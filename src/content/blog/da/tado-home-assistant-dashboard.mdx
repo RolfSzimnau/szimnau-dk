@@ -1,0 +1,203 @@
+---
+title: "Tado i Home Assistant — Animerede Klimakort og Tilstedeværelsesbaseret Opvarmning"
+description: "Sådan integrerede jeg 5 Tado-opvarmningszoner i Home Assistant med mushroom klimakort, en CSS-vejrtrækningsanimation på aktive zoner og automatiseringer for tilstedeværelsesbaseret nedsætning."
+pubDate: 2026-06-05
+tags: ["tado", "opvarmning", "dashboard", "card-mod", "home-assistant"]
+lang: "da"
+translationKey: "tado-home-assistant-dashboard"
+---
+
+Tados native HA-integration er en af de mest velpolerede i økosystemet — automatisk opdagelse, fuld understøttelse af klimaentiteter og en håndfuld nyttige ekstra sensorer. Dashboard-designet er, hvor du kan gøre det virkelig imponerende. Her er, hvordan jeg satte 5 zoner op med animerede aktiv-opvarmningsindikatorer og tilstedeværelsesbaseret nedsætning.
+
+## Integrationsopsætning
+
+Tado integreres native uden HACS. I HA, gå til **Indstillinger → Enheder og tjenester → Tilføj integration → Tado**. Efter godkendelse med din Tado-konto vises alle zoner automatisk som `climate.*`-entiteter.
+
+Hver zone får:
+```
+climate.zone_stue        — sat temp, aktuel temp, tilstand, HVAC-handling
+climate.zone_sovevarelse
+climate.zone_kontor
+climate.zone_badevarelse
+climate.zone_gang
+```
+
+Plus enhedsniveau-sensorer:
+```
+sensor.zone_stue_humidity           — relativ luftfugtighed (%)
+binary_sensor.zone_stue_window      — åbent vindue detekteret
+sensor.tado_outdoor_temperature     — omgivende udetemperatur
+```
+
+## Mushroom Klimakortet
+
+`custom:mushroom-climate-card` er lavet til dette formål. Det viser aktuel temperatur, indstillingspunkt og tilstand med passende farvekobling. Ingen konfiguration er nødvendig til grundlæggende brug:
+
+```yaml
+type: custom:mushroom-climate-card
+entity: climate.zone_stue
+hvac_modes:
+  - heat
+  - "off"
+show_temperature_control: true
+collapsible_controls: false
+```
+
+Indstilling af `show_temperature_control: true` tilføjer +/- knapper i kortet, så du kan justere indstillingspunktet uden at navigere væk.
+
+## Vejrtrækningsanimationen
+
+Det visuelle kendetegn: når en zone aktivt varmer op (HVAC-handling = "heating"), pulserer kortet med en varm orange glød. Dette bruger en CSS keyframe-animation via `card_mod`:
+
+```yaml
+type: custom:mushroom-climate-card
+entity: climate.zone_stue
+card_mod:
+  style: |
+    :host {
+      {% if state_attr('climate.zone_stue', 'hvac_action') == 'heating' %}
+      animation: breathe 3s ease-in-out infinite;
+      {% endif %}
+    }
+    @keyframes breathe {
+      0%, 100% {
+        filter: drop-shadow(0 0 4px rgba(255, 100, 0, 0.3));
+      }
+      50% {
+        filter: drop-shadow(0 0 14px rgba(255, 100, 0, 0.75));
+      }
+    }
+```
+
+Jinja2-tjekket inde i `card_mod`-stilblokken anvender betinget animationen — kun zoner, der aktivt kører, viser pulsen. Inaktive zoner er statiske.
+
+Dupliker dette blok for hver zone (erstat entitets-ID). Det visuelle resultat på tværs af 5 kort på én gang viser præcis, hvilke rum der varmer op, med et blik.
+
+## Dashboard-layout
+
+Jeg bruger en vertical-stack inde i en `custom:stack-in-card` til glasindpakningen med klimakortene i et 2-kolonne gitter via `custom:layout-card`:
+
+```yaml
+type: custom:stack-in-card
+card_mod:
+  style: |
+    ha-card {
+      background: rgba(255,255,255,0.05) !important;
+      backdrop-filter: blur(15px) !important;
+      border: 1px solid rgba(255,255,255,0.10) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+      border-radius: 28px !important;
+    }
+    ha-card::before { display: none !important; }
+cards:
+  - type: custom:layout-card
+    layout_type: custom:grid-layout
+    layout:
+      grid-template-columns: 1fr 1fr
+      grid-gap: 8px
+      padding: 8px
+    cards:
+      - type: custom:mushroom-climate-card
+        entity: climate.zone_stue
+        card_mod:
+          style: |
+            :host {
+              {% if state_attr('climate.zone_stue', 'hvac_action') == 'heating' %}
+              animation: breathe 3s ease-in-out infinite;
+              {% endif %}
+            }
+            @keyframes breathe {
+              0%, 100% { filter: drop-shadow(0 0 4px rgba(255,100,0,0.3)); }
+              50% { filter: drop-shadow(0 0 14px rgba(255,100,0,0.75)); }
+            }
+      # ... gentag for hver zone
+```
+
+Udetemperaturens sensor og luftfugtighed sidder som mushroom-template-kort i headerområdet over klimagitteret.
+
+## Tilstedeværelsesbaseret nedsætning
+
+Den mest nyttige automatisering: når alle forlader, sænk opvarmningen til et øko-indstillingspunkt. Når nogen ankommer, gendan tidsplanen.
+
+```yaml
+alias: Tado — Væk nedsætning
+trigger:
+  - platform: state
+    entity_id: group.husstandsmedlemmer
+    to: not_home
+action:
+  - repeat:
+      for_each:
+        - climate.zone_stue
+        - climate.zone_kontor
+        - climate.zone_sovevarelse
+        - climate.zone_badevarelse
+        - climate.zone_gang
+      sequence:
+        - service: climate.set_temperature
+          target:
+            entity_id: "{{ repeat.item }}"
+          data:
+            temperature: 17
+```
+
+Tados egen geofencing kan gøre dette også, men jeg foretrækker HA-versionen, fordi den forbinder sig til min bredere tilstedeværelsesdetektion (som kombinerer telefon-GPS, UniFi enhedssporing og en `person.*`-entitet for pålidelighed).
+
+Returautomatiseringen gendanner Tados planlagte tilstand frem for en fast temperatur:
+
+```yaml
+alias: Tado — Gendan tidsplan ved ankomst
+trigger:
+  - platform: state
+    entity_id: group.husstandsmedlemmer
+    to: home
+action:
+  - repeat:
+      for_each:
+        - climate.zone_stue
+        - climate.zone_kontor
+        - climate.zone_sovevarelse
+        - climate.zone_badevarelse
+        - climate.zone_gang
+      sequence:
+        - service: climate.set_hvac_mode
+          target:
+            entity_id: "{{ repeat.item }}"
+          data:
+            hvac_mode: auto
+```
+
+## Vinduesopdagelse
+
+Tados åbent-vindue-detektion er indbygget i hardwaren — hvis et vindue åbnes, registrerer TRV'en temperaturfaldet og sætter opvarmningen i den zone på pause. HA eksponerer dette via `binary_sensor.zone_*_window`-entiteten.
+
+Jeg tilføjede en notifikation, når et vindue har stået åbent i mere end 20 minutter, mens opvarmning er aktiv:
+
+```yaml
+alias: Tado — Åbent vindue advarsel
+trigger:
+  - platform: state
+    entity_id:
+      - binary_sensor.zone_stue_window
+      - binary_sensor.zone_sovevarelse_window
+    to: "on"
+    for:
+      minutes: 20
+condition:
+  - condition: template
+    value_template: >
+      {{ state_attr(trigger.entity_id.replace('_window', ''), 'hvac_action') == 'heating' }}
+action:
+  - service: notify.alle_enheder
+    data:
+      title: "Vindue åbent mens der varmes op"
+      message: >
+        {{ trigger.entity_id | replace('binary_sensor.zone_', '') | replace('_window', '') | replace('_', ' ') | title }}
+        vindue har stået åbent i 20 minutter.
+```
+
+## Hvad fungerer godt
+
+Tados HA-integration er solid. Statusopdateringer er hurtige (under 5 sekunder for TRV-feedback), klimaentiteten dækker alt, hvad du behøver, og vinduesopdagelse er et ægte nyttigt sikkerhedsnet. Integrationen har været stabil på tværs af adskillige HA-majorversioner uden brudændringer.
+
+Den animerede vejrtrækningseffekt på aktive zoner er det slags, gæster altid spørger om — det er et visuelt der øjeblikkeligt kommunikerer "dette rum varmer op" uden nogen forklaring.

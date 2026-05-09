@@ -1,0 +1,170 @@
+---
+title: "Škoda Elroq in Home Assistant — Vollständiger MyŠkoda Integrationsleitfaden"
+description: "Einrichtung der MyŠkoda-Integration in Home Assistant, alle verfügbaren Entitäten, ein Glassmorphism EV-Dashboard und Automatisierung der Klimavorwärmung über Google Kalender."
+pubDate: 2026-05-29
+tags: ["ev", "skoda-elroq", "myskoda", "home-assistant", "testbericht"]
+lang: "de"
+translationKey: "skoda-elroq-home-assistant"
+---
+
+Der Škoda Elroq ist ein solides Elektroauto, lebt aber wie die meisten modernen Fahrzeuge in einem proprietären App-Ökosystem. Die **MyŠkoda** Home Assistant-Integration bricht es aus diesem Silo heraus — hier ist, was man bekommt, wie man es einrichtet, und was ich damit gebaut habe.
+
+## Installation der MyŠkoda-Integration
+
+Die Integration ist auf HACS verfügbar. Suche nach **MySkoda** (der HACS-Paketname verwendet keine Sonderzeichen).
+
+Nach der Installation HA neu starten und über **Einstellungen → Geräte & Dienste → Integration hinzufügen → MySkoda** hinzufügen. Authentifizierung mit Škoda Connect-Anmeldedaten — dasselbe Konto wie für die My Škoda Mobile App.
+
+Die Integration pollt die Škoda Cloud-API. Antwortzeiten für Statusänderungen sind typischerweise 15–60 Sekunden; dies ist eine Cloud-API-Einschränkung, keine HA-Einschränkung.
+
+## Verfügbare Entitäten
+
+Nach dem Hinzufügen des Elroq siehst du:
+
+**Sensoren:**
+```
+sensor.elroq_battery_level          — Ladezustand (%)
+sensor.elroq_charging_power         — aktuelle Ladeleistung (kW)
+sensor.elroq_range                  — geschätzte Reichweite (km)
+sensor.elroq_odometer               — Gesamtkilometer (km)
+sensor.elroq_outside_temperature    — Umgebungstemperatur von Fahrzeugsensoren (°C)
+sensor.elroq_target_soc             — Ladelimit im Auto/App eingestellt (%)
+```
+
+**Binäre Sensoren:**
+```
+binary_sensor.elroq_charging        — lädt aktiv?
+binary_sensor.elroq_plugged_in      — Kabel angeschlossen?
+binary_sensor.elroq_doors_locked    — alle Türen verriegelt?
+binary_sensor.elroq_windows_closed  — alle Fenster geschlossen?
+```
+
+**Schaltflächen / Dienste:**
+```
+button.elroq_honk_flash             — Fernhupe + Blinken
+climate.elroq_air_conditioning      — HVAC-Vorwärmung
+switch.elroq_charging               — Laden starten/stoppen
+```
+
+Die Klimaentität ist die interessante. Das Einstellen einer Zieltemperatur und der Aufruf von `climate.turn_on` startet das HVAC-System des Fahrzeugs ferngesteuert — nützlich zum Vor-Heizen oder -Kühlen vor einer Fahrt.
+
+## Dashboard — Glassmorphism EV-Karte
+
+Die Elroq-Dashboard-Karte verwendet den Glassmorphism-Standard mit einem Batteriebalken über `ha-card::after`:
+
+```yaml
+type: custom:stack-in-card
+card_mod:
+  style: |
+    ha-card {
+      background: rgba(255,255,255,0.05) !important;
+      backdrop-filter: blur(15px) !important;
+      border: 1px solid rgba(255,255,255,0.10) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+      border-radius: 28px !important;
+      overflow: hidden !important;
+      position: relative !important;
+    }
+    ha-card::before { display: none !important; }
+    ha-card::after {
+      content: '' !important;
+      position: absolute !important;
+      left: 0; top: 0;
+      width: {{ states('sensor.elroq_battery_level') | int(0) }}% !important;
+      height: 100% !important;
+      background: linear-gradient(90deg,
+        rgba(76,175,80,0.18),
+        rgba(129,199,132,0.05)) !important;
+      pointer-events: none !important;
+    }
+cards:
+  - type: custom:mushroom-template-card
+    primary: Škoda Elroq
+    secondary: >
+      {{ states('sensor.elroq_battery_level') }}% ·
+      {{ states('sensor.elroq_range') }} km Reichweite
+    icon: mdi:car-electric
+    icon_color: >
+      {% set soc = states('sensor.elroq_battery_level') | int(0) %}
+      {% if soc > 60 %}green{% elif soc > 30 %}orange{% else %}red{% endif %}
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-template-card
+        primary: "{{ states('sensor.elroq_charging_power') | float(0) | round(1) }} kW"
+        secondary: Ladeleistung
+        icon: mdi:lightning-bolt
+      - type: custom:mushroom-template-card
+        primary: "{{ states('sensor.elroq_target_soc') }}%"
+        secondary: Ladelimit
+        icon: mdi:battery-charging-80
+```
+
+Der grüne Gradient hinter dem Karteninhalt repräsentiert visuell den Batteriestand — er verschiebt sich, während das Auto lädt.
+
+## Nützliche Automatisierungen
+
+### Benachrichtigung bei vollständiger Ladung
+
+```yaml
+alias: Elroq — Benachrichtigung wenn vollständig geladen
+trigger:
+  - platform: numeric_state
+    entity_id: sensor.elroq_battery_level
+    above: 99
+  - platform: state
+    entity_id: binary_sensor.elroq_charging
+    to: "off"
+condition:
+  - condition: state
+    entity_id: binary_sensor.elroq_plugged_in
+    state: "on"
+action:
+  - service: notify.all_devices
+    data:
+      title: "Elroq geladen"
+      message: >
+        Batterie bei {{ states('sensor.elroq_battery_level') }}% —
+        {{ states('sensor.elroq_range') }} km Reichweite.
+```
+
+### Vorwärmung aus Kalender
+
+Ich habe einen wiederkehrenden Google Kalender-Termin "Fahrt ins Büro" mit einer Startzeit. Eine Automatisierung 30 Minuten vor diesem Termin startet die Fahrzeugklimatisierung:
+
+```yaml
+alias: Elroq — Vorwärmen für Kalendertermin
+trigger:
+  - platform: calendar
+    event: start
+    offset: "-0:30:0"
+    entity_id: calendar.persoenlich
+condition:
+  - condition: template
+    value_template: "{{ 'Fahrt ins Büro' in trigger.calendar_event.summary }}"
+action:
+  - service: climate.turn_on
+    target:
+      entity_id: climate.elroq_air_conditioning
+  - service: climate.set_temperature
+    target:
+      entity_id: climate.elroq_air_conditioning
+    data:
+      temperature: 21
+```
+
+Das funktioniert gut. Der einzige Vorbehalt: Wenn das Auto über Nacht nicht angeschlossen ist, zieht die HVAC-Vorwärmung aus dem Akku statt aus dem Ladegerät — daher habe ich eine Prüfung hinzugefügt, die die Vorwärmung überspringt, wenn `sensor.elroq_battery_level` unter 30% liegt.
+
+## Was fehlt
+
+Die MyŠkoda-Integration ist gut, aber unvollständig:
+
+- **Keine Echtzeit-Ladesitzungsdaten** — man kann nicht sehen, wie viele kWh in der aktuellen Sitzung hinzugefügt wurden
+- **Kein Ladeverlauf** — historische Sitzungen werden nicht bereitgestellt
+- **Tür/Fenster-Zustand ist aggregiert** — man weiß, ob *irgendeine* Tür unverschlossen ist, aber nicht *welche*
+- **Polling-Latenz** — die 15–60 Sekunden Verzögerung macht es unbrauchbar für Echtzeit-Ladesteuerung
+
+Für die Smart-Charging-Automatisierung ist die Latenz akzeptabel, da die Automatisierung stündlich läuft. Für präzise Kontrolle (z.B. Stopp genau bei 80% an einer öffentlichen Ladestation) verwende ich noch die App.
+
+## Das größere Bild
+
+Der Elroq sitzt neben der Strompreisintegration in meinem HA-Setup als Paar. Spotpreise treiben Ladeentscheidungen; die MyŠkoda-Integration führt sie aus. Es ist nicht perfekt, funktioniert aber gut genug, dass das Auto größtenteils zu den günstigsten Stunden lädt — ohne manuellen Eingriff.

@@ -1,0 +1,172 @@
+---
+title: "Mammotion Flora i Home Assistant — En Praktisk Integrationsguide"
+description: "Sådan integrerede jeg Mammotion Flora (Luba Mini) robotplæneklipper i Home Assistant, byggede et ugentligt planlægnings-dashboard og erstattede min gamle Husqvarna med GPS-klipning."
+pubDate: 2026-05-08
+tags: ["mammotion", "plæneklipper", "home-assistant", "anmeldelse"]
+lang: "da"
+translationKey: "mammotion-flora-ha-integration"
+---
+
+Efter tre år med en Husqvarna 413c skiftede jeg til en **Mammotion Flora** (Luba Mini). Den afgørende faktor var ikke kun hardwaren — det var den native Home Assistant-integration. Ikke mere lukket app-økosystem uden automatiseringshooks. Her er alt, hvad jeg lærte under opsætningen.
+
+## Hvorfor skifte fra Husqvarna?
+
+Husqvarna fungerede fint mekanisk, men den levede helt uden for mit smarthjem:
+
+- Ingen HA-integration — ikke engang via uofficielle broer
+- Tidsplanlægning låst til den proprietære app
+- Ingen vejrbevidsthed — den kørte gladelig i regn
+- Nul sensorfeedback til at trigge automatiseringer
+
+Flora ændrede alt dette.
+
+## Mammotion Flora kort fortalt
+
+Flora bruger **GPS + RTK** til at definere dens klipningsgrænse — intet perimeterkabel er nødvendigt. Du tegner grænsen i Mammotion-appen, og klipperen navigerer inden for den ved hjælp af satelitpositionering. Vision-modulet tilføjer kamerabaseret hindringsdetektion ovenpå det.
+
+Nøglespecifikationer på min enhed:
+| Funktion | Detalje |
+|---------|--------|
+| Navigation | GPS + RTK multi-satellit |
+| Hindringsdetektion | Vision-modul (kamerabaseret) |
+| Klippebredde | 26 cm |
+| Hældningshåndtering | op til 45° |
+| HA-integration | Native (officiel) |
+
+## Opsætning af Home Assistant-integrationen
+
+Installer **Mammotion**-integrationen fra HACS (den er nu også tilgængelig på den officielle HA-integrationsliste). Efter godkendelse med din Mammotion-konto vises følgende entiteter:
+
+```
+lawn_mower.flora          — primær klipperentitet (start, dock, pause)
+sensor.flora_battery      — batteriprocent
+sensor.flora_satellites_robot  — aktive GPS-satellitter
+sensor.flora_wifi_rssi    — WiFi-signalstyrke (dBm)
+binary_sensor.flora_is_mowing — klipperstatus
+```
+
+`lawn_mower`-domænet giver fuld serviceunderstøttelse:
+
+```yaml
+service: lawn_mower.start_mow
+target:
+  entity_id: lawn_mower.flora
+
+service: lawn_mower.dock
+target:
+  entity_id: lawn_mower.flora
+```
+
+## Dashboard-design
+
+Mit Luba-view bruger et `custom:lawn-mower-card` øverst (det gengiver klippergrafik med batteriniveau) omgivet af mushroom chips til live-telemetri:
+
+```yaml
+type: vertical-stack
+cards:
+  - type: custom:lawn-mower-card
+    entity: lawn_mower.flora
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-chips-card
+        chips:
+          - type: entity
+            entity: sensor.flora_battery
+            icon: mdi:battery
+          - type: entity
+            entity: sensor.flora_satellites_robot
+            icon: mdi:satellite-variant
+          - type: entity
+            entity: sensor.flora_wifi_rssi
+            icon: mdi:wifi
+```
+
+Satellitantal-chippen er virkelig nyttig — under 10 satellitter forringes GPS-nøjagtigheden, og klipperen tøver ved grænsekanterne. Jeg tilføjede en betinget farveændring under grænseværdien via `card_mod`.
+
+## Ugentlig tidsplan med HA-hjælpere
+
+I stedet for at stole på Mammotion-appens planlægger (som ikke kan reagere på vejret) byggede jeg en brugerdefineret tidsplan med HA-hjælpere:
+
+**Input booleans** (én per dag):
+```
+input_boolean.flora_mandag
+input_boolean.flora_tirsdag
+input_boolean.flora_onsdag
+input_boolean.flora_torsdag
+input_boolean.flora_fredag
+input_boolean.flora_lordag
+input_boolean.flora_sondag
+```
+
+**Input number** til starttidspunkt:
+```
+input_number.flora_starttidspunkt   (min: 7, max: 20, step: 0.5)
+```
+
+**Automatisering:**
+
+```yaml
+alias: Flora — Kør efter tidsplan
+trigger:
+  - platform: time_pattern
+    minutes: "0"
+condition:
+  - condition: template
+    value_template: >
+      {% set day_map = {
+        0: 'mandag', 1: 'tirsdag', 2: 'onsdag',
+        3: 'torsdag', 4: 'fredag', 5: 'lordag', 6: 'sondag'
+      } %}
+      {% set today = day_map[now().weekday()] %}
+      {{ is_state('input_boolean.flora_' ~ today, 'on') }}
+  - condition: template
+    value_template: >
+      {{ now().hour == states('input_number.flora_starttidspunkt') | int(0) }}
+  - condition: not
+    conditions:
+      - condition: state
+        entity_id: weather.forecast_home
+        state:
+          - rainy
+          - pouring
+          - snowy
+          - lightning-rainy
+action:
+  - service: lawn_mower.start_mow
+    target:
+      entity_id: lawn_mower.flora
+```
+
+Kører hver time på klokkeslættet, tjekker om i dag er aktiveret, tjekker om det er den rigtige time, og springer over hvis vejrudsigten viser regn.
+
+Dashboard-kontakterne for hver dag sidder i et simpelt mushroom-template-card gitter — slå en dag til eller fra, og klipperen vil (eller vil ikke) køre den dag uden at røre appen.
+
+## Vision-modulet — Hindringsdetektion
+
+Vision-modulet er et lille kamera monteret på klipperens krop. I mine tests undgår det pålideligt:
+
+- Havemøbler og legetøj
+- Slanger efterladt på plænen
+- Pindsvin (vigtigt i Danmark)
+
+Det holder lejlighedsvis pause for skygger og lyse pletter ved visse solindfaldsvinkler — en kendt firmwarefejl, som Mammotion løbende forbedrer.
+
+## Ærlig vurdering
+
+**Hvad fungerer godt:**
+- GPS-grænsen er ægte trådløs og pålidelig over ~12 satellitter
+- HA-integrationen dækker alle væsentlige kommandoer og sensorer
+- Vejrbevidst tidsplanlægning via HA er en enorm forbedring over appen
+- Batterirapportering er nøjagtig
+
+**Smertenspunkter:**
+- App er påkrævet til initial grænseopsætning — ingen vej uden om det
+- Lejlighedsvis GPS-drift nær høje hække får klipperen til at pause og generhverve signal
+- RTK-basisstation forbedrer nøjagtighed markant men tilføjer omkostninger og kompleksitet
+- HA-integrationen tager somme tider 30–60 sekunder til at afspejle statusændringer efter kommandoer
+
+## Næste skridt
+
+Jeg planlægger at tilføje en **satellitkontrol**-automatisering der forsinker klipperstart, hvis satellitantallet er under 12 på det planlagte tidspunkt, og prøver igen efter 10 minutter. Kombineret med vejrkontrollen gør dette tidsplanen næsten fuldt autonom.
+
+Kommer du fra en perimeterkabelmaskine, er Flora et ægte fremskridt. HA-integrationen alene gjorde det værd at skifte.

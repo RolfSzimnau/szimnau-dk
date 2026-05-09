@@ -1,0 +1,201 @@
+---
+title: "Tado in Home Assistant — Animierte Klimakarten und Anwesenheitsbasierte Heizung"
+description: "5 Tado-Heizzonen in Home Assistant mit Mushroom-Klimakarten, einer CSS-Atemanimation bei aktiven Zonen und Automatisierungen für anwesenheitsbasierte Absenkung."
+pubDate: 2026-06-05
+tags: ["tado", "heizung", "dashboard", "card-mod", "home-assistant"]
+lang: "de"
+translationKey: "tado-home-assistant-dashboard"
+---
+
+Tados native HA-Integration gehört zu den saubersten im Ökosystem — automatische Erkennung, vollständige Klimaentitäts-Unterstützung und einige nützliche Zusatzsensoren. Das Dashboard-Design ist der Bereich, wo man es wirklich beeindruckend machen kann. Hier ist, wie ich 5 Zonen mit animierten Aktiv-Heizindikatoren und anwesenheitsbasierter Absenkung eingerichtet habe.
+
+## Integrationseinrichtung
+
+Tado integriert sich nativ ohne HACS. In HA: **Einstellungen → Geräte & Dienste → Integration hinzufügen → Tado**. Nach der Authentifizierung mit dem Tado-Konto erscheinen alle Zonen automatisch als `climate.*`-Entitäten.
+
+Jede Zone erhält:
+```
+climate.zone_wohnzimmer    — Solltemperatur, Isttemperatur, Modus, HVAC-Aktion
+climate.zone_schlafzimmer
+climate.zone_buerozimmer
+climate.zone_badezimmer
+climate.zone_flur
+```
+
+Plus Sensoren auf Geräteebene:
+```
+sensor.zone_wohnzimmer_humidity         — relative Luftfeuchtigkeit (%)
+binary_sensor.zone_wohnzimmer_window    — offenes Fenster erkannt
+sensor.tado_outdoor_temperature         — Außentemperatur
+```
+
+## Die Mushroom-Klimakarte
+
+`custom:mushroom-climate-card` ist genau dafür gebaut. Sie zeigt aktuelle Temperatur, Sollwert und Modus mit passender Farbkodierung:
+
+```yaml
+type: custom:mushroom-climate-card
+entity: climate.zone_wohnzimmer
+hvac_modes:
+  - heat
+  - "off"
+show_temperature_control: true
+collapsible_controls: false
+```
+
+`show_temperature_control: true` fügt +/-Schaltflächen in der Karte hinzu — Sollwert anpassen ohne Navigation.
+
+## Die Atemanimation
+
+Das visuelle Alleinstellungsmerkmal: Wenn eine Zone aktiv heizt (HVAC-Aktion = "heating"), pulsiert die Karte mit einem warmen orangefarbenen Leuchten. Dies nutzt eine CSS-Keyframe-Animation über `card_mod`:
+
+```yaml
+type: custom:mushroom-climate-card
+entity: climate.zone_wohnzimmer
+card_mod:
+  style: |
+    :host {
+      {% if state_attr('climate.zone_wohnzimmer', 'hvac_action') == 'heating' %}
+      animation: breathe 3s ease-in-out infinite;
+      {% endif %}
+    }
+    @keyframes breathe {
+      0%, 100% {
+        filter: drop-shadow(0 0 4px rgba(255, 100, 0, 0.3));
+      }
+      50% {
+        filter: drop-shadow(0 0 14px rgba(255, 100, 0, 0.75));
+      }
+    }
+```
+
+Die Jinja2-Prüfung im `card_mod`-Stilblock wendet die Animation bedingt an — nur aktiv heizende Zonen zeigen den Puls. Inaktive Zonen sind statisch.
+
+Diesen Block für jede Zone duplizieren (Entitäts-ID ersetzen). Das visuelle Ergebnis über 5 Karten zeigt auf einen Blick, welche Räume heizen.
+
+## Dashboard-Layout
+
+Ich verwende einen Vertical-Stack in einer `custom:stack-in-card` für die Glasumhüllung, mit den Klimakarten in einem 2-Spalten-Raster über `custom:layout-card`:
+
+```yaml
+type: custom:stack-in-card
+card_mod:
+  style: |
+    ha-card {
+      background: rgba(255,255,255,0.05) !important;
+      backdrop-filter: blur(15px) !important;
+      border: 1px solid rgba(255,255,255,0.10) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+      border-radius: 28px !important;
+    }
+    ha-card::before { display: none !important; }
+cards:
+  - type: custom:layout-card
+    layout_type: custom:grid-layout
+    layout:
+      grid-template-columns: 1fr 1fr
+      grid-gap: 8px
+      padding: 8px
+    cards:
+      - type: custom:mushroom-climate-card
+        entity: climate.zone_wohnzimmer
+        card_mod:
+          style: |
+            :host {
+              {% if state_attr('climate.zone_wohnzimmer', 'hvac_action') == 'heating' %}
+              animation: breathe 3s ease-in-out infinite;
+              {% endif %}
+            }
+            @keyframes breathe {
+              0%, 100% { filter: drop-shadow(0 0 4px rgba(255,100,0,0.3)); }
+              50% { filter: drop-shadow(0 0 14px rgba(255,100,0,0.75)); }
+            }
+      # ... für jede Zone wiederholen
+```
+
+## Anwesenheitsbasierte Absenkung
+
+Die nützlichste Automatisierung: Wenn alle weg sind, Heizung auf Öko-Sollwert absenken. Wenn jemand zurückkommt, Zeitplan wiederherstellen.
+
+```yaml
+alias: Tado — Abwesenheitsabsenkung
+trigger:
+  - platform: state
+    entity_id: group.haushaltsmitglieder
+    to: not_home
+action:
+  - repeat:
+      for_each:
+        - climate.zone_wohnzimmer
+        - climate.zone_buerozimmer
+        - climate.zone_schlafzimmer
+        - climate.zone_badezimmer
+        - climate.zone_flur
+      sequence:
+        - service: climate.set_temperature
+          target:
+            entity_id: "{{ repeat.item }}"
+          data:
+            temperature: 17
+```
+
+Tados eigenes Geofencing kann das auch, aber ich bevorzuge die HA-Version, weil sie in meine breitere Anwesenheitserkennung eingebunden ist (GPS-Telefon, UniFi-Geräteverfolgung und `person.*`-Entität kombiniert).
+
+Die Rückkehr-Automatisierung stellt Tados Zeitplanmodus statt einer festen Temperatur wieder her:
+
+```yaml
+alias: Tado — Zeitplan bei Rückkehr wiederherstellen
+trigger:
+  - platform: state
+    entity_id: group.haushaltsmitglieder
+    to: home
+action:
+  - repeat:
+      for_each:
+        - climate.zone_wohnzimmer
+        - climate.zone_buerozimmer
+        - climate.zone_schlafzimmer
+        - climate.zone_badezimmer
+        - climate.zone_flur
+      sequence:
+        - service: climate.set_hvac_mode
+          target:
+            entity_id: "{{ repeat.item }}"
+          data:
+            hvac_mode: auto
+```
+
+## Fenstererkennung
+
+Tados Öffnungsfenstererkennung ist in die Hardware eingebaut — öffnet sich ein Fenster, erkennt der TRV den Temperaturabfall und pausiert die Heizung für diese Zone. HA stellt dies über die `binary_sensor.zone_*_window`-Entität bereit.
+
+Ich habe eine Benachrichtigung hinzugefügt, wenn ein Fenster mehr als 20 Minuten bei aktiver Heizung offen ist:
+
+```yaml
+alias: Tado — Offenes Fenster Warnung
+trigger:
+  - platform: state
+    entity_id:
+      - binary_sensor.zone_wohnzimmer_window
+      - binary_sensor.zone_schlafzimmer_window
+    to: "on"
+    for:
+      minutes: 20
+condition:
+  - condition: template
+    value_template: >
+      {{ state_attr(trigger.entity_id.replace('_window', ''), 'hvac_action') == 'heating' }}
+action:
+  - service: notify.all_devices
+    data:
+      title: "Fenster offen beim Heizen"
+      message: >
+        {{ trigger.entity_id | replace('binary_sensor.zone_', '') | replace('_window', '') | replace('_', ' ') | title }}
+        Fenster ist seit 20 Minuten offen.
+```
+
+## Was gut funktioniert
+
+Tados HA-Integration ist solide. Statusaktualisierungen sind schnell (unter 5 Sekunden für TRV-Feedback), die Klimaentität deckt alles Nötige ab, und die Fenstererkennung ist ein genuiner Sicherheitsanker. Die Integration war über mehrere HA-Hauptversionen hinweg stabil.
+
+Der animierte Atemeffekt auf aktiven Zonen ist die Art von Sache, nach der Besucher immer fragen — ein visuelles, das sofort kommuniziert "dieser Raum heizt", ohne jede Erklärung.

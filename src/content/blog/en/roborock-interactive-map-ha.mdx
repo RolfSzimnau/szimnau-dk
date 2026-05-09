@@ -1,0 +1,213 @@
+---
+title: "Roborock Interactive Map in Home Assistant — Room-by-Room Cleaning and Maintenance Tracking"
+description: "How I integrated a Roborock S8 MaxV into Home Assistant with an interactive vacuum map, room-segment cleaning, maintenance sensors, and automations for dustbin alerts."
+pubDate: 2026-06-12
+tags: ["roborock", "vacuum", "dashboard", "home-assistant"]
+lang: "en"
+translationKey: "roborock-interactive-map-ha"
+---
+
+The Roborock S8 MaxV is a capable robot vacuum — but the real power comes when you integrate it with Home Assistant. Interactive room maps, room-by-room cleaning, maintenance tracking, and presence-aware automations. Here's how it all fits together.
+
+## Integration Setup
+
+The **Roborock** integration is built into HA (no HACS needed as of HA 2024.x). Add it via **Settings → Devices & Services → Add Integration → Roborock**, then authenticate with your Roborock app credentials.
+
+The integration supports both cloud and local polling. I use cloud polling — local communication is possible but requires a more involved setup involving extracting keys from the device firmware. For most users, cloud polling with a 5-second refresh interval is fine.
+
+After setup:
+
+```
+vacuum.roborock_s8_maxv             — main vacuum entity
+sensor.roborock_battery             — battery percentage
+sensor.roborock_status              — current status (cleaning, docked, idle, error)
+sensor.roborock_last_clean_area     — m² cleaned in last session
+sensor.roborock_last_clean_duration — minutes in last session
+sensor.roborock_total_clean_area    — lifetime m² cleaned
+```
+
+Plus maintenance sensors:
+```
+sensor.roborock_main_brush_left     — main brush life remaining (%)
+sensor.roborock_side_brush_left     — side brush life remaining (%)
+sensor.roborock_filter_left         — filter life remaining (%)
+sensor.roborock_sensor_dirty_left   — sensor cleaning needed (%)
+```
+
+## Interactive Map with xiaomi-vacuum-map-card
+
+The `custom:xiaomi-vacuum-map-card` (HACS) renders the live Roborock map in Lovelace with room zones and direct cleaning controls. It's the standout feature of this integration.
+
+```yaml
+type: custom:xiaomi-vacuum-map-card
+entity: vacuum.roborock_s8_maxv
+map_source:
+  camera: camera.roborock_map
+calibration_source:
+  auto: true
+internal_variables:
+  topic: roborock/map
+rooms:
+  - id: 16
+    name: Living Room
+    icon: mdi:sofa
+  - id: 17
+    name: Kitchen
+    icon: mdi:silverware-fork-knife
+  - id: 18
+    name: Bedroom
+    icon: mdi:bed
+  - id: 19
+    name: Office
+    icon: mdi:desk
+  - id: 20
+    name: Hallway
+    icon: mdi:door
+map_modes:
+  - template: vacuum_clean_zone
+  - template: vacuum_goto
+  - template: vacuum_clean_segment
+```
+
+Finding your room IDs: run the Roborock vacuum once, then check `state_attr('vacuum.roborock_s8_maxv', 'room_list')` in Developer Tools → Templates. The IDs are integers assigned when you create the map in the app.
+
+With this card, tapping a room on the map starts cleaning just that segment. Long-press sends the vacuum to a specific coordinate (useful for spot cleaning under the coffee table after a spill).
+
+## Room-by-Room Cleaning Service
+
+To trigger room cleaning via automation or a dashboard button:
+
+```yaml
+service: vacuum.send_command
+target:
+  entity_id: vacuum.roborock_s8_maxv
+data:
+  command: app_segment_clean
+  params:
+    - segments: [16, 17]  # living room + kitchen
+      repeat: 1
+```
+
+I expose this as a script with an `input_select` for room selection — a small dropdown on the dashboard lets me choose which room to clean without editing YAML.
+
+## Dashboard Layout
+
+```yaml
+type: custom:stack-in-card
+card_mod:
+  style: |
+    ha-card {
+      background: rgba(255,255,255,0.05) !important;
+      backdrop-filter: blur(15px) !important;
+      border: 1px solid rgba(255,255,255,0.10) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+      border-radius: 28px !important;
+      overflow: hidden !important;
+    }
+    ha-card::before { display: none !important; }
+cards:
+  - type: custom:xiaomi-vacuum-map-card
+    entity: vacuum.roborock_s8_maxv
+    map_source:
+      camera: camera.roborock_map
+    calibration_source:
+      auto: true
+    card_mod:
+      style: |
+        ha-card { border-radius: 0; box-shadow: none; border: none; }
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: entity
+        entity: sensor.roborock_status
+        icon: mdi:robot-vacuum
+      - type: entity
+        entity: sensor.roborock_battery
+        icon: mdi:battery
+      - type: entity
+        entity: sensor.roborock_last_clean_area
+        icon: mdi:texture-box
+```
+
+The map card inside a `stack-in-card` gets `border-radius: 0; box-shadow: none; border: none` so the outer container's `overflow: hidden` clips the map corners cleanly. This is the same pattern I use for the Flora mower map.
+
+## Maintenance Tracking
+
+The maintenance sensors are percentage-based: 100% means new, 0% means needs replacement. I surface these as colored indicator cards:
+
+```yaml
+type: custom:mushroom-template-card
+primary: "{{ states('sensor.roborock_main_brush_left') }}%"
+secondary: Main brush
+icon: mdi:brush
+icon_color: >
+  {% set pct = states('sensor.roborock_main_brush_left') | int(100) %}
+  {% if pct > 40 %}green{% elif pct > 20 %}orange{% else %}red{% endif %}
+```
+
+When any component drops below 20%, I get a persistent notification:
+
+```yaml
+alias: Roborock — Maintenance alert
+trigger:
+  - platform: numeric_state
+    entity_id:
+      - sensor.roborock_main_brush_left
+      - sensor.roborock_filter_left
+      - sensor.roborock_side_brush_left
+    below: 20
+action:
+  - service: persistent_notification.create
+    data:
+      title: "Roborock maintenance needed"
+      message: >
+        {{ trigger.entity_id | replace('sensor.roborock_', '') | replace('_left', '') | replace('_', ' ') | title }}
+        is at {{ trigger.to_state.state }}%.
+      notification_id: roborock_maintenance
+```
+
+Using `persistent_notification` (rather than a mobile push) means it shows up as a badge in the HA sidebar — visible when I'm in the app but not intrusive.
+
+## Presence-Aware Cleaning
+
+The most practical automation: run the vacuum when I leave, dock before I return.
+
+```yaml
+alias: Roborock — Clean while away
+trigger:
+  - platform: state
+    entity_id: person.rolf
+    to: not_home
+    for:
+      minutes: 5
+condition:
+  - condition: time
+    after: "09:00:00"
+    before: "18:00:00"
+  - condition: state
+    entity_id: vacuum.roborock_s8_maxv
+    state: docked
+action:
+  - service: vacuum.start
+    target:
+      entity_id: vacuum.roborock_s8_maxv
+
+alias: Roborock — Dock before arrival
+trigger:
+  - platform: state
+    entity_id: person.rolf
+    to: home
+condition:
+  - condition: state
+    entity_id: vacuum.roborock_s8_maxv
+    state: cleaning
+action:
+  - service: vacuum.return_to_base
+    target:
+      entity_id: vacuum.roborock_s8_maxv
+```
+
+The 5-minute delay on the departure trigger prevents false triggers from brief phone GPS glitches.
+
+## What's Next
+
+Room-specific scheduling based on actual use is on my list — for example, the kitchen gets cleaned daily, the office only twice a week. The `input_boolean` per-room approach I use for the Flora mower could work here too: enable/disable rooms for the daily clean without touching automations.

@@ -1,0 +1,218 @@
+---
+title: "Home Assistant Glassmorphism Dashboard — Det Komplette CSS Designsystem"
+description: "Et genanvendeligt glassmorphism designsystem til Home Assistant Lovelace-dashboards med card_mod. Dækker de 6 kern-CSS-konstanter, statusbjælker, kortkort, badge-undertrykkelse og Frosted Glass Dark tema-tilsidesættelse."
+pubDate: 2026-06-19
+tags: ["dashboard", "design", "card-mod", "lovelace", "home-assistant"]
+lang: "da"
+translationKey: "ha-glassmorphism-dashboard-design"
+---
+
+Efter genopbygning af tre Home Assistant-dashboards (stationær, mobil, tablet) med konsistent styling endte jeg med et glassmorphism designsystem. Alt er defineret af seks CSS-konstanter og en håndfuld kortmønstre. Her er det komplette system, så du kan kopiere det direkte.
+
+## Hvorfor glassmorphism?
+
+Mørke hjemmeautomatiseringsdashboards tendens til at se enten kliniske (flad Tailwind UI) eller visuelt rodede (for mange farvede statusfliser). Glassmorphism finder midtervejen: kort føles lette og lagdelte, statusfarver springer frem mod den gennemsigtige baggrund, og sløringseffekten grupperer relateret indhold naturligt.
+
+Det fungerer særlig godt mod en dyb marineblå baggrund (`#0a0f1a` eller lignende), hvor det gennemsigtige hvide glas skiller sig ud uden høj kontrast.
+
+## De 6 Kern-CSS-konstanter
+
+Hvert ydre kort i systemet bruger præcis disse værdier:
+
+```css
+border-radius: 28px;
+background: rgba(255, 255, 255, 0.05);
+backdrop-filter: blur(15px);
+-webkit-backdrop-filter: blur(15px);
+border: 1px solid rgba(255, 255, 255, 0.10);
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+```
+
+Og én obligatorisk undertrykkelseslinje:
+
+```css
+ha-card::before { display: none !important; }
+```
+
+Den sidste linje er kritisk, hvis du bruger **Frosted Glass Dark**-temaet (eller lignende). Temaet injicerer et `::before` pseudo-element overlay på hvert `ha-card`. Uden at undertrykke det får du dobbeltlagring, og din brugerdefinerede baggrund er delvist tildækket.
+
+## Standard Ydre Kortskabelon
+
+I `card_mod`, anvend designsystemet på ethvert kort ved hjælp af `custom:stack-in-card` som den ydre indpakning:
+
+```yaml
+type: custom:stack-in-card
+card_mod:
+  style: |
+    ha-card {
+      background: rgba(255,255,255,0.05) !important;
+      backdrop-filter: blur(15px) !important;
+      -webkit-backdrop-filter: blur(15px) !important;
+      border: 1px solid rgba(255,255,255,0.10) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+      border-radius: 28px !important;
+    }
+    ha-card::before { display: none !important; }
+cards:
+  # dine indre kort her
+```
+
+## Indre Kort — Gennemsigtighed
+
+Kort indlejret inde i en `stack-in-card` bør være visuelt usynlige — ingen baggrund, ingen skygge, ingen kant. Glasset kommer kun fra den ydre container:
+
+```yaml
+card_mod:
+  style: |
+    ha-card {
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    ha-card::before { display: none !important; }
+```
+
+Stak flere indre kort på denne måde, og de fremstår som én visuel enhed inde i glascontaineren.
+
+## Skillelinjer Mellem Indre Kort
+
+En subtil separator mellem stablede indre kort:
+
+```css
+ha-card {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+```
+
+Anvend dette på alle indre kort undtagen det sidste. Lettere end en standard kant — det læses som et indholdsafbræk uden at afbryde glasoverfladen.
+
+## Statusbjælker via `ha-card::after`
+
+`::before` pseudo-elementet er reserveret til temaundertrykkelse. Brug `::after` til statusbjælker:
+
+```yaml
+card_mod:
+  style: |
+    ha-card {
+      overflow: hidden !important;
+      position: relative !important;
+    }
+    ha-card::before { display: none !important; }
+    ha-card::after {
+      content: '' !important;
+      position: absolute !important;
+      left: 0;
+      top: 0;
+      width: {{ states('sensor.batteriniveau') | int(0) }}% !important;
+      height: 100% !important;
+      background: linear-gradient(
+        90deg,
+        rgba(76, 175, 80, 0.18),
+        rgba(129, 199, 132, 0.05)
+      ) !important;
+      pointer-events: none !important;
+    }
+```
+
+Gradienten toner ud til højre, så farveintensiteten følger værdien. Dette mønster virker til:
+- Batteriprocent (bil, robotstøvsuger, klippper)
+- Opladningsniveau
+- Resterende vedligeholdelseslevetid (inverter: 0% = fare, brug rød gradient)
+- Enhver 0–100% numerisk værdi
+
+## Kortkort Inde i Stack-in-Card
+
+Kortkort (støvsugerkort, kamera osv.) kræver speciel håndtering for at fungere inde i en glascontainer:
+
+```yaml
+type: custom:stack-in-card
+card_mod:
+  style: |
+    ha-card {
+      background: rgba(255,255,255,0.05) !important;
+      backdrop-filter: blur(15px) !important;
+      border: 1px solid rgba(255,255,255,0.10) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+      border-radius: 28px !important;
+      overflow: hidden !important;  /* ← kræves til hjørneklipning */
+    }
+    ha-card::before { display: none !important; }
+cards:
+  - type: custom:xiaomi-vacuum-map-card
+    entity: vacuum.robot
+    card_mod:
+      style: |
+        ha-card {
+          border-radius: 0 !important;   /* ← ingen radius på indre kort */
+          box-shadow: none !important;
+          border: none !important;
+        }
+```
+
+`overflow: hidden` på den ydre container klipper kortets hjørner til den ydre `border-radius`. Uden dette gengives kortet med kantede hjørner, der bløder ud over glaskortet. Det indre kortkort får `border-radius: 0` for at undgå dobbelt afrunding.
+
+## Badge-undertrykkelse
+
+Mushroom-kort viser farvede badges for enhedstilstande (f.eks. et orange "utilgængeligt" badge på en WiZ-lampe, der midlertidigt er offline). Skjul disse uden at påvirke kortets primære tilstandsvisning:
+
+```yaml
+card_mod:
+  style:
+    ".": |
+      mushroom-badge-icon.unavailable {
+        display: none !important;
+      }
+```
+
+`"."` nøglen i `card_mod` dict'en målretter værtselementets shadow DOM-kontekst — dette er den korrekte nøgle til mushroom-kortstyling i HA 2024+.
+
+## Den Komplette Genanvendelige Skabelon
+
+Kopier dette som startpunkt for ethvert nyt glaskort:
+
+```yaml
+type: custom:stack-in-card
+card_mod:
+  style: |
+    ha-card {
+      background: rgba(255,255,255,0.05) !important;
+      backdrop-filter: blur(15px) !important;
+      -webkit-backdrop-filter: blur(15px) !important;
+      border: 1px solid rgba(255,255,255,0.10) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+      border-radius: 28px !important;
+    }
+    ha-card::before { display: none !important; }
+cards:
+  - type: custom:mushroom-template-card
+    primary: Korttitel
+    secondary: Undertitel eller tilstand
+    icon: mdi:home
+    card_mod:
+      style: |
+        ha-card {
+          background: transparent !important;
+          box-shadow: none !important;
+          border: none !important;
+        }
+        ha-card::before { display: none !important; }
+```
+
+## Påkrævede Brugerdefinerede Kort
+
+Dette designsystem afhænger af:
+
+- `custom:stack-in-card` — ydre glascontainer
+- `custom:mushroom-*` — alle indre indholdskort
+- `custom:layout-card` — gitterlayout inde i glascontainere
+- `card_mod` — CSS-injektion (kræves af alle ovenstående)
+
+Installer alle via HACS. `card_mod`-integrationen er en separat HACS-installation — den er ikke inkluderet med mushroom.
+
+## Konsistent Anvendelse
+
+Den sværeste del af et designsystem i Lovelace er konsistens — YAML har ikke variabler. Hvert kort får sin egen kopi af CSS-blokken. Når jeg skal ændre glasopaciteten, ændrer jeg den 30 steder.
+
+Min tilgang: hold en lokal `snippets.yaml`-fil med den fulde kortskabelon som en kommentarblok. Når jeg opretter et nyt kort, indsætter jeg fra den fil. Ikke elegant, men det virker.
+
+En fremtidig forbedring ville være temavariabler (`var(--glass-bg)`) defineret én gang i HA-temaet og refereret i `card_mod`-stilarter. Dette virker i dag, hvis dit tema definerer brugerdefinerede CSS-egenskaber — men kræver vedligeholdelse af en brugerdefineret tema-YAML.

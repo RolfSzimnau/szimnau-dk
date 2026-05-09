@@ -1,0 +1,216 @@
+---
+title: "Home Assistant Glassmorphism Dashboard — Das komplette CSS Designsystem"
+description: "Ein wiederverwendbares Glassmorphism-Designsystem für Home Assistant Lovelace-Dashboards mit card_mod. Die 6 Kern-CSS-Konstanten, Fortschrittsbalken, Kartenkarten, Badge-Unterdrückung und Frosted Glass Dark Theme-Überschreibung."
+pubDate: 2026-06-19
+tags: ["dashboard", "design", "card-mod", "lovelace", "home-assistant"]
+lang: "de"
+translationKey: "ha-glassmorphism-dashboard-design"
+---
+
+Nach dem Neuaufbau von drei Home Assistant-Dashboards (Desktop, Mobil, Tablet) mit konsistentem Styling habe ich mich auf ein Glassmorphism-Designsystem festgelegt. Alles wird durch sechs CSS-Konstanten und eine Handvoll Kartenmuster definiert. Hier ist das komplette System zum direkten Kopieren.
+
+## Warum Glassmorphism?
+
+Dunkle Hausautomatisierungs-Dashboards sehen entweder klinisch aus (flaches Tailwind UI) oder visuell überladen (zu viele farbige Status-Kacheln). Glassmorphism findet den Mittelweg: Karten wirken leicht und geschichtet, Statusfarben heben sich vom durchscheinenden Hintergrund ab, und der Unschärfeeffekt gruppiert verwandte Inhalte natürlich.
+
+Es funktioniert besonders gut gegen einen tiefen Marineblau-Hintergrund (`#0a0f1a` oder ähnlich), wo das durchscheinende weiße Glas ohne hohen Kontrast heraussticht.
+
+## Die 6 Kern-CSS-Konstanten
+
+Jede äußere Karte im System verwendet genau diese Werte:
+
+```css
+border-radius: 28px;
+background: rgba(255, 255, 255, 0.05);
+backdrop-filter: blur(15px);
+-webkit-backdrop-filter: blur(15px);
+border: 1px solid rgba(255, 255, 255, 0.10);
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+```
+
+Und eine obligatorische Unterdrückungszeile:
+
+```css
+ha-card::before { display: none !important; }
+```
+
+Diese letzte Zeile ist entscheidend, wenn das **Frosted Glass Dark**-Theme (oder ähnliches) verwendet wird. Das Theme injiziert ein `::before`-Pseudo-Element-Overlay auf jede `ha-card`. Ohne Unterdrückung entsteht Doppel-Layering und der benutzerdefinierte Hintergrund wird teilweise verdeckt.
+
+## Die Standard-Außenkarten-Vorlage
+
+In `card_mod` das Designsystem auf jede Karte mit `custom:stack-in-card` als äußerer Umhüllung anwenden:
+
+```yaml
+type: custom:stack-in-card
+card_mod:
+  style: |
+    ha-card {
+      background: rgba(255,255,255,0.05) !important;
+      backdrop-filter: blur(15px) !important;
+      -webkit-backdrop-filter: blur(15px) !important;
+      border: 1px solid rgba(255,255,255,0.10) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+      border-radius: 28px !important;
+    }
+    ha-card::before { display: none !important; }
+cards:
+  # innere Karten hier
+```
+
+## Innere Karten — Transparenz-Behandlung
+
+Karten, die in einer `stack-in-card` verschachtelt sind, sollten visuell unsichtbar sein — kein Hintergrund, kein Schatten, kein Rahmen. Das Glas kommt nur vom äußeren Container:
+
+```yaml
+card_mod:
+  style: |
+    ha-card {
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    ha-card::before { display: none !important; }
+```
+
+## Trennlinien zwischen inneren Karten
+
+Ein subtiler Separator zwischen gestapelten inneren Karten:
+
+```css
+ha-card {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+```
+
+Auf alle inneren Karten außer der letzten anwenden. Leichter als ein Standard-Rahmen — liest sich als Inhaltsunterbrechung ohne die Glasoberfläche zu unterbrechen.
+
+## Fortschrittsbalken via `ha-card::after`
+
+Das `::before`-Pseudo-Element ist für die Theme-Unterdrückung reserviert. `::after` für Fortschrittsbalken verwenden:
+
+```yaml
+card_mod:
+  style: |
+    ha-card {
+      overflow: hidden !important;
+      position: relative !important;
+    }
+    ha-card::before { display: none !important; }
+    ha-card::after {
+      content: '' !important;
+      position: absolute !important;
+      left: 0;
+      top: 0;
+      width: {{ states('sensor.batteriestand') | int(0) }}% !important;
+      height: 100% !important;
+      background: linear-gradient(
+        90deg,
+        rgba(76, 175, 80, 0.18),
+        rgba(129, 199, 132, 0.05)
+      ) !important;
+      pointer-events: none !important;
+    }
+```
+
+Der Gradient verblasst nach rechts, sodass die Farbintensität den Wert verfolgt. Dieses Muster funktioniert für:
+- Batteriestand (Auto, Roboterstaubsauger, Mäher)
+- Ladestand
+- Verbleibende Wartungslebensdauer (invertiert: 0% = Gefahr, roten Gradienten verwenden)
+- Jeden 0–100% Zahlenwert
+
+## Kartenkarten in Stack-in-Card
+
+Kartenkarten (Staubsaugerkarte, Kamera usw.) benötigen besondere Behandlung, um in einem Glascontainer zu funktionieren:
+
+```yaml
+type: custom:stack-in-card
+card_mod:
+  style: |
+    ha-card {
+      background: rgba(255,255,255,0.05) !important;
+      backdrop-filter: blur(15px) !important;
+      border: 1px solid rgba(255,255,255,0.10) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+      border-radius: 28px !important;
+      overflow: hidden !important;  /* ← erforderlich für Ecken-Clipping */
+    }
+    ha-card::before { display: none !important; }
+cards:
+  - type: custom:xiaomi-vacuum-map-card
+    entity: vacuum.robot
+    card_mod:
+      style: |
+        ha-card {
+          border-radius: 0 !important;   /* ← kein Radius auf innerer Karte */
+          box-shadow: none !important;
+          border: none !important;
+        }
+```
+
+`overflow: hidden` am äußeren Container schneidet die Ecken der Karte auf den äußeren `border-radius` zu. Ohne dies rendert die Karte mit eckigen Ecken, die aus der Glaskarte herausragen. Die innere Kartenkarte erhält `border-radius: 0` um doppelte Abrundung zu vermeiden.
+
+## Badge-Unterdrückung
+
+Mushroom-Karten zeigen farbige Badges für Entitätsstatus (z.B. ein oranges "nicht verfügbar" Badge bei einer WiZ-Lampe, die vorübergehend offline ist). Diese ausblenden, ohne die Hauptstatusanzeige der Karte zu beeinflussen:
+
+```yaml
+card_mod:
+  style:
+    ".": |
+      mushroom-badge-icon.unavailable {
+        display: none !important;
+      }
+```
+
+Der `"."` Schlüssel im `card_mod`-Dict zielt auf den Shadow-DOM-Kontext des Host-Elements ab — dies ist der korrekte Schlüssel für Mushroom-Karten-Styling in HA 2024+.
+
+## Die komplette wiederverwendbare Vorlage
+
+Als Ausgangspunkt für jede neue Glaskarte kopieren:
+
+```yaml
+type: custom:stack-in-card
+card_mod:
+  style: |
+    ha-card {
+      background: rgba(255,255,255,0.05) !important;
+      backdrop-filter: blur(15px) !important;
+      -webkit-backdrop-filter: blur(15px) !important;
+      border: 1px solid rgba(255,255,255,0.10) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+      border-radius: 28px !important;
+    }
+    ha-card::before { display: none !important; }
+cards:
+  - type: custom:mushroom-template-card
+    primary: Kartentitel
+    secondary: Untertitel oder Status
+    icon: mdi:home
+    card_mod:
+      style: |
+        ha-card {
+          background: transparent !important;
+          box-shadow: none !important;
+          border: none !important;
+        }
+        ha-card::before { display: none !important; }
+```
+
+## Benötigte benutzerdefinierte Karten
+
+Dieses Designsystem hängt ab von:
+
+- `custom:stack-in-card` — äußerer Glascontainer
+- `custom:mushroom-*` — alle inneren Inhaltskarten
+- `custom:layout-card` — Rasterlayouts in Glascontainern
+- `card_mod` — CSS-Injektion (von allen obigen benötigt)
+
+Alle über HACS installieren. Die `card_mod`-Integration ist eine separate HACS-Installation — sie ist nicht mit Mushroom gebündelt.
+
+## Konsistente Anwendung
+
+Der schwierigste Teil eines Designsystems in Lovelace ist Konsistenz — YAML hat keine Variablen. Jede Karte erhält ihre eigene Kopie des CSS-Blocks. Wenn die Glasopazität geändert werden muss, wird sie an 30 Stellen geändert.
+
+Mein Ansatz: Eine lokale `snippets.yaml`-Datei mit der vollständigen Kartenvorlage als Kommentarblock. Beim Erstellen einer neuen Karte aus dieser Datei einfügen. Nicht elegant, aber es funktioniert.
+
+Eine zukünftige Verbesserung wären Theme-Variablen (`var(--glass-bg)`) einmal im HA-Theme definiert und in `card_mod`-Stilen referenziert. Dies funktioniert heute, wenn das Theme benutzerdefinierte CSS-Eigenschaften definiert — erfordert aber die Pflege einer benutzerdefinierten Theme-YAML.

@@ -1,0 +1,174 @@
+---
+title: "AI Security Camera in Home Assistant — LLM Vision That Actually Works"
+description: "How I integrated a Sentinel AI camera into Home Assistant with LLM Vision analysis, smart notification filtering, and a clean glassmorphism dashboard — including the 5-to-3 automation cleanup."
+pubDate: 2026-05-15
+tags: ["camera", "ai-vision", "security", "home-assistant"]
+lang: "en"
+translationKey: "sentinel-ai-camera-ha"
+---
+
+Security cameras in Home Assistant used to mean one thing: a dumb motion alert that fires 40 times a day. Adding an AI model to the pipeline changed everything. Here's how I set up my Sentinel camera with LLM Vision analysis, sane notification logic, and how I cut five automations down to three.
+
+## The Setup
+
+The camera exposes itself through HA's standard camera integration. Once added, several binary sensors become available:
+
+```
+binary_sensor.sentinel_motion       — generic motion
+binary_sensor.sentinel_person       — person detected
+binary_sensor.sentinel_animal       — animal detected
+binary_sensor.sentinel_vehicle      — vehicle detected
+```
+
+Person and vehicle detection come from the camera's onboard AI. The LLM Vision layer runs in HA itself — it grabs a camera snapshot and sends it to a language model to get a natural-language description.
+
+## LLM Vision Integration
+
+The HA **LLM Vision** integration (available on HACS) lets you call an AI model with a camera image and a prompt. I use it to generate a plain-English description when a person is detected:
+
+```yaml
+service: llmvision.image_analyzer
+data:
+  provider: openai
+  model: gpt-4o-mini
+  message: >
+    Describe what you see in this camera image in one sentence.
+    Focus on who or what is present and what they are doing.
+    Keep it under 20 words.
+  image_entities:
+    - camera.sentinel
+  max_tokens: 60
+response_variable: vision_response
+```
+
+The result goes directly into the notification body. Instead of "Motion detected", the phone notification reads something like "Person walking toward front door carrying a package."
+
+I toggle this analysis on and off with `input_boolean.sentinel_ai_analysis`. When the AI toggle is off, notifications still fire — just without the image description. This avoids API calls during periods when I don't need them (overnight, when AI context isn't worth the cost).
+
+## Notification Logic — Away Mode Only
+
+The most important filter: only notify when I'm actually away. Motion inside the house when I'm home is noise.
+
+```yaml
+alias: Sentinel — Person alert with AI description
+trigger:
+  - platform: state
+    entity_id: binary_sensor.sentinel_person
+    to: "on"
+condition:
+  - condition: state
+    entity_id: alarm_control_panel.home_alarm
+    state: armed_away
+action:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: input_boolean.sentinel_ai_analysis
+            state: "on"
+        sequence:
+          - service: llmvision.image_analyzer
+            data:
+              provider: openai
+              model: gpt-4o-mini
+              message: >
+                Describe what you see in one sentence. Under 20 words.
+              image_entities:
+                - camera.sentinel
+              max_tokens: 60
+            response_variable: ai_result
+          - service: notify.all_devices
+            data:
+              title: "Person detected"
+              message: "{{ ai_result.response_text }}"
+              data:
+                image: /api/camera_proxy/camera.sentinel
+    default:
+      - service: notify.all_devices
+        data:
+          title: "Person detected"
+          message: "Motion at front camera"
+          data:
+            image: /api/camera_proxy/camera.sentinel
+```
+
+## The 5-to-3 Automation Cleanup
+
+Originally I had five automations:
+1. Motion alert (any motion)
+2. Person alert
+3. AI description
+4. Night mode suppression
+5. AI cost limiter (rate limiting)
+
+The problem: they overlapped, had conflicting conditions, and the logs were a mess. I consolidated to three:
+
+**Automation 1** — Person alert with AI (shown above)
+**Automation 2** — Vehicle alert (no AI — just a snapshot notification)
+**Automation 3** — AI toggle reset (runs at midnight to re-enable AI if manually disabled)
+
+No more separate night mode automation — the `armed_away` condition handles it. No more rate limiter — the AI toggle handles it. Three automations, all readable in a single glance.
+
+## Dashboard Layout
+
+The security view card uses `custom:advanced-camera-card` for the live feed, with mushroom chips below for sensor state:
+
+```yaml
+type: vertical-stack
+cards:
+  - type: custom:advanced-camera-card
+    cameras:
+      - camera_entity: camera.sentinel
+    live:
+      show_image_during_load: true
+    view:
+      default: live
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: entity
+        entity: binary_sensor.sentinel_person
+        icon: mdi:account
+        icon_color: red
+      - type: entity
+        entity: binary_sensor.sentinel_animal
+        icon: mdi:paw
+      - type: entity
+        entity: binary_sensor.sentinel_vehicle
+        icon: mdi:car
+      - type: entity
+        entity: input_boolean.sentinel_ai_analysis
+        icon: mdi:brain
+        tap_action:
+          action: toggle
+  - type: logbook
+    entities:
+      - binary_sensor.sentinel_person
+      - binary_sensor.sentinel_vehicle
+    hours_to_show: 24
+```
+
+The logbook below the camera gives a 24-hour event timeline at a glance — useful for reviewing what triggered during the night without opening the History tab.
+
+## Glassmorphism Card Wrapper
+
+The security view sits inside a `custom:stack-in-card` with the standard glass treatment:
+
+```yaml
+type: custom:stack-in-card
+card_mod:
+  style: |
+    ha-card {
+      background: rgba(255,255,255,0.05) !important;
+      backdrop-filter: blur(15px) !important;
+      -webkit-backdrop-filter: blur(15px) !important;
+      border: 1px solid rgba(255,255,255,0.10) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+      border-radius: 28px !important;
+    }
+    ha-card::before { display: none !important; }
+```
+
+## What I'd Do Differently
+
+The onboard person/animal detection is good but occasionally misfires on large shadows. I'd love to run the LLM Vision on every motion trigger and let the AI decide whether to notify — but that's too many API calls. The current compromise (AI only on person detection, during armed away) is a practical balance.
+
+The next improvement is a **visitor time window**: a helper that defines daytime hours when I expect deliveries and visitors, suppressing notifications during those windows while keeping the AI description active for the log.

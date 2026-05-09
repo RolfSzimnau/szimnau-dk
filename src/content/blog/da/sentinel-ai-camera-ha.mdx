@@ -1,0 +1,155 @@
+---
+title: "AI-sikkerhedskamera i Home Assistant — LLM Vision der faktisk virker"
+description: "Sådan integrerede jeg et Sentinel AI-kamera i Home Assistant med LLM Vision-analyse, smart notifikationsfiltrering og et glassmorphism dashboard — inkl. oprydningen fra 5 til 3 automatiseringer."
+pubDate: 2026-05-15
+tags: ["kamera", "ai-vision", "sikkerhed", "home-assistant"]
+lang: "da"
+translationKey: "sentinel-ai-camera-ha"
+---
+
+Sikkerhedskameraer i Home Assistant betød tidligere én ting: en dum bevægelsesalarm der udløses 40 gange om dagen. Tilføjelsen af en AI-model til pipelines ændrede alt. Her er, hvordan jeg satte mit Sentinel-kamera op med LLM Vision-analyse, fornuftig notifikationslogik, og hvordan jeg reducerede fem automatiseringer til tre.
+
+## Opsætningen
+
+Kameraet præsenterer sig selv via HAs standard kameraintegration. Når det er tilføjet, bliver adskillige binære sensorer tilgængelige:
+
+```
+binary_sensor.sentinel_motion       — generel bevægelse
+binary_sensor.sentinel_person       — person detekteret
+binary_sensor.sentinel_animal       — dyr detekteret
+binary_sensor.sentinel_vehicle      — køretøj detekteret
+```
+
+Person- og køretøjsdetektion kommer fra kameraets onboard-AI. LLM Vision-laget kører i HA selv — det henter et kameraøjebliksbillede og sender det til en sprogmodel for at få en naturlig-sprog-beskrivelse.
+
+## LLM Vision-integration
+
+**LLM Vision**-integrationen (tilgængelig på HACS) lader dig kalde en AI-model med et kamerabillede og en prompt. Jeg bruger det til at generere en klartekstbeskrivelse, når en person detekteres:
+
+```yaml
+service: llmvision.image_analyzer
+data:
+  provider: openai
+  model: gpt-4o-mini
+  message: >
+    Beskriv hvad du ser på dette kamerabillede i én sætning.
+    Fokusér på hvem eller hvad der er til stede og hvad de gør.
+    Hold det under 20 ord.
+  image_entities:
+    - camera.sentinel
+  max_tokens: 60
+response_variable: vision_response
+```
+
+Resultatet går direkte ind i notifikationens brødtekst. I stedet for "Bevægelse detekteret" læser telefonnotifikationen noget som "Person går mod hoveddøren med en pakke."
+
+Jeg slår denne analyse til og fra med `input_boolean.sentinel_ai_analysis`. Når AI-skiftet er slået fra, udløses notifikationer stadig — bare uden billedbeskrivelse. Dette undgår API-kald i perioder, hvor jeg ikke har brug for dem.
+
+## Notifikationslogik — Kun i fraværstilstand
+
+Det vigtigste filter: notificer kun, når jeg faktisk er væk. Bevægelse inde i huset, mens jeg er hjemme, er støj.
+
+```yaml
+alias: Sentinel — Personalarm med AI-beskrivelse
+trigger:
+  - platform: state
+    entity_id: binary_sensor.sentinel_person
+    to: "on"
+condition:
+  - condition: state
+    entity_id: alarm_control_panel.home_alarm
+    state: armed_away
+action:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: input_boolean.sentinel_ai_analysis
+            state: "on"
+        sequence:
+          - service: llmvision.image_analyzer
+            data:
+              provider: openai
+              model: gpt-4o-mini
+              message: >
+                Beskriv hvad du ser i én sætning. Under 20 ord.
+              image_entities:
+                - camera.sentinel
+              max_tokens: 60
+            response_variable: ai_result
+          - service: notify.alle_enheder
+            data:
+              title: "Person detekteret"
+              message: "{{ ai_result.response_text }}"
+              data:
+                image: /api/camera_proxy/camera.sentinel
+    default:
+      - service: notify.alle_enheder
+        data:
+          title: "Person detekteret"
+          message: "Bevægelse ved frontkamera"
+          data:
+            image: /api/camera_proxy/camera.sentinel
+```
+
+## Fra 5 til 3 automatiseringer
+
+Oprindeligt havde jeg fem automatiseringer:
+1. Bevægelsesalarm (enhver bevægelse)
+2. Personalarm
+3. AI-beskrivelse
+4. Nattilstandsundertrykkelse
+5. AI-omkostningsbegrænsning (rate limiting)
+
+Problemet: de overlappede, havde modstridende betingelser, og logfilerne var et rod. Jeg konsoliderede til tre:
+
+**Automatisering 1** — Personalarm med AI (vist ovenfor)
+**Automatisering 2** — Køretøjsalarm (ingen AI — bare en øjebliksbilledenotifikation)
+**Automatisering 3** — AI-skift nulstilling (kører ved midnat for at genaktivere AI, hvis den er manuelt deaktiveret)
+
+Ingen separat nattilstandsautomatisering — `armed_away`-betingelsen håndterer det. Ingen rate limiter — AI-skiftet håndterer det. Tre automatiseringer, alle læselige i et enkelt øjekast.
+
+## Dashboard-layout
+
+Sikkerhedsview-kortet bruger `custom:advanced-camera-card` til live-feed med mushroom chips nedenfor for sensortilstand:
+
+```yaml
+type: vertical-stack
+cards:
+  - type: custom:advanced-camera-card
+    cameras:
+      - camera_entity: camera.sentinel
+    live:
+      show_image_during_load: true
+    view:
+      default: live
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: entity
+        entity: binary_sensor.sentinel_person
+        icon: mdi:account
+        icon_color: red
+      - type: entity
+        entity: binary_sensor.sentinel_animal
+        icon: mdi:paw
+      - type: entity
+        entity: binary_sensor.sentinel_vehicle
+        icon: mdi:car
+      - type: entity
+        entity: input_boolean.sentinel_ai_analysis
+        icon: mdi:brain
+        tap_action:
+          action: toggle
+  - type: logbook
+    entities:
+      - binary_sensor.sentinel_person
+      - binary_sensor.sentinel_vehicle
+    hours_to_show: 24
+```
+
+Logbogen under kameraet giver en 24-timers begivenhedsoversigt — nyttig til at gennemgå, hvad der udløste i løbet af natten uden at åbne Historik-fanen.
+
+## Hvad jeg ville gøre anderledes
+
+Onboard person/dyr-detektion er god, men fejlidentificerer lejlighedsvis store skygger. Jeg ville elske at køre LLM Vision på hver bevægelsestrigger og lade AI'en bestemme, om der skal notificeres — men det er for mange API-kald. Det nuværende kompromis (AI kun ved persondetektion, under armed away) er en praktisk balance.
+
+Den næste forbedring er et **besøgstidsvindue**: en hjælper der definerer dagtimerne, hvor jeg forventer leverancer og besøgende, og undertrykker notifikationer i disse vinduer.

@@ -1,0 +1,174 @@
+---
+title: "Mammotion Flora in Home Assistant — A Real-World Integration Guide"
+description: "How I integrated the Mammotion Flora (Luba Mini) robot mower into Home Assistant, built a weekday schedule dashboard, and replaced my old Husqvarna with GPS boundary mowing."
+pubDate: 2026-05-08
+tags: ["mammotion", "lawn-mower", "home-assistant", "review"]
+lang: "en"
+translationKey: "mammotion-flora-ha-integration"
+---
+
+After three years with a Husqvarna 413c, I made the switch to a **Mammotion Flora** (Luba Mini). The deciding factor wasn't just the hardware — it was native Home Assistant integration. No more closed-garden app with zero automation hooks. Here's everything I learned setting it up.
+
+## Why I Switched from Husqvarna
+
+The Husqvarna worked fine mechanically, but it lived completely outside my smart home:
+
+- No HA integration — not even through unofficial bridges
+- Scheduling locked to the proprietary app
+- No weather awareness — it would happily run in the rain
+- Zero sensor feedback to trigger automations
+
+The Flora changed all of that.
+
+## The Mammotion Flora at a Glance
+
+The Flora uses **GPS + RTK** to define its mowing boundary — no perimeter wire needed. You draw the boundary in the Mammotion app, and the mower navigates within it using satellite positioning. The Vision Module adds camera-based obstacle detection on top of that.
+
+Key specs on my unit:
+| Feature | Detail |
+|---------|--------|
+| Navigation | GPS + RTK multi-satellite |
+| Obstacle detection | Vision Module (camera-based) |
+| Cutting width | 26 cm |
+| Slope handling | up to 45° |
+| HA integration | Native (official) |
+
+## Setting Up the Home Assistant Integration
+
+Install the **Mammotion** integration from HACS (it's also available in the official HA integration list now). After authenticating with your Mammotion account, the following entities appear:
+
+```
+lawn_mower.flora          — main mower entity (start, dock, pause)
+sensor.flora_battery      — battery percentage
+sensor.flora_satellites_robot  — active GPS satellite count
+sensor.flora_wifi_rssi    — WiFi signal strength (dBm)
+binary_sensor.flora_is_mowing — mowing state
+```
+
+The `lawn_mower` domain means you get full service support:
+
+```yaml
+service: lawn_mower.start_mow
+target:
+  entity_id: lawn_mower.flora
+
+service: lawn_mower.dock
+target:
+  entity_id: lawn_mower.flora
+```
+
+## Dashboard Design
+
+My Luba view uses a `custom:lawn-mower-card` at the top (it renders the mower graphic with battery level) surrounded by mushroom chips for live telemetry:
+
+```yaml
+type: vertical-stack
+cards:
+  - type: custom:lawn-mower-card
+    entity: lawn_mower.flora
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-chips-card
+        chips:
+          - type: entity
+            entity: sensor.flora_battery
+            icon: mdi:battery
+          - type: entity
+            entity: sensor.flora_satellites_robot
+            icon: mdi:satellite-variant
+          - type: entity
+            entity: sensor.flora_wifi_rssi
+            icon: mdi:wifi
+```
+
+The satellite count chip is genuinely useful — below 10 satellites, GPS accuracy degrades and the mower hesitates at boundary edges. I added a conditional color change below the threshold using `card_mod`.
+
+## Weekday Schedule with HA Helpers
+
+Rather than relying on the Mammotion app's scheduler (which can't react to weather), I built a custom schedule using HA helpers:
+
+**Input booleans** (one per day):
+```
+input_boolean.flora_monday
+input_boolean.flora_tuesday
+input_boolean.flora_wednesday
+input_boolean.flora_thursday
+input_boolean.flora_friday
+input_boolean.flora_saturday
+input_boolean.flora_sunday
+```
+
+**Input number** for start time:
+```
+input_number.flora_start_hour   (min: 7, max: 20, step: 0.5)
+```
+
+**Automation:**
+
+```yaml
+alias: Flora — Run on schedule
+trigger:
+  - platform: time_pattern
+    minutes: "0"
+condition:
+  - condition: template
+    value_template: >
+      {% set day_map = {
+        0: 'monday', 1: 'tuesday', 2: 'wednesday',
+        3: 'thursday', 4: 'friday', 5: 'saturday', 6: 'sunday'
+      } %}
+      {% set today = day_map[now().weekday()] %}
+      {{ is_state('input_boolean.flora_' ~ today, 'on') }}
+  - condition: template
+    value_template: >
+      {{ now().hour == states('input_number.flora_start_hour') | int(0) }}
+  - condition: not
+    conditions:
+      - condition: state
+        entity_id: weather.forecast_home
+        state:
+          - rainy
+          - pouring
+          - snowy
+          - lightning-rainy
+action:
+  - service: lawn_mower.start_mow
+    target:
+      entity_id: lawn_mower.flora
+```
+
+This runs every hour on the clock, checks if today is enabled, checks if it's the right hour, and skips if the weather forecast shows rain. Clean and readable.
+
+The dashboard toggles for each day sit in a simple mushroom-template-card grid — flip the toggle for a day and the mower will (or won't) run that day without touching the app.
+
+## Vision Module — Obstacle Avoidance
+
+The Vision Module is a small camera mounted on the mower's body. In my testing it reliably avoids:
+
+- Garden furniture and toys
+- Hoses left on the lawn
+- Hedgehogs (important in Denmark)
+
+It occasionally pauses for shadows and bright patches at certain sun angles — a known firmware quirk that Mammotion has been improving.
+
+There's no HA sensor for Vision Module detections, so I can't trigger automations from obstacle events. Mammotion has indicated this may come in a future firmware update.
+
+## Honest Assessment
+
+**What works well:**
+- GPS boundary is genuinely wire-free and reliable above ~12 satellites
+- HA integration covers all essential commands and sensors
+- Weather-aware scheduling via HA is a huge improvement over the app
+- Battery reporting is accurate
+
+**Pain points:**
+- App is required for initial boundary setup — no way around it
+- Occasional GPS drift near tall hedges causes the mower to pause and re-acquire
+- RTK base station improves accuracy significantly but adds cost and complexity
+- The HA integration sometimes takes 30–60 seconds to reflect state changes after commands
+
+## What's Next
+
+I'm looking at adding a **before/after satellite count** automation that delays mowing start if the satellite count is below 12 at the scheduled time, retrying after 10 minutes. Combined with the weather check, this makes the schedule almost fully autonomous.
+
+If you're coming from a perimeter-wire mower, the Flora is a genuine step forward. The HA integration alone made it worth switching.

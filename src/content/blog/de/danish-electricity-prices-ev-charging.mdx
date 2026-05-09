@@ -1,0 +1,165 @@
+---
+title: "Dänische Stromspotpreise in Home Assistant — Smart EV-Laden kostenlos"
+description: "Energi Data Service-Integration für Live-Spotpreise, ApexCharts-Dashboard und automatisiertes Laden des Škoda Elroq in den günstigsten Stunden."
+pubDate: 2026-05-22
+tags: ["strom", "ev", "energi-data-service", "automatisierung", "skoda-elroq"]
+lang: "de"
+translationKey: "danish-electricity-prices-ev-charging"
+---
+
+Dänische Stromspotpreise schwanken stark — manchmal um den Faktor 10 zwischen der günstigsten und teuersten Stunde. Home Assistant kann diese Preise in Echtzeit sehen und darauf reagieren. So habe ich das Laden meines Škoda Elroq um die günstigsten Fenster automatisiert.
+
+## Energi Data Service-Integration
+
+[Energi Data Service](https://www.energidataservice.dk/) ist eine kostenlose dänische Regierungs-API, die stündliche Spotpreise für DK1 (Westdänemark) und DK2 (Ostdänemark) liefert. Die HA-Integration holt diese direkt — kein API-Schlüssel erforderlich.
+
+Installation über HACS: suche nach **Energi Data Service**, dann über Integrationen hinzufügen. Preisgebiet (DK1 oder DK2) und Energietarifkonfiguration auswählen.
+
+Nach der Einrichtung erhältst du:
+
+```
+sensor.energi_data_service          — aktueller Stundenpreis (DKK/kWh inkl. MwSt.)
+sensor.energi_data_service_today    — Attribute enthalten alle 24 Stundenpreise
+sensor.energi_data_service_tomorrow — Preise von morgen (verfügbar ~13:00 Uhr)
+```
+
+Die Attributstruktur des Today-Sensors sieht so aus:
+
+```json
+{
+  "today": [
+    {"hour": 0, "price": 0.82},
+    {"hour": 1, "price": 0.75},
+    ...
+    {"hour": 23, "price": 1.43}
+  ],
+  "min": 0.71,
+  "max": 2.18,
+  "mean": 1.12
+}
+```
+
+## Das Dashboard — ApexCharts Stepline
+
+Ein Stufenliniendiagramm ist das richtige Format für stündliche Preisdaten: Jeder Balken bleibt für die gesamte Stunde konstant, dann springt er zum nächsten Wert.
+
+```yaml
+type: custom:apexcharts-card
+graph_span: 30h
+now:
+  show: true
+  label: Jetzt
+header:
+  show: true
+  title: Strompreis heute + morgen
+  show_states: true
+  colorize_states: true
+series:
+  - entity: sensor.energi_data_service
+    type: column
+    data_generator: |
+      return entity.attributes.today.concat(entity.attributes.tomorrow || []).map(h => {
+        return [new Date().setHours(h.hour, 0, 0, 0), h.price];
+      });
+    color_threshold:
+      - value: 0
+        color: '#4caf50'
+      - value: 1.0
+        color: '#ff9800'
+      - value: 1.5
+        color: '#f44336'
+```
+
+Grün unter 1,00 DKK/kWh, orange bis 1,50, rot darüber. Auf einen Blick sieht man, wann man die Spülmaschine laufen lassen oder das Auto laden sollte.
+
+## Das günstigste Ladefenster finden
+
+Ich verwende einen Template-Sensor, der das günstigste 2-Stunden-Fenster für den Rest des heutigen Tages findet:
+
+```yaml
+template:
+  - sensor:
+      - name: "Günstigstes Ladefenster"
+        state: >
+          {% set prices = state_attr('sensor.energi_data_service', 'today') %}
+          {% if prices %}
+            {% set ns = namespace(best_hour=0, best_avg=999) %}
+            {% for i in range(prices | length - 1) %}
+              {% set avg = (prices[i].price + prices[i+1].price) / 2 %}
+              {% if avg < ns.best_avg and prices[i].hour >= now().hour %}
+                {% set ns.best_avg = avg %}
+                {% set ns.best_hour = prices[i].hour %}
+              {% endif %}
+            {% endfor %}
+            {{ '%02d:00' % ns.best_hour }}
+          {% else %}
+            unbekannt
+          {% endif %}
+        unit_of_measurement: ""
+        icon: mdi:clock-check
+```
+
+Dies wird als `"02:00"` oder `"14:00"` angezeigt — der Beginn des besten kommenden 2-Stunden-Ladeblocks. Eine Mushroom-Template-Karte auf dem Dashboard zeigt dies in großer Schrift.
+
+## Škoda Elroq-Integration
+
+Die MyŠkoda-Integration (HACS) verbindet sich mit der Škoda Cloud-API und stellt bereit:
+
+```
+sensor.elroq_battery_level         — Ladezustand (%)
+sensor.elroq_charging_power        — aktuelle Ladeleistung (kW)
+sensor.elroq_range                 — geschätzte Reichweite (km)
+binary_sensor.elroq_charging       — lädt das Auto gerade?
+binary_sensor.elroq_plugged_in     — Kabel angeschlossen?
+switch.elroq_charging              — Laden starten/stoppen
+```
+
+Die Switch-Entität ist die wichtige für Automatisierungen — das Umschalten startet und stoppt das AC-Laden von der Heimladestation.
+
+## Smart-Lade-Automatisierung
+
+```yaml
+alias: Elroq — Smart laden in günstigen Stunden
+trigger:
+  - platform: time_pattern
+    minutes: "0"
+condition:
+  - condition: state
+    entity_id: binary_sensor.elroq_plugged_in
+    state: "on"
+  - condition: numeric_state
+    entity_id: sensor.elroq_battery_level
+    below: 90
+action:
+  - choose:
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.energi_data_service
+            below: 1.0
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: switch.elroq_charging
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.energi_data_service
+            above: 1.5
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: switch.elroq_charging
+```
+
+Läuft jede Stunde zur vollen Stunde. Wenn der Preis unter 1,00 DKK/kWh liegt und das Auto angeschlossen und nicht voll ist — laden. Wenn der Preis über 1,50 liegt — stoppen. Zwischen 1,00 und 1,50 wird der Zustand nicht geändert (vermeidet Prellen).
+
+Ein Override-`input_boolean.elroq_force_charge` umgeht die Preiskontrolle an Tagen, an denen du unabhängig vom Preis eine volle Ladung benötigst.
+
+## Praktische Ergebnisse
+
+Im ersten vollen Monat mit intelligentem Laden sanken die Stromkosten für meinen Elroq um etwa 28% im Vergleich zu Dauerladen. Die größten Einsparungen kommen an Tagen mit großen nächtlichen Preisspreads — in Dänemark nicht ungewöhnlich, wenn die Windproduktion nachts hoch und die Nachfrage morgens steigt.
+
+Die Dashboard-Karte mit aktuellem Preis, günstigstem Fenster und Fahrzeugbatteriestand ist eines der am häufigsten gechecktesten Elemente meines Startbildschirms geworden.
+
+## Was als Nächstes kommt
+
+Ich plane die **Solarprognose-Integration** (mit der Forecast.Solar-Integration), damit das Auto an sonnigen Tagen aus dem prognostizierten Solarüberschuss statt aus Netzspotpreisen lädt. Die Logik wird: laden wenn Solarüberschuss ODER günstiges Netz, überspringen wenn teures Netz UND kein Solar.

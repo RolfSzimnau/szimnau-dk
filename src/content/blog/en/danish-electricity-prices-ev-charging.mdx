@@ -1,0 +1,166 @@
+---
+title: "Danish Electricity Spot Prices in Home Assistant — Smart EV Charging for Free"
+description: "Using the Energi Data Service integration to display live Danish spot prices, build an ApexCharts dashboard, and automate Škoda Elroq charging to the cheapest hours of the day."
+pubDate: 2026-05-22
+tags: ["electricity", "ev", "energi-data-service", "automation", "skoda-elroq"]
+lang: "en"
+translationKey: "danish-electricity-prices-ev-charging"
+---
+
+Danish electricity spot prices swing wildly — sometimes by a factor of 10 between the cheapest and most expensive hour. Home Assistant can see those prices in real time and act on them. Here's how I automated my Škoda Elroq charging around the cheapest windows.
+
+## Energi Data Service Integration
+
+[Energi Data Service](https://www.energidataservice.dk/) is a free Danish government API that provides hourly spot prices for DK1 (West Denmark) and DK2 (East Denmark). The HA integration pulls these directly — no API key required.
+
+Install via HACS: search for **Energi Data Service**, then add it via Integrations. Select your price area (DK1 or DK2) and your energy tariff configuration.
+
+After setup, you get:
+
+```
+sensor.energi_data_service          — current hour price (DKK/kWh incl. VAT)
+sensor.energi_data_service_today    — attributes contain all 24 hourly prices
+sensor.energi_data_service_tomorrow — tomorrow's prices (available ~13:00)
+```
+
+The attribute structure on the today sensor looks like:
+
+```json
+{
+  "today": [
+    {"hour": 0, "price": 0.82},
+    {"hour": 1, "price": 0.75},
+    ...
+    {"hour": 23, "price": 1.43}
+  ],
+  "tomorrow": [...],
+  "min": 0.71,
+  "max": 2.18,
+  "mean": 1.12
+}
+```
+
+## The Dashboard — ApexCharts Stepline
+
+A stepline chart is the right format for hourly price data: each bar holds steady for the full hour, then steps to the next value. The current hour gets highlighted automatically.
+
+```yaml
+type: custom:apexcharts-card
+graph_span: 30h
+now:
+  show: true
+  label: Now
+header:
+  show: true
+  title: Electricity price today + tomorrow
+  show_states: true
+  colorize_states: true
+series:
+  - entity: sensor.energi_data_service
+    type: column
+    data_generator: |
+      return entity.attributes.today.concat(entity.attributes.tomorrow || []).map(h => {
+        return [new Date().setHours(h.hour, 0, 0, 0), h.price];
+      });
+    color_threshold:
+      - value: 0
+        color: '#4caf50'
+      - value: 1.0
+        color: '#ff9800'
+      - value: 1.5
+        color: '#f44336'
+```
+
+Green below 1.00 DKK/kWh, orange up to 1.50, red above. At a glance you can see when to run the dishwasher or charge the car.
+
+## Finding the Cheapest Charging Window
+
+I use a template sensor that finds the cheapest 2-hour window remaining today (or tonight):
+
+```yaml
+template:
+  - sensor:
+      - name: "Cheapest charge window"
+        state: >
+          {% set prices = state_attr('sensor.energi_data_service', 'today') %}
+          {% if prices %}
+            {% set ns = namespace(best_hour=0, best_avg=999) %}
+            {% for i in range(prices | length - 1) %}
+              {% set avg = (prices[i].price + prices[i+1].price) / 2 %}
+              {% if avg < ns.best_avg and prices[i].hour >= now().hour %}
+                {% set ns.best_avg = avg %}
+                {% set ns.best_hour = prices[i].hour %}
+              {% endif %}
+            {% endfor %}
+            {{ '%02d:00' % ns.best_hour }}
+          {% else %}
+            unknown
+          {% endif %}
+        unit_of_measurement: ""
+        icon: mdi:clock-check
+```
+
+This displays as `"02:00"` or `"14:00"` — the start of the best upcoming 2-hour charging block. A mushroom-template-card on the dashboard shows this in large text.
+
+## Škoda Elroq Integration
+
+The MyŠkoda integration (HACS) connects to the Škoda cloud API and exposes:
+
+```
+sensor.elroq_battery_level         — state of charge (%)
+sensor.elroq_charging_power        — current charge rate (kW)
+sensor.elroq_range                 — estimated range (km)
+binary_sensor.elroq_charging       — is car currently charging?
+binary_sensor.elroq_plugged_in     — is cable connected?
+switch.elroq_charging              — start/stop charging
+```
+
+The switch entity is the key one for automation — toggling it starts and stops AC charging from the home charger.
+
+## Smart Charging Automation
+
+```yaml
+alias: Elroq — Smart charge on cheap hours
+trigger:
+  - platform: time_pattern
+    minutes: "0"
+condition:
+  - condition: state
+    entity_id: binary_sensor.elroq_plugged_in
+    state: "on"
+  - condition: numeric_state
+    entity_id: sensor.elroq_battery_level
+    below: 90
+action:
+  - choose:
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.energi_data_service
+            below: 1.0
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: switch.elroq_charging
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.energi_data_service
+            above: 1.5
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: switch.elroq_charging
+```
+
+Runs every hour on the clock. If the price is below 1.00 DKK/kWh and the car is plugged in and not full — charge. If price is above 1.50 — stop. Between 1.00 and 1.50, don't change state (avoids thrashing).
+
+An override `input_boolean.elroq_force_charge` bypasses the price check for days when you need a full charge regardless.
+
+## Practical Results
+
+Over the first full month with smart charging, my Elroq's electricity cost dropped by roughly 28% compared to always-on charging. The biggest savings come on days with large overnight price spreads — not uncommon in Denmark when wind generation is high at 02:00–04:00 and demand picks up at 08:00.
+
+The dashboard card showing current price, cheapest window, and car battery level has become one of the most-checked elements of my home screen.
+
+## What's Next
+
+I'm planning to add **solar forecast integration** (using the Forecast.Solar integration) so that on sunny days the car charges from predicted solar surplus rather than grid spot prices. The logic becomes: charge if solar surplus OR cheap grid, skip if expensive grid AND no solar.
