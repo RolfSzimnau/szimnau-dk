@@ -1,0 +1,97 @@
+---
+title: "Circadian Lighting With WiZ — Color Temperature That Follows the Sun"
+description: "How I built a circadian lighting system using WiZ bulbs and the HA sun entity — no third-party integration, just a single automation that maps solar elevation to colour temperature every 30 minutes."
+pubDate: 2026-08-07
+tags: ["wiz", "lights", "circadian", "automation", "home-assistant"]
+lang: "en"
+translationKey: "wiz-circadian-lighting"
+heroImage: "/blog-images/hjem-conditional.jpg"
+---
+
+Natural daylight isn't white. At noon it's a cool neutral — around 5500K. In the morning and evening it's warm orange. After sunset it's firelight. Your body uses those shifts to regulate alertness and sleep. Most smart lighting ignores this entirely and sits at the same colour temperature all day, usually something generic around 3000K, regardless of what the sun is doing outside.
+
+The WiZ bulbs support colour temperature natively. Home Assistant knows the exact elevation of the sun at any moment. Connecting the two takes one automation.
+
+![Home Assistant home screen — lights automatically shift colour temperature with the sun throughout the day](/blog-images/hjem-conditional.jpg)
+
+## The sun entity
+
+HA's `sun.sun` entity has an `elevation` attribute — the angle of the sun above (or below) the horizon in degrees. At solar noon in Denmark in summer it reaches around 55°. In winter it barely clears 15°. At sunrise and sunset it's 0°. At night it's negative.
+
+That single number describes the quality of outdoor light at any given moment. The automation uses it as the input to a colour temperature calculation.
+
+## The maths
+
+```yaml
+variables:
+  elevation: "{{ state_attr('sun.sun', 'elevation') | float(0) }}"
+  color_temp_k: >
+    {{ [[5000 if elevation > 45
+         else ((3500 + (elevation - 15) / 30 * 1500) | int) if elevation > 15
+         else ((2700 + elevation / 15 * 800) | int) if elevation > 0
+         else 2200,
+        2200] | max,
+       6500] | min }}
+```
+
+Three zones, two transitions:
+
+| Sun elevation | Colour temperature |
+|---|---|
+| Above 45° | 5000K — bright neutral daylight |
+| 15° – 45° | 3500K → 5000K linear ramp |
+| 0° – 15° | 2700K → 3500K linear ramp |
+| Below horizon | 2200K — warm amber |
+
+The `max` and `min` clamps at the end ensure the result never goes below 2200K or above 6500K regardless of floating point drift. On a clear summer midday the output is 5000K. On a dark December evening at 17:00 with the sun well below the horizon, it's 2200K.
+
+## When it runs
+
+```yaml
+trigger:
+  - platform: time_pattern
+    minutes: "/30"
+  - platform: state
+    entity_id:
+      - light.wiz_rgbw_tunable_414776
+      - light.wiz_tunable_white_601970
+      - light.wiz_tunable_white_60421e
+      - light.wiz_rgbw_tunable_44a4a4
+    to: "on"
+    for: "00:00:05"
+```
+
+Every 30 minutes the automation recalculates and adjusts any lights that are on. The second trigger is the important one: when you turn a light on, it immediately gets the correct colour temperature rather than waiting up to 30 minutes for the next scheduled update. The 5-second `for` delay prevents a race condition where the turn-on command itself gets overwritten before the bulb has finished responding.
+
+## Only touching lights that are on
+
+```yaml
+repeat:
+  for_each:
+    - light.wiz_rgbw_tunable_414776
+    - light.wiz_tunable_white_601970
+    - light.wiz_tunable_white_60421e
+    - light.wiz_rgbw_tunable_44a4a4
+  sequence:
+    - if:
+        - condition: template
+          value_template: "{{ is_state(repeat.item, 'on') }}"
+      then:
+        - action: light.turn_on
+          target:
+            entity_id: "{{ repeat.item }}"
+          data:
+            color_temp_kelvin: "{{ color_temp_k }}"
+```
+
+The `if` inside the loop is what makes this unobtrusive. If a light is off, nothing happens. The automation never turns lights on — it only adjusts lights that are already on. You can leave half the lights off and the ones you've turned on will follow the sun.
+
+## What it feels like
+
+The shift is slow enough that you don't notice it happening. What you notice instead is that the room feels right — alert and neutral during the day, warmer and more relaxed as the evening comes in, amber by the time you're winding down. The transition from 2700K to 2200K in the last hour before midnight is particularly noticeable if you pay attention to it: the light gets distinctly orange, which for most people is a signal to slow down.
+
+It also means the cinema mode automation (which sets 2200K for films) is now consistent with what the lights would naturally land on by evening anyway. The two automations don't conflict — the film automation takes over temporarily and the circadian one adjusts whatever's on at the next 30-minute tick.
+
+## What WiZ does natively
+
+WiZ has its own "Dynamic" modes in their app — sunrise simulation, candlelight, etc. I tried them. They run locally on the bulb and don't respond to anything in HA. You can't use them as a starting point and adjust based on other conditions. Building it in HA gives full control: the calculation uses real solar data for your exact location, the 30-minute tick is accurate, and the logic can be modified without touching the WiZ app at all.

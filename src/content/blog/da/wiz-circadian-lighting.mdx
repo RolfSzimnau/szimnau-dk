@@ -1,0 +1,97 @@
+---
+title: "Circadian Belysning med WiZ — Farvetemperatur der Følger Solen"
+description: "Hvordan jeg byggede et circadian belysningssystem med WiZ-pærer og HA's sol-entitet — ingen tredjepartsintegration, bare én automation der mapper solhøjde til farvetemperatur hvert 30. minut."
+pubDate: 2026-08-07
+tags: ["wiz", "lys", "circadian", "automation", "home-assistant"]
+lang: "da"
+translationKey: "wiz-circadian-lighting"
+heroImage: "/blog-images/hjem-conditional.jpg"
+---
+
+Naturligt dagslys er ikke hvidt. Ved middagstid er det et køligt neutralt — omkring 5500K. Om morgenen og aftenen er det varmt orange. Efter solnedgang er det som stearinlys. Din krop bruger disse skift til at regulere årvågenhed og søvn. De fleste smart-belysningssystemer ignorerer dette fuldstændigt og sidder ved den samme farvetemperatur hele dagen — typisk noget generisk omkring 3000K — uanset hvad solen laver udenfor.
+
+WiZ-pærerne understøtter farvetemperatur nativt. Home Assistant kender solens præcise høj over horisonten til enhver tid. At forbinde de to kræver én automation.
+
+![Home Assistant startskærm — lysene skifter automatisk farvetemperatur med solen i løbet af dagen](/blog-images/hjem-conditional.jpg)
+
+## Sol-entiteten
+
+HA's `sun.sun`-entitet har et `elevation`-attribut — vinklen på solen over (eller under) horisonten i grader. Ved solartidspunktet i Danmark om sommeren når den op på ca. 55°. Om vinteren rammer den knap 15°. Ved solopgang og solnedgang er den 0°. Om natten er den negativ.
+
+Det ene tal beskriver kvaliteten af udendørs lys på et givet tidspunkt. Automationen bruger det som input til en farvetemperaturberegning.
+
+## Matematikken
+
+```yaml
+variables:
+  elevation: "{{ state_attr('sun.sun', 'elevation') | float(0) }}"
+  color_temp_k: >
+    {{ [[5000 if elevation > 45
+         else ((3500 + (elevation - 15) / 30 * 1500) | int) if elevation > 15
+         else ((2700 + elevation / 15 * 800) | int) if elevation > 0
+         else 2200,
+        2200] | max,
+       6500] | min }}
+```
+
+Tre zoner, to overgange:
+
+| Solhøjde | Farvetemperatur |
+|---|---|
+| Over 45° | 5000K — klart neutralt dagslys |
+| 15° – 45° | 3500K → 5000K lineær ramp |
+| 0° – 15° | 2700K → 3500K lineær ramp |
+| Under horisonten | 2200K — varm rav |
+
+`max`- og `min`-afgrænsningerne til sidst sikrer at resultatet aldrig går under 2200K eller over 6500K uanset floating point-afvigelser. På en klar sommerdag ved middagstid er output 5000K. På en mørk decemberaften kl. 17 med solen langt under horisonten er det 2200K.
+
+## Hvornår den kører
+
+```yaml
+trigger:
+  - platform: time_pattern
+    minutes: "/30"
+  - platform: state
+    entity_id:
+      - light.wiz_rgbw_tunable_414776
+      - light.wiz_tunable_white_601970
+      - light.wiz_tunable_white_60421e
+      - light.wiz_rgbw_tunable_44a4a4
+    to: "on"
+    for: "00:00:05"
+```
+
+Hvert 30. minut genberegner automationen og justerer alle lys der er tændt. Den anden trigger er den vigtige: når man tænder et lys, får det øjeblikkeligt den korrekte farvetemperatur i stedet for at vente op til 30 minutter til næste planlagte opdatering. 5-sekunders `for`-forsinkelsen forhindrer en race condition hvor tænd-kommandoen selv overskrives inden pæren er færdig med at reagere.
+
+## Berører kun lys der er tændt
+
+```yaml
+repeat:
+  for_each:
+    - light.wiz_rgbw_tunable_414776
+    - light.wiz_tunable_white_601970
+    - light.wiz_tunable_white_60421e
+    - light.wiz_rgbw_tunable_44a4a4
+  sequence:
+    - if:
+        - condition: template
+          value_template: "{{ is_state(repeat.item, 'on') }}"
+      then:
+        - action: light.turn_on
+          target:
+            entity_id: "{{ repeat.item }}"
+          data:
+            color_temp_kelvin: "{{ color_temp_k }}"
+```
+
+`if`-betingelsen inde i løkken er det der gør den usynlig. Hvis et lys er slukket, sker der ingenting. Automationen tænder aldrig lys — den justerer kun lys der allerede er tændt. Man kan godt lade halvdelen af lysene være slukket og de man har tændt vil følge solen.
+
+## Hvad det føles som
+
+Skiftet er langsomt nok til at man ikke bemærker det sker. Hvad man i stedet bemærker er at rummet føles rigtigt — alert og neutralt om dagen, varmere og mere afslappet når aftenen sætter ind, rav-farvet når man er ved at lukke ned. Overgangen fra 2700K til 2200K i den sidste time inden midnat er særligt mærkbar hvis man er opmærksom på det: lyset bliver tydeligt orange, hvilket for de fleste er et signal om at sænke tempoet.
+
+Det betyder også at biograflys-automationen (der sætter 2200K til film) nu er konsistent med hvad lysene naturligt ville lande på om aftenen alligevel. De to automationer er ikke i konflikt — filmautomationen overtager midlertidigt og den circadian justerer hvad der er tændt ved næste 30-minutters-tick.
+
+## Hvad WiZ gør nativt
+
+WiZ har sine egne "Dynamisk"-tilstande i appen — solopgangs-simulation, stearinlys osv. Jeg prøvede dem. De kører lokalt på pæren og reagerer ikke på noget i HA. Man kan ikke bruge dem som udgangspunkt og justere baseret på andre betingelser. At bygge det i HA giver fuld kontrol: beregningen bruger ægte soldata for ens præcise placering, 30-minutters-ticket er præcist, og logikken kan modificeres uden at røre WiZ-appen overhovedet.

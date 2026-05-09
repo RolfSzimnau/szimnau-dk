@@ -1,0 +1,97 @@
+---
+title: "Zirkadianes Licht mit WiZ — Farbtemperatur die der Sonne folgt"
+description: "Wie ich ein zirkadianes Beleuchtungssystem mit WiZ-Lampen und der HA Sonnen-Entität gebaut habe — keine Drittanbieter-Integration, nur eine einzige Automatisierung die alle 30 Minuten die Sonnenhöhe auf Farbtemperatur abbildet."
+pubDate: 2026-08-07
+tags: ["wiz", "licht", "zirkadian", "automatisierung", "home-assistant"]
+lang: "de"
+translationKey: "wiz-circadian-lighting"
+heroImage: "/blog-images/hjem-conditional.jpg"
+---
+
+Natürliches Tageslicht ist nicht weiß. Mittags ist es ein kühles Neutral — etwa 5500K. Morgens und abends ist es warm orange. Nach Sonnenuntergang wie Kerzenlicht. Der Körper nutzt diese Verschiebungen um Wachheit und Schlaf zu regulieren. Die meisten Smart-Beleuchtungssysteme ignorieren das völlig und sitzen den ganzen Tag bei derselben Farbtemperatur — meistens irgendwas Generisches um 3000K — unabhängig davon was die Sonne draußen gerade macht.
+
+Die WiZ-Lampen unterstützen Farbtemperatur nativ. Home Assistant kennt den genauen Elevationswinkel der Sonne zu jedem Zeitpunkt. Die beiden zu verbinden erfordert eine einzige Automatisierung.
+
+![Home Assistant Startbildschirm — Lampen verschieben automatisch die Farbtemperatur mit der Sonne im Tagesverlauf](/blog-images/hjem-conditional.jpg)
+
+## Die Sonnen-Entität
+
+HA's `sun.sun`-Entität hat ein `elevation`-Attribut — den Winkel der Sonne über (oder unter) dem Horizont in Grad. Beim Sonnenhöchststand in Dänemark im Sommer erreicht er etwa 55°. Im Winter schafft er kaum 15°. Bei Sonnenauf- und -untergang ist er 0°. Nachts ist er negativ.
+
+Diese eine Zahl beschreibt die Qualität des Außenlichts zu jedem gegebenen Moment. Die Automatisierung verwendet sie als Eingabe für eine Farbtemperaturberechnung.
+
+## Die Mathematik
+
+```yaml
+variables:
+  elevation: "{{ state_attr('sun.sun', 'elevation') | float(0) }}"
+  color_temp_k: >
+    {{ [[5000 if elevation > 45
+         else ((3500 + (elevation - 15) / 30 * 1500) | int) if elevation > 15
+         else ((2700 + elevation / 15 * 800) | int) if elevation > 0
+         else 2200,
+        2200] | max,
+       6500] | min }}
+```
+
+Drei Zonen, zwei Übergänge:
+
+| Sonnenhöhe | Farbtemperatur |
+|---|---|
+| Über 45° | 5000K — helles neutrales Tageslicht |
+| 15° – 45° | 3500K → 5000K linearer Übergang |
+| 0° – 15° | 2700K → 3500K linearer Übergang |
+| Unter dem Horizont | 2200K — warmes Bernstein |
+
+Die `max`- und `min`-Klammern am Ende stellen sicher dass das Ergebnis unabhängig von Fließkomma-Abweichungen nie unter 2200K oder über 6500K geht. An einem klaren Sommermittag ist der Ausgabewert 5000K. An einem dunklen Dezemberabend um 17 Uhr mit der Sonne weit unter dem Horizont sind es 2200K.
+
+## Wann sie läuft
+
+```yaml
+trigger:
+  - platform: time_pattern
+    minutes: "/30"
+  - platform: state
+    entity_id:
+      - light.wiz_rgbw_tunable_414776
+      - light.wiz_tunable_white_601970
+      - light.wiz_tunable_white_60421e
+      - light.wiz_rgbw_tunable_44a4a4
+    to: "on"
+    for: "00:00:05"
+```
+
+Alle 30 Minuten berechnet die Automatisierung neu und passt alle eingeschalteten Lampen an. Der zweite Trigger ist der wichtige: wenn man eine Lampe einschaltet bekommt sie sofort die richtige Farbtemperatur anstatt bis zu 30 Minuten auf die nächste geplante Aktualisierung zu warten. Die 5-Sekunden-`for`-Verzögerung verhindert eine Race Condition bei der der Einschaltbefehl selbst überschrieben wird bevor die Lampe reagiert hat.
+
+## Berührt nur eingeschaltete Lampen
+
+```yaml
+repeat:
+  for_each:
+    - light.wiz_rgbw_tunable_414776
+    - light.wiz_tunable_white_601970
+    - light.wiz_tunable_white_60421e
+    - light.wiz_rgbw_tunable_44a4a4
+  sequence:
+    - if:
+        - condition: template
+          value_template: "{{ is_state(repeat.item, 'on') }}"
+      then:
+        - action: light.turn_on
+          target:
+            entity_id: "{{ repeat.item }}"
+          data:
+            color_temp_kelvin: "{{ color_temp_k }}"
+```
+
+Das `if` innerhalb der Schleife macht sie unauffällig. Wenn eine Lampe aus ist passiert nichts. Die Automatisierung schaltet niemals Lampen ein — sie passt nur Lampen an die bereits eingeschaltet sind. Man kann die Hälfte der Lampen ausgelassen haben und die eingeschalteten folgen trotzdem der Sonne.
+
+## Wie es sich anfühlt
+
+Die Verschiebung ist langsam genug dass man nicht bemerkt wie sie passiert. Was man stattdessen bemerkt ist dass der Raum sich richtig anfühlt — wach und neutral tagsüber, wärmer und entspannter wenn der Abend kommt, bernsteinfarben wenn man zur Ruhe geht. Der Übergang von 2700K zu 2200K in der letzten Stunde vor Mitternacht ist besonders spürbar wenn man darauf achtet: das Licht wird deutlich orange, was für die meisten Menschen ein Signal zum Entschleunigen ist.
+
+Es bedeutet auch dass die Kinomodus-Automatisierung (die für Filme 2200K setzt) jetzt konsistent ist mit dem was die Lampen am Abend ohnehin natürlich erreichen würden. Die beiden Automatisierungen stehen nicht in Konflikt — die Film-Automatisierung übernimmt vorübergehend und die zirkadiane passt was eingeschaltet ist beim nächsten 30-Minuten-Tick an.
+
+## Was WiZ nativ kann
+
+WiZ hat eigene "Dynamisch"-Modi in ihrer App — Sonnenaufgangs-Simulation, Kerzenlicht usw. Ich habe sie ausprobiert. Sie laufen lokal auf der Lampe und reagieren auf nichts in HA. Man kann sie nicht als Ausgangspunkt nehmen und basierend auf anderen Bedingungen anpassen. Es in HA zu bauen gibt volle Kontrolle: die Berechnung verwendet echte Solardaten für den eigenen genauen Standort, der 30-Minuten-Takt ist präzise, und die Logik kann angepasst werden ohne die WiZ-App überhaupt anzufassen.
