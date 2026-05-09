@@ -1,0 +1,120 @@
+---
+title: "TV sættes automatisk på pause når telefonen ringer — Opkald og Messenger"
+description: "Én automation der pauser TV'et i det øjeblik en af telefonerne ringer — almindelige opkald genoptages automatisk, Messenger-videoopkald får en knap i notifikationen."
+pubDate: 2026-07-24
+tags: ["tv", "automation", "telefon", "messenger", "home-assistant"]
+lang: "da"
+translationKey: "tv-pause-phone-calls"
+heroImage: "/blog-images/hjem-conditional.jpg"
+---
+
+Problemet er indlysende når man har oplevet det nok gange. Nogen ringer. Man roder efter fjernbetjeningen. Den er under en pude. Man finder den. Man sætter på pause. Man har allerede misset den første sætning af samtalen.
+
+Automationen er én betingelse: hvis en telefon ringer og TV'et er tændt, sæt på pause. Når opkaldet slutter, genoptag.
+
+![Home Assistant startskærm med kontekstafhængige kort inklusive TV-tilstand](/blog-images/hjem-conditional.jpg)
+
+## Telefonsensoren
+
+HA companion-appen eksponerer `sensor.pixel_10_phone_state` med fire tilstande: `ringing`, `in_call`, `offhook`, `idle`. Triggeren dækker alle tre ikke-idle tilstande — man vil have TV'et til at pause i det øjeblik telefonen ringer, ikke efter man har svaret.
+
+Automationen tjekker først om TV-fjernbetjeningen faktisk er tændt. Det giver ingen mening at sende en pause-kommando til et TV der allerede er slukket eller allerede på pause. `input_boolean.tv_was_playing` håndterer det sidste — den sættes til `on` når automationen pauser og tjekkes inden genoptagelse. Uden den kunne et opkald genstarte noget der bevidst var sat på pause inden opkaldet kom ind.
+
+```yaml
+alias: TV — Pause ved opkald
+trigger:
+  - platform: state
+    entity_id: sensor.pixel_10_phone_state
+    to: [ringing, in_call, offhook]
+    id: phone
+condition:
+  - condition: state
+    entity_id: remote.tv_stuen
+    state: "on"
+  - condition: state
+    entity_id: input_boolean.tv_was_playing
+    state: "off"
+action:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.tv_was_playing
+  - action: remote.send_command
+    target:
+      entity_id: remote.tv_stuen
+    data:
+      command: MEDIA_PAUSE
+  - wait_for_trigger:
+      - platform: state
+        entity_id: sensor.pixel_10_phone_state
+        to: idle
+    timeout: "02:00:00"
+    continue_on_timeout: true
+  - delay:
+      seconds: 2
+  - condition: state
+    entity_id: input_boolean.tv_was_playing
+    state: "on"
+  - action: remote.send_command
+    target:
+      entity_id: remote.tv_stuen
+    data:
+      command: MEDIA_PLAY
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.tv_was_playing
+```
+
+Forsinkelsen på 2 sekunder inden genoptagelse er bevidst. Uden den affyres play-kommandoen mens opkaldet teknisk set stadig afsluttes — telefonsensoren rammer `idle` en brøkdel af et sekund inden opkaldet egentlig dropper, og lyden kommer tilbage midt i farvel.
+
+2-timers timeout er et sikkerhedsnet. Hvis et opkald af en eller anden grund ikke registreres som afsluttet, sidder automationen ikke og venter for evigt. `continue_on_timeout: true` betyder at den genoptager uanset hvad efter to timer.
+
+## Messenger er anderledes
+
+Messenger-videoopkald registreres ikke i `phone_state`. De kommer som en notifikation. Companion-appen eksponerer `sensor.pixel_10_last_notification`, og når tilstanden indeholder "opkald", er det et Messenger-opkald.
+
+Håndteringen er anderledes fordi afslutningen af et Messenger-opkald er sværere at detektere pålideligt. I stedet for at vente på at sensoren går idle sender den en aktionerbar notifikation med én knap: **Genoptag TV**. Et tryk genoptager med det samme. Hvis ingen trykker inden 30 minutter, fortsætter automationen alligevel.
+
+```yaml
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ 'opkald' in (trigger.to_state.state | lower) }}
+        sequence:
+          - action: remote.send_command
+            target:
+              entity_id: remote.tv_stuen
+            data:
+              command: MEDIA_PAUSE
+          - action: notify.alle_enheder
+            data:
+              title: "📞 Messenger-opkald"
+              message: "TV sat på pause — tryk for at genoptage"
+              data:
+                actions:
+                  - action: tv_resume_after_call
+                    title: Genoptag TV
+          - wait_for_trigger:
+              - platform: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: tv_resume_after_call
+              - platform: state
+                entity_id: sensor.pixel_10_phone_state
+                to: idle
+            timeout: "00:30:00"
+            continue_on_timeout: true
+          - action: remote.send_command
+            target:
+              entity_id: remote.tv_stuen
+            data:
+              command: MEDIA_PLAY
+```
+
+30 minutters timeout på Messenger versus 2 timer på almindelige opkald afspejler virkeligheden — Messenger-videoopkald varer sjældent mere end en halv time. Et almindeligt telefonopkald til forældre kan godt gå halvanden time.
+
+## Hvad det faktisk løser
+
+Rodet efter fjernbetjeningen. Det er det hele. Det lyder småt. Efter et par uger uden at skulle gøre det bemærker man hvor ofte det skete — og at det første man gjorde da opkaldet sluttede var at finde fjernbetjeningen og un-pause, hvilket ikke er hvad man vil tænke på.
+
+Automationen kører stille. Der er ingen "TV sat på pause"-banner medmindre det er et Messenger-opkald der kræver den manuelle genoptagelsesknap. Almindelige opkald: den pauser, man taler, den genoptager. Intet at bekræfte, intet at trykke på.

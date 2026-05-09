@@ -1,6 +1,6 @@
 ---
-title: "Reolink CX810 i Home Assistant — Nummerplader på TV'et og Opkald der Pauser Det"
-description: "Hvordan jeg fik et Reolink CX810 4K PoE kamera til at læse nummerplader med AI, sende et snapshot til TV'et når nogen kører ind i indkørslen, og automatisk sætte på pause når en af telefonerne ringer."
+title: "Reolink CX810 i Home Assistant — Nummerpladegenkendelse og TV-snapshots"
+description: "Hvordan jeg fik et Reolink CX810 4K PoE kamera til at læse nummerplader med AI og sende et snapshot direkte til TV'et når nogen kører ind i indkørslen."
 pubDate: 2026-07-17
 tags: ["kamera", "reolink", "alpr", "ai-vision", "home-assistant", "tv"]
 lang: "da"
@@ -61,54 +61,6 @@ data:
 Telefonerne får det samme snapshot via `notify.alle_enheder`, med et tidsstemplet URL så det ikke serverer et cachet billede fra det forrige besøg.
 
 Persondetektion får en enklere version: intet ALPR-forsøg, bare en snapshot-notifikation. Det er nok til at se om det er postbudet eller nogen man ikke genkender.
-
-## TV-pause ved opkald
-
-Den anden automation har intet med kameraet at gøre, men lever i samme mentale kategori: TV'et der reagerer på hvad der sker i huset i stedet for at sidde der og ignorere det.
-
-Når en af telefonerne ringer, pauser TV'et. Når opkaldet slutter, genoptager det.
-
-Mekanismen er `sensor.pixel_10_phone_state`, som HA companion-appen på begge telefoner eksponerer med tilstande: `ringing`, `in_call`, `offhook`, `idle`. Automationen tjekker om TV-fjernbetjeningen faktisk er tændt inden den gør noget — ingen grund til at pause et TV der allerede er slukket.
-
-```yaml
-trigger:
-  - platform: state
-    entity_id: sensor.pixel_10_phone_state
-    to: [ringing, in_call, offhook]
-action:
-  - action: input_boolean.turn_on
-    target:
-      entity_id: input_boolean.tv_was_playing
-  - action: remote.send_command
-    target:
-      entity_id: remote.tv_stuen
-    data:
-      command: MEDIA_PAUSE
-  - wait_for_trigger:
-      - platform: state
-        entity_id: sensor.pixel_10_phone_state
-        to: idle
-    timeout: "02:00:00"
-    continue_on_timeout: true
-  - action: remote.send_command
-    target:
-      entity_id: remote.tv_stuen
-    data:
-      command: MEDIA_PLAY
-  - action: input_boolean.turn_off
-    target:
-      entity_id: input_boolean.tv_was_playing
-```
-
-`input_boolean.tv_was_playing` er hukommelsen. Den forhindrer automationen i at sende en play-kommando til et TV der allerede var sat på pause inden opkaldet — uden den kunne et opkald genoptage noget der bevidst var sat på pause.
-
-## Messenger-opkald er anderledes
-
-Et almindeligt telefonopkald slutter rent — sensoren går tilbage til `idle` og TV'et genoptager. Messenger-videoopkald registreres ikke altid i `phone_state`. De kommer ind som notifikationer.
-
-Automationen overvåger `sensor.pixel_10_last_notification` for ordet "opkald". Når den finder det, pauser den TV'et og sender en aktionerbar notifikation med én knap: **Genoptag TV**. Et tryk udløser `mobile_app_notification_action` med action `tv_resume_after_call`, som automationen venter på. Hvis ingen trykker inden 30 minutter, fortsætter automationen alligevel.
-
-Det er den slags der lyder kompliceret at forklare og tager fire sekunder at bruge.
 
 ## Hvad jeg ikke tog med
 

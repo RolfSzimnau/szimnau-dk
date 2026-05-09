@@ -1,6 +1,6 @@
 ---
-title: "Reolink CX810 in Home Assistant — Kennzeichen auf dem TV und Anrufe die es pausieren"
-description: "Wie ich eine Reolink CX810 4K PoE Kamera dazu gebracht habe, Kennzeichen per KI zu lesen, bei Einfahrt in die Auffahrt ein Snapshot-Bild auf den TV zu schicken und beim Klingeln eines Telefons automatisch zu pausieren."
+title: "Reolink CX810 in Home Assistant — Kennzeichenerkennung und TV-Snapshots"
+description: "Wie ich eine Reolink CX810 4K PoE Kamera dazu gebracht habe, Kennzeichen per KI zu lesen und bei Einfahrt in die Auffahrt direkt ein Snapshot-Bild auf den TV zu schicken."
 pubDate: 2026-07-17
 tags: ["kamera", "reolink", "alpr", "ki-vision", "home-assistant", "tv"]
 lang: "de"
@@ -61,54 +61,6 @@ Das `interrupt: 1`-Flag zwingt die Benachrichtigung dazu, auch dann zu erscheine
 Die Telefone bekommen denselben Snapshot über `notify.alle_enheder`, mit einer zeitgestempelten URL damit kein gecachtes Bild vom letzten Besuch geliefert wird.
 
 Personenerkennung bekommt eine einfachere Version: kein ALPR-Versuch, nur eine Snapshot-Benachrichtigung. Es reicht um zu sehen ob es der Postbote ist oder jemand Unbekanntes.
-
-## TV-Pause bei Anrufen
-
-Die zweite Automatisierung hat nichts mit der Kamera zu tun, lebt aber in derselben gedanklichen Kategorie: der TV der auf das reagiert was im Haus passiert, anstatt einfach da zu sitzen und es zu ignorieren.
-
-Wenn eines der Telefone klingelt, pausiert der TV. Wenn der Anruf endet, nimmt er wieder auf.
-
-Der Mechanismus ist `sensor.pixel_10_phone_state`, den die HA Companion App auf beiden Telefonen mit den Zuständen `ringing`, `in_call`, `offhook`, `idle` bereitstellt. Die Automatisierung prüft ob die TV-Fernbedienung tatsächlich eingeschaltet ist, bevor sie etwas tut — kein Sinn einen TV zu pausieren der bereits aus ist.
-
-```yaml
-trigger:
-  - platform: state
-    entity_id: sensor.pixel_10_phone_state
-    to: [ringing, in_call, offhook]
-action:
-  - action: input_boolean.turn_on
-    target:
-      entity_id: input_boolean.tv_was_playing
-  - action: remote.send_command
-    target:
-      entity_id: remote.tv_stuen
-    data:
-      command: MEDIA_PAUSE
-  - wait_for_trigger:
-      - platform: state
-        entity_id: sensor.pixel_10_phone_state
-        to: idle
-    timeout: "02:00:00"
-    continue_on_timeout: true
-  - action: remote.send_command
-    target:
-      entity_id: remote.tv_stuen
-    data:
-      command: MEDIA_PLAY
-  - action: input_boolean.turn_off
-    target:
-      entity_id: input_boolean.tv_was_playing
-```
-
-`input_boolean.tv_was_playing` ist das Gedächtnis. Es verhindert dass die Automatisierung einen Play-Befehl an einen TV schickt der vor dem Anruf bereits pausiert war — ohne es könnte ein Anruf etwas fortsetzen das absichtlich pausiert wurde.
-
-## Messenger-Anrufe sind anders
-
-Ein normaler Telefonanruf endet sauber — der Sensor geht zurück auf `idle` und der TV nimmt wieder auf. Messenger-Videoanrufe registrieren sich nicht immer in `phone_state`. Sie kommen als Benachrichtigungen rein.
-
-Die Automatisierung überwacht `sensor.pixel_10_last_notification` nach dem Wort "opkald" (Anruf). Wenn sie es findet, pausiert sie den TV und sendet eine aktionierbare Benachrichtigung mit einer einzigen Schaltfläche: **TV fortsetzen**. Ein Tippen löst `mobile_app_notification_action` mit der Aktion `tv_resume_after_call` aus, auf die die Automatisierung wartet. Wenn niemand innerhalb von 30 Minuten tippt, macht die Automatisierung trotzdem weiter.
-
-Es ist die Art von Sache die kompliziert klingt zu erklären und vier Sekunden braucht um sie zu benutzen.
 
 ## Was ich weggelassen habe
 

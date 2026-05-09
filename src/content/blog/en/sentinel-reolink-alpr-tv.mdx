@@ -1,6 +1,6 @@
 ---
-title: "Reolink CX810 in Home Assistant — License Plates on the TV and Calls That Pause It"
-description: "How I got a Reolink CX810 4K PoE camera to read license plates with AI, push a snapshot to the TV when someone pulls into the driveway, and automatically pause whatever we're watching when either phone rings."
+title: "Reolink CX810 in Home Assistant — License Plate Reading and TV Snapshots"
+description: "How I got a Reolink CX810 4K PoE camera to read license plates with AI and push a snapshot straight to the TV when someone pulls into the driveway."
 pubDate: 2026-07-17
 tags: ["camera", "reolink", "alpr", "ai-vision", "home-assistant", "tv"]
 lang: "en"
@@ -61,54 +61,6 @@ The `interrupt: 1` flag forces the notification to appear even if the TV is busy
 Phones get the same snapshot via `notify.alle_enheder`, with a timestamp-busted URL so it doesn't serve a cached image from the previous visit.
 
 Person detection gets a simpler version: no ALPR attempt, just a snapshot notification. It's enough to see whether it's the postman or someone you don't recognise.
-
-## TV pause on phone calls
-
-The second automation is unrelated to the camera but lives in the same mental category: the TV responding to what's happening in the house rather than sitting there ignoring it.
-
-When either phone rings, the TV pauses. When the call ends, it resumes.
-
-The mechanism is `sensor.pixel_10_phone_state`, which the HA companion app on both phones exposes with states: `ringing`, `in_call`, `offhook`, `idle`. The automation checks whether the TV remote is actually on before doing anything — no point pausing a TV that's already off.
-
-```yaml
-trigger:
-  - platform: state
-    entity_id: sensor.pixel_10_phone_state
-    to: [ringing, in_call, offhook]
-action:
-  - action: input_boolean.turn_on
-    target:
-      entity_id: input_boolean.tv_was_playing
-  - action: remote.send_command
-    target:
-      entity_id: remote.tv_stuen
-    data:
-      command: MEDIA_PAUSE
-  - wait_for_trigger:
-      - platform: state
-        entity_id: sensor.pixel_10_phone_state
-        to: idle
-    timeout: "02:00:00"
-    continue_on_timeout: true
-  - action: remote.send_command
-    target:
-      entity_id: remote.tv_stuen
-    data:
-      command: MEDIA_PLAY
-  - action: input_boolean.turn_off
-    target:
-      entity_id: input_boolean.tv_was_playing
-```
-
-`input_boolean.tv_was_playing` is the memory. It prevents the automation from sending a play command to a TV that was already paused before the call — without it, a call could resume something that was intentionally paused.
-
-## Messenger calls are different
-
-A regular phone call ends cleanly — the sensor goes back to `idle` and the TV resumes. Messenger video calls don't always register in `phone_state`. They come through as notifications.
-
-The automation watches `sensor.pixel_10_last_notification` for the word "opkald" (call). When it finds it, it pauses the TV and sends an actionable notification with a single button: **Genoptag TV**. Tapping it fires `mobile_app_notification_action` with action `tv_resume_after_call`, which the automation is waiting for. If nobody taps it within 30 minutes, the automation continues anyway.
-
-It's the kind of thing that sounds complicated to explain and takes about four seconds to use.
 
 ## What I cut
 
