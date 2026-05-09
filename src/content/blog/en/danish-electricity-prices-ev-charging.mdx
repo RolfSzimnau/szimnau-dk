@@ -1,48 +1,31 @@
 ---
-title: "Danish Electricity Spot Prices in Home Assistant — Smart EV Charging for Free"
-description: "Using the Energi Data Service integration to display live Danish spot prices, build an ApexCharts dashboard, and automate Škoda Elroq charging to the cheapest hours of the day."
+title: "Charging a Car on Danish Spot Prices — What I Actually Built"
+description: "Using Energi Data Service in Home Assistant to track hourly spot prices, find the cheapest charging window, and automate Škoda Elroq charging without touching the app."
 pubDate: 2026-05-22
 tags: ["electricity", "ev", "energi-data-service", "automation", "skoda-elroq"]
 lang: "en"
 translationKey: "danish-electricity-prices-ev-charging"
 ---
 
-Danish electricity spot prices swing wildly — sometimes by a factor of 10 between the cheapest and most expensive hour. Home Assistant can see those prices in real time and act on them. Here's how I automated my Škoda Elroq charging around the cheapest windows.
+Last February there was a day where electricity cost 0.18 DKK/kWh at 3am and 3.40 DKK/kWh at 8am. That's a 19x difference in one night. If your car charges on a fixed overnight schedule, you're basically rolling dice on which end of that spread you land on.
 
-## Energi Data Service Integration
+Home Assistant can see the hourly prices. The rest follows.
 
-[Energi Data Service](https://www.energidataservice.dk/) is a free Danish government API that provides hourly spot prices for DK1 (West Denmark) and DK2 (East Denmark). The HA integration pulls these directly — no API key required.
+## Energi Data Service
 
-Install via HACS: search for **Energi Data Service**, then add it via Integrations. Select your price area (DK1 or DK2) and your energy tariff configuration.
+[Energi Data Service](https://www.energidataservice.dk/) is a Danish public utility API — free, no key required. The HA integration pulls today's and tomorrow's hourly spot prices for your price area (DK1 or DK2).
 
-After setup, you get:
+Install from HACS, add via Integrations, pick your area. You get:
 
 ```
-sensor.energi_data_service          — current hour price (DKK/kWh incl. VAT)
-sensor.energi_data_service_today    — attributes contain all 24 hourly prices
-sensor.energi_data_service_tomorrow — tomorrow's prices (available ~13:00)
+sensor.energi_data_service    — current hour price (DKK/kWh incl. VAT)
 ```
 
-The attribute structure on the today sensor looks like:
+The `today` and `tomorrow` attributes contain the full 24-hour price arrays. Tomorrow's prices arrive around 13:00 each day, which is when the Nord Pool auction clears.
 
-```json
-{
-  "today": [
-    {"hour": 0, "price": 0.82},
-    {"hour": 1, "price": 0.75},
-    ...
-    {"hour": 23, "price": 1.43}
-  ],
-  "tomorrow": [...],
-  "min": 0.71,
-  "max": 2.18,
-  "mean": 1.12
-}
-```
+## The chart
 
-## The Dashboard — ApexCharts Stepline
-
-A stepline chart is the right format for hourly price data: each bar holds steady for the full hour, then steps to the next value. The current hour gets highlighted automatically.
+`custom:apexcharts-card` with a stepline type is the right call here — each bar holds for a full hour, then steps. I use color thresholds to make the expensive hours obvious at a glance:
 
 ```yaml
 type: custom:apexcharts-card
@@ -50,18 +33,13 @@ graph_span: 30h
 now:
   show: true
   label: Now
-header:
-  show: true
-  title: Electricity price today + tomorrow
-  show_states: true
-  colorize_states: true
 series:
   - entity: sensor.energi_data_service
     type: column
     data_generator: |
-      return entity.attributes.today.concat(entity.attributes.tomorrow || []).map(h => {
-        return [new Date().setHours(h.hour, 0, 0, 0), h.price];
-      });
+      return entity.attributes.today
+        .concat(entity.attributes.tomorrow || [])
+        .map(h => [new Date().setHours(h.hour, 0, 0, 0), h.price]);
     color_threshold:
       - value: 0
         color: '#4caf50'
@@ -71,11 +49,11 @@ series:
         color: '#f44336'
 ```
 
-Green below 1.00 DKK/kWh, orange up to 1.50, red above. At a glance you can see when to run the dishwasher or charge the car.
+Green below 1 DKK, orange up to 1.50, red above. Took me a while to get the `data_generator` right — the `concat` handles the case where tomorrow's prices haven't arrived yet.
 
-## Finding the Cheapest Charging Window
+## Finding the cheapest window
 
-I use a template sensor that finds the cheapest 2-hour window remaining today (or tonight):
+I built a template sensor that finds the cheapest consecutive 2-hour block remaining today:
 
 ```yaml
 template:
@@ -96,31 +74,14 @@ template:
           {% else %}
             unknown
           {% endif %}
-        unit_of_measurement: ""
-        icon: mdi:clock-check
 ```
 
-This displays as `"02:00"` or `"14:00"` — the start of the best upcoming 2-hour charging block. A mushroom-template-card on the dashboard shows this in large text.
+This shows up as `02:00` or `14:00` on the dashboard. Not used directly in the charging automation (that runs every hour and decides based on the current price), but useful for sanity-checking whether the car is charging at a reasonable time.
 
-## Škoda Elroq Integration
-
-The MyŠkoda integration (HACS) connects to the Škoda cloud API and exposes:
-
-```
-sensor.elroq_battery_level         — state of charge (%)
-sensor.elroq_charging_power        — current charge rate (kW)
-sensor.elroq_range                 — estimated range (km)
-binary_sensor.elroq_charging       — is car currently charging?
-binary_sensor.elroq_plugged_in     — is cable connected?
-switch.elroq_charging              — start/stop charging
-```
-
-The switch entity is the key one for automation — toggling it starts and stops AC charging from the home charger.
-
-## Smart Charging Automation
+## The charging automation
 
 ```yaml
-alias: Elroq — Smart charge on cheap hours
+alias: Elroq — Smart charge
 trigger:
   - platform: time_pattern
     minutes: "0"
@@ -151,16 +112,12 @@ action:
               entity_id: switch.elroq_charging
 ```
 
-Runs every hour on the clock. If the price is below 1.00 DKK/kWh and the car is plugged in and not full — charge. If price is above 1.50 — stop. Between 1.00 and 1.50, don't change state (avoids thrashing).
+Below 1.00 DKK — charge. Above 1.50 — stop. Between those two numbers — leave it alone. The dead zone between 1.00 and 1.50 is deliberate: without it the switch would toggle on and off every hour when prices hover around the threshold, which isn't good for the charger or the car.
 
-An override `input_boolean.elroq_force_charge` bypasses the price check for days when you need a full charge regardless.
+There's a `input_boolean.elroq_force_charge` override for mornings when I need a full charge regardless of price.
 
-## Practical Results
+## Does it actually save money?
 
-Over the first full month with smart charging, my Elroq's electricity cost dropped by roughly 28% compared to always-on charging. The biggest savings come on days with large overnight price spreads — not uncommon in Denmark when wind generation is high at 02:00–04:00 and demand picks up at 08:00.
+After the first full month: roughly 28% lower charging cost compared to always-on overnight charging. The savings come almost entirely from the nights with large price spreads — there are weeks in Denmark where the spread is tiny and the automation makes no difference at all.
 
-The dashboard card showing current price, cheapest window, and car battery level has become one of the most-checked elements of my home screen.
-
-## What's Next
-
-I'm planning to add **solar forecast integration** (using the Forecast.Solar integration) so that on sunny days the car charges from predicted solar surplus rather than grid spot prices. The logic becomes: charge if solar surplus OR cheap grid, skip if expensive grid AND no solar.
+The thing I didn't expect: it changed how I think about running other appliances. The electricity price chart is now one of the most-checked cards in my dashboard, and I find myself consciously timing the dishwasher and dryer around it. That behavioral change probably adds more savings than the automated EV charging does.

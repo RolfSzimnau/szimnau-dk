@@ -1,23 +1,19 @@
 ---
-title: "Home Assistant Glassmorphism Dashboard — The Complete CSS Design System"
-description: "A reusable glassmorphism design system for Home Assistant Lovelace dashboards using card_mod. Covers the 6 core CSS constants, progress bars, map cards, badge suppression, and the Frosted Glass Dark theme override."
+title: "Building a Consistent HA Dashboard with Glassmorphism — The CSS That Actually Works"
+description: "The six CSS constants I use across every card on three Home Assistant dashboards, plus the patterns for progress bars, map cards, and suppressing the Frosted Glass Dark theme's ::before overlay."
 pubDate: 2026-06-19
 tags: ["dashboard", "design", "card-mod", "lovelace", "home-assistant"]
 lang: "en"
 translationKey: "ha-glassmorphism-dashboard-design"
 ---
 
-After rebuilding three Home Assistant dashboards (desktop, mobile, tablet) with consistent styling, I settled on a glassmorphism design system. Everything is defined by six CSS constants and a handful of card patterns. Here's the complete system so you can copy it directly.
+I rebuilt my Home Assistant dashboards three times before they looked like they belonged together. The first version was Tailwind-ish flat cards. Fine. The second was too many colors. The third landed on glassmorphism — translucent frosted cards on a deep navy background — and I've left it alone since.
 
-## Why Glassmorphism
+What follows is the exact CSS, with the things that tripped me up explained.
 
-Dark home automation dashboards tend to look either clinical (flat Tailwind UI) or visually noisy (too many colored status tiles). Glassmorphism threads the needle: cards feel light and layered, status colors pop against the translucent background, and the blur effect naturally groups related content.
+## The six constants
 
-It works especially well against a deep navy background (`#0a0f1a` or similar), where the translucent white glass stands out without high contrast.
-
-## The 6 Core CSS Constants
-
-Every outer card in the system uses exactly these values:
+Every outer card uses exactly these values. No variation.
 
 ```css
 border-radius: 28px;
@@ -28,17 +24,15 @@ border: 1px solid rgba(255, 255, 255, 0.10);
 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 ```
 
-And one mandatory suppression line:
+And the one you'll miss if nobody tells you:
 
 ```css
 ha-card::before { display: none !important; }
 ```
 
-That last line is critical if you're using the **Frosted Glass Dark** theme (or similar). The theme injects a `::before` pseudo-element overlay on every `ha-card`. Without suppressing it, you get double-layering and your custom background is partially obscured.
+The **Frosted Glass Dark** theme (and several similar themes) injects a `::before` overlay onto every `ha-card`. If you don't suppress it, your custom background gets a semi-transparent overlay on top. The symptom is that your cards look slightly wrong — slightly too opaque, slightly off-color — and you can't figure out why.
 
-## The Standard Outer Card Template
-
-In `card_mod`, apply the design system to any card using `custom:stack-in-card` as the outer wrapper:
+## The outer card template
 
 ```yaml
 type: custom:stack-in-card
@@ -54,12 +48,14 @@ card_mod:
     }
     ha-card::before { display: none !important; }
 cards:
-  # your inner cards here
+  # content goes here
 ```
 
-## Inner Cards — Transparent Treatment
+`custom:stack-in-card` is the wrapper. All visual styling lives here. Inner cards get none of it.
 
-Cards nested inside a `stack-in-card` should be visually invisible — no background, no shadow, no border. The glass comes from the outer container only:
+## Inner cards — transparent only
+
+Cards nested inside the glass wrapper should disappear visually:
 
 ```yaml
 card_mod:
@@ -72,23 +68,19 @@ card_mod:
     ha-card::before { display: none !important; }
 ```
 
-Stack multiple inner cards this way and they appear as a single visual unit inside the glass container.
+The `::before` suppression is needed on inner cards too. The theme applies it everywhere.
 
-## Dividers Between Inner Cards
-
-A subtle separator between stacked inner cards:
+Between inner cards, I use a faint divider:
 
 ```css
-ha-card {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-}
+border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
 ```
 
-Apply this to all inner cards except the last one. Lighter than a standard border — it reads as a content break without interrupting the glass surface.
+Lighter than you'd expect. If it's too visible it cuts the glass surface. At 0.06 opacity it reads as a section break without drawing attention to itself.
 
-## Progress Bars via `ha-card::after`
+## Progress bars via `::after`
 
-The `::before` pseudo-element is reserved for theme suppression. Use `::after` for progress bars:
+`::before` is taken by theme suppression. `::after` is yours for content.
 
 ```yaml
 card_mod:
@@ -101,59 +93,48 @@ card_mod:
     ha-card::after {
       content: '' !important;
       position: absolute !important;
-      left: 0;
-      top: 0;
+      left: 0; top: 0;
       width: {{ states('sensor.battery_level') | int(0) }}% !important;
       height: 100% !important;
-      background: linear-gradient(
-        90deg,
+      background: linear-gradient(90deg,
         rgba(76, 175, 80, 0.18),
-        rgba(129, 199, 132, 0.05)
-      ) !important;
+        rgba(129, 199, 132, 0.05)) !important;
       pointer-events: none !important;
     }
 ```
 
-The gradient fades right, so the color intensity tracks the value. This pattern works for:
-- Battery percentage (car, robot vacuum, mower)
-- Charge level
-- Maintenance life remaining (invert: 0% = danger, use red gradient)
-- Any 0–100% numeric value
+The gradient fades right, so a card at 30% looks different from one at 80% in a way that reads intuitively. I use this for EV battery level, vacuum battery, and mower battery. For maintenance sensors I invert the color logic — near 0% means warning, so I use a red gradient.
 
-## Map Cards Inside Stack-in-Card
+## Map cards
 
-Map cards (vacuum map, camera, etc.) need special handling to work inside a glass container:
+Map cards have their own rendering rules. Put one directly in a glass `stack-in-card` without adjusting it and you get square corners poking outside the rounded wrapper.
+
+The fix: `overflow: hidden` on the outer card, `border-radius: 0` on the inner map card. The outer's overflow does the clipping.
 
 ```yaml
 type: custom:stack-in-card
 card_mod:
   style: |
     ha-card {
-      background: rgba(255,255,255,0.05) !important;
-      backdrop-filter: blur(15px) !important;
-      border: 1px solid rgba(255,255,255,0.10) !important;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
-      border-radius: 28px !important;
-      overflow: hidden !important;  /* ← required for corner clipping */
+      /* standard glass values */
+      overflow: hidden !important;  /* this is the key line */
     }
     ha-card::before { display: none !important; }
 cards:
-  - type: custom:xiaomi-vacuum-map-card   # or any map card
+  - type: custom:xiaomi-vacuum-map-card
     entity: vacuum.robot
     card_mod:
       style: |
         ha-card {
-          border-radius: 0 !important;   /* ← no radius on inner map */
+          border-radius: 0 !important;
           box-shadow: none !important;
           border: none !important;
         }
 ```
 
-The `overflow: hidden` on the outer container clips the map's corners to the outer `border-radius`. Without this, the map renders with square corners that bleed outside the glass card. The inner map card gets `border-radius: 0` to avoid double-rounding.
+## Badge suppression
 
-## Badge Suppression
-
-Mushroom cards show colored badges for entity states (e.g., an orange "unavailable" badge on a WiZ light that's temporarily offline). Hide these without affecting the card's main state display:
+Mushroom cards show colored badges on certain states — the orange "unavailable" badge when a device is offline is the main offender. It clashes with everything.
 
 ```yaml
 card_mod:
@@ -162,65 +143,14 @@ card_mod:
       mushroom-badge-icon.unavailable {
         display: none !important;
       }
-    mushroom-template-card$: |
-      .secondary::after {
-        content: 'Offline';
-        color: rgba(255,255,255,0.4);
-        font-size: 0.8em;
-      }
 ```
 
-The `"."` key in the `card_mod` dict targets the host element's shadow DOM context — this is the correct key for mushroom card styling in HA 2024+.
+The `"."` key is the correct one for mushroom cards in HA 2024+. Not `ha-card`, not the component name — `"."`. I spent longer than I'd like to admit testing other selectors before this one worked.
 
-## The Complete Reusable Template
+## The consistency problem
 
-Copy this as a starting point for any new glass card:
+YAML doesn't have variables. Every card that uses the glass treatment gets its own copy of those six CSS lines. When I want to adjust the background opacity across the whole dashboard, I change it in 25 places.
 
-```yaml
-type: custom:stack-in-card
-card_mod:
-  style: |
-    ha-card {
-      background: rgba(255,255,255,0.05) !important;
-      backdrop-filter: blur(15px) !important;
-      -webkit-backdrop-filter: blur(15px) !important;
-      border: 1px solid rgba(255,255,255,0.10) !important;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
-      border-radius: 28px !important;
-    }
-    ha-card::before { display: none !important; }
-cards:
-  - type: custom:mushroom-template-card
-    primary: Card Title
-    secondary: Subtitle or state
-    icon: mdi:home
-    card_mod:
-      style: |
-        ha-card {
-          background: transparent !important;
-          box-shadow: none !important;
-          border: none !important;
-        }
-        ha-card::before { display: none !important; }
-```
+My workaround: a `snippets.yaml` file sitting in my config folder with the full outer card template as a comment. Paste from there when creating new cards. It's not elegant but it's maintainable.
 
-## Custom Cards Required
-
-This design system depends on:
-
-- `custom:stack-in-card` — outer glass container
-- `custom:mushroom-*` — all inner content cards
-- `custom:layout-card` — grid layouts inside glass containers
-- `card_mod` — CSS injection (required by all of the above)
-
-**Not required** but used in specific cards: `custom:xiaomi-vacuum-map-card`, `custom:advanced-camera-card`, `custom:apexcharts-card`, `custom:lawn-mower-card`.
-
-Install all via HACS. The `card_mod` integration is a separate HACS install — it's not bundled with mushroom.
-
-## Applying Consistently
-
-The hardest part of a design system in Lovelace is consistency — YAML doesn't have variables. Every card gets its own copy of the CSS block. When I need to change the glass opacity, I change it in 30 places.
-
-My approach: keep a `snippets.yaml` file locally with the full card template as a comment block. When I create a new card, I paste from that file. Not elegant, but it works until HA adds native card templates.
-
-A future improvement would be theming variables (`var(--glass-bg)`) defined once in the HA theme and referenced in `card_mod` styles. This works today if your theme defines custom CSS properties — but requires maintaining a custom theme YAML.
+The right solution is custom CSS properties in the theme — `var(--glass-bg)` defined once, referenced everywhere. This works if you maintain a custom theme YAML. I haven't made that leap yet.
