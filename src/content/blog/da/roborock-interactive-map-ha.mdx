@@ -1,42 +1,34 @@
 ---
-title: "Roborock Interaktivt Kort i Home Assistant — Rum-for-rum Rengøring og Vedligeholdelsesporing"
-description: "Sådan integrerede jeg en Roborock S8 MaxV i Home Assistant med et interaktivt støvsugerkort, rum-for-rum rengøring, vedligeholdelsessensorer og automatiseringer til støvbeholderalarm."
+title: "Roborock i Home Assistant — Kortet, rummene, og hvad der faktisk er nyttigt"
+description: "Roborock S8 MaxV med interaktivt støvsugerkort, rum-segment-rengøring og vedligeholdelsessensorer der advarer dig inden børsten brænder ud."
 pubDate: 2026-06-12
 tags: ["roborock", "støvsuger", "dashboard", "home-assistant"]
 lang: "da"
 translationKey: "roborock-interactive-map-ha"
 ---
 
-Roborock S8 MaxV er en kapabel robotstøvsuger — men den virkelige kraft kommer, når du integrerer den med Home Assistant. Interaktive rumkort, rum-for-rum rengøring, vedligeholdelsesporing og tilstedeværelsesbevidste automatiseringer. Her er, hvordan det hele passer sammen.
+Roborock-integrationen er bygget direkte ind i HA — ingen HACS nødvendig. Tilføj den, log ind med din Roborock-konto, og støvsugeren dukker op. Hvad den ikke fortæller dig er at det interessante kommer fra et separat HACS-kort der gengiver det live kort.
 
-## Integrationsopsætning
+## Integrationen
 
-**Roborock**-integrationen er indbygget i HA (ingen HACS nødvendig fra HA 2024.x). Tilføj den via **Indstillinger → Enheder og tjenester → Tilføj integration → Roborock**, og godkend derefter med dine Roborock app-legitimationsoplysninger.
+Cloud-polling med 5-sekunders opdatering. Lokal kommunikation er mulig men kræver at man hiver nøgler ud af enhedens firmware, og det gad jeg ikke. Til alt der betyder noget — starte rengøring, tjekke batteri, rum-segmenter — er cloud-polling hurtigt nok.
 
-Integrationen understøtter både cloud- og lokal polling. Jeg bruger cloud-polling — lokal kommunikation er mulig, men kræver en mere involveret opsætning. For de fleste brugere er cloud-polling med 5-sekunders opdateringsinterval fint.
-
-After setup:
+Entiteter efter opsætning:
 
 ```
-vacuum.roborock_s8_maxv             — primær støvsugerentitet
-sensor.roborock_battery             — batteriprocent
-sensor.roborock_status              — aktuel status (rengøring, docket, inaktiv, fejl)
-sensor.roborock_last_clean_area     — m² rengjort i sidste session
-sensor.roborock_last_clean_duration — minutter i sidste session
-sensor.roborock_total_clean_area    — livstids m² rengjort
+vacuum.roborock_s8_maxv
+sensor.roborock_battery
+sensor.roborock_status
+sensor.roborock_last_clean_area
+sensor.roborock_main_brush_left    — procent levetid tilbage
+sensor.roborock_side_brush_left
+sensor.roborock_filter_left
+sensor.roborock_sensor_dirty_left
 ```
 
-Plus vedligeholdelsessensorer:
-```
-sensor.roborock_main_brush_left     — resterende levetid på hovedbørste (%)
-sensor.roborock_side_brush_left     — resterende levetid på sidebørste (%)
-sensor.roborock_filter_left         — resterende filterlevetid (%)
-sensor.roborock_sensor_dirty_left   — sensorrengøring nødvendig (%)
-```
+## Kortkortet
 
-## Interaktivt kort med xiaomi-vacuum-map-card
-
-`custom:xiaomi-vacuum-map-card` (HACS) gengiver det live Roborock-kort i Lovelace med rumzoner og direkte rengøringskontroller.
+`custom:xiaomi-vacuum-map-card` (HACS) er det der gør opsætningen faktisk nyttig. Det gengiver det live kort med dine rum-zoner markeret, og tryk på et rum starter rengøring af netop det segment.
 
 ```yaml
 type: custom:xiaomi-vacuum-map-card
@@ -45,8 +37,6 @@ map_source:
   camera: camera.roborock_map
 calibration_source:
   auto: true
-internal_variables:
-  topic: roborock/map
 rooms:
   - id: 16
     name: Stue
@@ -60,20 +50,14 @@ rooms:
   - id: 19
     name: Kontor
     icon: mdi:desk
-  - id: 20
-    name: Gang
-    icon: mdi:door
 map_modes:
-  - template: vacuum_clean_zone
-  - template: vacuum_goto
   - template: vacuum_clean_segment
+  - template: vacuum_goto
 ```
 
-Find dine rum-ID'er: kør Roborock-støvsugeren én gang, og tjek derefter `state_attr('vacuum.roborock_s8_maxv', 'room_list')` i Udviklingsværktøjer → Skabeloner. ID'erne er heltal tildelt, når du opretter kortet i appen.
+Find dine rum-ID'er: Udviklingsværktøjer → Skabelon, evaluer `{{ state_attr('vacuum.roborock_s8_maxv', 'room_list') }}`. ID'erne er heltal tildelt da kortet blev oprettet i appen. Mine starter ved 16 — dine vil sandsynligvis være anderledes.
 
-Med dette kort starter tryk på et rum på kortet rengøring af netop det segment. Langt tryk sender støvsugeren til en bestemt koordinat.
-
-## Dashboard-layout
+Kortkortet bor inde i en glas `stack-in-card`. Kortkort har brug for `border-radius: 0` på det indre kort, og den ydre container har brug for `overflow: hidden` — ellers bløder kortets hjørner ud over den afrundede glasindpakning.
 
 ```yaml
 type: custom:stack-in-card
@@ -90,32 +74,17 @@ card_mod:
     ha-card::before { display: none !important; }
 cards:
   - type: custom:xiaomi-vacuum-map-card
-    entity: vacuum.roborock_s8_maxv
-    map_source:
-      camera: camera.roborock_map
-    calibration_source:
-      auto: true
+    # ...
     card_mod:
       style: |
         ha-card { border-radius: 0; box-shadow: none; border: none; }
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: entity
-        entity: sensor.roborock_status
-        icon: mdi:robot-vacuum
-      - type: entity
-        entity: sensor.roborock_battery
-        icon: mdi:battery
-      - type: entity
-        entity: sensor.roborock_last_clean_area
-        icon: mdi:texture-box
 ```
 
-Kortkortet inde i en `stack-in-card` får `border-radius: 0; box-shadow: none; border: none`, så den ydre containers `overflow: hidden` klipper kortehjørnerne rent.
+## Vedligeholdelsessensorer
 
-## Vedligeholdelsesporing
+Børste- og filtersensorerne tæller ned fra 100% til 0%. Jeg ignorerede dem for længe og fik så en advarsel om at hovredbørsten var på 8% — hvilket viste sig at være *meget* mere nedslidt end en procent antydede.
 
-Vedligeholdelsessensorerne er procentbaserede: 100% betyder ny, 0% betyder skal udskiftes. Jeg præsenterer disse som farvede indikatorkort:
+Farvede indikatorkort for hver komponent:
 
 ```yaml
 type: custom:mushroom-template-card
@@ -127,33 +96,31 @@ icon_color: >
   {% if pct > 40 %}green{% elif pct > 20 %}orange{% else %}red{% endif %}
 ```
 
-Når en komponent falder under 20%, får jeg en vedvarende notifikation:
+Og en vedvarende notifikation (ikke push — jeg behøver ikke at min telefon bimler over en børste) når noget falder under 20%:
 
 ```yaml
 alias: Roborock — Vedligeholdelsesadvarsel
 trigger:
   - platform: numeric_state
-    entity_id:
-      - sensor.roborock_main_brush_left
-      - sensor.roborock_filter_left
-      - sensor.roborock_side_brush_left
+    entity_id: [sensor.roborock_main_brush_left, sensor.roborock_filter_left,
+                sensor.roborock_side_brush_left]
     below: 20
 action:
   - service: persistent_notification.create
     data:
-      title: "Roborock vedligeholdelse nødvendig"
+      title: "Roborock — tjek vedligeholdelse"
       message: >
-        {{ trigger.entity_id | replace('sensor.roborock_', '') | replace('_left', '') | replace('_', ' ') | title }}
-        er på {{ trigger.to_state.state }}%.
+        {{ trigger.entity_id | replace('sensor.roborock_','') | replace('_left','')
+           | replace('_',' ') | title }} er på {{ trigger.to_state.state }}%.
       notification_id: roborock_maintenance
 ```
 
-## Tilstedeværelsesbevidst rengøring
+## Automatiseringen jeg bruger hver dag
 
-Den mest praktiske automatisering: kør støvsugeren, når jeg forlader, og dock inden jeg vender tilbage.
+Rengør mens jeg er væk, dock inden jeg kommer hjem:
 
 ```yaml
-alias: Roborock — Rengør mens væk
+alias: Roborock — Rengør ved afgang
 trigger:
   - platform: state
     entity_id: person.rolf
@@ -172,7 +139,7 @@ action:
     target:
       entity_id: vacuum.roborock_s8_maxv
 
-alias: Roborock — Dock inden ankomst
+alias: Roborock — Dock ved hjemkomst
 trigger:
   - platform: state
     entity_id: person.rolf
@@ -187,8 +154,6 @@ action:
       entity_id: vacuum.roborock_s8_maxv
 ```
 
-5-minutters forsinkelsen på afgangstriggeren forhindrer falske triggere fra korte GPS-udsving.
+5-minutters forsinkelsen ved afgang er vigtig. Uden den trigger et kort GPS-udsving en rengøring, og støvsugeren er halvvejs igennem køkkenet når jeg går ind ad døren igen to minutter efter.
 
-## Næste skridt
-
-Rum-specifik planlægning baseret på faktisk brug er på min liste — for eksempel rengøres køkkenet dagligt, kontoret kun to gange om ugen. `input_boolean`-tilgangen per rum, som jeg bruger til Flora-klipperen, kunne virke her også.
+Dock-ved-hjemkomst-automatiseringen har præcis én gang reddet mig fra at træde på støvsugeren i mørket. Værd det.

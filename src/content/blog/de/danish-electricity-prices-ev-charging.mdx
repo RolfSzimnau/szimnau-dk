@@ -1,47 +1,31 @@
 ---
-title: "Dänische Stromspotpreise in Home Assistant — Smart EV-Laden kostenlos"
-description: "Energi Data Service-Integration für Live-Spotpreise, ApexCharts-Dashboard und automatisiertes Laden des Škoda Elroq in den günstigsten Stunden."
+title: "Auto laden mit dänischen Spotpreisen — Was ich wirklich gebaut habe"
+description: "Energi Data Service in Home Assistant für Echtzeit-Spotpreise, günstigstes Ladefenster finden und Škoda Elroq automatisch laden ohne die App anzufassen."
 pubDate: 2026-05-22
 tags: ["strom", "ev", "energi-data-service", "automatisierung", "skoda-elroq"]
 lang: "de"
 translationKey: "danish-electricity-prices-ev-charging"
 ---
 
-Dänische Stromspotpreise schwanken stark — manchmal um den Faktor 10 zwischen der günstigsten und teuersten Stunde. Home Assistant kann diese Preise in Echtzeit sehen und darauf reagieren. So habe ich das Laden meines Škoda Elroq um die günstigsten Fenster automatisiert.
+Im Februar gab es eine Nacht, in der Strom um 3 Uhr 0,18 DKK/kWh kostete und um 8 Uhr 3,40 DKK/kWh. Fast das 20-Fache innerhalb von fünf Stunden. Wer das Auto nach einem festen Nachtplan lädt, würfelt im Grunde, auf welche Seite dieses Spreads er fällt.
 
-## Energi Data Service-Integration
+Home Assistant kann die Stundenpreise sehen. Der Rest ergibt sich von selbst.
 
-[Energi Data Service](https://www.energidataservice.dk/) ist eine kostenlose dänische Regierungs-API, die stündliche Spotpreise für DK1 (Westdänemark) und DK2 (Ostdänemark) liefert. Die HA-Integration holt diese direkt — kein API-Schlüssel erforderlich.
+## Energi Data Service
 
-Installation über HACS: suche nach **Energi Data Service**, dann über Integrationen hinzufügen. Preisgebiet (DK1 oder DK2) und Energietarifkonfiguration auswählen.
+[Energi Data Service](https://www.energidataservice.dk/) ist eine kostenlose dänische Behörden-API — kein Schlüssel erforderlich. Die HA-Integration holt die heutigen und morgigen Stundenpreise für das eigene Preisgebiet (DK1 oder DK2).
 
-Nach der Einrichtung erhältst du:
+HACS installieren, über Integrationen hinzufügen, Gebiet auswählen. Man bekommt:
 
 ```
-sensor.energi_data_service          — aktueller Stundenpreis (DKK/kWh inkl. MwSt.)
-sensor.energi_data_service_today    — Attribute enthalten alle 24 Stundenpreise
-sensor.energi_data_service_tomorrow — Preise von morgen (verfügbar ~13:00 Uhr)
+sensor.energi_data_service    — aktueller Stundenpreis (DKK/kWh inkl. MwSt.)
 ```
 
-Die Attributstruktur des Today-Sensors sieht so aus:
+Die `today`- und `tomorrow`-Attribute enthalten die vollständigen 24-Stunden-Preisarrays. Die Preise für morgen kommen gegen 13 Uhr, wenn die Nord-Pool-Auktion abrechnet.
 
-```json
-{
-  "today": [
-    {"hour": 0, "price": 0.82},
-    {"hour": 1, "price": 0.75},
-    ...
-    {"hour": 23, "price": 1.43}
-  ],
-  "min": 0.71,
-  "max": 2.18,
-  "mean": 1.12
-}
-```
+## Das Diagramm
 
-## Das Dashboard — ApexCharts Stepline
-
-Ein Stufenliniendiagramm ist das richtige Format für stündliche Preisdaten: Jeder Balken bleibt für die gesamte Stunde konstant, dann springt er zum nächsten Wert.
+`custom:apexcharts-card` mit Column-Typ ist hier das Richtige — jede Spalte hält für eine volle Stunde, dann springt sie. Farbschwellenwerte machen die teuren Stunden sofort erkennbar:
 
 ```yaml
 type: custom:apexcharts-card
@@ -49,18 +33,13 @@ graph_span: 30h
 now:
   show: true
   label: Jetzt
-header:
-  show: true
-  title: Strompreis heute + morgen
-  show_states: true
-  colorize_states: true
 series:
   - entity: sensor.energi_data_service
     type: column
     data_generator: |
-      return entity.attributes.today.concat(entity.attributes.tomorrow || []).map(h => {
-        return [new Date().setHours(h.hour, 0, 0, 0), h.price];
-      });
+      return entity.attributes.today
+        .concat(entity.attributes.tomorrow || [])
+        .map(h => [new Date().setHours(h.hour, 0, 0, 0), h.price]);
     color_threshold:
       - value: 0
         color: '#4caf50'
@@ -70,11 +49,11 @@ series:
         color: '#f44336'
 ```
 
-Grün unter 1,00 DKK/kWh, orange bis 1,50, rot darüber. Auf einen Blick sieht man, wann man die Spülmaschine laufen lassen oder das Auto laden sollte.
+Grün unter 1 DKK, Orange bis 1,50, Rot darüber. Das `concat` behandelt den Fall, dass die morgigen Preise noch nicht verfügbar sind — ohne es scheitert das Diagramm lautlos am Vormittag.
 
-## Das günstigste Ladefenster finden
+## Das günstigste Fenster finden
 
-Ich verwende einen Template-Sensor, der das günstigste 2-Stunden-Fenster für den Rest des heutigen Tages findet:
+Ein Template-Sensor, der den günstigsten zusammenhängenden 2-Stunden-Block findet, der heute noch übrig ist:
 
 ```yaml
 template:
@@ -95,31 +74,14 @@ template:
           {% else %}
             unbekannt
           {% endif %}
-        unit_of_measurement: ""
-        icon: mdi:clock-check
 ```
 
-Dies wird als `"02:00"` oder `"14:00"` angezeigt — der Beginn des besten kommenden 2-Stunden-Ladeblocks. Eine Mushroom-Template-Karte auf dem Dashboard zeigt dies in großer Schrift.
+Wird als `02:00` oder `14:00` auf dem Dashboard angezeigt. Nicht direkt in der Ladeautomatisierung verwendet — die läuft stündlich und entscheidet anhand des aktuellen Preises — aber nützlich zur Überprüfung, ob das Auto zu einer vernünftigen Zeit lädt.
 
-## Škoda Elroq-Integration
-
-Die MyŠkoda-Integration (HACS) verbindet sich mit der Škoda Cloud-API und stellt bereit:
-
-```
-sensor.elroq_battery_level         — Ladezustand (%)
-sensor.elroq_charging_power        — aktuelle Ladeleistung (kW)
-sensor.elroq_range                 — geschätzte Reichweite (km)
-binary_sensor.elroq_charging       — lädt das Auto gerade?
-binary_sensor.elroq_plugged_in     — Kabel angeschlossen?
-switch.elroq_charging              — Laden starten/stoppen
-```
-
-Die Switch-Entität ist die wichtige für Automatisierungen — das Umschalten startet und stoppt das AC-Laden von der Heimladestation.
-
-## Smart-Lade-Automatisierung
+## Die Ladeautomatisierung
 
 ```yaml
-alias: Elroq — Smart laden in günstigen Stunden
+alias: Elroq — Smart laden
 trigger:
   - platform: time_pattern
     minutes: "0"
@@ -150,16 +112,12 @@ action:
               entity_id: switch.elroq_charging
 ```
 
-Läuft jede Stunde zur vollen Stunde. Wenn der Preis unter 1,00 DKK/kWh liegt und das Auto angeschlossen und nicht voll ist — laden. Wenn der Preis über 1,50 liegt — stoppen. Zwischen 1,00 und 1,50 wird der Zustand nicht geändert (vermeidet Prellen).
+Unter 1,00 DKK — laden. Über 1,50 DKK — stoppen. Dazwischen — nichts ändern. Die Todeszone ist absichtlich: ohne sie würde der Schalter jede Stunde hin und her schalten, wenn die Preise um den Schwellenwert schweben.
 
-Ein Override-`input_boolean.elroq_force_charge` umgeht die Preiskontrolle an Tagen, an denen du unabhängig vom Preis eine volle Ladung benötigst.
+Es gibt einen `input_boolean.elroq_force_charge`-Override für Morgen, an denen man unabhängig vom Preis eine volle Ladung braucht.
 
-## Praktische Ergebnisse
+## Spart es wirklich?
 
-Im ersten vollen Monat mit intelligentem Laden sanken die Stromkosten für meinen Elroq um etwa 28% im Vergleich zu Dauerladen. Die größten Einsparungen kommen an Tagen mit großen nächtlichen Preisspreads — in Dänemark nicht ungewöhnlich, wenn die Windproduktion nachts hoch und die Nachfrage morgens steigt.
+Erster vollständiger Monat: ca. 28% niedrigere Ladekosten im Vergleich zu dauerhaftem Nachtladen. Die Einsparungen kommen fast ausschließlich von den Nächten mit großen Preisspreads — es gibt Wochen in Dänemark, in denen der Spread gering ist und die Automatisierung keinen Unterschied macht.
 
-Die Dashboard-Karte mit aktuellem Preis, günstigstem Fenster und Fahrzeugbatteriestand ist eines der am häufigsten gechecktesten Elemente meines Startbildschirms geworden.
-
-## Was als Nächstes kommt
-
-Ich plane die **Solarprognose-Integration** (mit der Forecast.Solar-Integration), damit das Auto an sonnigen Tagen aus dem prognostizierten Solarüberschuss statt aus Netzspotpreisen lädt. Die Logik wird: laden wenn Solarüberschuss ODER günstiges Netz, überspringen wenn teures Netz UND kein Solar.
+Was ich nicht erwartet hatte: Es veränderte, wie ich über andere Geräte nachdenke. Das Strompreisdiagramm ist jetzt eine der meistgeprüften Karten auf meinem Dashboard, und ich ertappe mich dabei, Spülmaschine und Trockner danach zu timen. Diese Verhaltensänderung spart wahrscheinlich mehr als das automatisierte Laden selbst.

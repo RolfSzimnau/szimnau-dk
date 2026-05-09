@@ -1,109 +1,51 @@
 ---
-title: "Mammotion Flora in Home Assistant — Ein Praxisleitfaden zur Integration"
-description: "Wie ich den Mammotion Flora (Luba Mini) Mähroboter in Home Assistant integriert habe, ein Wochentags-Dashboard gebaut und meinen alten Husqvarna durch GPS-Mähen ersetzt habe."
+title: "Mammotion Flora in Home Assistant — Was wirklich funktioniert"
+description: "GPS-Mähen ohne Begrenzungsdraht, wetterbasierte Zeitplanung über HA und der Satellitanzahl-Sensor, vor dem niemand warnt. Ein ehrlicher Blick nach mehreren Monaten Betrieb."
 pubDate: 2026-05-08
 tags: ["mammotion", "maehroboter", "home-assistant", "testbericht"]
 lang: "de"
 translationKey: "mammotion-flora-ha-integration"
 ---
 
-Nach drei Jahren mit einem Husqvarna 413c habe ich auf einen **Mammotion Flora** (Luba Mini) gewechselt. Der entscheidende Faktor war nicht nur die Hardware — es war die native Home Assistant-Integration. Kein geschlossenes App-Ökosystem mehr ohne Automatisierungshooks. Hier ist alles, was ich bei der Einrichtung gelernt habe.
+Mein Husqvarna 413c lief drei Jahre lang und hatte nie irgendetwas mit Home Assistant zu tun. Nicht über HACS, nicht über inoffizielle Bridges, nicht über sonst irgendetwas. Er mähte nach seinem eigenen Zeitplan in seiner eigenen App, und wenn er im Regen fuhr, dann weil niemand der App gesagt hatte, dass es regnete.
 
-## Warum von Husqvarna wechseln?
+Dramatisch war das nicht. Nur nervig genug, dass ich irgendwann getauscht habe.
 
-Der Husqvarna funktionierte mechanisch gut, lebte aber völlig außerhalb meines Smart Homes:
+Ich ersetzte ihn durch einen **Mammotion Flora** (Luba Mini) Anfang des Jahres — hauptsächlich wegen der echten HA-Integration. Hier ist, was ich nach ein paar Monaten herausgefunden habe.
 
-- Keine HA-Integration — nicht einmal über inoffizielle Brücken
-- Zeitplanung nur über die proprietäre App
-- Kein Wetterbewusstsein — er fuhr fröhlich bei Regen
-- Kein Sensor-Feedback zum Auslösen von Automatisierungen
+## Einrichtung
 
-Der Flora hat das alles verändert.
+Der Flora nutzt GPS + RTK zur Navigation — kein Begrenzungsdraht. Die Grenze wird einmalig in der Mammotion-App gezeichnet, danach hält sich der Mäher innerhalb der Koordinaten. Das Vision Module ist eine kleine Kamera am Gehäuse, die Hindernisse erkennt.
 
-## Der Mammotion Flora auf einen Blick
-
-Der Flora nutzt **GPS + RTK** zur Definition der Mähgrenze — kein Begrenzungsdraht nötig. Die Grenze wird in der Mammotion-App gezeichnet, und der Mäher navigiert innerhalb dieser mithilfe der Satellitenpositionierung. Das Vision Module fügt kamerabasierte Hinderniserkennung hinzu.
-
-Wichtige Spezifikationen meines Geräts:
-| Funktion | Detail |
-|---------|--------|
-| Navigation | GPS + RTK Multi-Satellit |
-| Hinderniserkennung | Vision Module (kamerabasiert) |
-| Schnittbreite | 26 cm |
-| Hangbewältigung | bis zu 45° |
-| HA-Integration | Nativ (offiziell) |
-
-## Einrichtung der Home Assistant-Integration
-
-Installiere die **Mammotion**-Integration aus HACS (sie ist inzwischen auch in der offiziellen HA-Integrationsliste verfügbar). Nach der Authentifizierung mit deinem Mammotion-Konto erscheinen folgende Entitäten:
+Installation: HACS → Mammotion suchen → mit Konto authentifizieren. Danach erscheinen:
 
 ```
-lawn_mower.flora          — Haupt-Mäherentität (start, dock, pause)
-sensor.flora_battery      — Batteriestand in Prozent
-sensor.flora_satellites_robot  — Aktive GPS-Satelliten
-sensor.flora_wifi_rssi    — WLAN-Signalstärke (dBm)
-binary_sensor.flora_is_mowing — Mähstatus
+lawn_mower.flora
+sensor.flora_battery
+sensor.flora_satellites_robot   — die wichtige, siehe unten
+sensor.flora_wifi_rssi
 ```
 
-Die `lawn_mower`-Domäne bietet vollständige Service-Unterstützung:
+## Der Satellitanzahl-Sensor
 
-```yaml
-service: lawn_mower.start_mow
-target:
-  entity_id: lawn_mower.flora
+`sensor.flora_satellites_robot` ist die nützlichste Entität, die die Integration bereitstellt. Und die, über die niemand spricht.
 
-service: lawn_mower.dock
-target:
-  entity_id: lawn_mower.flora
+Unter etwa 10 aktiven Satelliten wird die GPS-Positionierung unzuverlässig. Der Mäher stoppt nicht — er zögert nur an den Grenzrändern und schleicht manchmal leicht in die Hecke. Ich entdeckte das, weil er sich an bewölkten Morgen seltsam verhielt, und verknüpfte es schließlich mit niedrigen Satellitanzahlen.
+
+Ich habe über `card_mod` einen Farbschwellenwert auf den Chip gesetzt: Grün über 12, Orange 8-12, Rot unter 8. Jetzt sehe ich auf einen Blick, ob die Bedingungen vor dem geplanten Start gut sind.
+
+## Den App-Zeitplan ersetzen
+
+Der Zeitplaner der Mammotion-App macht eine Sache: Mäher zu festen Zeiten an festen Tagen laufen lassen. Keine Wetterberücksichtigung.
+
+Ich ersetzte ihn vollständig mit HA-Helfern — ein `input_boolean` pro Wochentag, ein `input_number` für die Stunde:
+
+```
+input_boolean.flora_montag ... flora_sonntag
+input_number.flora_startzeit   (7-20, step 0.5)
 ```
 
-## Dashboard-Design
-
-Meine Luba-Ansicht verwendet eine `custom:lawn-mower-card` oben (zeigt Mähergrafik mit Batteriestand) mit Mushroom Chips für Live-Telemetrie:
-
-```yaml
-type: vertical-stack
-cards:
-  - type: custom:lawn-mower-card
-    entity: lawn_mower.flora
-  - type: horizontal-stack
-    cards:
-      - type: custom:mushroom-chips-card
-        chips:
-          - type: entity
-            entity: sensor.flora_battery
-            icon: mdi:battery
-          - type: entity
-            entity: sensor.flora_satellites_robot
-            icon: mdi:satellite-variant
-          - type: entity
-            entity: sensor.flora_wifi_rssi
-            icon: mdi:wifi
-```
-
-Der Satellitanzahl-Chip ist wirklich nützlich — unter 10 Satelliten verschlechtert sich die GPS-Genauigkeit, und der Mäher zögert an Grenzrändern. Ich habe über `card_mod` eine bedingte Farbänderung unterhalb des Schwellenwerts hinzugefügt.
-
-## Wochentags-Zeitplan mit HA-Helfern
-
-Statt auf den Zeitplaner der Mammotion-App zu vertrauen (der nicht auf das Wetter reagieren kann), habe ich einen benutzerdefinierten Zeitplan mit HA-Helfern gebaut:
-
-**Input Booleans** (einer pro Tag):
-```
-input_boolean.flora_montag
-input_boolean.flora_dienstag
-input_boolean.flora_mittwoch
-input_boolean.flora_donnerstag
-input_boolean.flora_freitag
-input_boolean.flora_samstag
-input_boolean.flora_sonntag
-```
-
-**Input Number** für die Startzeit:
-```
-input_number.flora_startzeit   (min: 7, max: 20, step: 0.5)
-```
-
-**Automatisierung:**
+Die Automatisierung prüft jede Stunde zur vollen Stunde:
 
 ```yaml
 alias: Flora — Nach Zeitplan fahren
@@ -117,8 +59,7 @@ condition:
         0: 'montag', 1: 'dienstag', 2: 'mittwoch',
         3: 'donnerstag', 4: 'freitag', 5: 'samstag', 6: 'sonntag'
       } %}
-      {% set today = day_map[now().weekday()] %}
-      {{ is_state('input_boolean.flora_' ~ today, 'on') }}
+      {{ is_state('input_boolean.flora_' ~ day_map[now().weekday()], 'on') }}
   - condition: template
     value_template: >
       {{ now().hour == states('input_number.flora_startzeit') | int(0) }}
@@ -126,45 +67,47 @@ condition:
     conditions:
       - condition: state
         entity_id: weather.forecast_home
-        state:
-          - rainy
-          - pouring
-          - snowy
-          - lightning-rainy
+        state: [rainy, pouring, snowy, lightning-rainy]
 action:
   - service: lawn_mower.start_mow
     target:
       entity_id: lawn_mower.flora
 ```
 
-Läuft jede Stunde zur vollen Stunde, prüft ob heute aktiviert ist, prüft ob es die richtige Stunde ist, und überspringt wenn die Wettervorhersage Regen zeigt.
+Das Dashboard ist eine Reihe von Umschaltern, einer pro Tag. Man sieht genau, was der Zeitplan ist, und kann ihn ändern ohne irgendeine App zu öffnen.
 
-## Vision Module — Hinderniserkennung
+## Dashboard
 
-Das Vision Module ist eine kleine Kamera am Mäher-Körper. In meinen Tests vermeidet er zuverlässig:
+`custom:lawn-mower-card` zeigt eine Grafik des Mähers mit Batteriestand. Mushroom-Chips darunter für die Telemetrie:
 
-- Gartenmöbel und Spielzeug
-- Auf dem Rasen liegende Schläuche
-- Igel (in Dänemark wichtig)
+```yaml
+- type: custom:mushroom-chips-card
+  chips:
+    - type: entity
+      entity: sensor.flora_battery
+      icon: mdi:battery
+    - type: entity
+      entity: sensor.flora_satellites_robot
+      icon: mdi:satellite-variant
+    - type: entity
+      entity: sensor.flora_wifi_rssi
+      icon: mdi:wifi
+```
 
-Bei bestimmten Sonnenwinkeln hält er gelegentlich bei Schatten und hellen Flecken an — ein bekannter Firmware-Fehler, den Mammotion kontinuierlich verbessert.
+## Das Vision Module
 
-## Ehrliche Bewertung
+Igel. In Dänemark ist das die erste Frage, die jeder stellt — und die Antwort ist ja, das Vision Module hält dafür an.
 
-**Was gut funktioniert:**
-- GPS-Grenze ist wirklich drahtlos und zuverlässig über ~12 Satelliten
-- HA-Integration deckt alle wesentlichen Befehle und Sensoren ab
-- Wetterbewusste Zeitplanung über HA ist eine enorme Verbesserung gegenüber der App
-- Batteriestandsmeldung ist genau
+Es hält auch für einen vergessenen Gartenschlauch, Gartenmöbel und einmal für den Schatten eines Fahnenmastes zu einer bestimmten Tageszeit. Diese letzte Sache dauerte eine Weile herauszufinden. Der Mäher hielt jeden sonnigen Nachmittag um 16:30 Uhr an, meldete kein Hindernis und fuhr nach einer Minute weiter. Es war der Schattenwinkel. Das Modul reagiert auf Kontrastmuster, nicht nur auf physische Objekte.
 
-**Schwachpunkte:**
-- App für die anfängliche Grenzeinrichtung erforderlich — kein Weg darum herum
-- Gelegentliche GPS-Drift in der Nähe hoher Hecken lässt den Mäher pausieren
-- RTK-Basisstation verbessert die Genauigkeit erheblich, fügt aber Kosten und Komplexität hinzu
-- Die HA-Integration braucht manchmal 30–60 Sekunden, um Statusänderungen nach Befehlen zu reflektieren
+Mammotion hat das in Firmware-Updates verbessert. Es ist jetzt meistens in Ordnung.
 
-## Was als Nächstes kommt
+Es gibt keinen HA-Sensor für Vision-Module-Ereignisse — ich kann keine Automatisierungen darauf aufbauen. Das ist eine echte Lücke.
 
-Ich plane eine **Satellitanzahl-Prüf**-Automatisierung, die den Mähstart verzögert, wenn die Satellitanzahl zum geplanten Zeitpunkt unter 12 liegt, und nach 10 Minuten erneut versucht. Kombiniert mit der Wetterprüfung macht dies den Zeitplan fast vollständig autonom.
+## Was mühsam ist
 
-Kommst du von einem Begrenzungsdraht-Mäher, ist der Flora ein echter Fortschritt. Die HA-Integration allein hat den Wechsel lohnenswert gemacht.
+Die Integration hat ein Latenzproblem. Befehle brauchen 30-60 Sekunden um durchzuschlagen. Sendest du `start_mow` und prüfst sofort den Zustand, ist er noch `docked`. Für Automatisierungen ist das egal. Für das Sitzen am Dashboard und das Warten auf Feedback ist es frustrierend.
+
+Die anfängliche Grenzeinrichtung erfordert die App — kein Weg daran vorbei. Ist das einmal erledigt, braucht man die App nie wieder. Aber man braucht sie dieses eine Mal.
+
+Insgesamt: der Wechsel war es wert. Der Mäher ist jetzt Teil des Smart Homes statt ein separates Gerät, das einfach herumfuhr und das Beste hoffte.

@@ -1,56 +1,35 @@
 ---
-title: "Škoda Elroq i Home Assistant — Komplet MyŠkoda Integrationsguide"
-description: "Opsætning af MyŠkoda-integrationen i Home Assistant, udforskning af alle tilgængelige entiteter, bygning af et glassmorphism EV-dashboard og automatisering af klimaforbehandling via Google Kalender."
+title: "Škoda Elroq + Home Assistant — Seks måneder inde"
+description: "Hvad MyŠkoda-integrationen faktisk giver dig i Home Assistant, hvad der mangler, og hvordan jeg byggede et nyttigt EV-dashboard med batteristatus og kalenderbaseret forvarming."
 pubDate: 2026-05-29
 tags: ["ev", "skoda-elroq", "myskoda", "home-assistant", "anmeldelse"]
 lang: "da"
 translationKey: "skoda-elroq-home-assistant"
 ---
 
-Škoda Elroq er en solid elbil, men som de fleste moderne biler lever den inde i et proprietært app-økosystem. **MyŠkoda** Home Assistant-integrationen bryder den ud af den silo — her er, hvad du får, hvordan du sætter det op, og hvad jeg byggede med det.
+Min Škoda er det eneste i huset der ikke taler med Home Assistant automatisk. Alle andre enheder er enten integreret native eller via HACS. Bilen levede i sin egen app, og det nag jeg. Ikke dramatisk — bare en konstant lille irritation.
 
-## Installation af MyŠkoda-integrationen
+[MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-integrationen løser det. HACS, godkend med din Škoda Connect-konto, og bilen dukker op som en enhed. API-polling med 15-60 sekunders latens på kommandoer — det er cloud-begrænsning, ikke HA.
 
-Integrationen er tilgængelig på HACS. Søg efter **MySkoda** (HACS-pakkenavnet bruger ingen specialtegn).
+## Hvad du faktisk får
 
-Efter installation, genstart HA og tilføj det via **Indstillinger → Enheder og tjenester → Tilføj integration → MySkoda**. Du godkender med dine Škoda Connect-legitimationsoplysninger — den samme konto, der bruges til Min Škoda mobilapp.
-
-Integrationen poller Škodas cloud-API. Svartider for statusændringer er typisk 15–60 sekunder; dette er en cloud-API-begrænsning, ikke en HA-begrænsning.
-
-## Tilgængelige entiteter
-
-Efter tilføjelse af Elroq vil du se:
-
-**Sensorer:**
 ```
-sensor.elroq_battery_level          — ladetilstand (%)
-sensor.elroq_charging_power         — aktuel ladehastighed (kW)
-sensor.elroq_range                  — estimeret rækkevidde (km)
-sensor.elroq_odometer               — total distance (km)
-sensor.elroq_outside_temperature    — omgivelsestemperatur fra bilsensorer (°C)
-sensor.elroq_target_soc             — lademål sat i bil/app (%)
+sensor.elroq_battery_level       — ladestilstand (%)
+sensor.elroq_charging_power      — aktuel ladehastighed (kW)
+sensor.elroq_range               — estimeret rækkevidde (km)
+sensor.elroq_target_soc          — lademål sat i bilen (%)
+binary_sensor.elroq_plugged_in
+binary_sensor.elroq_charging
+binary_sensor.elroq_doors_locked
+climate.elroq_air_conditioning   — fjernbetjent HVAC
+switch.elroq_charging            — start/stop
 ```
 
-**Binære sensorer:**
-```
-binary_sensor.elroq_charging        — lader aktivt?
-binary_sensor.elroq_plugged_in      — kabel tilsluttet?
-binary_sensor.elroq_doors_locked    — alle døre låst?
-binary_sensor.elroq_windows_closed  — alle vinduer lukket?
-```
+`climate`-entiteten er den jeg bruger mest. Sæt en temperatur, kald `climate.turn_on`, og bilen begynder at varme eller køle fra den strømkilde den er tilsluttet. Er den i stikkontakt, trækker den fra nettet. Er den ikke — fra batteriet. Derfor springer jeg forvarming over hvis batteriet er under 30%.
 
-**Knapper / Tjenester:**
-```
-button.elroq_honk_flash             — fjernbetjent horn + blink
-climate.elroq_air_conditioning      — HVAC-forbehandling
-switch.elroq_charging               — start/stop opladning
-```
+## Dashboardkortet
 
-Klimaentiteten er den interessante. Indstilling til en måltemperatur og kald af `climate.turn_on` starter bilens HVAC-system eksternt — nyttigt til forvarmning eller afkøling før en rejse.
-
-## Dashboard — Glassmorphism EV-kort
-
-Elroq-dashboardkortet bruger glassmorphism-standarden med et batteristatusbjælke lagt ovenpå via `ha-card::after`:
+Jeg ville have batteriniveauet synligt med det samme uden at det fylder for meget. Løsningen er en grøn gradient bag kortindholdet via `ha-card::after` — den fylder kortet proportionalt med ladestanden:
 
 ```yaml
 type: custom:stack-in-card
@@ -72,67 +51,27 @@ card_mod:
       left: 0; top: 0;
       width: {{ states('sensor.elroq_battery_level') | int(0) }}% !important;
       height: 100% !important;
-      background: linear-gradient(90deg,
-        rgba(76,175,80,0.18),
-        rgba(129,199,132,0.05)) !important;
+      background: linear-gradient(90deg, rgba(76,175,80,0.18), rgba(129,199,132,0.05)) !important;
       pointer-events: none !important;
     }
 cards:
   - type: custom:mushroom-template-card
-    primary: Škoda Elroq
-    secondary: >
-      {{ states('sensor.elroq_battery_level') }}% ·
-      {{ states('sensor.elroq_range') }} km rækkevidde
+    primary: "{{ states('sensor.elroq_battery_level') }}%  ·  {{ states('sensor.elroq_range') }} km"
+    secondary: Škoda Elroq
     icon: mdi:car-electric
     icon_color: >
       {% set soc = states('sensor.elroq_battery_level') | int(0) %}
       {% if soc > 60 %}green{% elif soc > 30 %}orange{% else %}red{% endif %}
-  - type: horizontal-stack
-    cards:
-      - type: custom:mushroom-template-card
-        primary: "{{ states('sensor.elroq_charging_power') | float(0) | round(1) }} kW"
-        secondary: Ladehastighed
-        icon: mdi:lightning-bolt
-      - type: custom:mushroom-template-card
-        primary: "{{ states('sensor.elroq_target_soc') }}%"
-        secondary: Lademål
-        icon: mdi:battery-charging-80
 ```
 
-Den grønne gradient bag kortindholdet repræsenterer visuelt batteriniveauet — det forskyder sig, mens bilen oplader. Det er subtilt, men effektivt som et visuelt alternativ til en traditionel statusbjælke.
+Gradienten er subtil — du lægger ikke mærke til den som en statusbjælke, det gør bare kortet føles anderledes ved 20% versus 80%. Det tog et par iterationer at få opaciteten rigtig.
 
-## Nyttige automatiseringer
+## Forvarming fra Google Kalender
 
-### Notificer når opladning er fuldført
-
-```yaml
-alias: Elroq — Notificer når fuldt opladet
-trigger:
-  - platform: numeric_state
-    entity_id: sensor.elroq_battery_level
-    above: 99
-  - platform: state
-    entity_id: binary_sensor.elroq_charging
-    to: "off"
-condition:
-  - condition: state
-    entity_id: binary_sensor.elroq_plugged_in
-    state: "on"
-action:
-  - service: notify.alle_enheder
-    data:
-      title: "Elroq opladet"
-      message: >
-        Batteri på {{ states('sensor.elroq_battery_level') }}% —
-        {{ states('sensor.elroq_range') }} km rækkevidde.
-```
-
-### Forbehandling fra kalender
-
-Jeg har en tilbagevendende Google Kalender-begivenhed kaldet "Kør til kontor" med et starttidspunkt. En automatisering 30 minutter før den begivenhed udløses, tænder bilens klima:
+Jeg har en tilbagevendende kalenderbegivenhed med et fast starttidspunkt. Automatiseringen aktiverer 30 minutter før:
 
 ```yaml
-alias: Elroq — Forbehandl for kalenderbegivenhed
+alias: Elroq — Forvarm fra kalender
 trigger:
   - platform: calendar
     event: start
@@ -141,6 +80,9 @@ trigger:
 condition:
   - condition: template
     value_template: "{{ 'Kør til kontor' in trigger.calendar_event.summary }}"
+  - condition: numeric_state
+    entity_id: sensor.elroq_battery_level
+    above: 30
 action:
   - service: climate.turn_on
     target:
@@ -152,19 +94,12 @@ action:
       temperature: 21
 ```
 
-Dette virker godt. Den eneste forbehold: hvis bilen ikke er tilsluttet natten over, trækker HVAC-forbehandlingen fra batteriet frem for laderen — så jeg tilføjede et tjek, der springer forbehandlingen over, hvis `sensor.elroq_battery_level` er under 30%.
+Det virker godt om vinteren. En varm bil om morgenen er en underapprecieret luksus.
 
-## Hvad mangler
+Ét problem: begivenhedsnavnet skal matche præcist. Jeg har omdøbt begivenheden to gange og gemt det i tide til at undre mig over hvorfor bilen ikke var varm. Det er en skrøbelig strengmatch og jeg har ikke fundet en bedre tilgang endnu.
 
-MyŠkoda-integrationen er god, men ufuldstændig:
+## Hvad der mangler
 
-- **Ingen realtids opladningssessionsdata** — du kan ikke se, hvor mange kWh der er tilføjet i den aktuelle session
-- **Ingen opladningshistorik** — historiske sessioner er ikke eksponeret
-- **Dør/vinduetilstand er aggregeret** — du ved, om *en* dør er ulåst, men ikke *hvilken*
-- **Pollingsventetid** — den 15–60 sekunders forsinkelse gør det ubrugeligt til realtids opladningskontrol
+Integrationen eksponerer ikke opladningssessionsdata — ingen kWh tilføjet i den aktuelle session, ingen opladningshistorik. Du kan se den aktuelle effektafsætning, men ikke hvor længe den har kørt eller hvad det har kostet. Til smart-opladningsautomatisering er det fint; til at overvåge dine faktiske opladningsomkostninger er det et hul.
 
-For den smarte opladningsautomatisering er ventetiden acceptabel, fordi automatiseringen kører timesvis, og et minut ekstra opladning ved en højere rate ikke er signifikant. Til præcis kontrol bruger jeg stadig appen.
-
-## Det større billede
-
-Elroq sidder ved siden af elprisintegrationen i min HA-opsætning som et par. Spotpriser driver opladningsbeslutninger; MyŠkoda-integrationen udfører dem. Det er ikke perfekt, men det fungerer godt nok til, at bilen for det meste oplader sig selv på de billigste timer uden manuel indgriben.
+For latens-problemet specifikt: hvis du står ved siden af bilen og trykker "start opladning" i HA-dashboardet, så forvent at vente et minut inden kontaktens tilstand opdateres. Brug appen til alt der kræver øjeblikkelig reaktion.

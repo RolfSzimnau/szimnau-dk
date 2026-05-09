@@ -1,30 +1,32 @@
 ---
-title: "KI-Sicherheitskamera in Home Assistant — LLM Vision das wirklich funktioniert"
-description: "Wie ich eine Sentinel KI-Kamera in Home Assistant mit LLM Vision-Analyse, intelligenter Benachrichtigungsfilterung und einem Glassmorphism-Dashboard integriert habe — einschließlich der Bereinigung von 5 auf 3 Automatisierungen."
+title: "KI-Kamera in Home Assistant — Benachrichtigungen, die keinen verrückt machen"
+description: "Wie ich die Sentinel-Kamera dazu gebracht habe, nützliche Meldungen zu schicken statt 40 Bewegungsalarme am Tag — LLM Vision, armed_away als einzige Bedingung, 5 Automatisierungen auf 3 reduziert."
 pubDate: 2026-05-15
 tags: ["kamera", "ki-vision", "sicherheit", "home-assistant"]
 lang: "de"
 translationKey: "sentinel-ai-camera-ha"
 ---
 
-Sicherheitskameras in Home Assistant bedeuteten früher eines: einen dummen Bewegungsalarm, der 40 Mal täglich auslöst. Das Hinzufügen eines KI-Modells zur Pipeline hat alles verändert. Hier ist, wie ich meine Sentinel-Kamera mit LLM Vision-Analyse, vernünftiger Benachrichtigungslogik eingerichtet habe — und wie ich fünf Automatisierungen auf drei reduziert habe.
+Die ersten zwei Wochen nach der Installation der Sentinel-Kamera hatte ich Bewegungsbenachrichtigungen aktiviert. Jede einzelne sagte "Bewegung erkannt." Vögel, Schatten, eine Plastiktüte, die nachts um drei an der Linse vorbeiwehte. Ich schaltete alle aus und ließ die Kamera für einen weiteren Monat nutzlos herumstehen.
 
-## Die Einrichtung
+Die Lösung waren zwei Dinge in der richtigen Reihenfolge: LLM Vision für Beschreibungen und `armed_away` als einzige Bedingung, die wirklich zählt.
 
-Die Kamera präsentiert sich über HAs Standard-Kameraintegration. Nach dem Hinzufügen werden mehrere binäre Sensoren verfügbar:
+## Was die Integration bietet
+
+Nach dem Hinzufügen der Kamera erstellt HA mehrere binäre Sensoren aus der integrierten Erkennung:
 
 ```
-binary_sensor.sentinel_motion       — allgemeine Bewegung
-binary_sensor.sentinel_person       — Person erkannt
-binary_sensor.sentinel_animal       — Tier erkannt
-binary_sensor.sentinel_vehicle      — Fahrzeug erkannt
+binary_sensor.sentinel_motion
+binary_sensor.sentinel_person
+binary_sensor.sentinel_animal
+binary_sensor.sentinel_vehicle
 ```
 
-Personen- und Fahrzeugerkennung kommen von der Onboard-KI der Kamera. Die LLM Vision-Schicht läuft in HA selbst — sie holt einen Kamera-Snapshot und sendet ihn an ein Sprachmodell, um eine natürlichsprachliche Beschreibung zu erhalten.
+Personen- und Fahrzeugerkennung kommen vom KI-Chip der Kamera. Ziemlich präzise — besser als reine Bewegungserkennung, nicht fehlerfrei. Der Tiersensor hat echte Füchse erkannt und auch, denkwürdig, eine große Plastiktüte, die sich auf eine Weise bewegte, die offenbar lebendig wirkte.
 
-## LLM Vision-Integration
+## LLM Vision
 
-Die **LLM Vision**-Integration (auf HACS verfügbar) ermöglicht es, ein KI-Modell mit einem Kamerabild und einem Prompt aufzurufen. Ich verwende es, um eine Klartextbeschreibung zu generieren, wenn eine Person erkannt wird:
+Die [LLM Vision](https://github.com/valentinfrlch/ha-llmvision)-Integration holt einen Snapshot von der Kamera und sendet ihn mit einem Prompt an ein Sprachmodell. Die Antwort kommt als Zeichenkette zurück, die in einer Benachrichtigung verwendet werden kann.
 
 ```yaml
 service: llmvision.image_analyzer
@@ -32,25 +34,24 @@ data:
   provider: openai
   model: gpt-4o-mini
   message: >
-    Beschreibe was du auf diesem Kamerabild siehst in einem Satz.
-    Konzentriere dich darauf, wer oder was präsent ist und was sie tun.
-    Halte es unter 20 Wörter.
+    Beschreibe was du siehst in einem Satz, unter 20 Wörter.
+    Fokussiere dich darauf, wer oder was anwesend ist und was sie tun.
   image_entities:
     - camera.sentinel
   max_tokens: 60
-response_variable: vision_response
+response_variable: ai_result
 ```
 
-Das Ergebnis geht direkt in den Benachrichtigungstext. Statt "Bewegung erkannt" lautet die Telefonbenachrichtigung etwa "Person geht auf die Haustür zu und trägt ein Paket."
+Die Qualität schwankt. "Person geht auf die Haustür zu und trägt ein Paket" ist gut. "Eine Gestalt ist im Bild in der Nähe einer Struktur sichtbar" ist weniger gut. Im Durchschnitt reicht es, um auf einen Blick zu sehen, ob eine Benachrichtigung es wert ist, sie zu öffnen.
 
-Ich schalte diese Analyse mit `input_boolean.sentinel_ai_analysis` ein und aus. Wenn der KI-Schalter aus ist, werden Benachrichtigungen trotzdem ausgelöst — nur ohne Bildbeschreibung.
+Ich steuere das mit `input_boolean.sentinel_ai_analysis`. Ist es ausgeschaltet, gehen Benachrichtigungen trotzdem raus — nur mit einer generischen Nachricht und dem Snapshot. Der Schalter existiert, weil ich nachts um zwei keine KI-Beschreibungen brauche, wenn die Benachrichtigung mich bereits aufweckt.
 
-## Benachrichtigungslogik — Nur im Abwesenheitsmodus
+## Die einzige Bedingung, die zählt
 
-Der wichtigste Filter: nur benachrichtigen, wenn ich wirklich weg bin. Bewegung im Haus, während ich zu Hause bin, ist Lärm.
+Alles läuft durch eine Prüfung: `alarm_control_panel.home_alarm` Zustand `armed_away`. Bin ich zuhause — keine Benachrichtigungen.
 
 ```yaml
-alias: Sentinel — Personenalarm mit KI-Beschreibung
+alias: Sentinel — Personenalarm
 trigger:
   - platform: state
     entity_id: binary_sensor.sentinel_person
@@ -70,47 +71,40 @@ action:
             data:
               provider: openai
               model: gpt-4o-mini
-              message: >
-                Beschreibe was du siehst in einem Satz. Unter 20 Wörter.
-              image_entities:
-                - camera.sentinel
+              message: Beschreibe was du siehst in einem Satz, unter 20 Wörter.
+              image_entities: [camera.sentinel]
               max_tokens: 60
             response_variable: ai_result
           - service: notify.all_devices
             data:
-              title: "Person erkannt"
+              title: "Person an der Kamera"
               message: "{{ ai_result.response_text }}"
               data:
                 image: /api/camera_proxy/camera.sentinel
     default:
       - service: notify.all_devices
         data:
-          title: "Person erkannt"
-          message: "Bewegung an Frontkamera"
+          title: "Person an der Kamera"
+          message: "Snapshot prüfen."
           data:
             image: /api/camera_proxy/camera.sentinel
 ```
 
 ## Von 5 auf 3 Automatisierungen
 
-Ursprünglich hatte ich fünf Automatisierungen:
-1. Bewegungsalarm (jede Bewegung)
-2. Personenalarm
-3. KI-Beschreibung
-4. Nachtmodus-Unterdrückung
-5. KI-Kostenbegrenzer (Rate Limiting)
+Ich hatte fünf Automatisierungen um diese Kamera aufgebaut. Bewegungsalarm, Personenalarm, eine separate die LLM Vision aufrief und das Ergebnis speicherte, eine Nachtsupprimierung die Alarme zwischen Mitternacht und 7 Uhr abschaltete, und ein Rate-Limiter damit ich keine API-Credits verbrannte.
 
-Das Problem: Sie überlappten sich, hatten widersprüchliche Bedingungen, und die Protokolle waren ein Durcheinander. Ich konsolidierte auf drei:
+Das Problem war nicht eine einzelne Automatisierung — es war, dass sie alle teilweise für dieselbe Entscheidung verantwortlich waren. Ob benachrichtigt werden soll. Die Nachtsupprimierung kam manchmal in Konflikt mit der `armed_away`-Logik. Der Rate-Limiter war ein stumpfes Instrument, das gelegentlich einen legitimen Alarm zum Schweigen brachte.
 
-**Automatisierung 1** — Personenalarm mit KI (oben gezeigt)
-**Automatisierung 2** — Fahrzeugalarm (keine KI — nur eine Snapshot-Benachrichtigung)
-**Automatisierung 3** — KI-Schalter-Reset (läuft um Mitternacht, um KI wieder zu aktivieren, falls manuell deaktiviert)
+Ich löschte alle fünf und fing mit dreien neu an:
 
-Keine separate Nachtmodus-Automatisierung — die `armed_away`-Bedingung handhabt das. Kein Rate Limiter — der KI-Schalter handhabt das. Drei Automatisierungen, alle auf einen Blick lesbar.
+1. **Personenalarm** — verwaltet die KI-Wahl intern mit `choose`
+2. **Fahrzeugsalarm** — keine KI, nur Snapshot + Benachrichtigung
+3. **KI-Schalter-Reset** — läuft um Mitternacht, schaltet `sentinel_ai_analysis` wieder ein
 
-## Dashboard-Layout
+Die Nachtsupprimierung ist weg, weil `armed_away` das bereits übernimmt. Der Rate-Limiter ist weg, weil der KI-Schalter diese Aufgabe bewusster erfüllt.
 
-Die Sicherheitsansicht verwendet `custom:advanced-camera-card` für den Live-Feed mit Mushroom Chips darunter:
+## Dashboard
 
 ```yaml
 type: vertical-stack
@@ -118,8 +112,6 @@ cards:
   - type: custom:advanced-camera-card
     cameras:
       - camera_entity: camera.sentinel
-    live:
-      show_image_during_load: true
     view:
       default: live
   - type: custom:mushroom-chips-card
@@ -128,9 +120,6 @@ cards:
         entity: binary_sensor.sentinel_person
         icon: mdi:account
         icon_color: red
-      - type: entity
-        entity: binary_sensor.sentinel_animal
-        icon: mdi:paw
       - type: entity
         entity: binary_sensor.sentinel_vehicle
         icon: mdi:car
@@ -146,10 +135,4 @@ cards:
     hours_to_show: 24
 ```
 
-Das Logbuch unter der Kamera gibt eine 24-Stunden-Ereigniszeitleiste — nützlich zum Überprüfen, was in der Nacht ausgelöst hat.
-
-## Was ich anders machen würde
-
-Die Onboard-Personen/Tier-Erkennung ist gut, aber erkennt gelegentlich große Schatten falsch. Ich würde gerne LLM Vision bei jedem Bewegungsauslöser laufen lassen und die KI entscheiden lassen, ob benachrichtigt werden soll — aber das sind zu viele API-Aufrufe. Der aktuelle Kompromiss (KI nur bei Personenerkennung, während armed away) ist eine praktische Balance.
-
-Die nächste Verbesserung ist ein **Besuchszeitfenster**: ein Helfer, der die Tagesstunden definiert, in denen ich Lieferungen und Besucher erwarte, und Benachrichtigungen in diesen Fenstern unterdrückt.
+Das Logbuch unten ist das, was ich tatsächlich am meisten nutze. Nach einer Reise scrolle ich das 24-Stunden-Protokoll durch, um zu sehen, was ausgelöst hat während ich weg war. Weniger Angst einflößend als Push-Benachrichtigungen einzeln nachzuspielen.

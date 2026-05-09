@@ -1,47 +1,31 @@
 ---
-title: "Danske Elspotpriser i Home Assistant — Smart EV-opladning Gratis"
-description: "Brug af Energi Data Service-integrationen til at vise live danske spotpriser, bygge et ApexCharts-dashboard og automatisere Škoda Elroq-opladning til de billigste timer på dagen."
+title: "Elspotpriser i Home Assistant — Sådan lader jeg bilen på de billige timer"
+description: "Energi Data Service til live spotpriser, ApexCharts stepline-diagram, og automatiseret Škoda Elroq-opladning uden at røre appen."
 pubDate: 2026-05-22
 tags: ["el", "ev", "energi-data-service", "automatisering", "skoda-elroq"]
 lang: "da"
 translationKey: "danish-electricity-prices-ev-charging"
 ---
 
-Danske elspotpriser svinger vildt — somme tider med en faktor 10 mellem den billigste og dyreste time. Home Assistant kan se disse priser i realtid og handle på dem. Sådan automatiserede jeg min Škoda Elroq-opladning omkring de billigste vinduer.
+Der var en nat i februar hvor el kostede 0,18 kr/kWh kl. 3 og 3,40 kr/kWh kl. 8. Næsten 20 gange så dyrt på fem timer. Hvis bilen lader på en fast natplan ruller du terning om hvilken ende af det spænd du lander på.
 
-## Energi Data Service-integration
+Home Assistant kan se timepriserne. Resten følger af sig selv.
 
-[Energi Data Service](https://www.energidataservice.dk/) er en gratis dansk offentlig API, der leverer timebaserede spotpriser for DK1 (Vestdanmark) og DK2 (Østdanmark). HA-integrationen henter disse direkte — ingen API-nøgle kræves.
+## Energi Data Service
 
-Installer via HACS: søg efter **Energi Data Service**, tilføj det derefter via Integrationer. Vælg dit prisområde (DK1 eller DK2) og din energitarifkonfiguration.
+[Energi Data Service](https://www.energidataservice.dk/) er en gratis dansk offentlig API — ingen nøgle krævet. HA-integrationen henter dagens og morgendagens timepriser for dit prisområde (DK1 eller DK2).
 
-Efter opsætning får du:
+Installer fra HACS, tilføj via Integrationer, vælg dit område. Du får:
 
 ```
-sensor.energi_data_service          — aktuel timepris (DKK/kWh inkl. moms)
-sensor.energi_data_service_today    — attributter indeholder alle 24 timepriser
-sensor.energi_data_service_tomorrow — morgendagens priser (tilgængelig ~kl. 13:00)
+sensor.energi_data_service    — aktuel timepris (kr/kWh inkl. moms)
 ```
 
-Attributstrukturens på today-sensoren ser sådan ud:
+`today`- og `tomorrow`-attributterne indeholder de fulde 24-timers prisarrays. Morgendagens priser dukker op omkring kl. 13 når Nord Pool-auktionen afregnes.
 
-```json
-{
-  "today": [
-    {"hour": 0, "price": 0.82},
-    {"hour": 1, "price": 0.75},
-    ...
-    {"hour": 23, "price": 1.43}
-  ],
-  "min": 0.71,
-  "max": 2.18,
-  "mean": 1.12
-}
-```
+## Diagrammet
 
-## Dashboardet — ApexCharts Stepline
-
-Et stepline-diagram er det rigtige format for timebaserede prisdata: hver søjle holder sig stabil i hele timen, derefter hopper den til den næsteværdi. Den aktuelle time fremhæves automatisk.
+`custom:apexcharts-card` med `column`-type er det rigtige her — hver søjle holder i en hel time, derefter hopper den. Farvetærskler gør de dyre timer tydelige:
 
 ```yaml
 type: custom:apexcharts-card
@@ -49,18 +33,13 @@ graph_span: 30h
 now:
   show: true
   label: Nu
-header:
-  show: true
-  title: Elpris i dag + i morgen
-  show_states: true
-  colorize_states: true
 series:
   - entity: sensor.energi_data_service
     type: column
     data_generator: |
-      return entity.attributes.today.concat(entity.attributes.tomorrow || []).map(h => {
-        return [new Date().setHours(h.hour, 0, 0, 0), h.price];
-      });
+      return entity.attributes.today
+        .concat(entity.attributes.tomorrow || [])
+        .map(h => [new Date().setHours(h.hour, 0, 0, 0), h.price]);
     color_threshold:
       - value: 0
         color: '#4caf50'
@@ -70,11 +49,11 @@ series:
         color: '#f44336'
 ```
 
-Grøn under 1,00 DKK/kWh, orange op til 1,50, rød derover. Med et blik kan du se, hvornår du skal tænde opvaskemaskinen eller lade bilen op.
+Grøn under 1 kr, orange op til 1,50, rød derover. `concat`-delen håndterer at morgendagens priser ikke er tilgængelige endnu — uden den fejler diagrammet stille om formiddagen.
 
-## Find det billigste opladningsvindue
+## Det billigste vindue
 
-Jeg bruger en skabelonsensor, der finder det billigste 2-timers vindue der er tilbage i dag (eller i nat):
+En template-sensor der finder det billigste sammenhængende 2-timers blok der er tilbage i dag:
 
 ```yaml
 template:
@@ -95,31 +74,14 @@ template:
           {% else %}
             ukendt
           {% endif %}
-        unit_of_measurement: ""
-        icon: mdi:clock-check
 ```
 
-Dette vises som `"02:00"` eller `"14:00"` — starten på det bedste kommende 2-timers opladningsblok. Et mushroom-template-card på dashboardet viser dette med stor tekst.
+Vises som `02:00` eller `14:00` på dashboardet. Ikke brugt direkte i opladningsautomatiseringen — den kører hvert time og beslutter ud fra den aktuelle pris — men nyttig til at verificere at bilen lader på et fornuftigt tidspunkt.
 
-## Škoda Elroq-integration
-
-MyŠkoda-integrationen (HACS) forbinder sig til Škodas cloud-API og eksponerer:
-
-```
-sensor.elroq_battery_level         — ladetilstand (%)
-sensor.elroq_charging_power        — aktuel ladehastighed (kW)
-sensor.elroq_range                 — estimeret rækkevidde (km)
-binary_sensor.elroq_charging       — lader bilen i øjeblikket?
-binary_sensor.elroq_plugged_in     — er kablet tilsluttet?
-switch.elroq_charging              — start/stop opladning
-```
-
-Switch-entiteten er den vigtige til automatisering — ved at skifte den startes og stoppes AC-opladning fra hjemmeladeren.
-
-## Smart opladningsautomatisering
+## Opladningsautomatiseringen
 
 ```yaml
-alias: Elroq — Smart opladning på billige timer
+alias: Elroq — Smart opladning
 trigger:
   - platform: time_pattern
     minutes: "0"
@@ -150,16 +112,12 @@ action:
               entity_id: switch.elroq_charging
 ```
 
-Kører hver time på klokkeslættet. Hvis prisen er under 1,00 DKK/kWh og bilen er tilsluttet og ikke fuld — oplad. Hvis prisen er over 1,50 — stop. Mellem 1,00 og 1,50 ændres tilstanden ikke (undgår bouncing).
+Under 1,00 kr — oplad. Over 1,50 kr — stop. Imellem de to tal — rør den ikke. Dødszonen er bevidst: uden den ville kontakten toggle frem og tilbage hver time når priserne svæver omkring tærsklen.
 
-En tilsidesættelses-`input_boolean.elroq_force_charge` omgår priskontrollen på dage, hvor du har brug for fuld opladning uanset hvad.
+Der er en `input_boolean.elroq_force_charge`-override til de morgener hvor jeg har brug for fuld opladning uanset pris.
 
-## Praktiske resultater
+## Virker det?
 
-Over den første hele måned med smart opladning faldt min Elroqs elomkostning med omtrent 28% sammenlignet med altid-tændt opladning. De største besparelser kommer på dage med store natlige prisforskelle — ikke usædvanligt i Danmark, når vindproduktionen er høj kl. 02–04 og efterspørgslen stiger kl. 08.
+Første hele måned: ca. 28% lavere opladningsomkostning sammenlignet med altid-tændt natopladning. Besparelsen kommer næsten udelukkende fra nætterne med store prisspænd — der er uger i Danmark hvor spændet er lille og automatiseringen ikke gør nogen forskel.
 
-Dashboardkortet, der viser aktuel pris, billigste vindue og bilbatteriniveau, er blevet et af de mest tjekkede elementer på min startskærm.
-
-## Næste skridt
-
-Jeg planlægger at tilføje **solarprognoseintegration** (ved hjælp af Forecast.Solar-integrationen), så bilen på solrige dage oplades fra forudsagt solenergiproduktion frem for netspotpriser. Logikken bliver: oplad hvis soloverskud ELLER billig net, spring over hvis dyrt net OG intet sol.
+Det jeg ikke forventede: det ændrede hvordan jeg tænker på at køre andre apparater. Elprisdiagrammet er nu et af de mest tjekkkede kort på mit dashboard, og jeg finder mig selv i at time opvaskemaskinen og tørretumbleren ud fra det. Den adfærdsændring sparer sandsynligvis mere end den automatiserede EV-opladning gør.
