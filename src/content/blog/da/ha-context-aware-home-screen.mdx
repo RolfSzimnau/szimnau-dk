@@ -1,0 +1,108 @@
+---
+title: "Et hjem-skærmbillede der viser mindre — betingede kort i Home Assistant"
+description: "Sådan byggede jeg en HA-forside hvor hvert kort skal gøre sig fortjent til at være der: kort der kun dukker op når noget er aktivt, en prioriteret alert-ticker og en Škoda-sektion der ændrer sig alt efter om laderen er tilsluttet."
+pubDate: 2026-06-26
+tags: ["dashboard", "lovelace", "betingede-kort", "home-assistant", "design"]
+lang: "da"
+translationKey: "ha-context-aware-home-screen"
+---
+
+Min datter spurgte mig engang hvad jeg kigger på når jeg åbner Home Assistant om morgenen. Jeg svarede at jeg tjekker hvad der sker. Det var ikke helt rigtigt. Jeg scannede forbi en masse ting der bare bekræftede at intet usædvanligt var sket — parkeret støvsuger, slukkede lys, låst bil. Det er ikke information. Det er støj.
+
+Jeg begyndte at fjerne alt der kun sagde "stadig fint".
+
+![Kontekstbevidst Home Assistant-forside med betingede kort der kun viser hvad der er aktivt](/blog-images/hjem-conditional.jpg)
+
+Skærmbilledet herover er fra i dag. Opvaskemaskinen kører (blåt kort). Laderen er sat i bilen, så "Unlock Cable" sidder ved siden af "Klima Boost". Home status er tom — ingen lys tændt, ingen robots i gang. Energi siger billigst nu. Det er det. Fire aktive ting, vist. Alt andet, gemt.
+
+## Alert-tickeren øverst
+
+Øverst sidder en `custom:alert-ticker-card` med `show_when_clear: false`. Når intet kræver opmærksomhed eksisterer den ikke. Når noget gør, roterer den med beskeder i prioritetsrækkefølge:
+
+```yaml
+type: custom:alert-ticker-card
+show_when_clear: false
+cycle_interval: 6
+alerts:
+  - entity: binary_sensor.sentinel_person
+    state: "on"
+    message: "👤 Person registreret ved Sentinel"
+    priority: 1
+    tap_action:
+      action: navigate
+      navigation_path: /nyt-mobil/overvagning
+  - entity: sensor.affalddk_bytoften_1_naeste_afhentning
+    operator: "=="
+    state: "1"
+    message: "🗑️ Renovation hentes i morgen"
+    priority: 3
+  - entity: lawn_mower.flora
+    state: error
+    message: "⚠️ Flora fejl"
+    priority: 1
+```
+
+Person-detektion er prioritet 1. Renovation i morgen er prioritet 3. Tapper man på person-alarmen navigerer den direkte til overvågning. Når alt er roligt: ingenting. Ikke en tom bjælke, ikke "Alt okay". Bare ingenting.
+
+## Opvaskemaskinen har tre tilstande
+
+Dette tog tid at få rigtigt. Opvaskemaskinens kort har tre helt forskellige udseender afhængig af tilstand:
+
+**Skjult** — når maskinen er slukket eller færdig. Intet kort, ingen sektion.
+
+**Klar** — når `OperationState` er `Ready` OG fjernstart er tilladt. Viser et tile med "Opvaskemaskine klar — indstil sluttid". Det dukker op i præcis det vindue hvor du har fyldt den men ikke startet den endnu.
+
+**Kører** — når `OperationState` er `Run`. Andet kort, blå baggrund, ingen handling nødvendig — bare bevidsthed.
+
+Tre tilstande, tre forskellige kort, ingen redundans.
+
+## Škoda-sektionen ændrer sig med kontekst
+
+Bilen vises altid — låsestatus, om den er hjemme. Men hvad der sidder nedenunder afhænger af om laderen er tilsluttet.
+
+**Lader ikke tilsluttet:** ét kort — "Klima Boost". Forvarm bilen inden du tager af sted, ét tryk.
+
+**Lader tilsluttet:** to kort side om side — "Klima Boost" og "Unlock Cable". Knappen til at frigøre ladekablet giver kun mening når kablet faktisk sidder i. Så den dukker kun op da.
+
+```yaml
+- type: conditional
+  conditions:
+    - condition: state
+      entity: binary_sensor.skoda_elroq_charger_connected
+      state: "on"
+  card:
+    type: horizontal-stack
+    cards:
+      - type: custom:mushroom-template-card
+        primary: Klima Boost
+        # ...
+      - type: custom:mushroom-template-card
+        primary: Unlock Cable
+        secondary: Tryk for at frigøre ladekabel
+        icon_color: orange
+```
+
+Det er mønstret jeg endte med at bruge overalt: vis ikke kontroller der ikke er relevante for enhedens nuværende tilstand.
+
+## Home status — sektionen der skal gøre sig fortjent til indhold
+
+Home status-sektionen indeholder flere betingede kort. Alle kræver at noget er aktivt:
+
+- **Stuelys** — kun synligt når mindst ét indendørs lys er tændt. Når det dukker op viser det fulde mushroom-lys-kort med dimmerskydere. Du er der allerede fordi noget er tændt, så giv fuld kontrol.
+- **Udendørs sektion** — dukker op når solen er under horisonten ELLER et udendørs lys er tændt. Midt på en solrig dag: væk. Kl. 21:30 eller hvis oversvømmelseslysene er tændt: der.
+- **Roborock** — kun når ikke docket og ikke idle. Støvsuger, vender tilbage, pauseret, fejl — vis det. Sidder i docken: irrelevant.
+- **Flora** — samme logik. Klipper eller vender tilbage: vis status og tryk ind til plænemowers-view. Parkeret: ingenting.
+
+## Skærmlængden er signalet
+
+Det her opdagede jeg ikke med det samme. Efter et par uger mærkede jeg at jeg læste skærmlængden inden jeg læste indholdet. Kort skærm: rolig dag. Lang skærm: noget foregår — scroll ned og find ud af hvad.
+
+Renovationskortet dukker kun op inden for 3 dage af afhentning. Det meste af året er det ikke der. Ugen inden afhentning vises det med farvekodet nedtælling: amber ved 3 dage, orange ved 2, rød ved 1. Jeg har ikke glemt at sætte skraldespandene ud siden jeg satte det op.
+
+Energikortet er altid der — nuværende pris og hvornår næste billige vindue er. Det fortjente permanent plads fordi det faktisk ændrer hvad jeg gør. Jeg planlægger opvaskemaskine og tørretumbler efter det.
+
+## Hvad der aldrig vises
+
+Ingenting for "alt er fint". Intet kort der siger bilen er hjemme og låst. Intet der bekræfter at robotten er docket. Fraværet af et kort fortæller dig det.
+
+Det var det der tog længst tid at stole på. Når skærmen er kort er instinktet at spekulere på om noget er gået i stykker. Det er det ikke. Kort betyder roligt.

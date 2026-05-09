@@ -1,0 +1,120 @@
+---
+title: "Ein Startbildschirm, der weniger zeigt — Kontextabhängige Karten in Home Assistant"
+description: "Wie ich einen HA-Startbildschirm gebaut habe, auf dem jede Karte ihren Platz verdienen muss: Karten die nur erscheinen wenn etwas aktiv ist, ein priorisierter Alert-Ticker und ein Škoda-Bereich der sich je nach Ladezustand verändert."
+pubDate: 2026-06-26
+tags: ["dashboard", "lovelace", "bedingte-karten", "home-assistant", "design"]
+lang: "de"
+translationKey: "ha-context-aware-home-screen"
+---
+
+Ich hatte mal einen HA-Startbildschirm mit über vierzig Karten. Jeden Morgen scrollte ich an geparkte Roboter, ausgeschaltete Lichter und einen leeren Bewegungssensor vorbei. Das ist keine Information — das ist Bestätigung, dass nichts Ungewöhnliches passiert ist. Lärm in Kartenform.
+
+Ich fing an, alles zu entfernen, das nur "immer noch in Ordnung" sagte.
+
+![Kontextabhängiger Home Assistant Startbildschirm — bedingte Karten zeigen nur was gerade aktiv ist](/blog-images/hjem-conditional.jpg)
+
+Der Screenshot oben ist von heute Morgen. Die Spülmaschine läuft (blaue Karte). Das Ladekabel ist am Auto angeschlossen, also sitzt "Kabel entriegeln" neben "Klima Boost". Home-Status ist leer — keine Lichter an, keine Roboter in Bewegung. Energie zeigt: gerade am günstigsten. Das war's. Vier aktive Dinge, angezeigt. Alles andere, versteckt.
+
+## Der Alert-Ticker oben
+
+Ganz oben sitzt eine `custom:alert-ticker-card` mit `show_when_clear: false`. Wenn nichts Aufmerksamkeit erfordert, existiert sie nicht. Wenn doch, rotiert sie Meldungen in Prioritätsreihenfolge:
+
+```yaml
+type: custom:alert-ticker-card
+show_when_clear: false
+cycle_interval: 6
+alerts:
+  - entity: binary_sensor.sentinel_person
+    state: "on"
+    message: "👤 Person an Sentinel erkannt"
+    priority: 1
+    tap_action:
+      action: navigate
+      navigation_path: /nyt-mobil/overvagning
+  - entity: lawn_mower.flora
+    state: error
+    message: "⚠️ Flora Fehler"
+    priority: 1
+  - entity: sensor.muellabfuhr_naechste_abholung
+    operator: "=="
+    state: "1"
+    message: "🗑️ Müll wird morgen abgeholt"
+    priority: 3
+```
+
+Personenerkennung ist Priorität 1. Müll morgen ist Priorität 3. Ein Tipp auf die Personenwarnung navigiert direkt zur Überwachungsansicht. Wenn alles ruhig ist: nichts. Kein leerer Balken, kein "Alles in Ordnung". Einfach nichts.
+
+## Die Spülmaschine hat drei Zustände
+
+Das hat eine Weile gedauert. Die Spülmaschinenkarte hat je nach Zustand drei völlig unterschiedliche Erscheinungsbilder:
+
+**Versteckt** — wenn die Maschine aus oder fertig ist. Keine Karte, kein Bereich.
+
+**Bereit** — wenn `OperationState` `Ready` ist UND Fernstart erlaubt ist. Zeigt eine Kachel mit "Spülmaschine bereit — Endzeit einstellen". Erscheint genau in dem Fenster, in dem man sie befüllt, aber noch nicht gestartet hat.
+
+**Läuft** — wenn `OperationState` `Run` ist. Andere Karte, blauer Hintergrund, "Spülmaschine läuft". Keine Aktion nötig, nur Bewusstsein.
+
+```yaml
+- type: conditional
+  conditions:
+    - entity: sensor.geschirrspueler_betriebszustand
+      state: BSH.Common.EnumType.OperationState.Run
+  card:
+    type: tile
+    name: Spülmaschine läuft
+    card_mod:
+      style: >
+        ha-card { background: rgba(30,136,229,0.15) !important;
+        border: 1px solid rgba(30,136,229,0.3) !important; }
+```
+
+Drei Zustände, drei verschiedene Karten, keine Redundanz.
+
+## Der Škoda-Bereich ändert sich je nach Kontext
+
+Das Auto wird immer angezeigt — Schlossstatus, ob es zu Hause ist. Was darunter erscheint, hängt davon ab, ob das Ladekabel angeschlossen ist.
+
+**Ladekabel nicht angeschlossen:** eine Karte — "Klima Boost". Auto vorheizen bevor man losfährt, ein Tipp.
+
+**Ladekabel angeschlossen:** zwei Karten nebeneinander — "Klima Boost" und "Kabel entriegeln". Die Schaltfläche zum Entriegeln des Ladekabels ergibt nur Sinn, wenn das Kabel physisch eingesteckt ist. Also erscheint sie nur dann.
+
+```yaml
+- type: conditional
+  conditions:
+    - condition: state
+      entity: binary_sensor.skoda_elroq_charger_connected
+      state: "on"
+  card:
+    type: horizontal-stack
+    cards:
+      - # Klima Boost
+      - type: custom:mushroom-template-card
+        primary: Kabel entriegeln
+        secondary: Tippen um Ladekabel freizugeben
+        icon_color: orange
+```
+
+Das ist das Muster, das ich überall verwendet habe: keine Bedienelemente anzeigen, die für den aktuellen Gerätezustand nicht relevant sind.
+
+## Home-Status — der Bereich, der seinen Inhalt verdienen muss
+
+Der Home-Status-Bereich enthält mehrere bedingte Karten. Alle brauchen etwas Aktives:
+
+- **Wohnzimmerlicht** — nur sichtbar wenn mindestens ein Innenlicht an ist. Wenn es erscheint, zeigt es vollständige Mushroom-Lichtkarten mit Dimmerschiebern. Man ist schon dort, weil etwas an ist — also volle Kontrolle.
+- **Außenbereich** — erscheint wenn die Sonne unter dem Horizont ist ODER ein Außenlicht an ist. Mittags an einem sonnigen Tag: weg. Um 21:30 Uhr oder wenn die Flutlichter an sind: da.
+- **Roborock** — nur wenn nicht geparkt und nicht im Leerlauf. Saugt, kehrt zurück, pausiert, Fehler — anzeigen. Sitzt in der Ladestation: irrelevant.
+- **Flora** — gleiche Logik. Mäht oder kehrt zurück: Status anzeigen. Geparkt: nichts.
+
+## Die Bildschirmlänge ist das Signal
+
+Das habe ich nicht sofort bemerkt. Nach ein paar Wochen merkte ich, dass ich die Bildschirmlänge las bevor ich den Inhalt las. Kurzer Bildschirm: ruhiger Tag, nichts braucht Aufmerksamkeit. Langer Bildschirm: irgendetwas ist los — scrollen und herausfinden was.
+
+Die Mülllkarte erscheint nur innerhalb von 3 Tagen vor der Abholung. Den Großteil des Jahres ist sie nicht da. Die Woche vor der Abholung erscheint sie mit farbkodiertem Countdown: Orange bei 3 Tagen, Dunkelorange bei 2, Rot bei 1. Seitdem habe ich die Tonne nicht mehr vergessen.
+
+Die Energiekarte ist immer da — aktueller Preis und wann das nächste günstige Fenster ist. Die hat ihren Dauerplatz verdient, weil sie tatsächlich ändert was ich tue. Ich plane Spülmaschine und Trockner danach.
+
+## Was niemals erscheint
+
+Nichts für "alles in Ordnung". Keine Karte die sagt, das Auto ist zu Hause und abgeschlossen. Keine Bestätigung dass der Roboter geparkt ist. Das Fehlen einer Karte teilt einem das mit.
+
+Das war der Teil, dem am längsten zu trauen dauerte. Wenn der Bildschirm kurz ist, ist der Instinkt zu fragen ob etwas kaputt ist. Ist es nicht. Kurz bedeutet ruhig.
