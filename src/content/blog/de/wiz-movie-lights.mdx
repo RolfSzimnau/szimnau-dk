@@ -1,0 +1,90 @@
+---
+title: "WiZ Lampen die auf den TV reagieren — Kinomodus ohne die Taste"
+description: "Wie ich die Wohnzimmerlampen automatisiert habe, sich beim Filmstart zu dimmen, bei Pause wieder aufzuhellen und sich beim TV-Ausschalten vollständig zurückzusetzen — keine Szenentaste, kein Sprachbefehl."
+pubDate: 2026-07-31
+tags: ["wiz", "licht", "automatisierung", "tv", "home-assistant"]
+lang: "de"
+translationKey: "wiz-movie-lights"
+heroImage: "/blog-images/hjem-conditional.jpg"
+---
+
+Jede TV-Fernbedienung hat eine Taste die man nie benutzt. Bei mir war es die "Szenen"-Taste die angeblich die Lichter für den Kinomodus dimmen sollte. Das Problem war nicht die Taste — es war daran zu denken sie zu drücken, und dann wieder daran zu denken als man pausierte um ein Getränk zu holen, und wieder als der Film zu Ende war.
+
+Die Automatisierung macht es stattdessen. Der TV spielt, die Lichter dimmen. Der TV pausiert, die Lichter kommen wieder hoch. Der TV schaltet aus, die Lichter stellen sich wieder her. Nichts zu merken, nichts zu drücken.
+
+![Home Assistant Startbildschirm mit kontextabhängigen Karten — Lichter reagieren automatisch auf den TV-Zustand](/blog-images/hjem-conditional.jpg)
+
+## Die Konfiguration
+
+Vier WiZ-Lampen im Wohnzimmer:
+
+- Zwei Deckenleuchten (`wiz_tunable_white_601970`, `wiz_tunable_white_60421e`) — die wichtigsten Overhead-Leuchten
+- Zwei Akzent-/Ecklampen (`wiz_rgbw_tunable_414776`, `wiz_rgbw_tunable_44a4a4`) — RGBW, können bis 2200K herunter
+
+Der Unterschied zwischen den beiden Typen ist wichtig für das was beim Filmstart passiert.
+
+## Was es auslöst
+
+```yaml
+trigger:
+  - entity_id: media_player.tv_stuen
+    to: playing
+  - entity_id: media_player.tv_stuen
+    to: paused
+  - entity_id: media_player.tv_stuen
+    to: [idle, off]
+condition:
+  - condition: time
+    after: "18:00:00"
+```
+
+Die Zeitbedingung ist das entscheidende Detail. Es hat keinen Sinn die Lichter mittags zu dimmen — die Sonne leistet ohnehin mehr als jede Deckenleuchte, und ein gedimmtes Wohnzimmer am helllichten Tag sieht einfach kaputt aus. Nach 18:00 Uhr fängt es an zu zählen.
+
+Der Modus ist `restart`. Wenn man pausiert und sofort wieder Play drückt, wird die Pause-Aktion abgebrochen bevor sie abgeschlossen ist. Ohne Restart-Modus würde man einen kurzen Aufblitz voller Helligkeit zwischen den Wiedergaben bekommen.
+
+## Wenn der Film startet
+
+```yaml
+sequence:
+  - action: light.turn_off
+    target:
+      entity_id:
+        - light.wiz_tunable_white_601970
+        - light.wiz_tunable_white_60421e
+  - action: light.turn_on
+    data:
+      brightness_pct: 15
+      color_temp_kelvin: 2200
+    target:
+      entity_id:
+        - light.wiz_rgbw_tunable_414776
+        - light.wiz_rgbw_tunable_44a4a4
+```
+
+Die Deckenleuchten gehen komplett aus — nicht gedimmt, aus. Overhead-Licht während eines Films erzeugt Blendung auf dem Bildschirm egal wie niedrig man es einstellt. Die Akzentlampen fallen auf 15% bei 2200K, was ein warmes Bernsteinlicht ergibt. Genug um den Raum zu sehen, nicht genug um das Bild auszuwaschen.
+
+## Wenn man pausiert
+
+```yaml
+sequence:
+  - action: light.turn_on
+    data:
+      brightness_pct: 100
+      color_temp_kelvin: 4000
+    target:
+      entity_id:
+        - light.wiz_tunable_white_601970
+        - light.wiz_tunable_white_60421e
+        - light.wiz_rgbw_tunable_414776
+        - light.wiz_rgbw_tunable_44a4a4
+```
+
+Alle vier Lampen auf 100%, 4000K. Nicht das warme 2700K das ich normalerweise benutzen würde — 4000K ist etwas kühler und neutraler, was sich anfühlt wie "man kann wieder ordentlich sehen" statt gemütliches Abendlicht. Der Übergang passiert in dem Moment wenn man Pause drückt, was genau dann ist wenn man das Licht braucht — nicht fünf Sekunden später.
+
+Dieselbe Sequenz läuft wenn der TV komplett ausschaltet. Ob man kurz pausiert hat oder fertig geschaut hat — der Raum kehrt zur Normalität zurück.
+
+## Warum kein Sonnenuntergangs-Trigger
+
+Ich habe eine Version ausprobiert die auch bei Sonnenuntergang dimmte unabhängig vom TV. Das schuf ein Problem: abends nach Hause zu kommen in ein dunkles Wohnzimmer wenn niemand etwas geschaut hatte. Der TV-Zustand ist ein besserer Trigger als die Sonne weil er daran geknüpft ist was tatsächlich im Raum passiert, nicht was draußen die Uhr sagt.
+
+Die 18:00-Bedingung behandelt den Randfall wenn jemand im Winter um 16 Uhr einen Film startet und der Raum dunkel genug ist dass es einen Unterschied macht. Davor feuert die Automatisierung einfach nicht.

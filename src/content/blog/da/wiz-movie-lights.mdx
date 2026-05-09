@@ -1,0 +1,90 @@
+---
+title: "WiZ Lys der Reagerer på TV'et — Biograftilstand uden Knappen"
+description: "Hvordan jeg automatiserede stuelysene til at dæmpe sig når en film starter, lyse op igen ved pause og gendanne sig fuldt ud når TV'et slukker — ingen sceneknap, ingen stemmekommando."
+pubDate: 2026-07-31
+tags: ["wiz", "lys", "automation", "tv", "home-assistant"]
+lang: "da"
+translationKey: "wiz-movie-lights"
+heroImage: "/blog-images/hjem-conditional.jpg"
+---
+
+Enhver TV-fjernbetjening har en knap man aldrig bruger. På min var det "scene"-knappen der angiveligt skulle dæmpe lysene til biograftilstand. Problemet var ikke knappen — det var at huske at trykke på den, og derefter huske at trykke igen da man satte på pause for at hente en drink, og igen da filmen var slut.
+
+Automationen gør det i stedet. TV'et spiller, lysene dæmper sig. TV'et sætter på pause, lysene kommer op igen. TV'et slukker, lysene gendannes. Intet at huske, intet at trykke på.
+
+![Home Assistant startskærm med kontekstafhængige kort — lysene reagerer automatisk på TV-tilstanden](/blog-images/hjem-conditional.jpg)
+
+## Opsætningen
+
+Fire WiZ-lys i stuen:
+
+- To loftlys (`wiz_tunable_white_601970`, `wiz_tunable_white_60421e`) — de primære overhead-lys
+- To accent-/hjørnelys (`wiz_rgbw_tunable_414776`, `wiz_rgbw_tunable_44a4a4`) — RGBW, kan gå ned til 2200K
+
+Forskellen mellem de to typer har betydning for hvad der sker når filmen starter.
+
+## Hvad der udløser det
+
+```yaml
+trigger:
+  - entity_id: media_player.tv_stuen
+    to: playing
+  - entity_id: media_player.tv_stuen
+    to: paused
+  - entity_id: media_player.tv_stuen
+    to: [idle, off]
+condition:
+  - condition: time
+    after: "18:00:00"
+```
+
+Tidsbetingelsen er den afgørende detalje. Det giver ingen mening at dæmpe lysene ved middagstid — solen gør mere end noget loftlys alligevel, og en dæmpet stue midt på dagen ser bare defekt ud. Efter kl. 18 begynder det at betyde noget.
+
+Tilstand er `restart`. Hvis man sætter på pause og med det samme trykker play igen, annulleres pause-handlingen inden den er færdig. Uden restart-tilstand ville man få et glimt af fuld lysstyrke imellem afspilningerne.
+
+## Når filmen starter
+
+```yaml
+sequence:
+  - action: light.turn_off
+    target:
+      entity_id:
+        - light.wiz_tunable_white_601970
+        - light.wiz_tunable_white_60421e
+  - action: light.turn_on
+    data:
+      brightness_pct: 15
+      color_temp_kelvin: 2200
+    target:
+      entity_id:
+        - light.wiz_rgbw_tunable_414776
+        - light.wiz_rgbw_tunable_44a4a4
+```
+
+Loftlysene slukker helt — ikke dæmpet, slukket. Overhead-lys under en film skaber reflekser på skærmen uanset hvor lavt man sætter dem. Accentlysene falder til 15% ved 2200K, hvilket er en varm rav-farve. Nok til at se rummet, ikke nok til at udvaske billedet.
+
+## Når man sætter på pause
+
+```yaml
+sequence:
+  - action: light.turn_on
+    data:
+      brightness_pct: 100
+      color_temp_kelvin: 4000
+    target:
+      entity_id:
+        - light.wiz_tunable_white_601970
+        - light.wiz_tunable_white_60421e
+        - light.wiz_rgbw_tunable_414776
+        - light.wiz_rgbw_tunable_44a4a4
+```
+
+Alle fire lys til 100%, 4000K. Ikke den varme 2700K jeg normalt ville bruge — 4000K er en smule koldere og mere neutral, hvilket opleves som "man kan se ordentligt igen" frem for hyggeligt aftenlys. Overgangen sker i det øjeblik man trykker pause, hvilket er præcis det tidspunkt man har brug for lyset — ikke fem sekunder senere.
+
+Den samme sekvens kører når TV'et slukker helt. Uanset om man satte på pause et øjeblik eller er færdig med at se, vender rummet tilbage til normalen.
+
+## Hvorfor ingen solopgangstrigger
+
+Jeg prøvede en version der også dæmpede ved solnedgang uanset TV'et. Det skabte et problem: at komme hjem om aftenen til en mørk stue når ingen havde set noget. TV-tilstanden er en bedre trigger end solen fordi den er knyttet til hvad der faktisk sker i rummet frem for hvad klokken er udenfor.
+
+18:00-betingelsen håndterer kanttilfældet hvor nogen starter en film kl. 16 om vinteren og rummet er mørkt nok til at det gør en forskel. Inden da affyrer automationen simpelthen ikke.
