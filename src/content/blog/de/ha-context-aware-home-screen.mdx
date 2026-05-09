@@ -70,6 +70,57 @@ Das hat eine Weile gedauert. Die Spülmaschinenkarte hat je nach Zustand drei v�
 
 Drei Zustände, drei verschiedene Karten, keine Redundanz.
 
+## Licht — zwei Ebenen, ein Prinzip
+
+Licht folgt einem zweistufigen Muster. Beide Ebenen sind davon abhängig, dass etwas eingeschaltet ist.
+
+**Ebene 1 — Schnellaktionen:** Wenn irgendein Licht an ist, erscheint oben eine bernsteinfarbene Karte mit der Anzahl und einem einzigen Tipp zum Ausschalten von allem:
+
+```yaml
+- type: conditional
+  conditions:
+    - condition: or
+      conditions:
+        - condition: state
+          entity: light.decke_1
+          state: "on"
+        # ... alle Lichter
+  card:
+    type: custom:mushroom-template-card
+    primary: Lichter an
+    secondary: >
+      {% set l = ['light.decke_1','light.decke_2','light.ecke',
+                  'light.flutlichter','light.bodenlichter']
+         | select('is_state','on') | list | count %}
+      {% set c = 1 if is_state('switch.lichterkette','on') else 0 %}
+      {{ l + c }} Lichter an – Tippen zum Ausschalten aller
+    icon: mdi:lightbulb-group
+    icon_color: amber
+    tap_action:
+      action: perform-action
+      perform_action: homeassistant.turn_off
+      target:
+        entity_id:
+          - light.decke_1
+          - light.decke_2
+          - light.ecke
+          - light.flutlichter
+          - light.bodenlichter
+          - switch.lichterkette
+    card_mod:
+      style: >
+        ha-card { background: rgba(255,152,0,0.10) !important;
+        border: 1px solid rgba(255,152,0,0.25) !important; }
+```
+
+Ein Tipp. Keine Navigation, keine Bestätigung, alles aus. Das ist die Karte, die ich in 90 % der Fälle benutze.
+
+**Ebene 2 — Home-Status:** Wenn Innenlichter speziell eingeschaltet sind, erscheinen die einzelnen Mushroom-Lichtkarten weiter unten — mit vollständigen Helligkeitsschiebern und Farbtemperatursteuerung. Nicht nur Ein/Aus. Wenn man das Licht angelassen hat und im Raum steht und es dimmen möchte, sind die Bedienelemente direkt da, ohne woanders hinzunavigieren.
+
+Der Außenbereich funktioniert genauso, wird aber bei Sonnenuntergang ODER wenn ein Außenlicht an ist ausgelöst. Mittags: unsichtbar. Um 21:30 Uhr: da mit einzelnen Steuerelementen für Flutlichter, Bodenlichter und Lichterkette.
+
+Die zwei Ebenen decken unterschiedliche Bedürfnisse ab. Schnellaktionen sind für "ich gehe, alles aus." Home-Status ist für "ich bin hier und möchte einstellen." Gleiche bedingte Logik, unterschiedliche Steuerungstiefe.
+
 ## Der Škoda-Bereich ändert sich je nach Kontext
 
 Das Auto wird immer angezeigt — Schlossstatus, ob es zu Hause ist. Was darunter erscheint, hängt davon ab, ob das Ladekabel angeschlossen ist.

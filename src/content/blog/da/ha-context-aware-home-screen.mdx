@@ -56,6 +56,57 @@ Dette tog tid at få rigtigt. Opvaskemaskinens kort har tre helt forskellige uds
 
 Tre tilstande, tre forskellige kort, ingen redundans.
 
+## Lys — to lag, ét princip
+
+Lys følger et to-lags mønster. Begge lag er betinget af at noget er tændt.
+
+**Lag 1 — Quick Actions:** Når et vilkårligt lys er tændt dukker et amber-farvet kort op øverst med antal og ét tryk til at slukke alt:
+
+```yaml
+- type: conditional
+  conditions:
+    - condition: or
+      conditions:
+        - condition: state
+          entity: light.loft_1
+          state: "on"
+        # ... alle lys
+  card:
+    type: custom:mushroom-template-card
+    primary: Lights on
+    secondary: >
+      {% set l = ['light.loft_1','light.loft_2','light.hjorne',
+                  'light.oversvommelses_lys','light.ground_lights']
+         | select('is_state','on') | list | count %}
+      {% set c = 1 if is_state('switch.lyskaede','on') else 0 %}
+      {{ l + c }} lights on – tap to turn off all
+    icon: mdi:lightbulb-group
+    icon_color: amber
+    tap_action:
+      action: perform-action
+      perform_action: homeassistant.turn_off
+      target:
+        entity_id:
+          - light.loft_1
+          - light.loft_2
+          - light.hjorne
+          - light.oversvommelses_lys
+          - light.ground_lights
+          - switch.lyskaede
+    card_mod:
+      style: >
+        ha-card { background: rgba(255,152,0,0.10) !important;
+        border: 1px solid rgba(255,152,0,0.25) !important; }
+```
+
+Ét tryk. Ingen navigation, ingen bekræftelse, alt slukket. Det er det kort jeg bruger 90% af gangene.
+
+**Lag 2 — Home Status:** Når indendørs lys specifikt er tændt dukker de individuelle mushroom-lys-kort op længere nede — med fulde lysstyrkeskydere og farvetemperaturkontrol. Ikke bare til/fra. Hvis du har glemt lyset og står i rummet og vil dæmpe det, er kontrollen der uden at navigere væk.
+
+Udendørs-sektionen virker på samme måde men udløses ved solnedgang ELLER at et udendørs lys er tændt. Midt på dagen: usynlig. Kl. 21:30: der med individuelle kontroller for oversvømmelseslys, terrasselys og lyskæde.
+
+De to lag dækker forskelligt behov. Quick Actions er til "jeg tager af sted, sluk alt." Home Status er til "jeg er her og vil justere." Samme betingede logik, forskellig kontroldybde.
+
 ## Škoda-sektionen ændrer sig med kontekst
 
 Bilen vises altid — låsestatus, om den er hjemme. Men hvad der sidder nedenunder afhænger af om laderen er tilsluttet.

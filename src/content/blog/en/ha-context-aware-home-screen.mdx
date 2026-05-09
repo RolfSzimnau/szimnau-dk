@@ -75,6 +75,60 @@ This took a while to get right. The dishwasher card has three completely differe
 
 Three states, three different cards, zero redundancy.
 
+## Lights — two tiers, one principle
+
+Lights follow a two-layer pattern. Both layers are conditional on something being on.
+
+**Layer 1 — Quick Actions:** When any light is on, an amber card appears at the top with the count and a single tap to kill everything:
+
+```yaml
+- type: conditional
+  conditions:
+    - condition: or
+      conditions:
+        - condition: state
+          entity: light.ceiling_1
+          state: "on"
+        - condition: state
+          entity: light.smart_flood_lights
+          state: "on"
+        # ... all lights
+  card:
+    type: custom:mushroom-template-card
+    primary: Lights on
+    secondary: >
+      {% set l = ['light.ceiling_1','light.ceiling_2','light.corner',
+                  'light.flood_lights','light.ground_lights']
+         | select('is_state','on') | list | count %}
+      {% set c = 1 if is_state('switch.string_lights','on') else 0 %}
+      {{ l + c }} lights on – tap to turn off all
+    icon: mdi:lightbulb-group
+    icon_color: amber
+    tap_action:
+      action: perform-action
+      perform_action: homeassistant.turn_off
+      target:
+        entity_id:
+          - light.ceiling_1
+          - light.ceiling_2
+          - light.corner
+          - light.flood_lights
+          - light.ground_lights
+          - switch.string_lights
+    card_mod:
+      style: >
+        ha-card { background: rgba(255,152,0,0.10) !important;
+        border: 1px solid rgba(255,152,0,0.25) !important; }
+```
+
+One tap. No navigation, no confirmation, all off. This is the card I use 90% of the time.
+
+**Layer 2 — Home Status:** When indoor lights specifically are on, the individual mushroom light cards appear further down — with full brightness sliders and colour temperature controls. Not just on/off. If you've left the lights on and you're standing in the room wanting to dim them, the controls are right there without navigating away.
+
+The outdoor lights section works the same way but triggers on sunset OR any outdoor light being on. At noon: invisible. At 21:30: there with individual controls for flood lights, ground lights, and string lights.
+
+The two layers serve different needs. Quick Actions is for "I'm leaving, kill everything." Home Status is for "I'm here and want to adjust." Same conditional logic, different depth of control.
+
 ## The Škoda section changes based on context
 
 The car is always shown — lock status, whether it's home. But what sits below it depends on whether the charger is connected.
