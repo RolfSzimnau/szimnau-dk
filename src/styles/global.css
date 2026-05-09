@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -12,6 +12,7 @@
   --color-text-muted: #94a3b8;
   --color-glass-border: rgba(255, 255, 255, 0.08);
   --font-family-sans: 'Inter', system-ui, sans-serif;
+  --font-family-display: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
@@ -30,9 +31,9 @@ body {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  border-radius: 1rem;
+  border-radius: 28px;
 }
 
 .blue-glow {
@@ -48,7 +49,7 @@ body {
   color: #94a3b8;
   max-width: 70ch;
 }
-.prose h1, .prose h2, .prose h3 { color: #e2e8f0; font-weight: 700; }
+.prose h1, .prose h2, .prose h3 { color: #e2e8f0; font-weight: 700; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
 .prose h2 { font-size: 1.5rem; margin-top: 2.5rem; margin-bottom: 1rem; }
 .prose h3 { font-size: 1.25rem; margin-top: 2rem; margin-bottom: 0.75rem; }
 .prose p { line-height: 1.8; margin-bottom: 1.25rem; }
