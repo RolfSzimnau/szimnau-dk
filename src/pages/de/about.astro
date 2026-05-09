@@ -1,0 +1,75 @@
+---
+import Base from '../../layouts/Base.astro';
+import SponsorshipCTA from '../../components/SponsorshipCTA.astro';
+import { useTranslations } from '../../i18n/utils';
+
+const lang = 'de';
+const t = useTranslations(lang);
+
+const skills = [
+  'Home Assistant', 'Proxmox VE', 'ESPHome', 'Node-RED',
+  'YAML Automatisierungen', 'Lovelace Dashboards', 'Wi-Fi IoT', 'Shelly',
+  'WiZ', 'Microsoft Azure', 'PowerShell', 'Docker',
+];
+---
+
+<Base
+  title="Über Rolf Szimnau"
+  description="Heimautomatisierungs-Spezialist und IT-Berater mit 29+ Jahren Erfahrung. Betreibt Home Assistant auf Proxmox und teilt praxisnahe Smart-Home-Kenntnisse."
+  lang={lang}
+>
+  <div class="max-w-4xl mx-auto px-6 py-24">
+    <header class="mb-16">
+      <p class="font-mono text-blue text-sm mb-3 tracking-wider uppercase">// Über mich</p>
+      <h1 class="text-4xl sm:text-5xl font-bold text-text-primary mb-4">{t('about.title')}</h1>
+      <p class="text-blue font-mono">{t('about.role')}</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+      <div class="md:col-span-2 space-y-5 text-text-muted leading-relaxed">
+        <p>
+          Ich bin <strong class="text-text-primary">Rolf Szimnau</strong> — Senior IT-Berater mit 29+ Jahren
+          Erfahrung in der Technologiebranche und wachsender Leidenschaft für Heimautomatisierung. Was mit
+          Neugier auf smarte Glühbirnen begann, ist heute zu einem vollständigen Proxmox-Home-Lab mit
+          Home Assistant als Herzstück geworden.
+        </p>
+        <p>
+          Ich betreibe <strong class="text-text-primary">Home Assistant OS als Proxmox-VM</strong> auf einem Dell
+          OptiPlex 7060, zusammen mit benutzerdefinierten ESPHome-Sensoren, Shelly-Schaltern, WiZ-Beleuchtung
+          und einem UniFi-Netzwerk mit ordentlicher IoT-VLAN-Isolation.
+        </p>
+        <p>
+          Mein professioneller Hintergrund in Microsoft Azure, Infrastrukturmanagement und SaaS-Betrieb bedeutet,
+          dass ich Heimautomatisierung mit dem Denkansatz eines Ingenieurs angehe — Zuverlässigkeit und Sicherheit
+          haben Priorität.
+        </p>
+      </div>
+      <div class="space-y-6">
+        <div class="glass-card p-5">
+          <h3 class="font-mono text-blue text-xs uppercase tracking-wider mb-3">Fakten</h3>
+          <ul class="space-y-2 text-sm text-text-muted">
+            <li class="flex gap-2"><span class="text-blue">▹</span> Ansässig in Dänemark</li>
+            <li class="flex gap-2"><span class="text-blue">▹</span> 29+ Jahre in der IT</li>
+            <li class="flex gap-2"><span class="text-blue">▹</span> EN · DA · DE</li>
+            <li class="flex gap-2"><span class="text-blue">▹</span> Home-Lab-Enthusiast</li>
+          </ul>
+        </div>
+        <div class="glass-card p-5">
+          <h3 class="font-mono text-blue text-xs uppercase tracking-wider mb-3">Kontakt</h3>
+          <a href="mailto:rolf@szimnau.dk" class="text-sm text-blue hover:underline">rolf@szimnau.dk</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-16">
+      <h2 class="text-2xl font-bold text-text-primary mb-6">Technische Fähigkeiten</h2>
+      <ul class="flex flex-wrap gap-2">
+        {skills.map(skill => (
+          <li class="font-mono text-sm text-text-muted border border-glass-border px-3 py-1.5 rounded-lg hover:border-blue/30 hover:text-blue transition-colors">{skill}</li>
+        ))}
+      </ul>
+    </div>
+
+    <SponsorshipCTA lang={lang} />
+  </div>
+</Base>

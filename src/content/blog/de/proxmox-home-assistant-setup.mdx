@@ -1,0 +1,68 @@
+---
+title: "Home Assistant auf Proxmox — Richtig Einrichten"
+description: "Eine vollständige Anleitung zur Installation von Home Assistant OS als Proxmox-VM auf einem Dell OptiPlex 7060. Umfasst VM-Dimensionierung, USB-Passthrough und erste Automatisierungen."
+pubDate: 2026-05-01
+tags: ["proxmox", "home-assistant", "einstieg", "virtualisierung"]
+lang: "de"
+translationKey: "proxmox-ha-setup"
+---
+
+Nach Jahren mit Home Assistant auf einem Raspberry Pi 4 habe ich schließlich meinen gesamten Smart-Home-Stack auf einen richtigen Heimserver umgezogen: einen **Dell OptiPlex 7060** mit **Proxmox VE**. Diese Anleitung zeigt genau, wie ich es eingerichtet habe — ohne Umschweife.
+
+## Warum vom Pi wechseln?
+
+Der Pi 4 ist gut zum Einstieg, aber nach zwei Jahren mit immer mehr Geräten, Automatisierungen und Add-ons stieß ich ständig an seine Grenzen:
+
+- SD-Karten-Korruption nach unerwarteten Stromausfällen
+- RAM-Mangel bei mehreren aktiven Add-ons
+- Keine Möglichkeit für Snapshots und Rollbacks nach schlechten Updates
+
+Der Wechsel zu Proxmox löste all das. HA OS läuft als VM, ich bekomme ordentliche Disk-Backups, Snapshots vor jedem Update, und der OptiPlex verbraucht im Leerlauf nur ~12W.
+
+## Hardware: Dell OptiPlex 7060
+
+Ich habe meinen OptiPlex 7060 für unter 150€ auf eBay gefunden. Hier ist die Konfiguration, die ich empfehle:
+
+| Komponente | Meine Konfiguration |
+|------------|---------------------|
+| CPU | Intel Core i5-8500 |
+| RAM | 32 GB DDR4 |
+| Speicher | 500 GB NVMe SSD (primär) |
+| Netzwerk | Intel I219-LM (nativer Linux-Support) |
+
+## Proxmox VE installieren
+
+Das neueste Proxmox VE ISO von [proxmox.com](https://www.proxmox.com/en/downloads) herunterladen und auf einen USB-Stick flashen.
+
+Den OptiPlex von USB booten und dem Installationsprogramm folgen. Web-UI erreichbar unter `https://DEINE-IP:8006`.
+
+## Home Assistant VM erstellen
+
+Proxmox hat ein Community-Skript, das die HA OS VM-Erstellung automatisiert. Im Proxmox-Shell ausführen:
+
+```bash
+bash -c "$(wget -qLO - https://github.com/tteck/Proxmox/raw/main/vm/haos-vm.sh)"
+```
+
+Ich verwende diese Ressourceneinstellungen für meine HA VM:
+
+```
+RAM: 4096 MB
+Kerne: 4 vCPU
+Disk: 32 GB
+Netzwerk: VirtIO bridge (vmbr0)
+```
+
+## Snapshot-Strategie
+
+Das ist die eigentliche Stärke von Proxmox. Vor jedem HA-Update:
+
+```
+Datacenter → HA VM → Snapshots → Snapshot erstellen
+```
+
+Ich benenne sie `vor-update-JJJJ-MM-TT`. Falls ein Update etwas kaputtmacht, Rollback in 10 Sekunden.
+
+## Was kommt als Nächstes?
+
+Im nächsten Beitrag behandle ich, wie ich eine ordentliche **IoT-VLAN-Isolation** mit UniFi eingerichtet habe — alle Smart-Home-Geräte auf einem separaten Netzwerksegment, getrennt vom Haupt-LAN.

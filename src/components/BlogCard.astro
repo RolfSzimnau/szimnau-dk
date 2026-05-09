@@ -1,0 +1,58 @@
+---
+import type { Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  pubDate: Date;
+  tags: string[];
+  slug: string;
+  heroImage?: string;
+}
+
+const { lang, title, description, pubDate, tags, slug, heroImage } = Astro.props;
+const t = useTranslations(lang);
+
+const formattedDate = pubDate.toLocaleDateString(
+  lang === 'da' ? 'da-DK' : lang === 'de' ? 'de-DE' : 'en-US',
+  { year: 'numeric', month: 'short', day: 'numeric' }
+);
+
+const readTime = Math.ceil(description.split(' ').length / 200) + 3;
+---
+
+<article class="glass-card overflow-hidden group hover:border-blue/20 transition-all duration-300 hover:-translate-y-1">
+  {heroImage && (
+    <div class="w-full h-48 overflow-hidden">
+      <img
+        src={heroImage}
+        alt={title}
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+      />
+    </div>
+  )}
+  <div class="p-6">
+    <div class="flex flex-wrap gap-2 mb-3">
+      {tags.slice(0, 3).map(tag => (
+        <span class="font-mono text-xs text-blue bg-blue-glow border border-blue/20 px-2.5 py-0.5 rounded-full">
+          #{tag}
+        </span>
+      ))}
+    </div>
+    <h3 class="font-bold text-text-primary text-lg leading-snug mb-2 group-hover:text-blue transition-colors">
+      {title}
+    </h3>
+    <p class="text-text-muted text-sm leading-relaxed mb-4 line-clamp-3">{description}</p>
+    <div class="flex items-center justify-between">
+      <span class="font-mono text-xs text-text-muted">{formattedDate} · {readTime} {t('blog.readtime')}</span>
+      <a
+        href={`/${lang}/blog/${slug}/`}
+        class="text-blue text-sm font-medium hover:underline"
+      >
+        {t('blog.readmore')}
+      </a>
+    </div>
+  </div>
+</article>

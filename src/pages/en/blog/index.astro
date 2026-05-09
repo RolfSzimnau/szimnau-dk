@@ -1,0 +1,65 @@
+---
+import Base from '../../../layouts/Base.astro';
+import BlogCard from '../../../components/BlogCard.astro';
+import { useTranslations } from '../../../i18n/utils';
+import { getCollection } from 'astro:content';
+
+const lang = 'en';
+const t = useTranslations(lang);
+
+const allPosts = await getCollection('blog');
+const posts = allPosts
+  .filter(p => p.data.lang === lang)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
+---
+
+<Base
+  title="Blog — Home Automation & Home Assistant"
+  description="In-depth guides, hardware reviews, and automation blueprints for Home Assistant enthusiasts."
+  lang={lang}
+>
+  <div class="max-w-6xl mx-auto px-6 py-24">
+    <header class="mb-12">
+      <p class="font-mono text-blue text-sm mb-3 tracking-wider uppercase">// Blog</p>
+      <h1 class="text-4xl sm:text-5xl font-bold text-text-primary mb-4">{t('blog.title')}</h1>
+      <p class="text-text-muted max-w-2xl">
+        Real-world Home Assistant guides, hardware reviews, and automation blueprints. No fluff — just what works.
+      </p>
+    </header>
+
+    {allTags.length > 0 && (
+      <div class="flex flex-wrap gap-2 mb-10">
+        {allTags.map(tag => (
+          <span class="font-mono text-xs text-blue border border-blue/20 bg-blue-glow px-3 py-1 rounded-full">
+            #{tag}
+          </span>
+        ))}
+      </div>
+    )}
+
+    {posts.length === 0 ? (
+      <div class="glass-card p-12 text-center">
+        <p class="text-text-muted font-mono">// Posts coming soon...</p>
+      </div>
+    ) : (
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {posts.map(post => {
+          const slug = post.id.replace(`${lang}/`, '');
+          return (
+            <BlogCard
+              lang={lang}
+              title={post.data.title}
+              description={post.data.description}
+              pubDate={post.data.pubDate}
+              tags={post.data.tags}
+              slug={slug}
+              heroImage={post.data.heroImage}
+            />
+          );
+        })}
+      </div>
+    )}
+  </div>
+</Base>

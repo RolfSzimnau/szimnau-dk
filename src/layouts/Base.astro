@@ -1,0 +1,53 @@
+---
+import '../styles/global.css';
+import SEO from '../components/SEO.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  title: string;
+  description: string;
+  lang: Lang;
+  canonicalURL?: string;
+  type?: 'website' | 'article';
+  pubDate?: Date;
+  heroImage?: string;
+  translationKey?: string;
+}
+
+const {
+  title,
+  description,
+  lang,
+  canonicalURL = Astro.url.href,
+  type = 'website',
+  pubDate,
+  heroImage,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <SEO
+      title={title}
+      description={description}
+      lang={lang}
+      canonicalURL={canonicalURL}
+      type={type}
+      pubDate={pubDate}
+      heroImage={heroImage}
+    />
+  </head>
+  <body class="min-h-screen bg-navy">
+    <Header lang={lang} />
+    <main>
+      <slot />
+    </main>
+    <Footer lang={lang} />
+  </body>
+</html>

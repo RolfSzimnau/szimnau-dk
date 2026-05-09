@@ -1,0 +1,97 @@
+---
+import Base from '../../layouts/Base.astro';
+import SponsorshipCTA from '../../components/SponsorshipCTA.astro';
+import { useTranslations } from '../../i18n/utils';
+
+const lang = 'en';
+const t = useTranslations(lang);
+
+const skills = [
+  'Home Assistant', 'Proxmox VE', 'ESPHome', 'Node-RED',
+  'YAML Automations', 'Lovelace Dashboards', 'Wi-Fi IoT', 'Shelly',
+  'WiZ', 'Microsoft Azure', 'PowerShell', 'Docker',
+];
+
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Rolf Szimnau',
+  url: 'https://szimnau.dk',
+  jobTitle: 'Home Automation Specialist & Senior IT Advisor',
+  description: 'Rolf Szimnau is a Home Assistant enthusiast and Senior IT Advisor with 29+ years of experience in technology. He runs a Proxmox-based home lab and publishes in-depth guides on Home Assistant, automation, and smart home hardware.',
+  sameAs: ['https://twitter.com/rszimnau', 'https://github.com/RolfSzimnau'],
+  knowsAbout: ['Home Assistant', 'Home Automation', 'Proxmox', 'Smart Home', 'ESPHome', 'Microsoft Azure'],
+  knowsLanguage: ['English', 'Danish', 'German'],
+  email: 'rolf@szimnau.dk',
+};
+---
+
+<Base
+  title="About Rolf Szimnau"
+  description="Home Automation specialist and IT advisor with 29+ years of experience. Runs Home Assistant on Proxmox and shares real-world smart home knowledge."
+  lang={lang}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(personJsonLd)} />
+
+  <div class="max-w-4xl mx-auto px-6 py-24">
+    <header class="mb-16">
+      <p class="font-mono text-blue text-sm mb-3 tracking-wider uppercase">// About</p>
+      <h1 class="text-4xl sm:text-5xl font-bold text-text-primary mb-4">{t('about.title')}</h1>
+      <p class="text-blue font-mono">{t('about.role')}</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+      <div class="md:col-span-2 space-y-5 text-text-muted leading-relaxed">
+        <p>
+          I'm <strong class="text-text-primary">Rolf Szimnau</strong> — a Senior IT Advisor with 29+ years in
+          technology, and an increasingly obsessive Home Automation enthusiast. What started as curiosity
+          about smart bulbs has evolved into a full-blown Proxmox home lab running Home Assistant as its heart.
+        </p>
+        <p>
+          I run <strong class="text-text-primary">Home Assistant OS on a Proxmox VM</strong> hosted on a Dell OptiPlex 7060,
+          alongside custom ESPHome sensors, Shelly switches, WiZ lighting, and a UniFi network with proper IoT
+          VLAN isolation. This site is where I document what I build, what breaks, and what I learn.
+        </p>
+        <p>
+          My professional background in Microsoft Azure, infrastructure management, and SaaS operations means
+          I approach Home Automation with an engineer's mindset — I care about reliability, security, and making
+          things that <em>actually work</em> without constant babysitting.
+        </p>
+        <p>
+          I publish guides, automation blueprints, and hardware reviews in <strong class="text-text-primary">English, Danish, and German</strong>.
+          If you're a hardware vendor interested in reaching a technical Home Assistant audience, I'd love to hear from you.
+        </p>
+      </div>
+
+      <div class="space-y-6">
+        <div class="glass-card p-5">
+          <h3 class="font-mono text-blue text-xs uppercase tracking-wider mb-3">Quick Facts</h3>
+          <ul class="space-y-2 text-sm text-text-muted">
+            <li class="flex gap-2"><span class="text-blue">▹</span> Based in Denmark</li>
+            <li class="flex gap-2"><span class="text-blue">▹</span> 29+ years in IT</li>
+            <li class="flex gap-2"><span class="text-blue">▹</span> EN · DA · DE</li>
+            <li class="flex gap-2"><span class="text-blue">▹</span> Home lab enthusiast</li>
+            <li class="flex gap-2"><span class="text-blue">▹</span> Open to sponsorships</li>
+          </ul>
+        </div>
+        <div class="glass-card p-5">
+          <h3 class="font-mono text-blue text-xs uppercase tracking-wider mb-3">Contact</h3>
+          <a href="mailto:rolf@szimnau.dk" class="text-sm text-blue hover:underline">rolf@szimnau.dk</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-16">
+      <h2 class="text-2xl font-bold text-text-primary mb-6">Technical Skills</h2>
+      <ul class="flex flex-wrap gap-2">
+        {skills.map(skill => (
+          <li class="font-mono text-sm text-text-muted border border-glass-border px-3 py-1.5 rounded-lg hover:border-blue/30 hover:text-blue transition-colors">
+            {skill}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <SponsorshipCTA lang={lang} />
+  </div>
+</Base>

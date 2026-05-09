@@ -1,0 +1,102 @@
+---
+title: "Running Home Assistant on Proxmox — The Right Way"
+description: "A complete guide to installing Home Assistant OS as a Proxmox VM on a Dell OptiPlex 7060. Covers VM sizing, USB passthrough, and first automations."
+pubDate: 2026-05-01
+tags: ["proxmox", "home-assistant", "getting-started", "virtualization"]
+lang: "en"
+translationKey: "proxmox-ha-setup"
+---
+
+After years of running Home Assistant on a Raspberry Pi 4, I finally moved my entire smart home stack to a proper home server: a **Dell OptiPlex 7060** running **Proxmox VE**. This guide covers exactly how I set it up — no fluff.
+
+## Why Move Off the Pi?
+
+The Pi 4 is fine for getting started, but after two years of adding devices, automations, and add-ons, I kept hitting its limits:
+
+- SD card corruption after unexpected power cuts
+- Running out of RAM with multiple add-ons active
+- No ability to snapshot and roll back after bad updates
+
+Moving to Proxmox solved all of this. HA OS runs as a VM, I get proper disk backups, snapshots before every update, and the OptiPlex draws only ~12W at idle.
+
+## Hardware: Dell OptiPlex 7060
+
+I picked up my OptiPlex 7060 for under €150 on eBay. Here's the spec I'd recommend:
+
+| Component | My Config |
+|-----------|-----------|
+| CPU | Intel Core i5-8500 |
+| RAM | 32 GB DDR4 |
+| Storage | 500 GB NVMe SSD (primary) |
+| Network | Intel I219-LM (native Linux support) |
+
+The i5-8500 is massively overpowered for HA alone, but it means I can also run other VMs and containers alongside it — media server, ad blocker, monitoring stack.
+
+## Installing Proxmox VE
+
+Download the latest Proxmox VE ISO from [proxmox.com](https://www.proxmox.com/en/downloads) and flash it to a USB drive with Rufus or Balena Etcher.
+
+Boot the OptiPlex from USB and follow the installer. Key settings:
+
+- **Target disk**: your NVMe SSD
+- **Country**: set to your actual location (affects NTP servers)
+- **Password**: use something strong — this is your hypervisor root
+
+After install, access the web UI at `https://YOUR-IP:8006`.
+
+## Creating the Home Assistant VM
+
+Proxmox has a community script that automates the HA OS VM creation. Run this in the Proxmox shell:
+
+```bash
+bash -c "$(wget -qLO - https://github.com/tteck/Proxmox/raw/main/vm/haos-vm.sh)"
+```
+
+The script will:
+1. Download the latest HA OS image
+2. Create a VM with sensible defaults
+3. Boot it automatically
+
+I use these resource settings for my HA VM:
+
+```
+RAM: 4096 MB
+Cores: 4 vCPU
+Disk: 32 GB (expandable)
+Network: VirtIO bridge (vmbr0)
+```
+
+## USB Passthrough for Zigbee/Z-Wave Dongles
+
+If you use a Zigbee or Z-Wave USB stick, you need to pass it through to the VM. In the Proxmox web UI:
+
+1. Go to your HA VM → Hardware → Add → USB Device
+2. Select **Use USB Vendor/Device ID** and choose your dongle
+3. Reboot the VM
+
+The device will appear in HA's hardware settings.
+
+## First Boot and Onboarding
+
+Once the VM starts, HA OS boots in ~30 seconds. Navigate to `http://homeassistant.local:8123` (or use the IP directly) and complete the onboarding wizard.
+
+My first integrations after setup:
+- **WiZ** — auto-detected on the local network immediately
+- **Shelly** — discovered via mDNS
+- **UniFi** — integrated for device tracking and network stats
+
+## Snapshot Strategy
+
+This is the real power of Proxmox. Before every HA update:
+
+```
+Datacenter → HA VM → Snapshots → Take Snapshot
+```
+
+I name them `pre-update-YYYY-MM-DD`. If an update breaks something, rollback in 10 seconds.
+
+## What's Next
+
+In the next post, I'll cover how I set up proper **IoT VLAN isolation** with UniFi — keeping all my smart devices on a separate network segment, away from the main LAN.
+
+If you're still running HA on a Pi, I genuinely recommend making the move. The stability improvement alone is worth it.

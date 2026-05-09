@@ -1,0 +1,95 @@
+---
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  title: string;
+  description: string;
+  lang: Lang;
+  canonicalURL: string;
+  type?: 'website' | 'article';
+  pubDate?: Date;
+  heroImage?: string;
+}
+
+const {
+  title,
+  description,
+  lang,
+  canonicalURL,
+  type = 'website',
+  pubDate,
+  heroImage,
+} = Astro.props;
+
+const siteTitle = `${title} | szimnau.dk`;
+const ogImage = heroImage ?? 'https://szimnau.dk/og-default.png';
+
+const locales: Lang[] = ['en', 'da', 'de'];
+
+function buildAlternate(targetLang: Lang): string {
+  const url = new URL(canonicalURL);
+  const parts = url.pathname.split('/').filter(Boolean);
+  if (['en', 'da', 'de'].includes(parts[0])) parts[0] = targetLang;
+  else parts.unshift(targetLang);
+  url.pathname = '/' + parts.join('/');
+  return url.toString();
+}
+
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Rolf Szimnau',
+  url: 'https://szimnau.dk',
+  sameAs: [
+    'https://twitter.com/rszimnau',
+    'https://github.com/RolfSzimnau',
+  ],
+  knowsAbout: ['Home Assistant', 'Home Automation', 'Proxmox', 'Smart Home', 'ESPHome'],
+  knowsLanguage: ['en', 'da', 'de'],
+};
+
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'szimnau.dk',
+  url: 'https://szimnau.dk',
+  author: personJsonLd,
+  description: 'Home Automation & Home Assistant authority site by Rolf Szimnau.',
+  inLanguage: lang,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: 'https://szimnau.dk/en/blog/',
+  },
+};
+---
+
+<title>{siteTitle}</title>
+<meta name="description" content={description} />
+<meta name="author" content="Rolf Szimnau" />
+<link rel="canonical" href={canonicalURL} />
+
+{locales.map(l => (
+  <link rel="alternate" hreflang={l} href={buildAlternate(l)} />
+))}
+<link rel="alternate" hreflang="x-default" href={buildAlternate('en')} />
+
+<meta property="og:title" content={siteTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:type" content={type} />
+<meta property="og:url" content={canonicalURL} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:site_name" content="szimnau.dk" />
+<meta property="og:locale" content={lang === 'da' ? 'da_DK' : lang === 'de' ? 'de_DE' : 'en_US'} />
+{type === 'article' && pubDate && (
+  <meta property="article:published_time" content={pubDate.toISOString()} />
+)}
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@rszimnau" />
+<meta name="twitter:creator" content="@rszimnau" />
+<meta name="twitter:title" content={siteTitle} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+
+<script type="application/ld+json" set:html={JSON.stringify(websiteJsonLd)} />
+<script type="application/ld+json" set:html={JSON.stringify(personJsonLd)} />

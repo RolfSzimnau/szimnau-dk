@@ -1,0 +1,39 @@
+---
+import type { Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<section class="py-16 px-6">
+  <div class="max-w-4xl mx-auto">
+    <div class="glass-card p-10 relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-blue/5 to-transparent pointer-events-none"></div>
+      <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-8">
+        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-blue-glow border border-blue/20 flex items-center justify-center text-2xl">
+          🤝
+        </div>
+        <div class="flex-1">
+          <h2 class="text-2xl font-bold text-text-primary mb-3">{t('sponsor.title')}</h2>
+          <p class="text-text-muted leading-relaxed max-w-2xl">{t('sponsor.body')}</p>
+        </div>
+        <div class="flex-shrink-0">
+          <a
+            href={`mailto:rolf@szimnau.dk?subject=Sponsorship%20Enquiry`}
+            class="inline-flex items-center gap-2 bg-blue text-navy font-bold px-6 py-3 rounded-xl hover:bg-blue-dim transition-colors text-sm whitespace-nowrap"
+          >
+            {t('sponsor.cta')}
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

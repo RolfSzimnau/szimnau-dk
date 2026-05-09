@@ -1,0 +1,72 @@
+---
+import Base from '../../layouts/Base.astro';
+import HardwareLab from '../../components/HardwareLab.astro';
+import SponsorshipCTA from '../../components/SponsorshipCTA.astro';
+import BlogCard from '../../components/BlogCard.astro';
+import { useTranslations } from '../../i18n/utils';
+import { getCollection } from 'astro:content';
+
+const lang = 'da';
+const t = useTranslations(lang);
+
+const allPosts = await getCollection('blog');
+const posts = allPosts
+  .filter(p => p.data.lang === lang)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
+---
+
+<Base
+  title="Hjemmeautomatisering & Home Assistant"
+  description="Dybdegående guides til Home Assistant, hardware-anmeldelser og automatiseringsblueprints af Rolf Szimnau."
+  lang={lang}
+>
+  <section class="min-h-screen flex items-center px-6 pt-16 relative overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue/5 rounded-full blur-[120px]"></div>
+    </div>
+    <div class="max-w-6xl mx-auto w-full relative z-10">
+      <div class="max-w-3xl">
+        <p class="font-mono text-blue text-sm mb-4 tracking-widest uppercase">// Hjemmeautomatisering</p>
+        <h1 class="text-5xl sm:text-6xl md:text-7xl font-bold text-text-primary leading-[1.1] mb-6">
+          {t('hero.headline')}
+        </h1>
+        <p class="text-text-muted text-xl leading-relaxed mb-10 max-w-2xl">
+          {t('hero.subheadline')}
+        </p>
+        <div class="flex flex-wrap gap-4">
+          <a href={`/${lang}/blog/`} class="inline-flex items-center gap-2 bg-blue text-navy font-bold px-7 py-4 rounded-xl hover:bg-blue-dim transition-colors text-base">
+            {t('hero.cta.blog')}
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href={`/${lang}/#hardware-lab`} class="inline-flex items-center gap-2 border border-blue/40 text-blue font-bold px-7 py-4 rounded-xl hover:bg-blue/5 transition-colors text-base">
+            {t('hero.cta.hardware')}
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {posts.length > 0 && (
+    <section class="py-24 px-6">
+      <div class="max-w-6xl mx-auto">
+        <div class="flex items-end justify-between mb-10">
+          <div>
+            <p class="font-mono text-blue text-sm mb-2 tracking-wider uppercase">// Blog</p>
+            <h2 class="text-3xl font-bold text-text-primary">{t('blog.title')}</h2>
+          </div>
+          <a href={`/${lang}/blog/`} class="text-blue text-sm hover:underline font-mono hidden sm:block">{t('blog.alltags')} →</a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {posts.map(post => {
+            const slug = post.id.replace(`${lang}/`, '');
+            return <BlogCard lang={lang} title={post.data.title} description={post.data.description} pubDate={post.data.pubDate} tags={post.data.tags} slug={slug} heroImage={post.data.heroImage} />;
+          })}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <HardwareLab lang={lang} />
+  <SponsorshipCTA lang={lang} />
+</Base>

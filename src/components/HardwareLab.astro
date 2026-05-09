@@ -1,0 +1,112 @@
+---
+import type { Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const hardware = [
+  {
+    name: 'Dell OptiPlex 7060',
+    category: 'Proxmox Host',
+    description: 'Intel i5-8500, 32GB RAM, 500GB NVMe SSD. Runs Proxmox VE as the home server backbone.',
+    status: 'running' as const,
+    icon: '🖥️',
+    link: null,
+  },
+  {
+    name: 'Home Assistant OS',
+    category: 'Smart Home Hub',
+    description: 'Running as a Proxmox VM with 4 vCPU and 4GB RAM. The brain of the smart home.',
+    status: 'running' as const,
+    icon: '🏠',
+    link: 'https://www.home-assistant.io',
+  },
+  {
+    name: 'WiZ Smart Lighting',
+    category: 'Lighting',
+    description: 'Wi-Fi connected bulbs and light strips integrated natively into Home Assistant.',
+    status: 'active' as const,
+    icon: '💡',
+    link: 'https://www.wizconnected.com',
+  },
+  {
+    name: 'Shelly Devices',
+    category: 'Switches & Relays',
+    description: 'Shelly 1PM and Shelly Plus series for smart switching and energy monitoring.',
+    status: 'active' as const,
+    icon: '🔌',
+    link: 'https://www.shelly.com',
+  },
+  {
+    name: 'ESPHome Sensors',
+    category: 'DIY Sensors',
+    description: 'Custom ESP32/ESP8266 sensors for temperature, humidity, motion, and more.',
+    status: 'active' as const,
+    icon: '📡',
+    link: 'https://esphome.io',
+  },
+  {
+    name: 'UniFi Network',
+    category: 'Networking',
+    description: 'UniFi Dream Machine with managed switches and APs — rock-solid IoT VLAN isolation.',
+    status: 'running' as const,
+    icon: '🌐',
+    link: 'https://ui.com',
+  },
+];
+
+const statusColors = {
+  running: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  active: 'text-blue bg-blue-glow border-blue/20',
+  testing: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
+};
+
+const statusLabels = {
+  running: t('hardware.status.running'),
+  active: t('hardware.status.active'),
+  testing: t('hardware.status.testing'),
+};
+---
+
+<section id="hardware-lab" class="py-24 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-12">
+      <p class="font-mono text-blue text-sm mb-2 tracking-wider uppercase">// Hardware</p>
+      <h2 class="text-3xl sm:text-4xl font-bold text-text-primary mb-4">{t('hardware.title')}</h2>
+      <p class="text-text-muted max-w-2xl">{t('hardware.subtitle')}</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {hardware.map(device => (
+        <div class="glass-card p-6 group hover:border-blue/20 transition-all duration-300 hover:blue-glow">
+          <div class="flex items-start justify-between mb-4">
+            <span class="text-3xl">{device.icon}</span>
+            <span class={`font-mono text-xs px-2.5 py-1 rounded-full border ${statusColors[device.status]}`}>
+              {statusLabels[device.status]}
+            </span>
+          </div>
+          <h3 class="font-bold text-text-primary mb-0.5 group-hover:text-blue transition-colors">
+            {device.name}
+          </h3>
+          <p class="font-mono text-xs text-blue mb-3">{device.category}</p>
+          <p class="text-text-muted text-sm leading-relaxed">{device.description}</p>
+          {device.link && (
+            <a
+              href={device.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1 mt-4 text-xs text-text-muted hover:text-blue transition-colors font-mono"
+            >
+              vendor site →
+            </a>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

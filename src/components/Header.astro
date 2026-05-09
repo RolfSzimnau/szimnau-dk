@@ -1,0 +1,65 @@
+---
+import type { Lang } from '../i18n/ui';
+import { useTranslations, switchLocale } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const currentPath = Astro.url.pathname;
+const langs: Lang[] = ['en', 'da', 'de'];
+---
+
+<header
+  id="site-header"
+  class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+>
+  <nav class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href={`/${lang}/`} class="font-mono text-blue font-bold text-lg tracking-tight hover:opacity-80 transition-opacity">
+      szimnau<span class="text-text-muted">.dk</span>
+    </a>
+
+    <div class="hidden md:flex items-center gap-8">
+      <a href={`/${lang}/`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
+        {t('nav.home')}
+      </a>
+      <a href={`/${lang}/blog/`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
+        {t('nav.blog')}
+      </a>
+      <a href={`/${lang}/about/`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
+        {t('nav.about')}
+      </a>
+      <a href={`/${lang}/#hardware-lab`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
+        {t('nav.hardware')}
+      </a>
+    </div>
+
+    <div class="flex items-center gap-1">
+      {langs.map(l => (
+        <a
+          href={switchLocale(currentPath, l)}
+          class={`font-mono text-xs px-2.5 py-1 rounded-full transition-all ${
+            l === lang
+              ? 'bg-blue text-navy font-bold'
+              : 'text-text-muted hover:text-blue border border-glass-border hover:border-blue/40'
+          }`}
+        >
+          {l.toUpperCase()}
+        </a>
+      ))}
+    </div>
+  </nav>
+</header>
+
+<script>
+  const header = document.getElementById('site-header');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 20) {
+      header?.classList.add('bg-navy/80', 'backdrop-blur-md', 'border-b', 'border-glass-border');
+    } else {
+      header?.classList.remove('bg-navy/80', 'backdrop-blur-md', 'border-b', 'border-glass-border');
+    }
+  }, { passive: true });
+</script>

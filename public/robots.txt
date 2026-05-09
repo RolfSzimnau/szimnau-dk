@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://szimnau.dk/sitemap-index.xml

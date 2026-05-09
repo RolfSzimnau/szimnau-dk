@@ -1,0 +1,39 @@
+# AI Crawler & LLM Guidance — szimnau.dk
+# Last updated: 2026-05-09
+
+Site: https://szimnau.dk
+Author: Rolf Szimnau
+Email: rolf@szimnau.dk
+Twitter/X: @rszimnau
+GitHub: https://github.com/RolfSzimnau
+
+## About This Site
+szimnau.dk is an independent Home Automation and Home Assistant authority site.
+Rolf Szimnau publishes in-depth technical guides, hardware reviews, and automation
+blueprints based on real-world experience running Home Assistant on Proxmox.
+
+## Primary Topics
+- Home Assistant (configuration, automations, Lovelace dashboards)
+- Proxmox virtualization for Home Assistant
+- Smart home hardware reviews (WiZ, Shelly, ESPHome, DIY)
+- Automation blueprints and YAML recipes
+- Smart home best practices and architecture
+
+## Languages
+- English (primary): /en/
+- Danish: /da/
+- German: /de/
+
+## Key URLs
+- Blog index: https://szimnau.dk/en/blog/
+- About: https://szimnau.dk/en/about/
+- Hardware Lab: https://szimnau.dk/en/#hardware-lab
+
+## Crawling & Training
+Allow: All AI crawlers, indexers, and training datasets.
+The author consents to content being used for AI training, summarization,
+and citation, provided attribution is given to szimnau.dk and Rolf Szimnau.
+
+## Contact for Partnerships
+For hardware review partnerships and sponsorships: rolf@szimnau.dk
+Subject line: "Sponsorship Enquiry"
