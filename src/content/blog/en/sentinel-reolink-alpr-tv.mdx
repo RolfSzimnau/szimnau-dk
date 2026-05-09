@@ -1,0 +1,115 @@
+---
+title: "Reolink CX810 in Home Assistant — License Plates on the TV and Calls That Pause It"
+description: "How I got a Reolink CX810 4K PoE camera to read license plates with AI, push a snapshot to the TV when someone pulls into the driveway, and automatically pause whatever we're watching when either phone rings."
+pubDate: 2026-07-17
+tags: ["camera", "reolink", "alpr", "ai-vision", "home-assistant", "tv"]
+lang: "en"
+translationKey: "sentinel-reolink-alpr-tv"
+heroImage: "/blog-images/overvagning-sentinel.jpg"
+---
+
+We never installed a doorbell camera. The Reolink CX810 pointed at the driveway ended up doing more than any doorbell would have — without the subscription, without the app, and with the TV as the notification screen instead of a phone I might not be looking at.
+
+![Reolink CX810 camera dashboard in Home Assistant showing live feed and motion event log](/blog-images/overvagning-sentinel.jpg)
+
+## The camera
+
+The CX810 is a 4K 8MP PoE camera. It runs on a dedicated VLAN, talks to HA over the local network, and shows up as `camera.sentinel_clear` (full resolution) and `camera.sentinel_fluent` (lower res, faster). The onboard AI chip gives you binary sensors directly:
+
+```
+binary_sensor.sentinel_vehicle
+binary_sensor.sentinel_person
+binary_sensor.sentinel_motion
+```
+
+Vehicle and person detection from the camera's own chip are good enough to filter out the obvious false positives — birds, shadows, the cat. Not perfect, but it's the right starting point.
+
+## License plate reading
+
+When a vehicle triggers the sensor, the automation waits 2 seconds — long enough for the car to pull in and a plate to be visible — then grabs a snapshot and sends it to `llmvision.image_analyzer` with a very short, specific prompt:
+
+```yaml
+message: >
+  Look at this surveillance camera image. Read the vehicle license plate number.
+  Reply with ONLY the plate number in capital letters (example: 'AB12345').
+  If no plate is visible or readable, reply with only the word 'none'.
+max_tokens: 15
+temperature: 0.1
+```
+
+15 tokens. Low temperature. No room to ramble. Either it returns a plate or it returns "none".
+
+If the first read comes back empty, the automation waits another 3 seconds and tries again with a fresh snapshot. Two attempts is enough — if the plate isn't readable after two tries it's because the angle is bad or it's dark, not because the model needed more time.
+
+The best result from either attempt wins. It gets stored in `input_text.last_5_plates` as a rolling JSON list — a simple log of the last five plates that entered the driveway, with timestamps.
+
+## What lands on the TV
+
+`notify.android_tv` sends to the TV directly:
+
+```yaml
+action: notify.android_tv
+data:
+  message: "🚗 Bil registreret! Nummerplade: {{ plate_text }}"
+  data:
+    image: "http://192.168.x.x:8123/local/sentinel_latest.jpg"
+    interrupt: 1
+```
+
+The `interrupt: 1` flag forces the notification to appear even if the TV is busy. The image shows up in the corner with the plate text underneath. You're watching something, a car pulls in, a thumbnail appears in the corner with the plate — you glance at it and either ignore it or grab your phone. No picking up the phone to check, no opening an app.
+
+Phones get the same snapshot via `notify.alle_enheder`, with a timestamp-busted URL so it doesn't serve a cached image from the previous visit.
+
+Person detection gets a simpler version: no ALPR attempt, just a snapshot notification. It's enough to see whether it's the postman or someone you don't recognise.
+
+## TV pause on phone calls
+
+The second automation is unrelated to the camera but lives in the same mental category: the TV responding to what's happening in the house rather than sitting there ignoring it.
+
+When either phone rings, the TV pauses. When the call ends, it resumes.
+
+The mechanism is `sensor.pixel_10_phone_state`, which the HA companion app on both phones exposes with states: `ringing`, `in_call`, `offhook`, `idle`. The automation checks whether the TV remote is actually on before doing anything — no point pausing a TV that's already off.
+
+```yaml
+trigger:
+  - platform: state
+    entity_id: sensor.pixel_10_phone_state
+    to: [ringing, in_call, offhook]
+action:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.tv_was_playing
+  - action: remote.send_command
+    target:
+      entity_id: remote.tv_stuen
+    data:
+      command: MEDIA_PAUSE
+  - wait_for_trigger:
+      - platform: state
+        entity_id: sensor.pixel_10_phone_state
+        to: idle
+    timeout: "02:00:00"
+    continue_on_timeout: true
+  - action: remote.send_command
+    target:
+      entity_id: remote.tv_stuen
+    data:
+      command: MEDIA_PLAY
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.tv_was_playing
+```
+
+`input_boolean.tv_was_playing` is the memory. It prevents the automation from sending a play command to a TV that was already paused before the call — without it, a call could resume something that was intentionally paused.
+
+## Messenger calls are different
+
+A regular phone call ends cleanly — the sensor goes back to `idle` and the TV resumes. Messenger video calls don't always register in `phone_state`. They come through as notifications.
+
+The automation watches `sensor.pixel_10_last_notification` for the word "opkald" (call). When it finds it, it pauses the TV and sends an actionable notification with a single button: **Genoptag TV**. Tapping it fires `mobile_app_notification_action` with action `tv_resume_after_call`, which the automation is waiting for. If nobody taps it within 30 minutes, the automation continues anyway.
+
+It's the kind of thing that sounds complicated to explain and takes about four seconds to use.
+
+## What I cut
+
+I tried a version that announced the plate by text-to-speech on the TV speaker. It worked but felt like a airport departure board. The visual notification is quieter — you see it if you're looking, miss it if you're not, and the TV doesn't interrupt itself to read a number plate aloud at you.

@@ -1,0 +1,115 @@
+---
+title: "Reolink CX810 in Home Assistant — Kennzeichen auf dem TV und Anrufe die es pausieren"
+description: "Wie ich eine Reolink CX810 4K PoE Kamera dazu gebracht habe, Kennzeichen per KI zu lesen, bei Einfahrt in die Auffahrt ein Snapshot-Bild auf den TV zu schicken und beim Klingeln eines Telefons automatisch zu pausieren."
+pubDate: 2026-07-17
+tags: ["kamera", "reolink", "alpr", "ki-vision", "home-assistant", "tv"]
+lang: "de"
+translationKey: "sentinel-reolink-alpr-tv"
+heroImage: "/blog-images/overvagning-sentinel.jpg"
+---
+
+Eine Türklingel mit Kamera haben wir nie installiert. Die Reolink CX810, die auf die Auffahrt zeigt, leistet am Ende mehr als jede Türklingel es getan hätte — ohne Abo, ohne App, und mit dem TV als Benachrichtigungsbildschirm statt einem Handy, auf das man vielleicht gerade nicht schaut.
+
+![Reolink CX810 Kamera-Dashboard in Home Assistant mit Live-Bild und Bewegungsprotokoll](/blog-images/overvagning-sentinel.jpg)
+
+## Die Kamera
+
+Die CX810 ist eine 4K 8MP PoE-Kamera. Sie läuft in einem dedizierten VLAN, kommuniziert mit HA über das lokale Netzwerk und erscheint als `camera.sentinel_clear` (volle Auflösung) und `camera.sentinel_fluent` (niedrigere Auflösung, schneller). Der KI-Chip der Kamera liefert direkt Binärsensoren:
+
+```
+binary_sensor.sentinel_vehicle
+binary_sensor.sentinel_person
+binary_sensor.sentinel_motion
+```
+
+Fahrzeug- und Personenerkennung vom eigenen Chip der Kamera sind gut genug, um die offensichtlichen Fehlalarme herauszufiltern — Vögel, Schatten, die Katze. Nicht perfekt, aber der richtige Ausgangspunkt.
+
+## Kennzeichenerkennung
+
+Wenn ein Fahrzeug den Sensor auslöst, wartet die Automatisierung 2 Sekunden — lang genug damit das Auto eingefahren und ein Kennzeichen sichtbar ist — nimmt dann einen Snapshot und sendet ihn an `llmvision.image_analyzer` mit einem sehr kurzen, spezifischen Prompt:
+
+```yaml
+message: >
+  Look at this surveillance camera image. Read the vehicle license plate number.
+  Reply with ONLY the plate number in capital letters (example: 'AB12345').
+  If no plate is visible or readable, reply with only the word 'none'.
+max_tokens: 15
+temperature: 0.1
+```
+
+15 Token. Niedrige Temperatur. Kein Platz zum Schwadronieren. Entweder gibt es ein Kennzeichen zurück oder "none".
+
+Wenn der erste Versuch leer zurückkommt, wartet die Automatisierung weitere 3 Sekunden und versucht es erneut mit einem neuen Snapshot. Zwei Versuche reichen — wenn das Kennzeichen nach zwei Versuchen nicht lesbar ist, liegt es am schlechten Winkel oder Dunkelheit, nicht daran dass das Modell mehr Zeit brauchte.
+
+Das beste Ergebnis aus einem der beiden Versuche gewinnt. Es wird in `input_text.last_5_plates` als rollende JSON-Liste gespeichert — ein einfaches Protokoll der letzten fünf Kennzeichen, die in die Auffahrt eingefahren sind, mit Zeitstempeln.
+
+## Was auf dem TV landet
+
+`notify.android_tv` sendet direkt an den TV:
+
+```yaml
+action: notify.android_tv
+data:
+  message: "🚗 Fahrzeug erkannt! Kennzeichen: {{ plate_text }}"
+  data:
+    image: "http://192.168.x.x:8123/local/sentinel_latest.jpg"
+    interrupt: 1
+```
+
+Das `interrupt: 1`-Flag zwingt die Benachrichtigung dazu, auch dann zu erscheinen wenn der TV beschäftigt ist. Das Bild erscheint in der Ecke mit dem Kennzeichentext darunter. Man schaut etwas an, ein Auto fährt ein, ein Miniaturbild erscheint in der Ecke mit dem Kennzeichen — man wirft einen Blick drauf und ignoriert es entweder oder greift zum Handy. Kein Handy in die Hand nehmen zum Nachschauen, keine App öffnen.
+
+Die Telefone bekommen denselben Snapshot über `notify.alle_enheder`, mit einer zeitgestempelten URL damit kein gecachtes Bild vom letzten Besuch geliefert wird.
+
+Personenerkennung bekommt eine einfachere Version: kein ALPR-Versuch, nur eine Snapshot-Benachrichtigung. Es reicht um zu sehen ob es der Postbote ist oder jemand Unbekanntes.
+
+## TV-Pause bei Anrufen
+
+Die zweite Automatisierung hat nichts mit der Kamera zu tun, lebt aber in derselben gedanklichen Kategorie: der TV der auf das reagiert was im Haus passiert, anstatt einfach da zu sitzen und es zu ignorieren.
+
+Wenn eines der Telefone klingelt, pausiert der TV. Wenn der Anruf endet, nimmt er wieder auf.
+
+Der Mechanismus ist `sensor.pixel_10_phone_state`, den die HA Companion App auf beiden Telefonen mit den Zuständen `ringing`, `in_call`, `offhook`, `idle` bereitstellt. Die Automatisierung prüft ob die TV-Fernbedienung tatsächlich eingeschaltet ist, bevor sie etwas tut — kein Sinn einen TV zu pausieren der bereits aus ist.
+
+```yaml
+trigger:
+  - platform: state
+    entity_id: sensor.pixel_10_phone_state
+    to: [ringing, in_call, offhook]
+action:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.tv_was_playing
+  - action: remote.send_command
+    target:
+      entity_id: remote.tv_stuen
+    data:
+      command: MEDIA_PAUSE
+  - wait_for_trigger:
+      - platform: state
+        entity_id: sensor.pixel_10_phone_state
+        to: idle
+    timeout: "02:00:00"
+    continue_on_timeout: true
+  - action: remote.send_command
+    target:
+      entity_id: remote.tv_stuen
+    data:
+      command: MEDIA_PLAY
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.tv_was_playing
+```
+
+`input_boolean.tv_was_playing` ist das Gedächtnis. Es verhindert dass die Automatisierung einen Play-Befehl an einen TV schickt der vor dem Anruf bereits pausiert war — ohne es könnte ein Anruf etwas fortsetzen das absichtlich pausiert wurde.
+
+## Messenger-Anrufe sind anders
+
+Ein normaler Telefonanruf endet sauber — der Sensor geht zurück auf `idle` und der TV nimmt wieder auf. Messenger-Videoanrufe registrieren sich nicht immer in `phone_state`. Sie kommen als Benachrichtigungen rein.
+
+Die Automatisierung überwacht `sensor.pixel_10_last_notification` nach dem Wort "opkald" (Anruf). Wenn sie es findet, pausiert sie den TV und sendet eine aktionierbare Benachrichtigung mit einer einzigen Schaltfläche: **TV fortsetzen**. Ein Tippen löst `mobile_app_notification_action` mit der Aktion `tv_resume_after_call` aus, auf die die Automatisierung wartet. Wenn niemand innerhalb von 30 Minuten tippt, macht die Automatisierung trotzdem weiter.
+
+Es ist die Art von Sache die kompliziert klingt zu erklären und vier Sekunden braucht um sie zu benutzen.
+
+## Was ich weggelassen habe
+
+Ich habe eine Version ausprobiert die das Kennzeichen per Text-zu-Sprache über den TV-Lautsprecher ansagte. Es funktionierte aber fühlte sich wie eine Abflugtafel am Flughafen an. Die visuelle Benachrichtigung ist diskreter — man sieht sie wenn man hinschaut, übersieht sie wenn nicht, und der TV unterbricht sich nicht selbst um eine Nummer vorzulesen.
