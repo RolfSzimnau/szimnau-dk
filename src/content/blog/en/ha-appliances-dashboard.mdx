@@ -1,0 +1,85 @@
+---
+title: "Bosch Dishwasher in Home Assistant — Schedule by Electricity Price"
+description: "How I connected the Bosch dishwasher via Home Connect, built a dashboard with programme selection and finish-time control, and added a button that finds the cheapest hour to run it."
+pubDate: 2026-07-10
+tags: ["bosch", "home-connect", "dishwasher", "electricity", "home-assistant"]
+lang: "en"
+translationKey: "ha-appliances-dashboard"
+heroImage: "/blog-images/hvidevarer-appliances.jpg"
+---
+
+The dishwasher was the appliance I expected least from. It's a Bosch. It connects to the Bosch Home Connect app, which is fine but just another app. I added the Home Connect integration to HA mostly out of completeness.
+
+Then I realised it exposes enough control to do something actually useful: schedule the wash to start at the cheapest electricity hour.
+
+![Bosch dishwasher dashboard in Home Assistant with programme selector, finish time, and smart scheduling](/blog-images/hvidevarer-appliances.jpg)
+
+## What Home Connect exposes
+
+After adding the integration, the dishwasher shows up with:
+
+```
+sensor.dishwasher_operation_state   — Ready, Run, Finished, etc.
+sensor.dishwasher_program           — Eco50, Auto, Intensive, etc.
+sensor.dishwasher_remaining_time
+binary_sensor.dishwasher_remote_start_allowed
+select.dishwasher_program
+select.dishwasher_finish_at         — delayed start time
+switch.dishwasher_half_load
+switch.dishwasher_speed_perfect
+button.dishwasher_start
+```
+
+The key one is `select.dishwasher_finish_at`. Bosch's own delayed start lets you tell the machine what time you want it to finish — it works backwards from there. That's the lever.
+
+## The dashboard card
+
+The dashboard shows all controls in one glass card:
+
+- Operation state (Ready to wash / Running / Finished)
+- Programme selector
+- Finish time selector
+- Half load and SpeedPerfect toggles
+- Two action buttons: **Schedule cheapest** and **Start now**
+
+The "Schedule cheapest" button is a script that reads Energi Data Service spot prices, finds the cheapest upcoming 1-hour window before midnight, adds the programme's runtime, and sets `select.dishwasher_finish_at` to that time.
+
+```yaml
+alias: Dishwasher — Schedule cheapest hour
+sequence:
+  - variables:
+      prices: "{{ state_attr('sensor.energi_data_service', 'raw_today') | default([]) }}"
+      now_h: "{{ now().hour }}"
+      duration_h: 2
+      best: >
+        {{ prices
+           | selectattr('hour.hour', 'ge', now_h | int)
+           | sort(attribute='price')
+           | first }}
+  - service: select.select_option
+    target:
+      entity_id: select.dishwasher_finish_at
+    data:
+      option: >
+        {{ (as_datetime(best.hour) + timedelta(hours=duration_h))
+           .strftime('%H:%M') }}
+  - service: button.press
+    target:
+      entity_id: button.dishwasher_start
+```
+
+The card shows the result: "Schedule cheapest — 16:30 · 0.27 kr". You see both the time and the price before you commit.
+
+## Why this is worth the effort
+
+Eco50 runs about 2 hours. The price difference between the cheapest and most expensive hour of a typical Danish weekday is 1–3 DKK/kWh. At 0.8 kWh per cycle that's 0.80–2.40 DKK saved per wash. Not dramatic individually. Over 300 washes a year it adds up, and more importantly the grid is less stressed during peaks.
+
+The real benefit is behavioural. I load the dishwasher when it's full, tap one button, and don't think about it. The machine figures out when to run. It's finished before I go to bed.
+
+## What doesn't work
+
+Remote start has to be enabled on the machine's physical panel — there's a small icon on the display. If I forget to enable it, the integration's start command does nothing. I've forgotten this enough times that I added a chip to the card showing whether remote start is currently allowed.
+
+Programme changes via HA only work before the machine starts. Once running, the state entities update but the selects become read-only. That's a Bosch firmware limitation, not HA.
+
+The `Finished` state notification is the other thing. The dishwasher sends a state update when done. I have an alert ticker entry for it on the home screen — "Dishwasher done — empty me!" — that appears until someone acknowledges it. Low-tech, but I actually empty it now instead of leaving it sitting there for three hours.

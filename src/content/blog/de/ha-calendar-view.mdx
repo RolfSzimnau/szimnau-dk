@@ -1,0 +1,65 @@
+---
+title: "Familienkalender in Home Assistant — Vier Personen, Eine Ansicht"
+description: "Wie ich vier Google Kalender und Müllabfuhr-Daten in einer farbcodierten HA-Ansicht zusammengeführt habe, die unseren jahrelangen Wandkalender ersetzt hat."
+pubDate: 2026-07-03
+tags: ["kalender", "google-kalender", "dashboard", "home-assistant"]
+lang: "de"
+translationKey: "ha-calendar-view"
+heroImage: "/blog-images/kalender-calendar.jpg"
+---
+
+Wir hatten jahrelang einen Wandkalender in der Küche. Einen dieser großen Papierkalender mit einer Spalte pro Familienmitglied. Jemand schreibt etwas rein, jemand anderes sieht es nicht, und am Ende gibt es eine Kollision bei der Schulabholung oder einen Geburtstag, der erst am Morgen selbst auffällt. Der Kalender funktionierte gut, solange ihn alle pflegten — was sie nicht verlässlich taten.
+
+![Familienkalender in Home Assistant — vier farbcodierte Google Kalender plus Müllabfuhr](/blog-images/kalender-calendar.jpg)
+
+Die HA-Kalenderansicht hat das Gewohnheitsproblem nicht gelöst. Aber sie hat dieselben Informationen an einen Ort gebracht, an den alle sowieso schauen.
+
+## Die Konfiguration
+
+Jedes Familienmitglied hat einen Google Kalender. Die HA Google Kalender-Integration zieht alle als separate `calendar.*`-Entitäten rein. Die Müllabfuhr kommt von der `affalddk`-Integration — einer dänischen Gemeindeabfall-API, die eine eigene Kalenderentität mit Abholungsterminen erstellt.
+
+Die Kalenderansicht verwendet `custom:atomic-calendar-revive` im Agendamodus. Nichts Aufwändiges — nur eine scrollbare Liste bevorstehender Ereignisse, farbcodiert nach Person.
+
+```yaml
+type: custom:atomic-calendar-revive
+entities:
+  - entity: calendar.rolf
+    color: "#4fc3f7"
+  - entity: calendar.familienmitglied_1
+    color: "#f06292"
+  - entity: calendar.familienmitglied_2
+    color: "#ff8a65"
+  - entity: calendar.familienmitglied_3
+    color: "#aed581"
+  - entity: calendar.affalddk_bytoften_1
+    color: "#78909c"
+mode: Event
+maxEventCount: 15
+hoursFormat: 24h
+showWeekDay: true
+showRelativeTime: true
+showLocation: true
+showDescription: false
+```
+
+`showRelativeTime: true` ist das, was verändert hat, wie ich sie benutze. Statt "14. Mai" steht da "in 5 Tagen". Relative Zeit verarbeite ich schneller als absolute Daten. Ich weiß nicht warum.
+
+## Was der Müllkalender bringt
+
+Die `affalddk`-Integration erstellt Kalendereinträge für jeden Abholungstyp: Restmüll, Wertstoffe, Papier, Glas. Sie erscheinen als graue Einträge in der Ansicht. Auf dem Startbildschirm erscheint die Müllkarte nur innerhalb von drei Tagen vor einer Abholung — aber hier in der dedizierten Kalenderansicht sieht man den vollständigen Zeitplan Monate im Voraus.
+
+Das klingt marginal. Ist es nicht. Zu wissen, dass die Papierabholung nächsten Donnerstag ist, bedeutet, dass ich Kartons tatsächlich rechtzeitig aufschlage, anstatt sie am Vorabend hineinzustopfen.
+
+## Die Farbcodierung
+
+Jede Person bekommt eine Farbe, konsistent. Dieselbe Farbe in jedem Kontext, in dem ihre Ereignisse erscheinen. Nach ein paar Wochen hört man auf, die Namensspalte zu lesen, und liest nur noch die Farbe. Ein Blick auf Montag verrät, wessen Tag es ist, ohne dass die Augen auf Text fokussieren müssen.
+
+Der Müllkalender ist grau, weil es keine Person ist — es ist Infrastruktur. Er sitzt in der Liste, ohne visuell mit den menschlichen Einträgen zu konkurrieren.
+
+## Was ich nicht gemacht habe
+
+Ich habe keine Wochenansicht gebaut. Es gibt Kalender-Karten, die ein richtiges Monatsgitter rendern, und ich habe eine ausprobiert. Sie sah korrekt aus, aber ich stellte fest, dass ich sie genauso nutzte wie den Papierwandkalender: nicht oft genug und nur um ein bestimmtes Datum zu prüfen.
+
+Die Agendaansicht ist das, was ich tatsächlich verwende. Es ist einfach eine Liste dessen, was kommt, in Reihenfolge. Kein räumliches Denken erforderlich.
+
+Der Startbildschirm zeigt die nächsten 3 Ereignisse aus allen Kalendern kombiniert. Die dedizierte Kalenderansicht zeigt 15. Wenn ich eine Woche vorausplanen möchte, gehe ich zur Kalenderansicht. Im Alltag schaue ich nur auf den Startbildschirm. Zwei Zoomstufen über denselben Daten.

@@ -1,0 +1,65 @@
+---
+title: "Familiekalender i Home Assistant — Fire Mennesker, Ét Overblik"
+description: "Hvordan jeg samlede fire Google Kalendere og renovationsdata i én farvekoderet HA-visning der erstattede vores vægkalender."
+pubDate: 2026-07-03
+tags: ["kalender", "google-kalender", "dashboard", "home-assistant"]
+lang: "da"
+translationKey: "ha-calendar-view"
+heroImage: "/blog-images/kalender-calendar.jpg"
+---
+
+Vi har haft en vægkalender i køkkenet i årevis. En af de store papirkalendere med en kolonne per familiemedlem. Nogen skriver noget i den, en anden ser det ikke, og pludselig er der dobbeltbooking ved skolehentning eller en fødselsdag der ikke huskes før selve morgenen. Kalenderen virkede fint så længe alle holdt den opdateret — det gjorde de bare ikke, konsekvent.
+
+![Familiekalender i Home Assistant — fire farvekoderede Google Kalendere plus renovationsdata](/blog-images/kalender-calendar.jpg)
+
+HA-kalendervisningen løste ikke vaneproblemet. Men den lagde den samme information et sted alle alligevel kigger.
+
+## Opsætningen
+
+Hvert familiemedlem har en Google Kalender. HA's Google Kalender-integration trækker dem alle ind som separate `calendar.*`-entiteter. Renovationsdata kommer fra `affalddk`-integrationen — en dansk kommunal affalds-API der opretter sin egen kalenderentitet med afhentningsdatoer.
+
+Kalendervisningen bruger `custom:atomic-calendar-revive` i agendatilstand. Ingenting fancy — bare en rulleliste over kommende begivenheder, farvekoderet per person.
+
+```yaml
+type: custom:atomic-calendar-revive
+entities:
+  - entity: calendar.rolf
+    color: "#4fc3f7"
+  - entity: calendar.familiemedlem_1
+    color: "#f06292"
+  - entity: calendar.familiemedlem_2
+    color: "#ff8a65"
+  - entity: calendar.familiemedlem_3
+    color: "#aed581"
+  - entity: calendar.affalddk_bytoften_1
+    color: "#78909c"
+mode: Event
+maxEventCount: 15
+hoursFormat: 24h
+showWeekDay: true
+showRelativeTime: true
+showLocation: true
+showDescription: false
+```
+
+`showRelativeTime: true` er det der ændrede hvordan jeg bruger den. I stedet for "14. maj" står der "om 5 dage". Jeg behandler relativ tid hurtigere end absolutte datoer. Jeg ved ikke hvorfor.
+
+## Hvad affaldskalenderen gør
+
+`affalddk`-integrationen opretter kalenderbegivenheder for hver afhentningstype: restaffald, genbrug, papir, glas. De vises som grå poster i visningen. På startskærmen vises renovationskortet kun inden for tre dage fra en afhentning — men her i den dedikerede kalendervisning ser man hele skemaet måneder frem.
+
+Det lyder småt. Det er det ikke. At vide at papirafhentning er næste torsdag betyder at jeg faktisk får brudt kartoner ned i tide i stedet for at proppe dem ned i beholderen aftenen inden.
+
+## Farvekodningen
+
+Hvert person får én farve, konsekvent. Den samme farve i alle sammenhænge hvor deres begivenheder optræder. Efter et par uger holder man op med at læse navnekolonnen og læser bare farven. Et blik på mandag fortæller hvems dag det er uden at øjnene skal fokusere på tekst.
+
+Affaldskalenderen er grå fordi det ikke er en person — det er infrastruktur. Den sidder i listen uden at konkurrere visuelt med de menneskelige begivenheder.
+
+## Hvad jeg ikke gjorde
+
+Jeg lavede ikke en ugevisning. Der er korttyper der viser et ordentligt månedsgitter, og jeg prøvede én. Den så korrekt ud men jeg fandt ud af at jeg brugte den på samme måde som jeg brugte den papirvægkalender: ikke ofte nok, og kun for at tjekke en bestemt dato.
+
+Agendavisningen er hvad jeg faktisk bruger. Det er bare en liste over hvad der kommer, i rækkefølge. Ingen rumlig forståelse nødvendig.
+
+Startskærmen viser de næste 3 begivenheder fra alle kalendere kombineret. Den dedikerede kalendervisning viser 15. Når jeg vil planlægge en uge frem, går jeg til kalendervisningen. I dagligdagen kigger jeg bare på startskærmen. To zoomniveauer over de samme data.

@@ -1,0 +1,85 @@
+---
+title: "Bosch Geschirrspüler in Home Assistant — Nach Strompreis einplanen"
+description: "Wie ich den Bosch Geschirrspüler über Home Connect eingebunden, ein Dashboard mit Programmwahl und Endzeitkontrolle gebaut und einen Knopf hinzugefügt habe, der die günstigste Stunde findet."
+pubDate: 2026-07-10
+tags: ["bosch", "home-connect", "geschirrspueler", "strom", "home-assistant"]
+lang: "de"
+translationKey: "ha-appliances-dashboard"
+heroImage: "/blog-images/hvidevarer-appliances.jpg"
+---
+
+Der Geschirrspüler war das Gerät, von dem ich am wenigsten erwartet hatte. Es ist ein Bosch. Er verbindet sich mit der Bosch Home Connect-App, was in Ordnung ist — aber nur eine weitere App. Ich habe die Home Connect-Integration zu HA hauptsächlich aus Vollständigkeitsgründen hinzugefügt.
+
+Dann stellte ich fest, dass er genug Kontrolle bietet, um etwas wirklich Nützliches zu tun: den Waschgang so planen, dass er in der günstigsten Stromstunde startet.
+
+![Bosch Geschirrspüler-Dashboard in Home Assistant mit Programmwähler, Endzeit und Smart-Scheduling](/blog-images/hvidevarer-appliances.jpg)
+
+## Was Home Connect bereitstellt
+
+Nach dem Hinzufügen der Integration erscheint der Geschirrspüler mit:
+
+```
+sensor.dishwasher_operation_state   — Ready, Run, Finished, usw.
+sensor.dishwasher_program           — Eco50, Auto, Intensive, usw.
+sensor.dishwasher_remaining_time
+binary_sensor.dishwasher_remote_start_allowed
+select.dishwasher_program
+select.dishwasher_finish_at         — verzögerter Startzeitpunkt
+switch.dishwasher_half_load
+switch.dishwasher_speed_perfect
+button.dishwasher_start
+```
+
+Der entscheidende ist `select.dishwasher_finish_at`. Boschs eigener Verzögerungsstart lässt einen der Maschine mitteilen, wann man fertig sein möchte — sie rechnet rückwärts. Das ist der Hebel.
+
+## Die Dashboard-Karte
+
+Das Dashboard zeigt alle Bedienelemente in einer Glaskarte:
+
+- Betriebszustand (Bereit / Läuft / Fertig)
+- Programmwähler
+- Endzeitwähler
+- Halb-Beladung und SpeedPerfect-Schalter
+- Zwei Aktionsschaltflächen: **Günstigste planen** und **Jetzt starten**
+
+Der "Günstigste planen"-Knopf ist ein Skript, das Energi Data Service Spotpreise liest, das günstigste kommende 1-Stunden-Fenster vor Mitternacht findet, die Programmlaufzeit addiert und `select.dishwasher_finish_at` auf diesen Zeitpunkt setzt.
+
+```yaml
+alias: Geschirrspüler — Günstigste Stunde planen
+sequence:
+  - variables:
+      prices: "{{ state_attr('sensor.energi_data_service', 'raw_today') | default([]) }}"
+      now_h: "{{ now().hour }}"
+      duration_h: 2
+      best: >
+        {{ prices
+           | selectattr('hour.hour', 'ge', now_h | int)
+           | sort(attribute='price')
+           | first }}
+  - service: select.select_option
+    target:
+      entity_id: select.dishwasher_finish_at
+    data:
+      option: >
+        {{ (as_datetime(best.hour) + timedelta(hours=duration_h))
+           .strftime('%H:%M') }}
+  - service: button.press
+    target:
+      entity_id: button.dishwasher_start
+```
+
+Die Karte zeigt das Ergebnis: "Günstigste planen — 16:30 · 0,27 kr". Man sieht Zeit und Preis, bevor man bestätigt.
+
+## Warum der Aufwand lohnt
+
+Eco50 läuft ca. 2 Stunden. Die Preisdifferenz zwischen der günstigsten und teuersten Stunde eines typischen dänischen Werktags beträgt 1–3 DKK/kWh. Bei 0,8 kWh pro Waschgang sind das 0,80–2,40 DKK gespart. Individuell nicht dramatisch. Über 300 Waschgänge im Jahr summiert es sich — und wichtiger: das Netz wird in Spitzenlastzeiten weniger belastet.
+
+Der eigentliche Vorteil ist verhaltensbezogen. Ich befülle den Geschirrspüler wenn er voll ist, drücke einen Knopf und denke nicht mehr daran. Die Maschine findet heraus, wann sie laufen soll. Sie ist fertig bevor ich ins Bett gehe.
+
+## Was nicht funktioniert
+
+Fernstart muss am physischen Bedienfeld der Maschine aktiviert werden — auf dem Display gibt es ein kleines Symbol dafür. Wenn ich das vergesse, tut der Startbefehl der Integration nichts. Ich habe das oft genug vergessen, dass ich einen Chip zur Karte hinzugefügt habe, der anzeigt ob Fernstart gerade erlaubt ist.
+
+Programmänderungen über HA funktionieren nur bevor die Maschine startet. Sobald sie läuft, aktualisieren sich die Zustandsentitäten, aber die Auswahlfelder werden schreibgeschützt. Das ist eine Bosch-Firmware-Einschränkung, nicht HA.
+
+Die `Finished`-Zustandsbenachrichtigung ist die andere Sache. Der Geschirrspüler sendet eine Zustandsaktualisierung wenn er fertig ist. Ich habe dafür einen Alert-Ticker-Eintrag auf dem Startbildschirm — "Geschirrspüler fertig — leer mich!" — der erscheint bis jemand ihn bestätigt. Lowtech, aber ich leere ihn jetzt tatsächlich statt ihn drei Stunden stehen zu lassen.

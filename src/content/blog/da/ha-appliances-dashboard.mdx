@@ -1,0 +1,85 @@
+---
+title: "Bosch Opvaskemaskine i Home Assistant — Planlæg efter Elprisen"
+description: "Hvordan jeg forbandt opvaskemaskinen via Home Connect, byggede et dashboard med programvalg og sluttidskontrol, og tilføjede en knap der finder den billigste time."
+pubDate: 2026-07-10
+tags: ["bosch", "home-connect", "opvaskemaskine", "elektricitet", "home-assistant"]
+lang: "da"
+translationKey: "ha-appliances-dashboard"
+heroImage: "/blog-images/hvidevarer-appliances.jpg"
+---
+
+Opvaskemaskinen var det apparat jeg forventede mindst fra. Det er en Bosch. Den forbinder til Bosch Home Connect-appen, hvilket er fint men bare endnu en app. Jeg tilføjede Home Connect-integrationen til HA mest for fuldstændighedens skyld.
+
+Så opdagede jeg at den eksponerer nok kontrol til at gøre noget faktisk nyttigt: planlæg vasken til at starte i den billigste elektricitetstime.
+
+![Bosch opvaskemaskine-dashboard i Home Assistant med programvælger, sluttid og smart planlægning](/blog-images/hvidevarer-appliances.jpg)
+
+## Hvad Home Connect eksponerer
+
+Efter tilføjelse af integrationen vises opvaskemaskinen med:
+
+```
+sensor.dishwasher_operation_state   — Ready, Run, Finished, osv.
+sensor.dishwasher_program           — Eco50, Auto, Intensive, osv.
+sensor.dishwasher_remaining_time
+binary_sensor.dishwasher_remote_start_allowed
+select.dishwasher_program
+select.dishwasher_finish_at         — forsinket starttid
+switch.dishwasher_half_load
+switch.dishwasher_speed_perfect
+button.dishwasher_start
+```
+
+Den vigtigste er `select.dishwasher_finish_at`. Bosch's egen forsinkede start lader dig fortælle maskinen hvornår du vil have den færdig — den regner baglæns derfra. Det er grebet.
+
+## Dashboard-kortet
+
+Dashboardet viser alle kontroller i ét glaskort:
+
+- Driftstilstand (Klar til vask / Kører / Færdig)
+- Programvælger
+- Sluttidsvælger
+- Halvt læs og SpeedPerfect-kontakter
+- To handlingsknapper: **Planlæg billigst** og **Start nu**
+
+"Planlæg billigst"-knappen er et script der læser Energi Data Service spotpriser, finder det billigste kommende 1-times vindue inden midnat, lægger programmets køretid til, og sætter `select.dishwasher_finish_at` til det tidspunkt.
+
+```yaml
+alias: Opvaskemaskine — Planlæg billigste time
+sequence:
+  - variables:
+      prices: "{{ state_attr('sensor.energi_data_service', 'raw_today') | default([]) }}"
+      now_h: "{{ now().hour }}"
+      duration_h: 2
+      best: >
+        {{ prices
+           | selectattr('hour.hour', 'ge', now_h | int)
+           | sort(attribute='price')
+           | first }}
+  - service: select.select_option
+    target:
+      entity_id: select.dishwasher_finish_at
+    data:
+      option: >
+        {{ (as_datetime(best.hour) + timedelta(hours=duration_h))
+           .strftime('%H:%M') }}
+  - service: button.press
+    target:
+      entity_id: button.dishwasher_start
+```
+
+Kortet viser resultatet: "Planlæg billigst — 16:30 · 0,27 kr". Du ser både tidspunktet og prisen inden du bekræfter.
+
+## Hvorfor det er besværet værd
+
+Eco50 kører ca. 2 timer. Prisforskellen mellem den billigste og dyreste time på en typisk dansk hverdag er 1–3 DKK/kWh. Ved 0,8 kWh per vask er det 0,80–2,40 DKK sparet per vask. Ikke dramatisk individuelt. Over 300 vaske om året løber det op, og vigtigst af alt er nettet mindre belastet under spidsbelastning.
+
+Den reelle fordel er adfærdsmæssig. Jeg fylder opvaskemaskinen når den er fuld, trykker på én knap, og tænker ikke mere på det. Maskinen finder ud af hvornår den skal køre. Den er færdig inden jeg går i seng.
+
+## Hvad der ikke virker
+
+Fjernstart skal aktiveres på maskinens fysiske panel — der er et lille ikon på displayet. Hvis jeg glemmer at aktivere det, gør integrationens startkommando ingenting. Jeg har glemt det nok gange til at jeg tilføjede en chip til kortet der viser om fjernstart er tilladt.
+
+Programændringer via HA virker kun inden maskinen starter. Når den kører, opdateres tilstandsentiteterne men vælgerne bliver skrivebeskyttede. Det er en Bosch firmware-begrænsning, ikke HA.
+
+`Finished`-tilstandsnotifikationen er det andet. Opvaskemaskinen sender en tilstandsopdatering når den er færdig. Jeg har en alert ticker-post til det på startskærmen — "Opvaskemaskine færdig — tøm mig!" — der vises indtil nogen bekræfter den. Lavteknologisk, men jeg tømmer den faktisk nu i stedet for at lade den stå i tre timer.
