@@ -5,7 +5,7 @@ pubDate: 2026-09-14
 tags: ["lora", "iot", "home-assistant", "diy", "mailbox"]
 lang: "da"
 translationKey: "mailboxguard-lora-home-assistant"
-heroImage: "/blog-images/mailboxguard.jpg"
+heroImage: "/blog-images/mailboxguard-installed.jpg"
 ---
 
 Min postkasse er 200 meter fra huset, for enden af indkørslen. Det er ikke det store problem at gå ud og tjekke — men at gøre det i regnen og finde ingenting, er det.
@@ -14,17 +14,17 @@ Dansk postlevering er uregelmæssig nok til, at jeg aldrig kan forudsige, hvorn�
 
 LoRa gør.
 
+![MailBoxGuard-sensor monteret inde i en postkasse, der viser den kompakte lukkede enhed med antenne](/blog-images/mailboxguard-installed.jpg)
+
 ## Hardwaret
 
-**MailBoxGuard** er et lille board fra PricelessToolkit bygget op om en ATtiny1616. Det har:
-- En integreret reedkontakt til dørdetektering
-- Et eksternt reedkontakt-input
-- En AM312 PIR-sensor til bevægelse (jeg deaktiverede den — for mange falske positiver fra biler på vejen)
-- USB-C-opladning på et enkelt 14500 Li-Ion-batteri
+**MailBoxGuard** er en komplet, selvstændig enhed fra PricelessToolkit — ikke et bart PCB, men en færdig vejrbestandig kapsel designet til at leve inde i en postkasse. Elektronikken er bygget op om en ATtiny1616 med en integreret reedkontakt til dørdetektering, en valgfri AM312 PIR-sensor til bevægelse (jeg deaktiverede den — for mange falske positiver fra biler på vejen) og USB-C-opladning på et enkelt 14500 Li-Ion-batteri.
 
-Strømforbruget i dvale med kun reedkontakt er 280 nanoampere. Jeg har ikke skiftet batteriet siden installationen. Det var for over et år siden.
+![MailBoxGuard systemdiagram med sensordelen, LoRa-node og Meshtastic gateway-muligheder](/blog-images/mailboxguard-product.jpg)
 
-Til LoRa-gatewayen købte jeg et LilyGo TTGO LoRa32-board på AliExpress — under 200 kr., kører på 868 MHz i Danmark. Jeg programmerede det med Arduino IDE ved hjælp af firmware fra PricelessToolkits dokumentation. Opsætningen tog en eftermiddag. Siden da har jeg ikke rørt det.
+Formfaktoren er vigtig. Den trådfriheds-formede kapsel er designet specifikt til ikke at hænge fast i breve og pakker. Den monteres plant mod postkassens inderside og antennen er integreret i kapslen, så den ikke stikker ud i postspalten.
+
+Til gatewayen købte jeg et LilyGo TTGO LoRa32-board på AliExpress — under 200 kr., kører på 868 MHz i Danmark. Jeg programmerede det med Arduino IDE ved hjælp af firmware fra PricelessToolkits dokumentation. Opsætningen tog en eftermiddag. Siden da har jeg ikke rørt det.
 
 ## Hvorfor LoRa på 200 meter
 
@@ -42,7 +42,7 @@ homeassistant/binary_sensor/mailboxguard/state → ON
 
 HA opfanger dette automatisk og opretter en `binary_sensor.mailboxguard`-entitet. Ingen manuel YAML-konfiguration på HA-siden.
 
-ATtiny1616 sidder i dyb dvale. Når reedkontakten udløses, vågner den, sender LoRa-pakken og falder til søvn igen på under et sekund. Det enkelt sendetrin på 65 mikroampere er det eneste meningsfulde strømforbrug — og dermed det årelange batteriliv.
+ATtiny1616 sidder i dyb dvale. Når reedkontakten udløses, vågner den, sender LoRa-pakken og falder til søvn igen på under et sekund. Det enkelt sendetrin på 65 mikroampere er det eneste meningsfulde strømforbrug. Standbyforbrug i reedkontakt-only tilstand er 280 nanoampere — og dermed det årelange batteriliv.
 
 ## Home Assistant-automation
 
@@ -66,14 +66,12 @@ action:
 
 ## Installation
 
-Boardet passer inde i postkasselåget. Reedkontakten monterede jeg på dørkarmen med dobbeltklæbende tape og en lille neodym-magnet på selve låget. 14500-batteriet falder ned i holderen på boardet. Luk låget — det er hele installationen.
-
-LoRa-antennen på MailBoxGuard er en lille trådstub. Jeg løb den langs indersiden af låget for at holde den væk fra postkassens metalkrop. Ingen ekstern antenne nødvendig.
+MailBoxGuard monteres på postkassens inderside. Jeg brugte dobbeltklæbende tape. Antennen sidder oprejst inde i kapslen, og hele enheden er kompakt nok til ikke at forstyrre brevelevering.
 
 TTGO LoRa32 ved huset sidder i serverrummet med antennen ved et vindue mod indkørslen. Et kort USB-kabel forsyner det fra serveren.
 
 ## Én ting at vide
 
-PricelessToolkit har udgået MailBoxGuard til fordel for de nyere PirBOX-LITE og PirBOX-MAX. Det er dem, der er aktuelle hvis du køber nyt — samme koncept, bedre hardware, mere konfiguration. Finder du en MailBoxGuard på lager, virker den præcis som beskrevet her.
+PricelessToolkit har udgået MailBoxGuard til fordel for de nyere PirBOX-LITE og PirBOX-MAX. Det er dem, der er aktuelle hvis du køber nyt — samme koncept, forbedret hardware, flere konfigurationsmuligheder. Finder du en MailBoxGuard på lager, virker den præcis som beskrevet her.
 
 Mit eksemplar har kørt siden før udgangen. Urokkelig stabilt.

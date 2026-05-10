@@ -5,7 +5,7 @@ pubDate: 2026-09-14
 tags: ["lora", "iot", "home-assistant", "diy", "mailbox"]
 lang: "en"
 translationKey: "mailboxguard-lora-home-assistant"
-heroImage: "/blog-images/mailboxguard.jpg"
+heroImage: "/blog-images/mailboxguard-installed.jpg"
 ---
 
 My mailbox is 200 metres from the house, at the end of the driveway. Walking out to check it isn't a big deal. Walking out in the rain and finding nothing is.
@@ -14,17 +14,17 @@ Danish postal delivery is irregular enough that I genuinely can't predict when s
 
 LoRa does.
 
+![MailBoxGuard sensor mounted inside a mailbox, showing the compact enclosed unit with antenna](/blog-images/mailboxguard-installed.jpg)
+
 ## The Hardware
 
-**MailBoxGuard** is a small board from PricelessToolkit built around an ATtiny1616. It has:
-- An onboard reed switch for door detection
-- An optional external reed switch input
-- An AM312 PIR sensor for motion (I disabled this — too many false positives from passing cars on the road)
-- USB-C charging on a single 14500 Li-Ion cell
+**MailBoxGuard** is a complete self-contained unit from PricelessToolkit — not a bare PCB but a finished, weather-resistant enclosure designed to live inside a mailbox. The electronics inside are built around an ATtiny1616 with an onboard reed switch for door detection, an optional AM312 PIR sensor for motion (I disabled this — too many false positives from passing cars), and USB-C charging on a single 14500 Li-Ion cell.
 
-The standby power draw when running reed-switch-only is 280 nanoamperes. I have not changed the battery since installation. That was over a year ago.
+![MailBoxGuard system diagram showing the sensor unit, LoRa node brain, and Meshtastic gateway options](/blog-images/mailboxguard-product.jpg)
 
-For the LoRa gateway I bought a LilyGo TTGO LoRa32 board on AliExpress — under €25, running on 868 MHz here in Denmark. I programmed it with the Arduino IDE using firmware from the PricelessToolkit documentation. The setup took an afternoon. Since then I have not touched it.
+The form factor matters. The snag-free enclosure is shaped specifically to avoid catching on envelopes and parcels. It mounts flush to the mailbox interior and the antenna tucks up so it doesn't protrude into the mail slot.
+
+For the gateway I bought a LilyGo TTGO LoRa32 board on AliExpress — under €25, running on 868 MHz here in Denmark. I programmed it with the Arduino IDE using firmware from the PricelessToolkit documentation. The setup took an afternoon. Since then I have not touched it.
 
 ## Why LoRa at 200 Metres
 
@@ -42,7 +42,7 @@ homeassistant/binary_sensor/mailboxguard/state → ON
 
 HA picks this up automatically and creates a `binary_sensor.mailboxguard` entity. No manual YAML config needed on the HA side.
 
-The ATtiny1616 sits in deep sleep. When the reed switch trips it wakes up, transmits the LoRa packet, and goes back to sleep in under a second. That single 65-microampere transmission is the only meaningful power draw — hence the year-long battery life.
+The ATtiny1616 sits in deep sleep. When the reed switch trips it wakes up, transmits the LoRa packet, and goes back to sleep in under a second. That single 65-microampere transmission is the only meaningful power draw. The standby current on reed-switch-only mode is 280 nanoamperes — hence the year-long battery life.
 
 ## Home Assistant Automation
 
@@ -66,14 +66,12 @@ action:
 
 ## Installation
 
-The board fits inside the mailbox lid. I attached the reed switch to the door frame with double-sided tape and a small rare-earth magnet on the door itself. The 14500 cell drops into the holder on the board. Close the lid and that's the entire installation.
-
-The LoRa antenna on the MailBoxGuard is a small wire stub. I ran it along the inside edge of the lid to keep it away from the metal body of the mailbox. No external antenna needed.
+The MailBoxGuard mounts to the interior wall of the mailbox. I used a small patch of double-sided tape. The antenna sits upright inside the enclosure and the whole unit is compact enough that it doesn't interfere with letter delivery.
 
 The TTGO LoRa32 at the house end sits in the server room with its antenna next to a window facing the driveway. A short USB cable powers it from the server.
 
 ## One Thing to Know
 
-PricelessToolkit discontinued the MailBoxGuard in favour of the newer PirBOX-LITE and PirBOX-MAX. Those are the current options if you're buying new — same concept, better hardware, more configuration. If you find a MailBoxGuard in stock, it works exactly as described here.
+PricelessToolkit discontinued the MailBoxGuard in favour of the newer PirBOX-LITE and PirBOX-MAX. Those are the current options if you're buying new — same concept, improved hardware, more configuration options. If you find a MailBoxGuard in stock, it works exactly as described here.
 
 Mine has been running since before the discontinuation. Rock solid.
