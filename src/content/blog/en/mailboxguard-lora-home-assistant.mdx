@@ -1,0 +1,79 @@
+---
+title: "MailBoxGuard: LoRa Mailbox Sensor 200 Metres from the House"
+description: "How I wired a PricelessToolkit MailBoxGuard to an AliExpress LoRa gateway, got instant push notifications when mail arrives, and haven't touched the battery in over a year."
+pubDate: 2026-09-14
+tags: ["lora", "iot", "home-assistant", "diy", "mailbox"]
+lang: "en"
+translationKey: "mailboxguard-lora-home-assistant"
+heroImage: "/blog-images/mailboxguard.jpg"
+---
+
+My mailbox is 200 metres from the house, at the end of the driveway. Walking out to check it isn't a big deal. Walking out in the rain and finding nothing is.
+
+Danish postal delivery is irregular enough that I genuinely can't predict when something's there. I needed a sensor. The problem is that 200 metres is too far for Zigbee, Z-Wave, Bluetooth, and most Wi-Fi setups. None of those reach reliably at that distance through trees and a garden wall.
+
+LoRa does.
+
+## The Hardware
+
+**MailBoxGuard** is a small board from PricelessToolkit built around an ATtiny1616. It has:
+- An onboard reed switch for door detection
+- An optional external reed switch input
+- An AM312 PIR sensor for motion (I disabled this — too many false positives from passing cars on the road)
+- USB-C charging on a single 14500 Li-Ion cell
+
+The standby power draw when running reed-switch-only is 280 nanoamperes. I have not changed the battery since installation. That was over a year ago.
+
+For the LoRa gateway I bought a LilyGo TTGO LoRa32 board on AliExpress — under €25, running on 868 MHz here in Denmark. I programmed it with the Arduino IDE using firmware from the PricelessToolkit documentation. The setup took an afternoon. Since then I have not touched it.
+
+## Why LoRa at 200 Metres
+
+I tried a Zigbee approach first. A Sonoff Zigbee dongle at the house, a mains-powered repeater halfway down the driveway. The reception was inconsistent, and the repeater needed its own power outlet. That's too much infrastructure for one sensor that just needs to say "door opened."
+
+LoRa at 868 MHz goes through trees, hedges, and a garden wall with link margin to spare. The TTGO LoRa32 shows RSSI values of roughly -90 to -100 dBm from the mailbox — solid enough that I've never had a missed notification in over a year.
+
+## Firmware and MQTT
+
+The firmware variant I used sends MQTT messages with Home Assistant autodiscovery payloads. When the mailbox door opens:
+
+```
+homeassistant/binary_sensor/mailboxguard/state → ON
+```
+
+HA picks this up automatically and creates a `binary_sensor.mailboxguard` entity. No manual YAML config needed on the HA side.
+
+The ATtiny1616 sits in deep sleep. When the reed switch trips it wakes up, transmits the LoRa packet, and goes back to sleep in under a second. That single 65-microampere transmission is the only meaningful power draw — hence the year-long battery life.
+
+## Home Assistant Automation
+
+Door opens → push notification to both phones:
+
+```yaml
+alias: Mailbox — Notify on delivery
+trigger:
+  - platform: state
+    entity_id: binary_sensor.mailboxguard
+    from: "off"
+    to: "on"
+action:
+  - service: notify.alle_enheder
+    data:
+      title: "📬 Post i postkassen"
+      message: "Der er kommet post."
+```
+
+`notify.alle_enheder` is my notify group covering both phones simultaneously. The notification has never fired for a false positive. A reed switch is binary — there's no ambiguity about whether the door is open or closed.
+
+## Installation
+
+The board fits inside the mailbox lid. I attached the reed switch to the door frame with double-sided tape and a small rare-earth magnet on the door itself. The 14500 cell drops into the holder on the board. Close the lid and that's the entire installation.
+
+The LoRa antenna on the MailBoxGuard is a small wire stub. I ran it along the inside edge of the lid to keep it away from the metal body of the mailbox. No external antenna needed.
+
+The TTGO LoRa32 at the house end sits in the server room with its antenna next to a window facing the driveway. A short USB cable powers it from the server.
+
+## One Thing to Know
+
+PricelessToolkit discontinued the MailBoxGuard in favour of the newer PirBOX-LITE and PirBOX-MAX. Those are the current options if you're buying new — same concept, better hardware, more configuration. If you find a MailBoxGuard in stock, it works exactly as described here.
+
+Mine has been running since before the discontinuation. Rock solid.

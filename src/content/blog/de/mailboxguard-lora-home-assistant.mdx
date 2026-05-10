@@ -1,0 +1,79 @@
+---
+title: "MailBoxGuard: LoRa-Briefkastensensor 200 Meter vom Haus"
+description: "Wie ich einen PricelessToolkit MailBoxGuard mit einem AliExpress-LoRa-Gateway aufgebaut habe und sofortige Push-Benachrichtigungen beim Posteingang bekomme — ohne seit über einem Jahr die Batterie gewechselt zu haben."
+pubDate: 2026-09-14
+tags: ["lora", "iot", "home-assistant", "diy", "mailbox"]
+lang: "de"
+translationKey: "mailboxguard-lora-home-assistant"
+heroImage: "/blog-images/mailboxguard.jpg"
+---
+
+Mein Briefkasten ist 200 Meter vom Haus entfernt, am Ende der Einfahrt. Hinauszugehen um nachzuschauen ist keine große Sache. Im Regen hinauszugehen und nichts zu finden, schon.
+
+Die Postlieferung ist unregelmäßig genug, dass ich nie vorhersagen kann, wann etwas da ist. Ich brauchte einen Sensor. Das Problem: 200 Meter sind zu weit für Zigbee, Z-Wave, Bluetooth und die meisten WLAN-Lösungen. Keines davon reicht auf diese Distanz zuverlässig durch Bäume und eine Gartenmauer.
+
+LoRa schon.
+
+## Die Hardware
+
+**MailBoxGuard** ist ein kleines Board von PricelessToolkit, aufgebaut auf einem ATtiny1616. Es hat:
+- Einen integrierten Reed-Schalter zur Türerkennung
+- Einen externen Reed-Schalter-Eingang
+- Einen AM312 PIR-Sensor für Bewegung (ich habe ihn deaktiviert — zu viele Fehlalarme durch vorbeifahrende Autos)
+- USB-C-Ladung mit einem einzelnen 14500 Li-Ion-Akku
+
+Die Standby-Stromaufnahme im Reed-Schalter-only-Modus beträgt 280 Nanoampere. Ich habe den Akku seit der Installation nicht gewechselt. Das ist über ein Jahr her.
+
+Für das LoRa-Gateway kaufte ich ein LilyGo TTGO LoRa32-Board auf AliExpress — unter 25 €, läuft auf 868 MHz in Dänemark. Ich programmierte es mit der Arduino IDE anhand der Firmware aus der PricelessToolkit-Dokumentation. Die Einrichtung dauerte einen Nachmittag. Seitdem habe ich es nicht mehr angefasst.
+
+## Warum LoRa auf 200 Metern
+
+Ich habe zuerst einen Zigbee-Ansatz versucht. Ein Sonoff Zigbee-Dongle am Haus, ein netzbetriebener Repeater auf halber Strecke der Einfahrt. Der Empfang war unzuverlässig, und der Repeater brauchte eine eigene Steckdose. Das ist zu viel Infrastruktur für einen einzigen Sensor, der nur "Tür geöffnet" melden muss.
+
+LoRa auf 868 MHz durchdringt Bäume, Hecke und Gartenmauer mit gutem Sicherheitsabstand. Das TTGO LoRa32 zeigt RSSI-Werte von etwa -90 bis -100 dBm vom Briefkasten — zuverlässig genug, dass ich in über einem Jahr keine einzige verpasste Benachrichtigung hatte.
+
+## Firmware und MQTT
+
+Die von mir verwendete Firmware-Variante sendet MQTT-Nachrichten mit Home Assistant Autodiscovery-Payloads. Wenn die Briefkastentür öffnet:
+
+```
+homeassistant/binary_sensor/mailboxguard/state → ON
+```
+
+HA nimmt das automatisch auf und erstellt eine `binary_sensor.mailboxguard`-Entität. Kein manuelles YAML-Setup auf der HA-Seite nötig.
+
+Der ATtiny1616 liegt im Tiefschlaf. Wenn der Reed-Schalter auslöst, wacht er auf, sendet das LoRa-Paket und schläft innerhalb einer Sekunde wieder ein. Dieser einzelne 65-Mikroampere-Sendezyklus ist der einzige nennenswerte Stromverbrauch — daher die jahrelange Akkulaufzeit.
+
+## Home Assistant Automation
+
+Tür öffnet → Push-Benachrichtigung auf beide Telefone:
+
+```yaml
+alias: Briefkasten — Benachrichtigung bei Lieferung
+trigger:
+  - platform: state
+    entity_id: binary_sensor.mailboxguard
+    from: "off"
+    to: "on"
+action:
+  - service: notify.alle_enheder
+    data:
+      title: "📬 Post im Briefkasten"
+      message: "Es ist Post angekommen."
+```
+
+`notify.alle_enheder` ist meine Benachrichtigungsgruppe, die beide Telefone gleichzeitig erreicht. Die Benachrichtigung hat noch nie einen Fehlalarm ausgelöst. Ein Reed-Schalter ist binär — es gibt keine Zweideutigkeit, ob die Tür offen oder geschlossen ist.
+
+## Installation
+
+Das Board passt in den Briefkastendeckel. Den Reed-Schalter befestigte ich am Türrahmen mit doppelseitigem Klebeband und einem kleinen Neodym-Magneten an der Tür selbst. Der 14500-Akku fällt in den Halter auf dem Board. Deckel schließen — das ist die gesamte Installation.
+
+Die LoRa-Antenne am MailBoxGuard ist ein kleiner Drahtstummel. Ich legte ihn entlang der Innenseite des Deckels, um ihn vom Metallkörper des Briefkastens fernzuhalten. Keine externe Antenne nötig.
+
+Das TTGO LoRa32 am Haus liegt im Serverraum mit der Antenne an einem Fenster Richtung Einfahrt. Ein kurzes USB-Kabel versorgt es vom Server.
+
+## Eins zu wissen
+
+PricelessToolkit hat den MailBoxGuard zugunsten der neueren PirBOX-LITE und PirBOX-MAX eingestellt. Das sind die aktuellen Optionen beim Neukauf — gleiches Konzept, bessere Hardware, mehr Konfigurationsmöglichkeiten. Findet man einen MailBoxGuard auf Lager, funktioniert er genau wie hier beschrieben.
+
+Meins läuft seit vor der Einstellung. Absolut zuverlässig.

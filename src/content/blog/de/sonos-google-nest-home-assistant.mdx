@@ -1,0 +1,174 @@
+---
+title: "Sonos und Google Nest als ein System in Home Assistant"
+description: "Wie ich einen Sonos-Wohnzimmerlautsprecher mit vier Google Nest Audio Lautsprechern per Home Assistant Scripts vereint habe — ohne Drittanbieter-Brücken und ohne Abonnement."
+pubDate: 2026-08-14
+tags: ["sonos", "google-nest", "audio", "home-assistant", "multiroom"]
+lang: "de"
+translationKey: "sonos-google-nest-home-assistant"
+heroImage: "/blog-images/sonos-google-nest.jpg"
+---
+
+Sonos und Google sind Konkurrenten. Ihre Apps sprechen nicht miteinander. Hat man einen Sonos-Lautsprecher im Wohnzimmer und Google Nest Audio Lautsprecher in Schlafzimmern und Küche, hat man zwei separate Musiksysteme ohne gemeinsame Steuerung.
+
+Ich habe ungefähr zwei Jahre so gelebt, bevor es nervig genug war, um es zu ändern.
+
+Die Lösung war keine Bridge-App und kein Abonnement. Es war Home Assistant.
+
+## Die Hardware, mit der ich arbeite
+
+Wohnzimmer: ein Sonos-Lautsprecher (`media_player.stue`).
+
+Alles andere ist Google Nest Audio oder Google Home:
+- Schlafzimmer (`media_player.hojtaler`)
+- Büro (`media_player.hojtaler_mia`)
+- Küche (`media_player.hojtaler_kokken`)
+- Werkstatt (`media_player.vaerksted`)
+
+Fünf Lautsprecher, zwei Marken, null native Kompatibilität.
+
+## Wie HA beide integriert
+
+Die Sonos-Integration in HA ist nativ und hervorragend. Sie findet den Lautsprecher automatisch über das lokale Netzwerk — keine Sonos-Cloud-Abhängigkeit für grundlegende Wiedergabesteuerung.
+
+Google-Lautsprecher werden über die Google Home-Integration (oder die Cast-Integration) eingebunden. Beide liefern `media_player`-Entitäten mit Standard-Play/Pause/Lautstärke-Services.
+
+Da HA alles auf dieselbe `media_player`-Domäne mappt, kann man einen Sonos und einen Google-Lautsprecher mit identischen Service-Aufrufen steuern:
+
+```yaml
+service: media_player.volume_set
+data:
+  volume_level: 0.3
+target:
+  entity_id:
+    - media_player.stue
+    - media_player.hojtaler
+```
+
+HA interessiert es nicht, dass es zwei verschiedene Marken sind.
+
+## Die drei Scripts
+
+Ich habe drei Scripts gebaut, die alle fünf Lautsprecher als ein System behandeln:
+
+**Alle pausieren:**
+```yaml
+alias: alle_hojtalere_pause
+sequence:
+  - service: media_player.media_pause
+    target:
+      entity_id:
+        - media_player.stue
+        - media_player.hojtaler
+        - media_player.hojtaler_mia
+        - media_player.hojtaler_kokken
+        - media_player.vaerksted
+```
+
+**Alle stoppen:**
+```yaml
+alias: alle_hojtalere_stop
+sequence:
+  - service: media_player.media_stop
+    target:
+      entity_id:
+        - media_player.stue
+        - media_player.hojtaler
+        - media_player.hojtaler_mia
+        - media_player.hojtaler_kokken
+        - media_player.vaerksted
+```
+
+**Lautstärke aller setzen (nimmt einen Wert als Field-Input):**
+```yaml
+alias: alle_hojtalere_volumen
+fields:
+  volume:
+    description: Lautstärke (0.0–1.0)
+    default: 0.3
+sequence:
+  - service: media_player.volume_set
+    data:
+      volume_level: "{{ volume }}"
+    target:
+      entity_id:
+        - media_player.stue
+        - media_player.hojtaler
+        - media_player.hojtaler_mia
+        - media_player.hojtaler_kokken
+        - media_player.vaerksted
+```
+
+Ich rufe diese aus Automationen, Dashboard-Buttons und Sprachbefehlen auf. Das Lautstärke-Script ist besonders nützlich abends — ein Sprachbefehl senkt alles auf 15%, ohne in drei verschiedenen Apps nach einzelnen Lautsprecherreglern zu suchen.
+
+## Praktische Automationen
+
+**Das Haus verlassen** — wenn die letzte Person geht, alles pausieren was spielt:
+
+```yaml
+alias: Verlassen — alle Lautsprecher pausieren
+trigger:
+  - platform: state
+    entity_id: group.family
+    to: not_home
+condition:
+  - condition: template
+    value_template: >
+      {{ states | selectattr('domain', 'eq', 'media_player')
+         | selectattr('state', 'eq', 'playing') | list | count > 0 }}
+action:
+  - service: script.alle_hojtalere_pause
+```
+
+**TV schaltet ein** — Küchenlautsprecher automatisch leiser stellen, wenn der Fernseher startet:
+
+```yaml
+alias: TV an — Küchenlautsprecher leiser
+trigger:
+  - platform: state
+    entity_id: media_player.samsung_tv
+    to: "on"
+action:
+  - service: media_player.volume_set
+    data:
+      volume_level: 0.15
+    target:
+      entity_id: media_player.hojtaler_kokken
+```
+
+## Dashboard-Steuerung
+
+Eine mushroom chips-Karte in der Haupt-Hjem-Ansicht für schnelle Einzel-Tippen-Kontrolle:
+
+```yaml
+type: custom:mushroom-chips-card
+chips:
+  - type: action
+    icon: mdi:pause
+    tap_action:
+      action: call-service
+      service: script.alle_hojtalere_pause
+  - type: action
+    icon: mdi:stop
+    tap_action:
+      action: call-service
+      service: script.alle_hojtalere_stop
+  - type: action
+    icon: mdi:volume-medium
+    tap_action:
+      action: call-service
+      service: script.alle_hojtalere_volumen
+      data:
+        volume: 0.2
+```
+
+Drei Chips, alle Lautsprecher abgedeckt. Sie liegt neben den WiZ-Beleuchtungskontrollen und ist zu einem der meistgenutzten Teile des Dashboards geworden.
+
+## Was HA nicht löst
+
+Natives Gruppieren zwischen Sonos und Google ist über HA weiterhin unmöglich. Man kann kein Audio vom Sonos zu einem Google-Lautsprecher senden — sie verwenden unterschiedliche Streaming-Protokolle (RAAT vs Cast). HA kann sie gleichzeitig steuern, aber die Audiowiedergabe nicht synchronisieren.
+
+Für synchronisierte Musik nutze ich entweder Sonos allein (via Sonos-Gruppierung) oder Google allein (via Cast). Die HA-Scripts sind für Steuerung, nicht für Streaming.
+
+Die andere Lücke ist TTS. HAs TTS-Engine kann an jeden `media_player` senden, aber in der Praxis unterbricht TTS die Wiedergabe und nimmt sie danach nicht wieder auf. Für Sonos gibt es einen Workaround mit `tts.speak` und der `announce`-Option. Für Google-Lautsprecher existiert noch kein sauberes Äquivalent. TTS-Benachrichtigungen schicke ich nur an Räume, in denen normalerweise keine Musik läuft.
+
+Trotz dieser Einschränkungen ist es wirklich nützlich, fünf Lautsprecher von zwei Herstellern unter einer gemeinsamen Steuerungsschicht zu haben. Das tägliche Zwei-Apps-Jonglieren war still und leise nervig — und jetzt ist es einfach weg.

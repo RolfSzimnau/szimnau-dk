@@ -1,0 +1,174 @@
+---
+title: "Sonos og Google Nest som ét anlæg i Home Assistant"
+description: "Hvordan jeg samler et Sonos-stueanlæg med fire Google Nest Audio-højttalere via Home Assistant scripts — uden tredjeparts broer og uden abonnement."
+pubDate: 2026-08-14
+tags: ["sonos", "google-nest", "audio", "home-assistant", "multiroom"]
+lang: "da"
+translationKey: "sonos-google-nest-home-assistant"
+heroImage: "/blog-images/sonos-google-nest.jpg"
+---
+
+Sonos og Google er konkurrenter. Deres apps taler ikke med hinanden. Har du en Sonos-højttaler i stuen og Google Nest Audio-højttalere i soveværelser og køkken, har du to separate musiksystemer uden fælles styring.
+
+Jeg levede med det i to år, inden det blev irriterende nok til at gøre noget ved.
+
+Løsningen var ikke en bridge-app eller en abonnementstjeneste. Det var Home Assistant.
+
+## Udstyret jeg arbejder med
+
+Stuen: en Sonos-højttaler (`media_player.stue`).
+
+Resten er Google Nest Audio eller Google Home:
+- Soveværelse (`media_player.hojtaler`)
+- Kontor (`media_player.hojtaler_mia`)
+- Køkken (`media_player.hojtaler_kokken`)
+- Værksted (`media_player.vaerksted`)
+
+Fem højttalere, to mærker, nul native kompatibilitet.
+
+## Hvordan HA integrerer begge
+
+Sonos-integrationen i HA er native og solid. Den finder højttaleren automatisk over lokalt netværk — ingen afhængighed af Sonos-skyen til basal afspilningsstyring.
+
+Google-højttalere integreres via Google Home-integrationen (eller Cast-integrationen). Begge giver `media_player`-entiteter med standard play/pause/volumen-services.
+
+Fordi HA mapper alt til samme `media_player`-domæne, kan du styre en Sonos og en Google-højttaler med identiske service-kald:
+
+```yaml
+service: media_player.volume_set
+data:
+  volume_level: 0.3
+target:
+  entity_id:
+    - media_player.stue
+    - media_player.hojtaler
+```
+
+HA er ligeglad med, at de er to forskellige mærker.
+
+## De tre scripts
+
+Jeg har bygget tre scripts, der behandler alle fem højttalere som ét system:
+
+**Pause alle:**
+```yaml
+alias: alle_hojtalere_pause
+sequence:
+  - service: media_player.media_pause
+    target:
+      entity_id:
+        - media_player.stue
+        - media_player.hojtaler
+        - media_player.hojtaler_mia
+        - media_player.hojtaler_kokken
+        - media_player.vaerksted
+```
+
+**Stop alle:**
+```yaml
+alias: alle_hojtalere_stop
+sequence:
+  - service: media_player.media_stop
+    target:
+      entity_id:
+        - media_player.stue
+        - media_player.hojtaler
+        - media_player.hojtaler_mia
+        - media_player.hojtaler_kokken
+        - media_player.vaerksted
+```
+
+**Sæt volumen på alle (tager et niveau som field-input):**
+```yaml
+alias: alle_hojtalere_volumen
+fields:
+  volume:
+    description: Volumen (0.0–1.0)
+    default: 0.3
+sequence:
+  - service: media_player.volume_set
+    data:
+      volume_level: "{{ volume }}"
+    target:
+      entity_id:
+        - media_player.stue
+        - media_player.hojtaler
+        - media_player.hojtaler_mia
+        - media_player.hojtaler_kokken
+        - media_player.vaerksted
+```
+
+Jeg kalder disse fra automationer, dashboard-knapper og stemmekommandoer. Volumen-scriptet er især nyttigt om aftenen — én stemmekommando sætter alt til 15% uden at jagte individuelle højttalerkontroller i tre forskellige apps.
+
+## Praktiske automationer
+
+**Forlader hjemmet** — når den sidste person forlader, pause alt der spiller:
+
+```yaml
+alias: Forlader — pause alle højttalere
+trigger:
+  - platform: state
+    entity_id: group.family
+    to: not_home
+condition:
+  - condition: template
+    value_template: >
+      {{ states | selectattr('domain', 'eq', 'media_player')
+         | selectattr('state', 'eq', 'playing') | list | count > 0 }}
+action:
+  - service: script.alle_hojtalere_pause
+```
+
+**TV tændes** — sænk automatisk køkkenhøjttaleren, når TV'et starter:
+
+```yaml
+alias: TV tændt — sænk køkkenhøjttaleren
+trigger:
+  - platform: state
+    entity_id: media_player.samsung_tv
+    to: "on"
+action:
+  - service: media_player.volume_set
+    data:
+      volume_level: 0.15
+    target:
+      entity_id: media_player.hojtaler_kokken
+```
+
+## Dashboard-styring
+
+Jeg har en mushroom chips-card i hoved-Hjem-visningen til hurtig ét-tryk-styring:
+
+```yaml
+type: custom:mushroom-chips-card
+chips:
+  - type: action
+    icon: mdi:pause
+    tap_action:
+      action: call-service
+      service: script.alle_hojtalere_pause
+  - type: action
+    icon: mdi:stop
+    tap_action:
+      action: call-service
+      service: script.alle_hojtalere_stop
+  - type: action
+    icon: mdi:volume-medium
+    tap_action:
+      action: call-service
+      service: script.alle_hojtalere_volumen
+      data:
+        volume: 0.2
+```
+
+Tre chips, alle højttalere håndteret. Den ligger ved siden af WiZ-lysstyringen og er blevet en af de mest brugte dele af dashboardet.
+
+## Hvad HA ikke løser
+
+Native gruppering mellem Sonos og Google er stadig umulig via HA. Du kan ikke sende lyd fra Sonos til en Google-højttaler — de bruger forskellige streaming-protokoller (RAAT vs Cast). HA kan styre dem samtidigt, men kan ikke synkronisere afspilning.
+
+Til synkroniseret musik bruger jeg enten Sonos alene (via Sonos-gruppering) eller Google alene (via Cast). HA-scripts er til styring, ikke streaming.
+
+Den anden mangel er TTS. HAs TTS-motor kan sende til enhver `media_player`, men i praksis afbryder TTS afspilningen og genoptager den ikke. For Sonos er der en workaround med `tts.speak` og `announce`-optionen. For Google-højttalere er der ikke et rent ækvivalent endnu. Jeg kører TTS-notifikationer kun til rum, hvor der normalt ikke spilles musik.
+
+På trods af begrænsningerne er det genuint nyttigt at have fem højttalere fra to fabrikanter under ét kontrollag. Den daglige to-apps-jonglering var stille og roligt irriterende — og nu er den bare væk.
