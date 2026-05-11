@@ -1,6 +1,6 @@
 ---
 title: "Roborock in Home Assistant — Die Karte, die Räume und was wirklich nützlich ist"
-description: "Roborock S8 MaxV mit interaktiver Karte, Raum-Segment-Reinigung und Wartungssensoren, die warnen bevor die Bürste abbrennt."
+description: "Roborock S5 Max mit interaktiver Karte, Raum-Segment-Reinigung und Wartungssensoren, die warnen bevor die Bürste abbrennt."
 pubDate: 2026-06-12
 tags: ["roborock", "staubsauger", "dashboard", "home-assistant"]
 lang: "de"
@@ -17,7 +17,7 @@ Cloud-Polling mit 5-Sekunden-Aktualisierung. Lokale Kommunikation ist möglich, 
 Entitäten nach der Einrichtung:
 
 ```
-vacuum.roborock_s8_maxv
+vacuum.roborock_s5_max
 sensor.roborock_battery
 sensor.roborock_status
 sensor.roborock_last_clean_area
@@ -33,7 +33,7 @@ sensor.roborock_sensor_dirty_left
 
 ```yaml
 type: custom:xiaomi-vacuum-map-card
-entity: vacuum.roborock_s8_maxv
+entity: vacuum.roborock_s5_max
 map_source:
   camera: camera.roborock_map
 calibration_source:
@@ -56,7 +56,7 @@ map_modes:
   - template: vacuum_goto
 ```
 
-Raum-IDs finden: Entwicklertools → Template, `{{ state_attr('vacuum.roborock_s8_maxv', 'room_list') }}` auswerten. Die IDs sind ganze Zahlen, die beim Erstellen der Karte in der App vergeben wurden. Meins fangen bei 16 an — die eigenen werden wahrscheinlich anders sein.
+Raum-IDs finden: Entwicklertools → Template, `{{ state_attr('vacuum.roborock_s5_max', 'room_list') }}` auswerten. Die IDs sind ganze Zahlen, die beim Erstellen der Karte in der App vergeben wurden. Meins fangen bei 16 an — die eigenen werden wahrscheinlich anders sein.
 
 Die Kartenkarte lebt in einem Glas-`stack-in-card`. Kartenkarten brauchen `border-radius: 0` auf der inneren Karte, und der äußere Container braucht `overflow: hidden` — sonst stehen die quadratischen Ecken der Karte aus der abgerundeten Glasumhüllung heraus.
 
@@ -133,12 +133,12 @@ condition:
     after: "09:00:00"
     before: "18:00:00"
   - condition: state
-    entity_id: vacuum.roborock_s8_maxv
+    entity_id: vacuum.roborock_s5_max
     state: docked
 action:
   - service: vacuum.start
     target:
-      entity_id: vacuum.roborock_s8_maxv
+      entity_id: vacuum.roborock_s5_max
 
 alias: Roborock — Andocken bei Rückkehr
 trigger:
@@ -147,12 +147,12 @@ trigger:
     to: home
 condition:
   - condition: state
-    entity_id: vacuum.roborock_s8_maxv
+    entity_id: vacuum.roborock_s5_max
     state: cleaning
 action:
   - service: vacuum.return_to_base
     target:
-      entity_id: vacuum.roborock_s8_maxv
+      entity_id: vacuum.roborock_s5_max
 ```
 
 Die 5-Minuten-Verzögerung beim Abgang ist wichtig. Ohne sie löst ein kurzer GPS-Ausreißer eine Reinigung aus, und der Staubsauger ist auf halbem Weg durch die Küche wenn ich zwei Minuten später wieder reinkomme.

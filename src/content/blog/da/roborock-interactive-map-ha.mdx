@@ -1,6 +1,6 @@
 ---
 title: "Roborock i Home Assistant — Kortet, rummene, og hvad der faktisk er nyttigt"
-description: "Roborock S8 MaxV med interaktivt støvsugerkort, rum-segment-rengøring og vedligeholdelsessensorer der advarer dig inden børsten brænder ud."
+description: "Roborock S5 Max med interaktivt støvsugerkort, rum-segment-rengøring og vedligeholdelsessensorer der advarer dig inden børsten brænder ud."
 pubDate: 2026-06-12
 tags: ["roborock", "støvsuger", "dashboard", "home-assistant"]
 lang: "da"
@@ -17,7 +17,7 @@ Cloud-polling med 5-sekunders opdatering. Lokal kommunikation er mulig men kræv
 Entiteter efter opsætning:
 
 ```
-vacuum.roborock_s8_maxv
+vacuum.roborock_s5_max
 sensor.roborock_battery
 sensor.roborock_status
 sensor.roborock_last_clean_area
@@ -33,7 +33,7 @@ sensor.roborock_sensor_dirty_left
 
 ```yaml
 type: custom:xiaomi-vacuum-map-card
-entity: vacuum.roborock_s8_maxv
+entity: vacuum.roborock_s5_max
 map_source:
   camera: camera.roborock_map
 calibration_source:
@@ -56,7 +56,7 @@ map_modes:
   - template: vacuum_goto
 ```
 
-Find dine rum-ID'er: Udviklingsværktøjer → Skabelon, evaluer `{{ state_attr('vacuum.roborock_s8_maxv', 'room_list') }}`. ID'erne er heltal tildelt da kortet blev oprettet i appen. Mine starter ved 16 — dine vil sandsynligvis være anderledes.
+Find dine rum-ID'er: Udviklingsværktøjer → Skabelon, evaluer `{{ state_attr('vacuum.roborock_s5_max', 'room_list') }}`. ID'erne er heltal tildelt da kortet blev oprettet i appen. Mine starter ved 16 — dine vil sandsynligvis være anderledes.
 
 Kortkortet bor inde i en glas `stack-in-card`. Kortkort har brug for `border-radius: 0` på det indre kort, og den ydre container har brug for `overflow: hidden` — ellers bløder kortets hjørner ud over den afrundede glasindpakning.
 
@@ -133,12 +133,12 @@ condition:
     after: "09:00:00"
     before: "18:00:00"
   - condition: state
-    entity_id: vacuum.roborock_s8_maxv
+    entity_id: vacuum.roborock_s5_max
     state: docked
 action:
   - service: vacuum.start
     target:
-      entity_id: vacuum.roborock_s8_maxv
+      entity_id: vacuum.roborock_s5_max
 
 alias: Roborock — Dock ved hjemkomst
 trigger:
@@ -147,12 +147,12 @@ trigger:
     to: home
 condition:
   - condition: state
-    entity_id: vacuum.roborock_s8_maxv
+    entity_id: vacuum.roborock_s5_max
     state: cleaning
 action:
   - service: vacuum.return_to_base
     target:
-      entity_id: vacuum.roborock_s8_maxv
+      entity_id: vacuum.roborock_s5_max
 ```
 
 5-minutters forsinkelsen ved afgang er vigtig. Uden den trigger et kort GPS-udsving en rengøring, og støvsugeren er halvvejs igennem køkkenet når jeg går ind ad døren igen to minutter efter.
