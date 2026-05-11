@@ -63,3 +63,33 @@ Person detection gets a simpler version: no ALPR attempt, just a snapshot notifi
 ## What I cut
 
 I tried a version that announced the plate by text-to-speech on the TV speaker. It worked but felt like a airport departure board. The visual notification is quieter — you see it if you're looking, miss it if you're not, and the TV doesn't interrupt itself to read a number plate aloud at you.
+
+## What actually broke first
+
+The first week the TV notification ran, it stopped working. Not visibly — the automation completed, no errors in the trace, but the TV showed text only with no image, and the phones got nothing at all.
+
+The problem was image size. The nfandroidtv integration sends a snapshot to the TV app via HTTP POST to port 7676. I was using `camera.sentinel_clear` — the full-resolution feed — which produces frames around 1.9 MB. The TV app took more than 5 seconds to process that. HA hit a ReadTimeout, aborted the script step mid-run, and the phone notifications never fired.
+
+On top of that, the integration had landed in a `failed_unload` state — most likely from a HA restart that happened during one of those timeouts. The symptom was `notify.android_tv` disappearing from the available services for stretches, then coming back. The integration showed as loaded, but HA hadn't cleanly registered its services.
+
+Three fixes, in order:
+
+**1. Delete and recreate the integration.** Settings → Devices & Services → find "Notifications for Android TV / Fire TV" → delete → add it back. This clears the failed_unload state and re-registers `notify.android_tv` cleanly.
+
+**2. Switch the snapshot source.** Changed both snapshot steps in the automation from `camera.sentinel_clear` to `camera.sentinel_fluent`. The fluent stream produces 50–200 KB frames instead of 1.9 MB — small enough that the TV app processes it in well under a second. Image quality is still more than enough to identify a person or read a plate in decent light.
+
+**3. Add `continue_on_error: true` on the TV notify step:**
+
+```yaml
+- action: notify.android_tv
+  continue_on_error: true
+  data:
+    message: "🚗 {{ plate_text }}"
+    data:
+      image: "http://192.168.x.x:8123/local/sentinel_latest.jpg"
+      interrupt: 1
+```
+
+If the TV times out or the integration drops again, the phone notifications still go out. The TV is a nice-to-have. Phones are not optional.
+
+All three together solved it. The TV now shows the snapshot within about a second, and in cases where the TV is off or the integration hiccups, phones always get the notification regardless.

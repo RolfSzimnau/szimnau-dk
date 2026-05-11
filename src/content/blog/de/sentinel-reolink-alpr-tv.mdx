@@ -63,3 +63,33 @@ Personenerkennung bekommt eine einfachere Version: kein ALPR-Versuch, nur eine S
 ## Was ich weggelassen habe
 
 Ich habe eine Version ausprobiert die das Kennzeichen per Text-zu-Sprache über den TV-Lautsprecher ansagte. Es funktionierte aber fühlte sich wie eine Abflugtafel am Flughafen an. Die visuelle Benachrichtigung ist diskreter — man sieht sie wenn man hinschaut, übersieht sie wenn nicht, und der TV unterbricht sich nicht selbst um eine Nummer vorzulesen.
+
+## Was zuerst tatsächlich kaputtging
+
+In der ersten Woche lief die TV-Benachrichtigung und hörte dann auf zu funktionieren. Nicht sichtbar — die Automatisierung lief durch, keine Fehler in der Trace, aber der TV zeigte nur Text ohne Bild, und die Telefone bekamen überhaupt nichts.
+
+Das Problem war die Bildgröße. Die nfandroidtv-Integration schickt einen Snapshot an die TV-App via HTTP POST auf Port 7676. Ich verwendete `camera.sentinel_clear` — den Full-Resolution-Feed — der Frames von etwa 1,9 MB produziert. Die TV-App brauchte mehr als 5 Sekunden um das zu verarbeiten. HA traf einen ReadTimeout, brach den Script-Schritt mitten in der Ausführung ab, und die Telefonbenachrichtigungen wurden nie gesendet.
+
+Obendrauf war die Integration in einen `failed_unload`-Zustand geraten — wahrscheinlich durch einen HA-Neustart während eines dieser Timeouts. Das Symptom: `notify.android_tv` verschwand zeitweise aus den verfügbaren Services und tauchte dann wieder auf. Die Integration stand als geladen, aber HA hatte ihre Services nicht sauber registriert.
+
+Drei Korrekturen der Reihe nach:
+
+**1. Integration löschen und neu erstellen.** Einstellungen → Geräte & Dienste → "Notifications for Android TV / Fire TV" finden → löschen → neu hinzufügen. Das bereinigt den failed_unload-Zustand und registriert `notify.android_tv` sauber neu.
+
+**2. Snapshot-Quelle wechseln.** Beide Snapshot-Schritte in der Automatisierung von `camera.sentinel_clear` auf `camera.sentinel_fluent` umgestellt. Der Fluent-Stream produziert 50–200 KB Frames statt 1,9 MB — klein genug damit die TV-App es in deutlich unter einer Sekunde verarbeitet. Die Bildqualität reicht noch mehr als aus um eine Person zu identifizieren oder ein Kennzeichen bei gutem Licht zu lesen.
+
+**3. `continue_on_error: true` beim TV-Notify-Schritt hinzufügen:**
+
+```yaml
+- action: notify.android_tv
+  continue_on_error: true
+  data:
+    message: "🚗 {{ plate_text }}"
+    data:
+      image: "http://192.168.x.x:8123/local/sentinel_latest.jpg"
+      interrupt: 1
+```
+
+Wenn der TV einen Timeout hat oder die Integration wieder ausfällt, kommen die Telefonbenachrichtigungen trotzdem durch. Der TV ist schön zu haben. Telefone sind es nicht.
+
+Diese drei Dinge zusammen haben es gelöst. Der TV zeigt den Snapshot jetzt innerhalb von etwa einer Sekunde, und in den Fällen wo der TV aus ist oder die Integration hakt, bekommen die Telefone immer eine Benachrichtigung, egal was passiert.

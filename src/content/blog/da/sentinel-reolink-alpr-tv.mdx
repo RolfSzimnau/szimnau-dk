@@ -63,3 +63,33 @@ Persondetektion får en enklere version: intet ALPR-forsøg, bare en snapshot-no
 ## Hvad jeg ikke tog med
 
 Jeg prøvede en version der annoncerede nummerplade via tekst-til-tale på TV-højttaleren. Det virkede men føltes som en afgangstavle i lufthavnen. Den visuelle notifikation er mere diskret — man ser den hvis man kigger, overser den hvis man ikke gør, og TV'et afbryder ikke sig selv for at læse et nummer op.
+
+## Hvad der faktisk gik galt
+
+Den første uge automationen kørte, holdt den op med at virke. Ikke synligt — automationen gennemførte, ingen fejl i trace'en, men TV'et viste kun tekst uden billede, og telefonerne fik slet ingenting.
+
+Problemet var billedstørrelse. nfandroidtv-integrationen sender et snapshot til TV-appen via HTTP POST på port 7676. Jeg brugte `camera.sentinel_clear` — det fulde opløsnings-feed — som producerer frames på ca. 1,9 MB. TV-appen brugte mere end 5 sekunder på at behandle det. HA ramte en ReadTimeout, afbrød script-steget midt i kørslen, og telefon-notifikationerne blev aldrig afsendt.
+
+Derudover var integrationen havnet i `failed_unload`-tilstand — sandsynligvis fra en HA-genstart under et af de timeouts. Symptomet: `notify.android_tv` forsvandt fra de tilgængelige services i perioder og kom så tilbage igen. Integrationen stod som indlæst, men HA havde ikke rent registreret dens services.
+
+Tre rettelser i rækkefølge:
+
+**1. Slet og opret integrationen igen.** Indstillinger → Enheder og tjenester → find "Notifications for Android TV / Fire TV" → slet → tilføj igen. Det rydder failed_unload-tilstanden og genregistrerer `notify.android_tv` rent.
+
+**2. Skift snapshot-kilde.** Ændret begge snapshot-steps i automationen fra `camera.sentinel_clear` til `camera.sentinel_fluent`. Fluent-streamen producerer 50–200 KB frames i stedet for 1,9 MB — lille nok til at TV-appen behandler det på under et sekund. Billedkvaliteten er stadig mere end nok til at identificere en person eller læse en nummerplade i godt lys.
+
+**3. Tilføj `continue_on_error: true` på TV-notify-steget:**
+
+```yaml
+- action: notify.android_tv
+  continue_on_error: true
+  data:
+    message: "🚗 {{ plate_text }}"
+    data:
+      image: "http://192.168.x.x:8123/local/sentinel_latest.jpg"
+      interrupt: 1
+```
+
+Hvis TV'et timeouter eller integrationen falder ud igen, kommer telefon-notifikationerne stadig igennem. TV'et er rart at have. Telefonerne er ikke valgfrie.
+
+De tre ting tilsammen løste det. TV'et viser nu snapshot'et inden for ca. et sekund, og i de tilfælde hvor TV'et er slukket eller integrationen fejler, får telefonerne altid notifikation uanset hvad.
