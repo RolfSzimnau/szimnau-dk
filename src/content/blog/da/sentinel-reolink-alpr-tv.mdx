@@ -10,8 +10,6 @@ heroImage: "/blog-images/overvagning-sentinel.jpg"
 
 Vi har aldrig fået installeret en dørklokke med kamera. Reolink CX810 der peger ned mod indkørslen endte med at gøre mere end nogen dørklokke ville have gjort — uden abonnement, uden app, og med TV'et som notifikationsskærm i stedet for en telefon man måske ikke kigger på.
 
-![Reolink CX810 kamera-dashboard i Home Assistant med livebillede og bevægelses-log](/blog-images/overvagning-sentinel.jpg)
-
 ## Kameraet
 
 CX810 er et 4K 8MP PoE kamera. Det kører på et dedikeret VLAN, taler med HA over det lokale netværk, og dukker op som `camera.sentinel_clear` (fuld opløsning) og `camera.sentinel_fluent` (lavere opløsning, hurtigere). Kameraets eget AI-chip giver binære sensorer direkte:

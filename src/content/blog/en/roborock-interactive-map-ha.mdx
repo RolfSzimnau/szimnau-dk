@@ -10,8 +10,6 @@ heroImage: "/blog-images/robot-roborock.jpg"
 
 The Roborock integration is built into HA now — no HACS needed. Add it, sign in with your Roborock account, and the vacuum appears. What it doesn't tell you is that the interesting part comes from a separate HACS card that renders the live map.
 
-![Roborock S8 MaxV dashboard in Home Assistant — interactive room map with colour-coded zones and maintenance tracking](/blog-images/robot-roborock.jpg)
-
 ## The integration
 
 Cloud polling, 5-second refresh. Local communication is possible but requires extracting keys from the device firmware, which I didn't bother with. For anything that matters — starting a clean, checking battery, room segments — cloud polling is fast enough.

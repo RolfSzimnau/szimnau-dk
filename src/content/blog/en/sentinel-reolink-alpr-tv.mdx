@@ -10,8 +10,6 @@ heroImage: "/blog-images/overvagning-sentinel.jpg"
 
 We never installed a doorbell camera. The Reolink CX810 pointed at the driveway ended up doing more than any doorbell would have — without the subscription, without the app, and with the TV as the notification screen instead of a phone I might not be looking at.
 
-![Reolink CX810 camera dashboard in Home Assistant showing live feed and motion event log](/blog-images/overvagning-sentinel.jpg)
-
 ## The camera
 
 The CX810 is a 4K 8MP PoE camera. It runs on a dedicated VLAN, talks to HA over the local network, and shows up as `camera.sentinel_clear` (full resolution) and `camera.sentinel_fluent` (lower res, faster). The onboard AI chip gives you binary sensors directly:
