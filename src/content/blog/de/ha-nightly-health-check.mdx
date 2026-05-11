@@ -1,0 +1,204 @@
+---
+title: "Nächtliche Gesundheitschecks für Home Assistant — GitHub Actions als Wächter"
+description: "Wie ich eine nächtliche CI-Pipeline gebaut habe, die 22 Tests gegen mein Live-Home-Assistant-Setup ausführt und automatisch ein GitHub-Issue öffnet, wenn etwas nicht funktioniert — bevor ich es selbst bemerke."
+pubDate: 2026-10-05
+tags: ["home-assistant", "github-actions", "testing", "proxmox", "automation"]
+lang: "de"
+translationKey: "ha-nightly-health-check"
+heroImage: "/blog-images/ha-health-check-github-actions.jpg"
+---
+
+Die Geschirrspüler-Benachrichtigung funktionierte monatelang perfekt. Dann eines Tages nicht mehr. Der `notify.android_tv`-Dienst war nach einem HA-Neustart still verschwunden, und ich erfuhr es erst, als ich in der Küche stand und auf einen Alarm wartete, der nie kam.
+
+Das war das letzte Mal, dass ich von einer defekten Integration erfuhr, weil ich sie zufällig genau dann brauchte.
+
+## Die Idee
+
+Jede Nacht um 02:00 Uhr führt ein Skript alle meine Home-Assistant-Muster durch eine Testsuite und prüft, ob alles noch funktioniert. Wenn etwas fehlschlägt, öffnet sich automatisch ein GitHub-Issue mit dem genauen Fehler und einer Liste wahrscheinlicher Ursachen. Bis zum Morgen weiß ich, was kaputt gegangen ist und ungefähr warum.
+
+Das Ganze läuft auf GitHub Actions. Die Tests sind normales Node.js. Keine Drittanbieter-Überwachungsdienste, keine Cloud-Abonnements, keine zusätzlichen Dashboards zum Prüfen.
+
+## Warum ein self-hosted Runner nötig ist
+
+GitHubs Cloud-Runner können eine Home-Assistant-Instanz im lokalen Netzwerk nicht erreichen. Die Tests rufen die HA-REST-API und WebSocket direkt auf, daher muss der Runner im gleichen Netzwerk wie HA laufen.
+
+Die Lösung: ein leichtgewichtiger Linux-Container auf dem Proxmox-Host, der bereits HA betreibt. Ein zusätzlicher LXC-Container — Debian 12, 1 vCPU, 512 MB RAM — als self-hosted GitHub-Actions-Runner registriert. Er startet automatisch mit Proxmox und kostet kaum Ressourcen.
+
+Der Runner erhält ein Label (`home-network`), damit der Workflow nur auf Hardware läuft, die HA tatsächlich erreichen kann:
+
+```yaml
+jobs:
+  ha-tests:
+    runs-on: [self-hosted, home-network]
+    timeout-minutes: 5
+```
+
+## Zugangsdaten: der richtige Weg
+
+Die Tests benötigen ein langlebiges HA-Token. Der richtige Ansatz ist, es als GitHub-Actions-Secret zu speichern — niemals im Repository hardcoden.
+
+In HA: **Profil → Langlebige Zugriffstoken → Token erstellen**
+
+In GitHub: **Repository → Settings → Secrets and variables → Actions → New repository secret**
+
+`HA_TOKEN` als Name. Der Workflow injiziert es als Umgebungsvariable:
+
+```yaml
+env:
+  HA_URL: http://homeassistant.local:8123
+  HA_TOKEN: ${{ secrets.HA_TOKEN }}
+```
+
+Der Test-Helper liest beide aus der Umgebung:
+
+```js
+const HA_URL = process.env.HA_URL;
+const HA_TOKEN = process.env.HA_TOKEN;
+if (!HA_URL || !HA_TOKEN) throw new Error('HA_URL and HA_TOKEN env vars required');
+```
+
+## Der Zeitplan
+
+```yaml
+on:
+  schedule:
+    - cron: '0 1 * * *'   # 02:00 Uhr dänische Zeit (UTC+1)
+  workflow_dispatch:        # manueller Trigger jederzeit verfügbar
+```
+
+`workflow_dispatch` bedeutet, dass ich es auch manuell aus dem GitHub-Actions-Tab auslösen kann, wenn ich nach Änderungen etwas überprüfen möchte.
+
+## Was getestet wird
+
+Die Testsuite verwendet Node's eingebauten `node:test`-Runner — kein Jest, kein Mocha, keine zusätzlichen Abhängigkeiten. Jede Testdatei deckt einen Bereich ab.
+
+**Smoke-Test** — antwortet HA überhaupt?
+
+```js
+test('HA API ist erreichbar und läuft', async () => {
+  const result = await haGet('/api/');
+  assert.equal(result.message, 'API running.');
+});
+```
+
+Einfach, aber entscheidend. Wenn HA ausgefallen ist oder das Token abgelaufen ist, schlägt alles andere hier zuerst mit einer klaren Meldung fehl.
+
+**Benachrichtigungsdienste** — existieren die Telefon- und Tablet-Dienste wirklich?
+
+```js
+test('notify.mobile_app_pixel_10 Dienst existiert', async () => {
+  const services = await haGet('/api/services');
+  const notifyDomain = services.find(s => s.domain === 'notify');
+  assert.ok('mobile_app_pixel_10' in notifyDomain.services);
+});
+```
+
+Dies fängt den Fall ab, wo die Companion-App neu installiert wurde, der Gerätename geändert wurde oder die Integration ausgefallen ist. Der Dienst kann ohne sichtbaren Fehler in HA verschwinden.
+
+**Automationen** — sind welche defekt oder versehentlich deaktiviert?
+
+```js
+test('keine Automation ist unavailable', async () => {
+  const states = await haGet('/api/states');
+  const broken = states.filter(
+    s => s.entity_id.startsWith('automation.') && s.state === 'unavailable'
+  );
+  assert.deepEqual(broken.map(s => s.entity_id), []);
+});
+```
+
+Es gibt auch spezifische Tests für EV-Ladeautomationen und Mähroboter-Zeitpläne — nicht nur ob sie existieren, sondern ob sie aktiviert sind. Eine versehentlich deaktivierte Automation ist funktional defekt, auch wenn HA sie als gesund anzeigt.
+
+**Integrationsspezifische Prüfungen** — sieht die Kamera, was sie soll? Sind alle 5 Tado-Klimazonen vorhanden? Ist der Roborock erreichbar? Jede Integration erhält ihren eigenen Test, der verifiziert, dass die richtigen Entitäten existieren und nicht unavailable sind.
+
+## Der Custom-Cards-Test — der clevere
+
+Dies ist der nützlichste Test in der Suite und der, über den ich am frohsten bin.
+
+Home Assistant validiert die YAML-Struktur der Dashboard-Konfiguration, prüft aber nicht, ob das Custom-Card-JavaScript tatsächlich installiert ist. Wenn man in einem Dashboard auf `custom:some-card` verweist und die HACS-Komponente nicht installiert ist, zeigt der Browser eine generische "Configuration error"-Meldung. Kein Serverlog erfasst das. Keine HA-Benachrichtigung löst aus. Man sieht nur eine defekte Karte.
+
+Der Test löst dies, indem er zwei Dinge kreuzt:
+
+1. Alle im Dashboard verwendeten `custom:*`-Kartentypen (per WebSocket abgerufen, rekursiv durch den gesamten Kartenbaum gelaufen)
+2. Alle in Lovelace registrierten JavaScript-Ressourcen (ebenfalls per WebSocket)
+
+```js
+test('alle Custom Cards haben registrierte JS-Ressourcen', async () => {
+  const [resources, dashboardPaths] = await Promise.all([
+    getLovelaceResources(),
+    getAllDashboardPaths(),
+  ]);
+  const resourceUrls = resources.map(r => r.url ?? '');
+
+  for (const path of dashboardPaths) {
+    const config = await getDashboard(path);
+    const types = extractCustomTypes(config.views);
+
+    for (const type of types) {
+      const fragment = CARD_RESOURCE_MAP[type]; // z.B. 'mushroom', 'apexcharts-card'
+      assert.ok(
+        resourceUrls.some(url => url.includes(fragment)),
+        `${type} — JS-Ressource nicht registriert`
+      );
+    }
+  }
+});
+```
+
+Die `CARD_RESOURCE_MAP` ordnet jeden Kartentyp dem URL-Fragment zu, das sein HACS-Paket registriert. Mushroom-Karten teilen sich alle eine JS-Datei (`mushroom`), daher werden alle 15+ Mushroom-Untertypen auf das gleiche Fragment gemappt.
+
+Dies hat echte Probleme abgefangen: ein HA-Update, das HACS zurückgesetzt hat, eine manuelle Neuinstallation, die ein Paket ausgelassen hat, eine neue Karte, die ich einem Dashboard hinzugefügt und deren Ressource ich zu installieren vergessen hatte.
+
+## Was passiert, wenn ein Test fehlschlägt
+
+Der letzte Schritt des Workflows läuft bei Fehlern und öffnet ein GitHub-Issue:
+
+```yaml
+- name: Issue bei Fehlschlag öffnen
+  if: failure()
+  uses: actions/github-script@v7
+  with:
+    script: |
+      const output = fs.readFileSync('test-output.txt', 'utf8').slice(0, 4000);
+      const title = `[HA Health] Test regression — ${today}`;
+      // Deduplizierung: überspringen wenn Titel bereits existiert
+      await github.rest.issues.create({
+        title,
+        labels: ['ha-regression'],
+        body: `## Test Output\n\`\`\`\n${output}\n\`\`\`\n\n## Häufige Ursachen\n...`,
+      });
+```
+
+Das Issue enthält die genaue fehlgeschlagene Assertion, das Datum, einen Link zur vollständigen Ausführung, eine Liste häufiger Ursachen (Entität unavailable, umbenannte Entität, HA-Update, abgelaufenes Token) und den Befehl zum lokalen Ausführen der Tests.
+
+Deduplizierung verhindert, dass dasselbe Problem über 30 Nächte 30 Issues öffnet, bevor ich es behebe.
+
+## Tests lokal ausführen
+
+Wenn ein Issue öffnet, ist der schnellste Weg zur Diagnose, die Suite lokal gegen die Live-Instanz zu starten:
+
+```bash
+npm install
+HA_URL=http://homeassistant.local:8123 \
+HA_TOKEN=dein_token_hier \
+node --test tests/ha/*.test.mjs
+```
+
+Die Ausgabe ist TAP-formatiert. Fehlgeschlagene Tests zeigen die genaue Assertion, die brach, und den tatsächlichen vs. erwarteten Wert.
+
+## Was das wirklich abfängt
+
+Seit der Einrichtung hat es gefangen:
+
+- Den `notify.android_tv`-Dienst, der nach einem HA-Neustart verschwand (das failed_unload-Problem, das in einem anderen Beitrag beschrieben wird)
+- Eine Mähroboter-Automation, die deaktiviert wurde, als ich eine andere bearbeitete und versehentlich den Toggle traf
+- Ein HACS-Update, das die Custom-Card-Ressourcen zurücksetzte und still drei Dashboard-Ansichten zerbrach
+- Die Škoda-Elroq-Integration, die nach einem HA-Update ihre Entitäten verlor, als die Integration ihre interne Benennung änderte
+
+Keine dieser Situationen wäre offensichtlich geworden, bevor ich genau das brauchte, was kaputt war. Jetzt sind es GitHub-Issues um 02:05 Uhr.
+
+## Der größere Punkt
+
+Neunundzwanzig Jahre Infrastrukturarbeit bedeuten, dass ich Heimautomatisierung genauso behandle wie Produktionssysteme: Dinge gehen still kaputt, zu ungünstigen Zeiten, und der einzige Weg, es zu wissen bevor es wichtig wird, ist kontinuierliches Prüfen. Ein nächtlicher Testlauf gegen eine Live-HA-Instanz ist das Minimum lebensfähiger Überwachung für ein Setup, von dem man wirklich abhängig ist.
+
+Die Konzepte sind einfach genug, um sie für jedes HA-Setup anzupassen — selbst nur mit dem Smoke-Test und dem Automations-Gesundheitscheck anzufangen, gibt einem etwas Wertvolles.
