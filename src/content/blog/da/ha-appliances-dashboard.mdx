@@ -8,7 +8,7 @@ translationKey: "ha-appliances-dashboard"
 heroImage: "/blog-images/hvidevarer-appliances.jpg"
 ---
 
-Opvaskemaskinen var det apparat jeg forventede mindst fra. Det er en Bosch. Den forbinder til Bosch Home Connect-appen, hvilket er fint men bare endnu en app. Jeg tilføjede Home Connect-integrationen til HA mest for fuldstændighedens skyld.
+Opvaskemaskinen var det apparat jeg forventede mindst fra. Det er en Bosch. Den forbinder til Bosch Home Connect-appen, hvilket er fint men bare endnu en app. Jeg tilføjede **Home Connect**-integrationen (indbygget i HA, ingen HACS — kræver en Home Connect-konto) til HA mest for fuldstændighedens skyld.
 
 Så opdagede jeg at den eksponerer nok kontrol til at gøre noget faktisk nyttigt: planlæg vasken til at starte i den billigste elektricitetstime.
 
@@ -40,7 +40,7 @@ Dashboardet viser alle kontroller i ét glaskort:
 - Halvt læs og SpeedPerfect-kontakter
 - To handlingsknapper: **Planlæg billigst** og **Start nu**
 
-"Planlæg billigst"-knappen er et script der læser Energi Data Service spotpriser, finder det billigste kommende 1-times vindue inden midnat, lægger programmets køretid til, og sætter `select.dishwasher_finish_at` til det tidspunkt.
+"Planlæg billigst"-knappen er et script der læser [Energi Data Service](https://www.energidataservice.dk/) spotpriser (HACS-integration, gratis dansk offentlig API), finder det billigste kommende 1-times vindue inden midnat, lægger programmets køretid til, og sætter `select.dishwasher_finish_at` til det tidspunkt.
 
 ```yaml
 alias: Opvaskemaskine — Planlæg billigste time

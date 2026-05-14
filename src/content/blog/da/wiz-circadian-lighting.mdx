@@ -10,7 +10,7 @@ heroImage: "/blog-images/szimnau-wiz-ha-lighting-guide.jpg"
 
 Naturligt dagslys er ikke hvidt. Ved middagstid er det et køligt neutralt — omkring 5500K. Om morgenen og aftenen er det varmt orange. Efter solnedgang er det som stearinlys. Din krop bruger disse skift til at regulere årvågenhed og søvn. De fleste smart-belysningssystemer ignorerer dette fuldstændigt og sidder ved den samme farvetemperatur hele dagen — typisk noget generisk omkring 3000K — uanset hvad solen laver udenfor.
 
-WiZ-pærerne understøtter farvetemperatur nativt. Home Assistant kender solens præcise høj over horisonten til enhver tid. At forbinde de to kræver én automation.
+WiZ-pærerne understøtter farvetemperatur nativt. **WiZ**-integrationen er indbygget i HA — den opdager pærer automatisk på lokalt netværk, ingen HACS nødvendig. Home Assistant kender solens præcise høj over horisonten til enhver tid via den indbyggede `sun.sun`-entitet. At forbinde de to kræver én automation.
 
 ![Home Assistant startskærm — lysene skifter automatisk farvetemperatur med solen i løbet af dagen](/blog-images/hjem-conditional.jpg)
 

@@ -32,7 +32,7 @@ LoRa på 868 MHz går igennem træer, hæk og havemur med god margin. TTGO LoRa3
 
 ## Firmware og MQTT
 
-Den firmwarevariant jeg brugte sender MQTT-beskeder med Home Assistant autodiscovery-payloads. Når postkassedøren åbnes:
+Den firmwarevariant jeg brugte sender MQTT-beskeder med Home Assistant autodiscovery-payloads. Du skal bruge en MQTT-broker — **Mosquitto broker**-add-on'en håndterer det: installer den fra HA's Add-on Store (Indstillinger → Add-ons → søg Mosquitto), tilføj derefter MQTT-integrationen under Integrationer. Når postkassedøren åbnes:
 
 ```
 homeassistant/binary_sensor/mailboxguard/state → ON

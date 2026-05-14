@@ -26,7 +26,7 @@ sensor.energi_data_service    — aktuel timepris (kr/kWh inkl. moms)
 
 ## Diagrammet
 
-`custom:apexcharts-card` med `column`-type er det rigtige her — hver søjle holder i en hel time, derefter hopper den. Farvetærskler gør de dyre timer tydelige:
+`custom:apexcharts-card` (HACS) med `column`-type er det rigtige her — hver søjle holder i en hel time, derefter hopper den. Farvetærskler gør de dyre timer tydelige:
 
 ```yaml
 type: custom:apexcharts-card
@@ -80,6 +80,8 @@ template:
 Vises som `02:00` eller `14:00` på dashboardet. Ikke brugt direkte i opladningsautomatiseringen — den kører hvert time og beslutter ud fra den aktuelle pris — men nyttig til at verificere at bilen lader på et fornuftigt tidspunkt.
 
 ## Opladningsautomatiseringen
+
+Automationen bruger `switch.elroq_charging` fra [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-integrationen (HACS) til at starte og stoppe opladningen.
 
 ```yaml
 alias: Elroq — Smart opladning

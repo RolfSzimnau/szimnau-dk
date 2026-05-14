@@ -18,7 +18,7 @@ Ich ersetzte ihn durch einen **Mammotion Flora** (Luba Mini) Anfang des Jahres �
 
 Der Flora nutzt GPS + RTK zur Navigation — kein Begrenzungsdraht. Die Grenze wird einmalig in der Mammotion-App gezeichnet, danach hält sich der Mäher innerhalb der Koordinaten. Das Vision Module ist eine kleine Kamera am Gehäuse, die Hindernisse erkennt.
 
-Installation: HACS → Mammotion suchen → mit Konto authentifizieren. Danach erscheinen:
+Installation: HACS → Mammotion suchen → mit Konto authentifizieren. Ein Mammotion-Cloud-Konto ist Pflicht — die Integration kommuniziert über die Mammotion-Cloud, nicht lokal. Danach erscheinen:
 
 ```
 lawn_mower.flora
@@ -79,7 +79,7 @@ Das Dashboard ist eine Reihe von Umschaltern, einer pro Tag. Man sieht genau, wa
 
 ## Dashboard
 
-`custom:lawn-mower-card` zeigt eine Grafik des Mähers mit Batteriestand. Mushroom-Chips darunter für die Telemetrie:
+`custom:lawn-mower-card` (HACS) zeigt eine Grafik des Mähers mit Batteriestand. Mushroom-Chips darunter für die Telemetrie:
 
 ```yaml
 - type: custom:mushroom-chips-card

@@ -8,7 +8,7 @@ translationKey: "roborock-interactive-map-ha"
 heroImage: "/blog-images/robot-roborock.jpg"
 ---
 
-The Roborock integration is built into HA now — no HACS needed. Add it, sign in with your Roborock account, and the vacuum appears. What it doesn't tell you is that the interesting part comes from a separate HACS card that renders the live map.
+The Roborock integration is built into HA — no HACS needed, but you do need a Roborock cloud account to authenticate. Add the integration, sign in, and the vacuum appears. What it doesn't tell you is that the interesting part comes from a separate HACS card that renders the live map.
 
 ## The integration
 
@@ -85,7 +85,7 @@ cards:
 
 The brush and filter sensors count down from 100% to 0%. I ignored them for too long and then the main brush warning notification showed up at 8% — which turned out to be *much* more worn than I expected from a percentage.
 
-Now I have colored indicator cards for each component:
+Now I have colored indicator cards for each component, using `custom:mushroom-template-card` (HACS, Mushroom suite) with `card_mod` (HACS) for the color logic:
 
 ```yaml
 type: custom:mushroom-template-card

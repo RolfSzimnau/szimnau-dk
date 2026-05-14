@@ -89,7 +89,7 @@ The dashboard is a row of toggle switches, one per day. My partner can see exact
 
 ## Dashboard
 
-`custom:lawn-mower-card` renders a graphic of the mower with battery level — looks good, minimal config. I put it at the top of the view, with mushroom chips below for the telemetry I actually care about:
+`custom:lawn-mower-card` (HACS) renders a graphic of the mower with battery level — looks good, minimal config. I put it at the top of the view, with mushroom chips below for the telemetry I actually care about:
 
 ```yaml
 - type: custom:mushroom-chips-card
@@ -119,6 +119,6 @@ There's no HA sensor for obstacle events, which is a genuine gap. I can't build 
 
 The HA integration has a latency problem. Commands take 30–60 seconds to reflect. If you send `start_mow` and immediately check the state, it's still `docked`. This is fine for automations (who cares if the state updates 45 seconds later) but confusing if you're watching the dashboard and pressing buttons.
 
-Initial boundary setup requires the app — there's no way around that. The GPS boundary data lives in Mammotion's cloud and the app is the only interface to draw it. Once set up, you never need the app again. But you do need it that first time.
+Initial boundary setup requires the Mammotion app and a Mammotion cloud account — there's no way around that. The GPS boundary data lives in their cloud and the app is the only interface to draw it. Once set up, you never need the app again. But you do need it that first time.
 
 Overall: worth it. The HA integration changes the mower from a standalone appliance into something that actually fits into how I run the house.

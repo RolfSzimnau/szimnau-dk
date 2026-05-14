@@ -8,7 +8,7 @@ translationKey: "roborock-interactive-map-ha"
 heroImage: "/blog-images/robot-roborock.jpg"
 ---
 
-Die Roborock-Integration ist direkt in HA eingebaut — kein HACS nötig. Hinzufügen, mit dem Roborock-Konto einloggen, der Staubsauger erscheint. Was einem niemand sagt: das Interessante kommt von einer separaten HACS-Karte, die die Live-Karte rendert.
+Die Roborock-Integration ist direkt in HA eingebaut — kein HACS nötig. Hinzufügen, mit dem Roborock-Konto einloggen (ein Roborock-Cloud-Konto ist erforderlich), der Staubsauger erscheint. Was einem niemand sagt: das Interessante kommt von einer separaten HACS-Karte, die die Live-Karte rendert.
 
 ## Die Integration
 
@@ -85,7 +85,7 @@ cards:
 
 Die Bürsten- und Filtersensoren zählen von 100% auf 0% herunter. Ich ignorierte sie zu lange und bekam dann eine Warnung, dass die Hauptbürste bei 8% war — was sich als *viel* abgenutzter herausstellte, als eine Prozentzahl vermuten ließ.
 
-Farbige Indikatorkarten für jede Komponente:
+Farbige Indikatorkarten für jede Komponente mit `custom:mushroom-template-card` (HACS, Mushroom-Suite) und `card_mod` (HACS):
 
 ```yaml
 type: custom:mushroom-template-card

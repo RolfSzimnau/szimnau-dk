@@ -8,7 +8,7 @@ translationKey: "ha-appliances-dashboard"
 heroImage: "/blog-images/hvidevarer-appliances.jpg"
 ---
 
-Der Geschirrspüler war das Gerät, von dem ich am wenigsten erwartet hatte. Es ist ein Bosch. Er verbindet sich mit der Bosch Home Connect-App, was in Ordnung ist — aber nur eine weitere App. Ich habe die Home Connect-Integration zu HA hauptsächlich aus Vollständigkeitsgründen hinzugefügt.
+Der Geschirrspüler war das Gerät, von dem ich am wenigsten erwartet hatte. Es ist ein Bosch. Er verbindet sich mit der Bosch Home Connect-App, was in Ordnung ist — aber nur eine weitere App. Ich habe die **Home Connect**-Integration (in HA integriert, kein HACS — erfordert ein Home Connect-Konto) zu HA hauptsächlich aus Vollständigkeitsgründen hinzugefügt.
 
 Dann stellte ich fest, dass er genug Kontrolle bietet, um etwas wirklich Nützliches zu tun: den Waschgang so planen, dass er in der günstigsten Stromstunde startet.
 
@@ -40,7 +40,7 @@ Das Dashboard zeigt alle Bedienelemente in einer Glaskarte:
 - Halb-Beladung und SpeedPerfect-Schalter
 - Zwei Aktionsschaltflächen: **Günstigste planen** und **Jetzt starten**
 
-Der "Günstigste planen"-Knopf ist ein Skript, das Energi Data Service Spotpreise liest, das günstigste kommende 1-Stunden-Fenster vor Mitternacht findet, die Programmlaufzeit addiert und `select.dishwasher_finish_at` auf diesen Zeitpunkt setzt.
+Der "Günstigste planen"-Knopf ist ein Skript, das [Energi Data Service](https://www.energidataservice.dk/) Spotpreise liest (HACS-Integration, kostenlose dänische Behörden-API), das günstigste kommende 1-Stunden-Fenster vor Mitternacht findet, die Programmlaufzeit addiert und `select.dishwasher_finish_at` auf diesen Zeitpunkt setzt.
 
 ```yaml
 alias: Geschirrspüler — Günstigste Stunde planen

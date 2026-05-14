@@ -14,9 +14,9 @@ Die HA-Kalenderansicht hat das Gewohnheitsproblem nicht gelöst. Aber sie hat di
 
 ## Die Konfiguration
 
-Jedes Familienmitglied hat einen Google Kalender. Die HA Google Kalender-Integration zieht alle als separate `calendar.*`-Entitäten rein. Die Müllabfuhr kommt von der `affalddk`-Integration — einer dänischen Gemeindeabfall-API, die eine eigene Kalenderentität mit Abholungsterminen erstellt.
+Jedes Familienmitglied hat einen Google Kalender. Die HA Google Kalender-Integration zieht alle als separate `calendar.*`-Entitäten rein. Die Müllabfuhr kommt von der `affalddk`-Integration (HACS, dänische Gemeindeabfall-API), die eine eigene Kalenderentität mit Abholungsterminen erstellt.
 
-Die Kalenderansicht verwendet `custom:atomic-calendar-revive` im Agendamodus. Nichts Aufwändiges — nur eine scrollbare Liste bevorstehender Ereignisse, farbcodiert nach Person.
+Die Kalenderansicht verwendet `custom:atomic-calendar-revive` (HACS) im Agendamodus. Nichts Aufwändiges — nur eine scrollbare Liste bevorstehender Ereignisse, farbcodiert nach Person.
 
 ```yaml
 type: custom:atomic-calendar-revive

@@ -33,7 +33,7 @@ Og den du vil gå glip af hvis ingen fortæller dig det:
 ha-card::before { display: none !important; }
 ```
 
-**Frosted Glass Dark**-temaet (og adskillige lignende temaer) injicerer et `::before`-overlay på hvert `ha-card`. Hvis du ikke undertrykker det, får din brugerdefinerede baggrund et halvgennemsigtigt lag ovenpå. Symptomet er at dine kort ser lidt forkerte ud — lidt for uigennemsigtige, lidt forkert farvet — og du kan ikke finde ud af hvorfor. Jeg brugte et godt stykke tid på at lede det sted forkert sted inden jeg fandt det.
+**Frosted Glass Dark**-temaet (tilgængeligt i HACS under Themes, og adskillige lignende temaer) injicerer et `::before`-overlay på hvert `ha-card`. Hvis du ikke undertrykker det, får din brugerdefinerede baggrund et halvgennemsigtigt lag ovenpå. Symptomet er at dine kort ser lidt forkerte ud — lidt for uigennemsigtige, lidt forkert farvet — og du kan ikke finde ud af hvorfor. Jeg brugte et godt stykke tid på at lede det sted forkert sted inden jeg fandt det.
 
 ## Ydre kort-skabelonen
 
@@ -54,7 +54,7 @@ cards:
   # indhold herunder
 ```
 
-`custom:stack-in-card` er indpakningen. Al visuel styling bor her. Indre kort får ingen af det.
+`custom:stack-in-card` (HACS) er indpakningen. Al visuel styling bor her. Indre kort får ingen af det. `card_mod` (også HACS) er det der gør CSS-injektionen mulig.
 
 ## Indre kort — kun gennemsigtighed
 

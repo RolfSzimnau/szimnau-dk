@@ -30,7 +30,7 @@ Die `climate`-Entität nutze ich am meisten. Temperatur einstellen, `climate.tur
 
 ## Die Dashboard-Karte
 
-Ich wollte den Ladestand sofort sichtbar haben ohne viel Platz einzunehmen. Die Lösung ist ein grüner Verlauf hinter dem Karteninhalt über `ha-card::after` — er füllt die Karte proportional zum Ladestand:
+Ich wollte den Ladestand sofort sichtbar haben ohne viel Platz einzunehmen. Die Lösung ist ein grüner Verlauf hinter dem Karteninhalt über `ha-card::after` — er füllt die Karte proportional zum Ladestand. Die Karte verwendet `custom:stack-in-card` und `custom:mushroom-template-card` (beide HACS, Mushroom-Suite), mit `card_mod` (HACS) für das CSS:
 
 ```yaml
 type: custom:stack-in-card

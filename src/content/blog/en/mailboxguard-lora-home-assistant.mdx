@@ -32,7 +32,7 @@ LoRa at 868 MHz goes through trees, hedges, and a garden wall with link margin t
 
 ## Firmware and MQTT
 
-The firmware variant I used sends MQTT messages with Home Assistant autodiscovery payloads. When the mailbox door opens:
+The firmware variant I used sends MQTT messages with Home Assistant autodiscovery payloads. You need an MQTT broker running — the **Mosquitto broker** add-on handles this: install it from the HA Add-on Store (Settings → Add-ons → search Mosquitto), then add the MQTT integration under Integrations. When the mailbox door opens:
 
 ```
 homeassistant/binary_sensor/mailboxguard/state → ON

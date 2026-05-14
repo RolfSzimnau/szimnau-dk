@@ -27,7 +27,9 @@ Person and vehicle come from the camera's own AI chip. They're reasonably accura
 
 ## LLM Vision
 
-The [LLM Vision](https://github.com/valentinfrlch/ha-llmvision) integration pulls a snapshot from the camera and sends it to a language model with a prompt. The response comes back as a string you can use in a notification.
+The [LLM Vision](https://github.com/valentinfrlch/ha-llmvision) integration (HACS) pulls a snapshot from the camera and sends it to a language model with a prompt. The response comes back as a string you can use in a notification.
+
+LLM Vision supports OpenAI, Anthropic, Google, and local Ollama models. OpenAI is what I use — you need an API key from platform.openai.com. GPT-4o-mini costs fractions of a cent per image; at one or two vehicle events a day it's negligible.
 
 ```yaml
 service: llmvision.image_analyzer
@@ -111,6 +113,8 @@ I deleted all five and started from scratch with three:
 The night suppression is gone because `armed_away` already handles it — if I'm asleep at home, I'm not armed away. The rate limiter is gone because the AI toggle does that job more deliberately.
 
 ## The dashboard card
+
+The dashboard uses `custom:advanced-camera-card` (HACS) for the live feed and `custom:mushroom-chips-card` (HACS, part of the Mushroom suite) for the status chips:
 
 ```yaml
 type: vertical-stack

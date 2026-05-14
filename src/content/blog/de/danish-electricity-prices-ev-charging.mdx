@@ -26,7 +26,7 @@ Die `today`- und `tomorrow`-Attribute enthalten die vollständigen 24-Stunden-Pr
 
 ## Das Diagramm
 
-`custom:apexcharts-card` mit Column-Typ ist hier das Richtige — jede Spalte hält für eine volle Stunde, dann springt sie. Farbschwellenwerte machen die teuren Stunden sofort erkennbar:
+`custom:apexcharts-card` (HACS) mit Column-Typ ist hier das Richtige — jede Spalte hält für eine volle Stunde, dann springt sie. Farbschwellenwerte machen die teuren Stunden sofort erkennbar:
 
 ```yaml
 type: custom:apexcharts-card
@@ -80,6 +80,8 @@ template:
 Wird als `02:00` oder `14:00` auf dem Dashboard angezeigt. Nicht direkt in der Ladeautomatisierung verwendet — die läuft stündlich und entscheidet anhand des aktuellen Preises — aber nützlich zur Überprüfung, ob das Auto zu einer vernünftigen Zeit lädt.
 
 ## Die Ladeautomatisierung
+
+Die Automatisierung verwendet `switch.elroq_charging` aus der [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-Integration (HACS) zum Starten und Stoppen des Ladevorgangs.
 
 ```yaml
 alias: Elroq — Smart laden

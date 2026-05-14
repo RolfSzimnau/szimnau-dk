@@ -8,7 +8,7 @@ translationKey: "tado-home-assistant-dashboard"
 heroImage: "/blog-images/klima-tado.jpg"
 ---
 
-Tados HA-integration er en af de bedste out-of-the-box — tilføj integrationen, log ind, og alle zoner dukker op som `climate.*`-entiteter med fuld understøttelse. Statuspop kommer tilbage under fem sekunder. Det bare virker.
+Tados HA-integration er en af de bedste out-of-the-box — indbygget i HA, ingen HACS. Du skal bruge Tado Internet Bridge-hardware og en Tado-konto. Tilføj integrationen, log ind, og alle zoner dukker op som `climate.*`-entiteter med fuld understøttelse. Statuspop kommer tilbage under fem sekunder. Det bare virker.
 
 Så selve opvarmningsdelen var nem. Det interessante var at få dashboardet til at fortælle noget med et øjeblik.
 
@@ -42,7 +42,7 @@ Dupliker blokken for hver zone og skift entitets-ID. Jinja2 inde i `card_mod` ev
 
 ## Layout
 
-Fem kort i et 2-kolonne gitter via `custom:layout-card`, pakket ind i et glas `stack-in-card`:
+Fem kort i et 2-kolonne gitter via `custom:layout-card` (HACS), pakket ind i et glas `custom:stack-in-card` (HACS), med `card_mod` (HACS) til CSS-animationerne:
 
 ```yaml
 type: custom:stack-in-card

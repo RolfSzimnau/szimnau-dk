@@ -8,7 +8,7 @@ translationKey: "ha-appliances-dashboard"
 heroImage: "/blog-images/hvidevarer-appliances.jpg"
 ---
 
-The dishwasher was the appliance I expected least from. It's a Bosch. It connects to the Bosch Home Connect app, which is fine but just another app. I added the Home Connect integration to HA mostly out of completeness.
+The dishwasher was the appliance I expected least from. It's a Bosch. It connects to the Bosch Home Connect app, which is fine but just another app. I added the **Home Connect** integration (built into HA, no HACS needed — requires a Home Connect account) mostly out of completeness.
 
 Then I realised it exposes enough control to do something actually useful: schedule the wash to start at the cheapest electricity hour.
 
@@ -40,7 +40,7 @@ The dashboard shows all controls in one glass card:
 - Half load and SpeedPerfect toggles
 - Two action buttons: **Schedule cheapest** and **Start now**
 
-The "Schedule cheapest" button is a script that reads Energi Data Service spot prices, finds the cheapest upcoming 1-hour window before midnight, adds the programme's runtime, and sets `select.dishwasher_finish_at` to that time.
+The "Schedule cheapest" button is a script that reads **Energi Data Service** (HACS) spot prices, finds the cheapest upcoming 1-hour window before midnight, adds the programme's runtime, and sets `select.dishwasher_finish_at` to that time.
 
 ```yaml
 alias: Dishwasher — Schedule cheapest hour

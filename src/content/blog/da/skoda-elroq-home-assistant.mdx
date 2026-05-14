@@ -30,7 +30,7 @@ switch.elroq_charging            — start/stop
 
 ## Dashboardkortet
 
-Jeg ville have batteriniveauet synligt med det samme uden at det fylder for meget. Løsningen er en grøn gradient bag kortindholdet via `ha-card::after` — den fylder kortet proportionalt med ladestanden:
+Jeg ville have batteriniveauet synligt med det samme uden at det fylder for meget. Løsningen er en grøn gradient bag kortindholdet via `ha-card::after` — den fylder kortet proportionalt med ladestanden. Kortet bruger `custom:stack-in-card` og `custom:mushroom-template-card` (begge HACS, Mushroom-suiten), med `card_mod` (HACS) til CSS'en:
 
 ```yaml
 type: custom:stack-in-card

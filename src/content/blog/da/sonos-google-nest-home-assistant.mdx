@@ -28,9 +28,9 @@ Fem højttalere, to mærker, nul native kompatibilitet.
 
 ## Hvordan HA integrerer begge
 
-Sonos-integrationen i HA er native og solid. Den finder højttaleren automatisk over lokalt netværk — ingen afhængighed af Sonos-skyen til basal afspilningsstyring.
+**Sonos**-integrationen i HA er indbygget og solid. Den finder højttaleren automatisk over lokalt netværk — ingen afhængighed af Sonos-skyen til basal afspilningsstyring.
 
-Google-højttalere integreres via Google Home-integrationen (eller Cast-integrationen). Begge giver `media_player`-entiteter med standard play/pause/volumen-services.
+Google-højttalere integreres via **Google Home**-integrationen (indbygget, eller den ældre **Cast**-integration — begge ligger i HA's integrationsliste). Begge giver `media_player`-entiteter med standard play/pause/volumen-services.
 
 Fordi HA mapper alt til samme `media_player`-domæne, kan du styre en Sonos og en Google-højttaler med identiske service-kald:
 
@@ -137,7 +137,7 @@ action:
 
 ## Dashboard-styring
 
-Jeg har en mushroom chips-card i hoved-Hjem-visningen til hurtig ét-tryk-styring:
+Jeg har en `custom:mushroom-chips-card` (HACS, Mushroom-suite) i hoved-Hjem-visningen til hurtig ét-tryk-styring:
 
 ```yaml
 type: custom:mushroom-chips-card

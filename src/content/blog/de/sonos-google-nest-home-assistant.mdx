@@ -28,9 +28,9 @@ Fünf Lautsprecher, zwei Marken, null native Kompatibilität.
 
 ## Wie HA beide integriert
 
-Die Sonos-Integration in HA ist nativ und hervorragend. Sie findet den Lautsprecher automatisch über das lokale Netzwerk — keine Sonos-Cloud-Abhängigkeit für grundlegende Wiedergabesteuerung.
+Die **Sonos**-Integration in HA ist nativ eingebaut und hervorragend. Sie findet den Lautsprecher automatisch über das lokale Netzwerk — keine Sonos-Cloud-Abhängigkeit für grundlegende Wiedergabesteuerung.
 
-Google-Lautsprecher werden über die Google Home-Integration (oder die Cast-Integration) eingebunden. Beide liefern `media_player`-Entitäten mit Standard-Play/Pause/Lautstärke-Services.
+Google-Lautsprecher werden über die **Google Home**-Integration eingebunden (ebenfalls nativ eingebaut, oder die ältere **Cast**-Integration — beide in HAs Integrationsliste). Beide liefern `media_player`-Entitäten mit Standard-Play/Pause/Lautstärke-Services.
 
 Da HA alles auf dieselbe `media_player`-Domäne mappt, kann man einen Sonos und einen Google-Lautsprecher mit identischen Service-Aufrufen steuern:
 
@@ -137,7 +137,7 @@ action:
 
 ## Dashboard-Steuerung
 
-Eine mushroom chips-Karte in der Haupt-Hjem-Ansicht für schnelle Einzel-Tippen-Kontrolle:
+Eine `custom:mushroom-chips-card` (HACS, Mushroom-Suite) in der Haupt-Ansicht für schnelle Einzel-Tippen-Kontrolle:
 
 ```yaml
 type: custom:mushroom-chips-card

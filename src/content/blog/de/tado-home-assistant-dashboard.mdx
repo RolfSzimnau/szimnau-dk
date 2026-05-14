@@ -8,7 +8,7 @@ translationKey: "tado-home-assistant-dashboard"
 heroImage: "/blog-images/klima-tado.jpg"
 ---
 
-Tados HA-Integration gehört zum Besten, was es out-of-the-box gibt — Integration hinzufügen, einloggen, und alle Zonen erscheinen als `climate.*`-Entitäten mit voller Unterstützung. Statusupdates kommen in unter fünf Sekunden zurück. Es funktioniert einfach.
+Tados HA-Integration gehört zum Besten, was es out-of-the-box gibt — in HA integriert, kein HACS nötig. Du brauchst die **Tado Internet Bridge** Hardware und ein Tado-Konto. Integration hinzufügen, einloggen, und alle Zonen erscheinen als `climate.*`-Entitäten mit voller Unterstützung. Statusupdates kommen in unter fünf Sekunden zurück. Es funktioniert einfach.
 
 Der Heizungsteil war also einfach. Das Interessante war, das Dashboard dazu zu bringen, auf einen Blick etwas zu sagen.
 
@@ -42,7 +42,7 @@ Den Block für jede Zone duplizieren und die Entitäts-ID tauschen. Das Jinja2 i
 
 ## Layout
 
-Fünf Karten in einem 2-Spalten-Raster über `custom:layout-card`, eingewickelt in einen Glas-`stack-in-card`:
+Fünf Karten in einem 2-Spalten-Raster über `custom:layout-card` (HACS), eingewickelt in einen Glas-`custom:stack-in-card` (HACS), mit `card_mod` (HACS) für die CSS-Animationen:
 
 ```yaml
 type: custom:stack-in-card

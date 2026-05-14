@@ -14,9 +14,9 @@ The HA calendar view didn't replace the habit problem. But it put the same infor
 
 ## The setup
 
-Each family member has a Google Calendar. HA's Google Calendar integration pulls all of them in as separate `calendar.*` entities. Waste collection comes from the `affalddk` integration — a Danish municipal waste API that creates its own calendar entity with pickup dates.
+Each family member has a Google Calendar. HA's Google Calendar integration pulls all of them in as separate `calendar.*` entities. Waste collection comes from the `affalddk` integration (HACS) — a Danish municipal waste API that creates its own calendar entity with pickup dates.
 
-The calendar view uses `custom:atomic-calendar-revive` in agenda mode. Nothing fancy — just a scrollable list of upcoming events, colour-coded by person.
+The calendar view uses `custom:atomic-calendar-revive` (HACS) in agenda mode. Nothing fancy — just a scrollable list of upcoming events, colour-coded by person.
 
 ```yaml
 type: custom:atomic-calendar-revive

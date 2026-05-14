@@ -10,7 +10,7 @@ heroImage: "/blog-images/szimnau-wiz-ha-lighting-guide.jpg"
 
 Natürliches Tageslicht ist nicht weiß. Mittags ist es ein kühles Neutral — etwa 5500K. Morgens und abends ist es warm orange. Nach Sonnenuntergang wie Kerzenlicht. Der Körper nutzt diese Verschiebungen um Wachheit und Schlaf zu regulieren. Die meisten Smart-Beleuchtungssysteme ignorieren das völlig und sitzen den ganzen Tag bei derselben Farbtemperatur — meistens irgendwas Generisches um 3000K — unabhängig davon was die Sonne draußen gerade macht.
 
-Die WiZ-Lampen unterstützen Farbtemperatur nativ. Home Assistant kennt den genauen Elevationswinkel der Sonne zu jedem Zeitpunkt. Die beiden zu verbinden erfordert eine einzige Automatisierung.
+Die WiZ-Lampen unterstützen Farbtemperatur nativ. Die **WiZ**-Integration ist in HA eingebaut — sie erkennt Lampen automatisch im lokalen Netzwerk, kein HACS nötig. Home Assistant kennt den genauen Elevationswinkel der Sonne zu jedem Zeitpunkt über die eingebaute `sun.sun`-Entität. Die beiden zu verbinden erfordert eine einzige Automatisierung.
 
 ![Home Assistant Startbildschirm — Lampen verschieben automatisch die Farbtemperatur mit der Sonne im Tagesverlauf](/blog-images/hjem-conditional.jpg)
 

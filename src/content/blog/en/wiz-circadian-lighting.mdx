@@ -10,7 +10,7 @@ heroImage: "/blog-images/szimnau-wiz-ha-lighting-guide.jpg"
 
 Natural daylight isn't white. At noon it's a cool neutral — around 5500K. In the morning and evening it's warm orange. After sunset it's firelight. Your body uses those shifts to regulate alertness and sleep. Most smart lighting ignores this entirely and sits at the same colour temperature all day, usually something generic around 3000K, regardless of what the sun is doing outside.
 
-The WiZ bulbs support colour temperature natively. Home Assistant knows the exact elevation of the sun at any moment. Connecting the two takes one automation.
+The WiZ bulbs support colour temperature natively. The **WiZ** integration is built into HA — it auto-discovers bulbs on the local network with no HACS needed. Home Assistant knows the exact elevation of the sun at any moment via the built-in `sun.sun` entity. Connecting the two takes one automation.
 
 ![Home Assistant home screen — lights automatically shift colour temperature with the sun throughout the day](/blog-images/hjem-conditional.jpg)
 

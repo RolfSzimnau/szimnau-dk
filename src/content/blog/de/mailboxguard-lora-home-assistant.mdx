@@ -32,7 +32,7 @@ LoRa auf 868 MHz durchdringt Bäume, Hecke und Gartenmauer mit gutem Sicherheits
 
 ## Firmware und MQTT
 
-Die von mir verwendete Firmware-Variante sendet MQTT-Nachrichten mit Home Assistant Autodiscovery-Payloads. Wenn die Briefkastentür öffnet:
+Die von mir verwendete Firmware-Variante sendet MQTT-Nachrichten mit Home Assistant Autodiscovery-Payloads. Dafür wird ein MQTT-Broker in HA benötigt — ich nutze das **Mosquitto Broker**-Add-on (kostenlos im HA Add-on-Store), das einen lokalen Broker bereitstellt. Unter Einstellungen → Geräte & Dienste → MQTT konfigurieren. Wenn die Briefkastentür öffnet:
 
 ```
 homeassistant/binary_sensor/mailboxguard/state → ON

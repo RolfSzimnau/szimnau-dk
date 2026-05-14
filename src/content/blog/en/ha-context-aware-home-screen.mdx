@@ -16,7 +16,7 @@ The screenshot above is from this morning. The dishwasher is running (blue card)
 
 ## The alert ticker
 
-At the very top sits a `custom:alert-ticker-card` with `show_when_clear: false`. When nothing needs attention, it doesn't exist. When something does, it rotates through alerts in priority order:
+At the very top sits a `custom:alert-ticker-card` (HACS) with `show_when_clear: false`. When nothing needs attention, it doesn't exist. When something does, it rotates through alerts in priority order:
 
 ```yaml
 type: custom:alert-ticker-card
@@ -78,7 +78,7 @@ Three states, three different cards, zero redundancy.
 
 Lights follow a two-layer pattern. Both layers are conditional on something being on.
 
-**Layer 1 — Quick Actions:** When any light is on, an amber card appears at the top with the count and a single tap to kill everything:
+**Layer 1 — Quick Actions:** When any light is on, an amber card appears at the top with the count and a single tap to kill everything. These use `custom:mushroom-template-card` (HACS, Mushroom suite) with `card_mod` (HACS) for the tinted backgrounds:
 
 ```yaml
 - type: conditional

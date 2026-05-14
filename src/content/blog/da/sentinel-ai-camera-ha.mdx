@@ -27,7 +27,9 @@ Person og køretøj kommer fra kameraets eget AI-chip. Rimelig præcis — bedre
 
 ## LLM Vision
 
-[LLM Vision](https://github.com/valentinfrlch/ha-llmvision)-integrationen henter et snapshot fra kameraet og sender det til en sprogmodel med en prompt. Svaret kommer tilbage som en streng du kan bruge i en notifikation.
+[LLM Vision](https://github.com/valentinfrlch/ha-llmvision)-integrationen (HACS) henter et snapshot fra kameraet og sender det til en sprogmodel med en prompt. Svaret kommer tilbage som en streng du kan bruge i en notifikation.
+
+LLM Vision understøtter OpenAI, Anthropic, Google og lokale Ollama-modeller. OpenAI er hvad jeg bruger — du skal bruge en API-nøgle fra platform.openai.com. GPT-4o-mini koster brøkdele af en øre per billede; ved én eller to køretøjshændelser om dagen er det ubetydeligt.
 
 ```yaml
 service: llmvision.image_analyzer
@@ -106,6 +108,8 @@ Jeg slettede alle fem og startede forfra med tre:
 Natundertrykkelsen er væk fordi `armed_away` allerede håndterer det. Rate-limiteren er væk fordi AI-kontakten gør det job mere bevidst.
 
 ## Dashboard
+
+Dashboardet bruger `custom:advanced-camera-card` (HACS) til live-feed og `custom:mushroom-chips-card` (HACS, Mushroom-suite) til statuskortene:
 
 ```yaml
 type: vertical-stack

@@ -33,7 +33,7 @@ Und die Zeile, die man verpasst, wenn niemand es einem sagt:
 ha-card::before { display: none !important; }
 ```
 
-Das **Frosted Glass Dark** Theme (und mehrere ähnliche) injiziert ein `::before`-Overlay auf jede `ha-card`. Unterdrückt man es nicht, liegt ein halbtransparentes Layer über dem eigenen Hintergrund. Das Symptom: die Karten sehen leicht falsch aus — leicht zu undurchsichtig, leicht in der Farbe verändert — und man findet nicht heraus warum. Ich suchte eine Weile an der falschen Stelle, bevor ich darauf kam.
+Das **Frosted Glass Dark** Theme (im HACS unter Themes verfügbar, und mehrere ähnliche) injiziert ein `::before`-Overlay auf jede `ha-card`. Unterdrückt man es nicht, liegt ein halbtransparentes Layer über dem eigenen Hintergrund. Das Symptom: die Karten sehen leicht falsch aus — leicht zu undurchsichtig, leicht in der Farbe verändert — und man findet nicht heraus warum. Ich suchte eine Weile an der falschen Stelle, bevor ich darauf kam.
 
 ## Die äußere Karten-Vorlage
 
@@ -54,7 +54,7 @@ cards:
   # Inhalt hier
 ```
 
-`custom:stack-in-card` ist die Umhüllung. Alle visuellen Styles leben hier. Innere Karten bekommen nichts davon.
+`custom:stack-in-card` (HACS) ist die Umhüllung — `card_mod` (HACS) liefert die CSS-Injektion. Alle visuellen Styles leben hier. Innere Karten bekommen nichts davon.
 
 ## Innere Karten — nur Transparenz
 
@@ -124,7 +124,7 @@ card_mod:
     }
     ha-card::before { display: none !important; }
 cards:
-  - type: custom:xiaomi-vacuum-map-card
+  - type: custom:xiaomi-vacuum-map-card  # HACS
     entity: vacuum.robot
     card_mod:
       style: |

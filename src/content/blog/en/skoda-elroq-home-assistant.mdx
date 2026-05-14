@@ -10,7 +10,7 @@ heroImage: "/blog-images/skoda-elroq.jpg"
 
 The My Škoda app is fine. It does everything it's supposed to do. But it's one more app that knows something my home automation doesn't, and that bothered me more than it probably should.
 
-The [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) integration fixes that. It's HACS, it authenticates with your Škoda Connect account, and it polls the cloud API. The polling latency is real — commands take 15–60 seconds to reflect — but for most use cases that's fine.
+The [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) integration (HACS) fixes that. It authenticates with your Škoda Connect account and polls the cloud API. The polling latency is real — commands take 15–60 seconds to reflect — but for most use cases that's fine.
 
 ## What you actually get
 
@@ -32,7 +32,7 @@ The `climate` entity is the one I use most. Set it to a temperature, call `clima
 
 ## The dashboard card
 
-I wanted the battery level visible at a glance without taking up much space. The solution is a green gradient behind the card content via `ha-card::after` — it fills the card proportionally to the charge level:
+I wanted the battery level visible at a glance without taking up much space. The solution is a green gradient behind the card content via `ha-card::after` — it fills the card proportionally to the charge level. The card uses `custom:stack-in-card` and `custom:mushroom-template-card` (both HACS, part of the Mushroom suite), with `card_mod` (HACS) for the CSS:
 
 ```yaml
 type: custom:stack-in-card

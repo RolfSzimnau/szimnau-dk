@@ -16,7 +16,7 @@ Der Screenshot oben ist von heute Morgen. Die Spülmaschine läuft (blaue Karte)
 
 ## Der Alert-Ticker oben
 
-Ganz oben sitzt eine `custom:alert-ticker-card` mit `show_when_clear: false`. Wenn nichts Aufmerksamkeit erfordert, existiert sie nicht. Wenn doch, rotiert sie Meldungen in Prioritätsreihenfolge:
+Ganz oben sitzt eine `custom:alert-ticker-card` (HACS) mit `show_when_clear: false`. Wenn nichts Aufmerksamkeit erfordert, existiert sie nicht. Wenn doch, rotiert sie Meldungen in Prioritätsreihenfolge:
 
 ```yaml
 type: custom:alert-ticker-card
@@ -85,7 +85,7 @@ Licht folgt einem zweistufigen Muster. Beide Ebenen sind davon abhängig, dass e
           state: "on"
         # ... alle Lichter
   card:
-    type: custom:mushroom-template-card
+    type: custom:mushroom-template-card  # HACS, card_mod (HACS) für die inline CSS-Styles
     primary: Lichter an
     secondary: >
       {% set l = ['light.decke_1','light.decke_2','light.ecke',

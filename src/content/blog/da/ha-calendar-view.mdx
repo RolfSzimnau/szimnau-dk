@@ -14,9 +14,9 @@ HA-kalendervisningen løste ikke vaneproblemet. Men den lagde den samme informat
 
 ## Opsætningen
 
-Hvert familiemedlem har en Google Kalender. HA's Google Kalender-integration trækker dem alle ind som separate `calendar.*`-entiteter. Renovationsdata kommer fra `affalddk`-integrationen — en dansk kommunal affalds-API der opretter sin egen kalenderentitet med afhentningsdatoer.
+Hvert familiemedlem har en Google Kalender. HA's Google Kalender-integration trækker dem alle ind som separate `calendar.*`-entiteter. Renovationsdata kommer fra `affalddk`-integrationen (HACS) — en dansk kommunal affalds-API der opretter sin egen kalenderentitet med afhentningsdatoer.
 
-Kalendervisningen bruger `custom:atomic-calendar-revive` i agendatilstand. Ingenting fancy — bare en rulleliste over kommende begivenheder, farvekoderet per person.
+Kalendervisningen bruger `custom:atomic-calendar-revive` (HACS) i agendatilstand. Ingenting fancy — bare en rulleliste over kommende begivenheder, farvekoderet per person.
 
 ```yaml
 type: custom:atomic-calendar-revive

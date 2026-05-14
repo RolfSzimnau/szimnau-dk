@@ -26,7 +26,7 @@ The `today` and `tomorrow` attributes contain the full 24-hour price arrays. Tom
 
 ## The chart
 
-`custom:apexcharts-card` with a stepline type is the right call here — each bar holds for a full hour, then steps. I use color thresholds to make the expensive hours obvious at a glance:
+`custom:apexcharts-card` (HACS) with a stepline type is the right call here — each bar holds for a full hour, then steps. I use color thresholds to make the expensive hours obvious at a glance:
 
 ```yaml
 type: custom:apexcharts-card
@@ -115,7 +115,7 @@ action:
 
 Below 1.00 DKK — charge. Above 1.50 — stop. Between those two numbers — leave it alone. The dead zone between 1.00 and 1.50 is deliberate: without it the switch would toggle on and off every hour when prices hover around the threshold, which isn't good for the charger or the car.
 
-There's a `input_boolean.elroq_force_charge` override for mornings when I need a full charge regardless of price.
+There's a `input_boolean.elroq_force_charge` override for mornings when I need a full charge regardless of price. The EV entities (`switch.elroq_charging`, `binary_sensor.elroq_plugged_in`) come from the [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) integration (HACS) — authenticate with your Škoda Connect account to get them.
 
 ## Does it actually save money?
 

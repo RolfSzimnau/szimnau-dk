@@ -27,7 +27,7 @@ Personen- und Fahrzeugerkennung kommen vom KI-Chip der Kamera. Ziemlich präzise
 
 ## LLM Vision
 
-Die [LLM Vision](https://github.com/valentinfrlch/ha-llmvision)-Integration holt einen Snapshot von der Kamera und sendet ihn mit einem Prompt an ein Sprachmodell. Die Antwort kommt als Zeichenkette zurück, die in einer Benachrichtigung verwendet werden kann.
+Die [LLM Vision](https://github.com/valentinfrlch/ha-llmvision)-Integration (HACS) holt einen Snapshot von der Kamera und sendet ihn mit einem Prompt an ein Sprachmodell. Für den `openai`-Provider wird ein OpenAI API-Schlüssel benötigt — `gpt-4o-mini` ist günstig (Bruchteile eines Cents pro Bild), aber kostet etwas. Die Ausgaben summieren sich bei häufig ausgelösten Kameras schnell, daher der `sentinel_ai_analysis`-Schalter. Die Antwort kommt als Zeichenkette zurück, die in einer Benachrichtigung verwendet werden kann.
 
 ```yaml
 service: llmvision.image_analyzer
@@ -110,12 +110,12 @@ Die Nachtsupprimierung ist weg, weil `armed_away` das bereits übernimmt. Der Ra
 ```yaml
 type: vertical-stack
 cards:
-  - type: custom:advanced-camera-card
+  - type: custom:advanced-camera-card  # HACS
     cameras:
       - camera_entity: camera.sentinel
     view:
       default: live
-  - type: custom:mushroom-chips-card
+  - type: custom:mushroom-chips-card  # HACS
     chips:
       - type: entity
         entity: binary_sensor.sentinel_person

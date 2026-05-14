@@ -28,9 +28,9 @@ Five speakers, two brands, zero native cross-compatibility.
 
 ## How HA Integrates Both
 
-The Sonos integration in HA is native and excellent. It finds the speaker automatically over the local network — no Sonos cloud dependency for basic playback control, grouping, or volume.
+The **Sonos** integration in HA is built-in and excellent. It finds the speaker automatically over the local network — no Sonos cloud dependency for basic playback control, grouping, or volume.
 
-Google speakers integrate through the Google Home integration (or the older Cast integration if you prefer). Either way you get `media_player` entities with standard play/pause/volume services.
+Google speakers integrate through the **Google Home** integration (built-in, or the older **Cast** integration if you prefer — both are in HA's integration list). Either way you get `media_player` entities with standard play/pause/volume services.
 
 Because HA maps everything to the same `media_player` domain, you can control a Sonos and a Google speaker with identical service calls:
 
@@ -137,7 +137,7 @@ action:
 
 ## Dashboard Control
 
-I put a mushroom chips card in the main Hjem view for quick one-tap control:
+I put a `custom:mushroom-chips-card` (HACS, Mushroom suite) in the main Hjem view for quick one-tap control:
 
 ```yaml
 type: custom:mushroom-chips-card

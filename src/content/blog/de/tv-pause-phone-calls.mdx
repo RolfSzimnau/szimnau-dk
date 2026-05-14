@@ -16,9 +16,9 @@ Die Automatisierung hat eine einzige Bedingung: wenn ein Telefon klingelt und de
 
 ## Der Telefonsensor
 
-Die HA Companion App stellt `sensor.pixel_10_phone_state` mit vier Zuständen bereit: `ringing`, `in_call`, `offhook`, `idle`. Der Trigger erfasst alle drei Nicht-Idle-Zustände — der TV soll pausieren sobald das Telefon klingelt, nicht erst nachdem man abgenommen hat.
+Die HA Companion App (kostenlos für iOS und Android) stellt `sensor.pixel_10_phone_state` mit vier Zuständen bereit: `ringing`, `in_call`, `offhook`, `idle`. Sie muss auf dem Telefon installiert sein und HA-Benachrichtigungen zugelassen haben. Der Trigger erfasst alle drei Nicht-Idle-Zustände — der TV soll pausieren sobald das Telefon klingelt, nicht erst nachdem man abgenommen hat.
 
-Die Automatisierung prüft zuerst ob die TV-Fernbedienung tatsächlich eingeschaltet ist. Es hat keinen Sinn einen Pause-Befehl an einen TV zu schicken der bereits aus oder bereits pausiert ist. `input_boolean.tv_was_playing` übernimmt Letzteres — es wird beim Pausieren auf `on` gesetzt und vor dem Fortsetzen geprüft. Ohne es könnte ein Anruf etwas fortsetzen das absichtlich vor dem Anruf pausiert wurde.
+Die Automatisierung prüft zuerst ob die TV-Fernbedienung tatsächlich eingeschaltet ist. `remote.tv_stuen` kommt aus der **Android TV**-Integration (in HA integriert, kein HACS). Es hat keinen Sinn einen Pause-Befehl an einen TV zu schicken der bereits aus oder bereits pausiert ist. `input_boolean.tv_was_playing` übernimmt Letzteres — es wird beim Pausieren auf `on` gesetzt und vor dem Fortsetzen geprüft. Ohne es könnte ein Anruf etwas fortsetzen das absichtlich vor dem Anruf pausiert wurde.
 
 ```yaml
 alias: TV — Pause bei Anruf
