@@ -67,6 +67,26 @@ cards:
 
 Der Verlauf ist subtil — man nimmt ihn nicht als Fortschrittsbalken wahr, die Karte fühlt sich bei 20% einfach anders an als bei 80%. Es dauerte ein paar Iterationen, die Deckkraft richtig hinzubekommen.
 
+Das Auto-Icon bekommt eine weitere Ebene, wenn `binary_sensor.elroq_charging` on ist: ein leuchtender Ring, der durch Cyan und Grün pulsiert — dieselben Farben wie der LED-Ring am Stoßfänger des Elroq während des Ladens. `card_mod`-Block direkt auf der Mushroom-Karte innerhalb des Stacks hinzufügen:
+
+```yaml
+    card_mod:
+      style: |
+        mushroom-shape-icon {
+          {% if is_state('binary_sensor.elroq_charging', 'on') %}
+          animation: charge-ring 2s linear infinite;
+          {% endif %}
+        }
+        @keyframes charge-ring {
+          0%   { box-shadow: 0 0 8px 3px rgba(0,212,255,0.85); }
+          33%  { box-shadow: 0 0 8px 3px rgba(0,255,140,0.85); }
+          66%  { box-shadow: 0 0 8px 3px rgba(100,220,255,0.85); }
+          100% { box-shadow: 0 0 8px 3px rgba(0,212,255,0.85); }
+        }
+```
+
+Das Jinja im CSS wird serverseitig ausgewertet, sodass die Animation nur dann im DOM existiert, wenn das Auto tatsächlich lädt. Wenn nicht, hat der Selektor überhaupt keine Eigenschaften.
+
 ## Vorwärmung aus dem Kalender
 
 Ich habe einen wiederkehrenden Termin mit fester Startzeit. Die Automatisierung feuert 30 Minuten vorher:

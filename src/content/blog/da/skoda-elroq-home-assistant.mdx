@@ -67,6 +67,26 @@ cards:
 
 Gradienten er subtil — du lægger ikke mærke til den som en statusbjælke, det gør bare kortet føles anderledes ved 20% versus 80%. Det tog et par iterationer at få opaciteten rigtig.
 
+Bilikonen får et ekstra lag når `binary_sensor.elroq_charging` er tændt: en lysende ring der pulserer i cyan og grønt — de samme farver som LED-ringen på Elroq'ens forreste kofanger mens den lader. Tilføj en `card_mod`-blok direkte på mushroom-kortet inde i stacken:
+
+```yaml
+    card_mod:
+      style: |
+        mushroom-shape-icon {
+          {% if is_state('binary_sensor.elroq_charging', 'on') %}
+          animation: charge-ring 2s linear infinite;
+          {% endif %}
+        }
+        @keyframes charge-ring {
+          0%   { box-shadow: 0 0 8px 3px rgba(0,212,255,0.85); }
+          33%  { box-shadow: 0 0 8px 3px rgba(0,255,140,0.85); }
+          66%  { box-shadow: 0 0 8px 3px rgba(100,220,255,0.85); }
+          100% { box-shadow: 0 0 8px 3px rgba(0,212,255,0.85); }
+        }
+```
+
+Jinja'en i CSS'en evalueres server-side, så animationen eksisterer kun i DOM'en når bilen faktisk oplader. Når den ikke gør, har selectoren slet ingen properties.
+
 ## Forvarming fra Google Kalender
 
 Jeg har en tilbagevendende kalenderbegivenhed med et fast starttidspunkt. Automatiseringen aktiverer 30 minutter før:

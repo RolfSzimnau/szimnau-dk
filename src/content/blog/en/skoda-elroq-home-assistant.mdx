@@ -69,6 +69,26 @@ cards:
 
 The gradient is subtle — you don't really notice it as a progress bar, it just makes the card feel different at 20% versus 80%. Took a few iterations to get the opacity right so it reads as information without dominating the card.
 
+The car icon gets one more layer when `binary_sensor.elroq_charging` is on: a glowing ring that cycles through cyan and green — the same colors as the LED ring on the Elroq's front bumper while it charges. Add a `card_mod` block directly on the mushroom card inside the stack:
+
+```yaml
+    card_mod:
+      style: |
+        mushroom-shape-icon {
+          {% if is_state('binary_sensor.elroq_charging', 'on') %}
+          animation: charge-ring 2s linear infinite;
+          {% endif %}
+        }
+        @keyframes charge-ring {
+          0%   { box-shadow: 0 0 8px 3px rgba(0,212,255,0.85); }
+          33%  { box-shadow: 0 0 8px 3px rgba(0,255,140,0.85); }
+          66%  { box-shadow: 0 0 8px 3px rgba(100,220,255,0.85); }
+          100% { box-shadow: 0 0 8px 3px rgba(0,212,255,0.85); }
+        }
+```
+
+The Jinja in the CSS is evaluated server-side, so the animation only exists in the DOM when the car is actually charging. When it's off, the selector has no properties at all.
+
 ## Pre-conditioning from Google Calendar
 
 I have a recurring calendar event called "Drive to office" with a fixed start time. The automation fires 30 minutes before:
