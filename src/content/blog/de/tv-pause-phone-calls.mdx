@@ -12,8 +12,6 @@ Das Problem ist offensichtlich sobald man es oft genug erlebt hat. Jemand ruft a
 
 Die Automatisierung hat eine einzige Bedingung: wenn ein Telefon klingelt und der TV läuft, pausieren. Wenn der Anruf endet, fortsetzen.
 
-![Home Assistant Startbildschirm mit kontextabhängigen Karten einschließlich TV-Zustand](/blog-images/hjem-conditional.jpg)
-
 ## Der Telefonsensor
 
 Die HA Companion App (kostenlos für iOS und Android) stellt `sensor.pixel_10_phone_state` mit vier Zuständen bereit: `ringing`, `in_call`, `offhook`, `idle`. Sie muss auf dem Telefon installiert sein und HA-Benachrichtigungen zugelassen haben. Der Trigger erfasst alle drei Nicht-Idle-Zustände — der TV soll pausieren sobald das Telefon klingelt, nicht erst nachdem man abgenommen hat.

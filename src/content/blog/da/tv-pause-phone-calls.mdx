@@ -12,8 +12,6 @@ Problemet er indlysende når man har oplevet det nok gange. Nogen ringer. Man ro
 
 Automationen er én betingelse: hvis en telefon ringer og TV'et er tændt, sæt på pause. Når opkaldet slutter, genoptag.
 
-![Home Assistant startskærm med kontekstafhængige kort inklusive TV-tilstand](/blog-images/hjem-conditional.jpg)
-
 ## Telefonsensoren
 
 **HA Companion App** (gratis, Google Play / App Store) eksponerer `sensor.pixel_10_phone_state` med fire tilstande: `ringing`, `in_call`, `offhook`, `idle`. Installer appen, log ind på din HA-instans, og sensoren dukker op automatisk. Triggeren dækker alle tre ikke-idle tilstande — man vil have TV'et til at pause i det øjeblik telefonen ringer, ikke efter man har svaret.

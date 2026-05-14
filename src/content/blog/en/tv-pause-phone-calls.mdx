@@ -12,8 +12,6 @@ The problem is obvious once you've experienced it enough times. Someone calls. Y
 
 The automation is one condition: if a phone rings and the TV is on, pause it. When the call ends, resume it.
 
-![Home Assistant home screen showing context-aware cards including TV state](/blog-images/hjem-conditional.jpg)
-
 ## The phone sensor
 
 The **HA Companion App** (free, Google Play / App Store) exposes `sensor.pixel_10_phone_state` with four states: `ringing`, `in_call`, `offhook`, `idle`. Install the app, sign in to your HA instance, and the sensor appears automatically — no extra configuration. The trigger covers all three non-idle states — you want the TV to pause the moment the phone rings, not after you've answered.
