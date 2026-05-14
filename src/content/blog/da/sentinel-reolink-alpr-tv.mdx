@@ -46,11 +46,11 @@ Det bedste resultat fra ét af de to forsøg vinder. Det gemmes i `input_text.la
 `notify.android_tv` sender direkte til TV'et:
 
 ```yaml
-action: notify.android_tv
+action: notify.android_tv_fire_tv_192_168_1_40
 data:
   message: "🚗 Bil registreret! Nummerplade: {{ plate_text }}"
   data:
-    image: "http://192.168.x.x:8123/local/sentinel_latest.jpg"
+    image: "http://192.168.x.x:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
     interrupt: 1
 ```
 
@@ -81,15 +81,17 @@ Tre rettelser i rækkefølge:
 **3. Tilføj `continue_on_error: true` på TV-notify-steget:**
 
 ```yaml
-- action: notify.android_tv
+- action: notify.android_tv_fire_tv_192_168_1_40
   continue_on_error: true
   data:
     message: "🚗 {{ plate_text }}"
     data:
-      image: "http://192.168.x.x:8123/local/sentinel_latest.jpg"
+      image: "http://192.168.x.x:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
       interrupt: 1
 ```
 
 Hvis TV'et timeouter eller integrationen falder ud igen, kommer telefon-notifikationerne stadig igennem. TV'et er rart at have. Telefonerne er ikke valgfrie.
 
 De tre ting tilsammen løste det. TV'et viser nu snapshot'et inden for ca. et sekund, og i de tilfælde hvor TV'et er slukket eller integrationen fejler, får telefonerne altid notifikation uanset hvad.
+
+**Opdatering, maj 2026:** Nummerpladegenkendelsen er taget ud. Nøjagtigheden om natten var ikke pålidelig nok — plader i dårlige vinkler eller ved kraftig regn returnerede "none" oftere end et egentligt resultat, og to LLM Vision-kald per køretøjshændelse tilføjede en latens der fik notifikationen til at føles langsom. Det nuværende setup springer ALPR helt over: bil- eller persondetektion → fluent snapshot → TV og telefoner. Den rullende pladeliste er væk. Kameraet, TV-integrationen og `continue_on_error`-tilgangen er bevaret. AI-laget er ikke.

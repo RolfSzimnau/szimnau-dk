@@ -46,11 +46,11 @@ Das beste Ergebnis aus einem der beiden Versuche gewinnt. Es wird in `input_text
 `notify.android_tv` sendet direkt an den TV:
 
 ```yaml
-action: notify.android_tv
+action: notify.android_tv_fire_tv_192_168_1_40
 data:
   message: "🚗 Fahrzeug erkannt! Kennzeichen: {{ plate_text }}"
   data:
-    image: "http://192.168.x.x:8123/local/sentinel_latest.jpg"
+    image: "http://192.168.x.x:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
     interrupt: 1
 ```
 
@@ -81,15 +81,17 @@ Drei Korrekturen der Reihe nach:
 **3. `continue_on_error: true` beim TV-Notify-Schritt hinzufügen:**
 
 ```yaml
-- action: notify.android_tv
+- action: notify.android_tv_fire_tv_192_168_1_40
   continue_on_error: true
   data:
     message: "🚗 {{ plate_text }}"
     data:
-      image: "http://192.168.x.x:8123/local/sentinel_latest.jpg"
+      image: "http://192.168.x.x:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
       interrupt: 1
 ```
 
 Wenn der TV einen Timeout hat oder die Integration wieder ausfällt, kommen die Telefonbenachrichtigungen trotzdem durch. Der TV ist schön zu haben. Telefone sind es nicht.
 
 Diese drei Dinge zusammen haben es gelöst. Der TV zeigt den Snapshot jetzt innerhalb von etwa einer Sekunde, und in den Fällen wo der TV aus ist oder die Integration hakt, bekommen die Telefone immer eine Benachrichtigung, egal was passiert.
+
+**Update, Mai 2026:** Die Kennzeichenerkennung ist rausgeflogen. Die Genauigkeit bei Nacht war nicht zuverlässig genug — Kennzeichen bei ungünstigem Winkel oder bei starkem Regen gaben häufiger "none" zurück als ein echtes Ergebnis, und zwei LLM-Vision-Aufrufe pro Fahrzeugereignis addierten eine Latenz die die Benachrichtigung langsam wirken ließ. Das aktuelle Setup überspringt ALPR komplett: Fahrzeug- oder Personenerkennung → Fluent-Snapshot → TV und Telefone. Die rollende Kennzeichenliste ist weg. Die Kamera, die TV-Integration und der `continue_on_error`-Ansatz sind geblieben. Der KI-Layer nicht.

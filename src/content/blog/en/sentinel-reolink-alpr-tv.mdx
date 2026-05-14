@@ -46,11 +46,11 @@ The best result from either attempt wins. It gets stored in `input_text.last_5_p
 `notify.android_tv` sends to the TV directly:
 
 ```yaml
-action: notify.android_tv
+action: notify.android_tv_fire_tv_192_168_1_40
 data:
   message: "🚗 Bil registreret! Nummerplade: {{ plate_text }}"
   data:
-    image: "http://192.168.x.x:8123/local/sentinel_latest.jpg"
+    image: "http://192.168.x.x:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
     interrupt: 1
 ```
 
@@ -81,15 +81,17 @@ Three fixes, in order:
 **3. Add `continue_on_error: true` on the TV notify step:**
 
 ```yaml
-- action: notify.android_tv
+- action: notify.android_tv_fire_tv_192_168_1_40
   continue_on_error: true
   data:
     message: "🚗 {{ plate_text }}"
     data:
-      image: "http://192.168.x.x:8123/local/sentinel_latest.jpg"
+      image: "http://192.168.x.x:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
       interrupt: 1
 ```
 
 If the TV times out or the integration drops again, the phone notifications still go out. The TV is a nice-to-have. Phones are not optional.
 
 All three together solved it. The TV now shows the snapshot within about a second, and in cases where the TV is off or the integration hiccups, phones always get the notification regardless.
+
+**Update, May 2026:** The plate reading came out. Night accuracy wasn't reliable enough — plates at steep angles or in rain returned "none" more often than a real result, and two LLM Vision calls per vehicle event added latency that made the notification feel slow. The current setup skips ALPR entirely: vehicle or person trigger → fluent snapshot → TV and phones. The rolling plate log is gone. The camera, the TV integration, and the `continue_on_error` approach all stayed. The AI layer didn't.
