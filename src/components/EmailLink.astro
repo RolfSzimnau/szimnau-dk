@@ -1,0 +1,28 @@
+---
+interface Props {
+  class?: string;
+  subject?: string;
+}
+const { class: className, subject } = Astro.props;
+---
+<a
+  data-email-obf
+  data-u="rolf"
+  data-d="szimnau.dk"
+  data-subject={subject ?? ''}
+  href="#"
+  class={className}
+>
+  <slot><span data-email-text>rolf [at] szimnau.dk</span></slot>
+</a>
+<script>
+  document.querySelectorAll('[data-email-obf]').forEach(el => {
+    const u = el.getAttribute('data-u') ?? '';
+    const d = el.getAttribute('data-d') ?? '';
+    const sub = el.getAttribute('data-subject') ?? '';
+    const addr = u + String.fromCharCode(64) + d;
+    el.setAttribute('href', 'mailto:' + addr + (sub ? '?subject=' + sub : ''));
+    const textEl = el.querySelector('[data-email-text]');
+    if (textEl) textEl.textContent = addr;
+  });
+</script>

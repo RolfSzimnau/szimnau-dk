@@ -1,68 +1,106 @@
 ---
 title: "Home Assistant på Proxmox — Den Rigtige Måde"
-description: "En komplet guide til at installere Home Assistant OS som en Proxmox VM på en Dell OptiPlex 7060. Dækker VM-størrelse, USB-passthrough og første automationer."
+description: "Hvordan jeg flyttede Home Assistant fra en Raspberry Pi 4 til en Dell OptiPlex 7060 med Proxmox VE — VM-opsætning, USB-passthrough og hvorfor snapshots forandrede alt ved den måde jeg håndterer HA-opdateringer på."
 pubDate: 2024-11-15
 tags: ["proxmox", "home-assistant", "kom-i-gang", "virtualisering"]
 lang: "da"
-translationKey: "proxmox-ha-setup"
+translationKey: "proxmox-home-assistant-setup"
 ---
 
-Efter år med Home Assistant på en Raspberry Pi 4 flyttede jeg endelig hele mit smart home-setup til en ordentlig hjemmeserver: en **Dell OptiPlex 7060** med **Proxmox VE**. Denne guide dækker præcis, hvordan jeg satte det op — uden unødvendigt vrøvl.
+Mit Home Assistant-setup havde kørt på en Raspberry Pi 4 i to år, da jeg en onsdag aften i oktober kom hjem og fandt den død. SD-kortet havde stille og roligt korrupteret sig selv. Ingen advarsel. Ingen pæn nedlukning. Bare et koldt hus og ingenting der virkede.
 
-## Hvorfor Forlade Pi'en?
+Jeg havde planlagt at migrere til ordentlig hardware i måneder. Den aften bestilte jeg endelig OptiPlex 7060.
 
-Pi 4 er fin til at komme i gang, men efter to år med tilføjelse af enheder, automationer og add-ons ramte jeg konstant dens grænser:
+## Hvorfor Proxmox i Stedet for at Køre HA Direkte
 
-- SD-kort korruption efter uventede strømafbrud
-- Løber tør for RAM med flere aktive add-ons
-- Ingen mulighed for snapshot og rollback efter dårlige opdateringer
+Det oplagte valg ville være at installere HA OS direkte på OptiPlex. Jeg valgte Proxmox fordi jeg ville have OptiPlex som en fuld hjemmeserver, ikke bare en HA-boks — kørende flere VMs og containere side om side med Home Assistant.
 
-Flytning til Proxmox løste alt dette. HA OS kører som en VM, jeg får ordentlige diskbackups, snapshots før hver opdatering, og OptiPlex bruger kun ~12W i tomgang.
+Den anden årsag: snapshots. Inden enhver HA-opdatering tager jeg et Proxmox-snapshot. Hvis noget går i stykker, tager en rollback 10 sekunder. På Pi'en kunne en dårlig opdatering betyde en times genoprettelsesarbejde.
 
-## Hardware: Dell OptiPlex 7060
+## Hardwaren: Dell OptiPlex 7060
 
-Jeg fandt min OptiPlex 7060 for under 1.000 kr. på eBay. Her er den spec, jeg anbefaler:
+Jeg fandt en refurbished OptiPlex 7060 for under 1.100 kr. på eBay. Den kom med 16 GB RAM, som jeg straks opgraderede til 32 GB — 8 GB-sticks kostede 90 kr. stykket og OptiPlex tager dem uden problemer.
 
-| Komponent | Mit Setup |
-|-----------|-----------|
-| CPU | Intel Core i5-8500 |
+| Komponent | Spec |
+|-----------|------|
+| CPU | Intel Core i5-8500 (6 kerner) |
 | RAM | 32 GB DDR4 |
-| Lager | 500 GB NVMe SSD (primær) |
-| Netværk | Intel I219-LM (native Linux-understøttelse) |
+| Lager | 500 GB NVMe SSD |
+| Netværk | Intel I219-LM |
+
+i5-8500 er komplet overdreven til Home Assistant alene. Det er fint — det betyder at hele maskinen kører i tomgang ved omkring 12W, og jeg stadig har plads til en medieserver, ad-blocker og et overvågningssetup kørende parallelt.
 
 ## Installation af Proxmox VE
 
-Download den seneste Proxmox VE ISO fra [proxmox.com](https://www.proxmox.com/en/downloads) og flash den til et USB-drev.
+Download Proxmox VE ISO fra proxmox.com, flash den til USB med Rufus eller Balena Etcher og boot OptiPlex fra den.
 
-Boot OptiPlex fra USB og følg installationsprogrammet. Adgang til web-UI på `https://DIN-IP:8006`.
+Installationsprogrammet er ligetil. Værd at lægge mærke til:
+
+- **Måldisk**: vælg din NVMe SSD, ikke et eventuelt USB-drev der stadig sidder i
+- **Management-IP**: giv den en statisk IP nu — du tilgår web-UI'et på `https://DIN-IP:8006` fra det tidspunkt
+- **Hostname**: jeg bruger `proxmox.local` — let at huske, virker med mDNS
+
+Opdater pakkelisten og anvend eventuelle ventende opdateringer fra Proxmox-skallen inden du gør andet.
 
 ## Oprettelse af Home Assistant VM
 
-Proxmox har et community-script, der automatiserer HA OS VM-oprettelsen. Kør dette i Proxmox-skallen:
+Proxmox-community'et vedligeholder et hjælpescript der automatiserer HA OS VM-oprettelsen. Kør dette i Proxmox-skallen:
 
 ```bash
 bash -c "$(wget -qLO - https://github.com/tteck/Proxmox/raw/main/vm/haos-vm.sh)"
 ```
 
-Jeg bruger disse ressourceindstillinger til min HA VM:
+Scriptet downloader det seneste HA OS-billede, opretter en VM med fornuftige standardindstillinger og starter den. Jeg bruger disse ressourceindstillinger:
 
 ```
-RAM: 4096 MB
+RAM:    4096 MB
 Kerner: 4 vCPU
-Disk: 32 GB
-Netværk: VirtIO bridge (vmbr0)
+Disk:   32 GB (kan udvides)
+Net:    VirtIO bridge (vmbr0)
 ```
 
-## Snapshot-strategi
+4 GB RAM lyder som meget til HA alene, men add-ons spiser hukommelse hurtigt. Kørende det fulde setup — HA OS, Matter-server, Mosquitto broker, Studio Code Server og et par til — ser jeg typisk 2,5–3 GB i brug.
 
-Dette er den reelle styrke ved Proxmox. Før hver HA-opdatering:
+## USB-Passthrough til Zigbee/Z-Wave Dongler
+
+Bruger du en USB-radio-stick, skal du videresende den til VM'en i stedet for at have den tilgængelig for Proxmox-hosten.
+
+I Proxmox web-UI:
+
+1. Vælg din HA VM → Hardware → Tilføj → USB-enhed
+2. Vælg **Brug USB Vendor/Device ID** og vælg din dongle fra listen
+3. Genstart VM'en
+
+Enheden vises i HA's hardwareindstillinger som om den var direkte tilsluttet. Det overlever Proxmox-genstarter — VM'en får enheden automatisk ved opstart.
+
+En ting der snublede mig: hvis du vælger via **USB-port** i stedet for vendor/device ID, bryder videresendelsen sammen når du stikker donglen i en anden USB-port under vedligeholdelse. Brug altid vendor/device ID.
+
+## Første Boot
+
+Når HA VM kører, gå til `http://homeassistant.local:8123` og gennemfør onboarding-guiden. Det tager cirka 2 minutter fra første boot til dashboardet.
+
+Mine første integrationer efter opsætning:
+- **WiZ** — auto-opdaget på det lokale netværk med det samme, alle 22 pærer dukkede op uden nogen konfiguration
+- **UniFi** — integreret til enhedssporing og netværksstatistik, essentiel til at vide hvem der er hjemme
+- **Tado** — klimaanlæg, 5 zoner, opdaget efter indtastning af legitimationsoplysninger
+
+Netværkets auto-opdagelse i HA 2024 er imponerende. De fleste ting fandt sig selv i løbet af de første minutter.
+
+## Snapshot-Arbejdsgangen
+
+Det her er den del der ændrede måden jeg håndterer HA-vedligeholdelse på. Inden enhver HA-opdatering:
 
 ```
 Datacenter → HA VM → Snapshots → Tag Snapshot
+Navn: pre-opdatering-ÅÅÅÅ-MM-DD
 ```
 
-Jeg navngiver dem `pre-opdatering-ÅÅÅÅ-MM-DD`. Hvis en opdatering ødelægger noget, rulles den tilbage på 10 sekunder.
+Snapshots tager under 30 sekunder. Virker opdateringen fint, sletter jeg snapshots et døgn senere. Går noget i stykker — og med 30+ integrationer sker det lejlighedsvist — ruller jeg tilbage på 10 sekunder og huset er tilbage til sin tidligere tilstand.
 
-## Hvad Er Det Næste?
+På Raspberry Pi var jeg altid lidt nervøs ved opdateringer fordi genoprettelse var langsom og besværlig. Med Proxmox-snapshots anvender jeg opdateringer den dag de udkommer uden tøven.
 
-I næste indlæg dækker jeg, hvordan jeg sætter ordentlig **IoT VLAN-isolering** op med UniFi — og holder alle mine smart home-enheder på et separat netværkssegment, væk fra hoved-LAN.
+## Hvad Flytningen Faktisk Løste
+
+Tre år på Pi'en betød tre SD-kortudskiftninger og to korruptionsepisoder. OptiPlex har kørt siden slutningen af 2022 uden en eneste hardwarehændelse. NVMe-SSD'en bekymrer sig ikke om strømafbrud. Proxmox skriver til journalerede filsystemer. Pi'en var aldrig det rigtige redskab til infrastruktur der styrer varme, sikkerhedskameraer og EV-opladning — den var bare billig og nem at starte med.
+
+OptiPlex gav mig også plads til at vokse. HA VM'en sidder på samme host som en Debian VM der kører min self-hosted GitHub Actions runner, en Home Assistant Supervised container til testformål og et par andre lette services. Alt for 1.100 kr. hardware og 12W fra stikkontakten.

@@ -1,6 +1,7 @@
 ---
 import type { Lang } from '../i18n/ui';
 import { useTranslations } from '../i18n/utils';
+import EmailLink from './EmailLink.astro';
 
 interface Props {
   lang: Lang;
@@ -23,15 +24,15 @@ const t = useTranslations(lang);
           <p class="text-text-muted leading-relaxed max-w-2xl">{t('sponsor.body')}</p>
         </div>
         <div class="flex-shrink-0">
-          <a
-            href={`mailto:rolf@szimnau.dk?subject=Sponsorship%20Enquiry`}
+          <EmailLink
+            subject="Sponsorship Enquiry"
             class="inline-flex items-center gap-2 bg-blue text-navy font-bold px-6 py-3 rounded-xl hover:bg-blue-dim transition-colors text-sm whitespace-nowrap"
           >
             {t('sponsor.cta')}
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
-          </a>
+          </EmailLink>
         </div>
       </div>
     </div>

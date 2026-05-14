@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import SponsorshipCTA from '../../components/SponsorshipCTA.astro';
+import EmailLink from '../../components/EmailLink.astro';
 import { useTranslations } from '../../i18n/utils';
 
 const lang = 'da';
@@ -83,7 +84,7 @@ const skills = [
         <div class="glass-card p-5">
           <h3 class="font-mono text-blue text-xs uppercase tracking-wider mb-3">Kontakt</h3>
           <div class="space-y-2">
-            <a href="mailto:rolf@szimnau.dk" class="block text-sm text-blue hover:underline font-mono">rolf@szimnau.dk</a>
+            <EmailLink class="block text-sm text-blue hover:underline font-mono" />
             <a href="https://www.linkedin.com/in/szimnau/" target="_blank" rel="noopener noreferrer" class="block text-sm text-blue hover:underline font-mono">LinkedIn →</a>
           </div>
         </div>
