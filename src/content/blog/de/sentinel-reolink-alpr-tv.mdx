@@ -43,7 +43,9 @@ Das beste Ergebnis aus einem der beiden Versuche gewinnt. Es wird in `input_text
 
 ## Was auf dem TV landet
 
-`notify.android_tv` sendet direkt an den TV:
+Eine App macht das auf der TV-Seite möglich: **[Notifications for Android TV](https://play.google.com/store/apps/details?id=de.cyberdream.androidtv.notifications.phone)** (kostenlos, Google Play). Sie betreibt einen kleinen HTTP-Server auf Port 7676, an den die HA-Integration "Notifications for Android TV / Fire TV" postet. Kein Konto, keine Cloud — die Benachrichtigung geht direkt von HA über das lokale Netzwerk zum TV. App installieren, TV-IP notieren, Integration in HA unter Einstellungen → Geräte & Dienste hinzufügen, und man bekommt einen `notify.android_tv_*`-Dienst.
+
+`notify.android_tv_fire_tv_192_168_1_40` sendet direkt an den TV:
 
 ```yaml
 action: notify.android_tv_fire_tv_192_168_1_40

@@ -43,7 +43,9 @@ Det bedste resultat fra ét af de to forsøg vinder. Det gemmes i `input_text.la
 
 ## Hvad der lander på TV'et
 
-`notify.android_tv` sender direkte til TV'et:
+Én app gør det muligt på TV-siden: **[Notifications for Android TV](https://play.google.com/store/apps/details?id=de.cyberdream.androidtv.notifications.phone)** (gratis, Google Play). Den kører en lille HTTP-server på port 7676 som HA's "Notifications for Android TV / Fire TV"-integration poster til. Ingen konto, ingen cloud — notifikationen går direkte fra HA til TV'et over det lokale netværk. Installer appen, notér TV'ets IP, tilføj integrationen i HA under Indstillinger → Enheder og tjenester, og du får en `notify.android_tv_*`-service.
+
+`notify.android_tv_fire_tv_192_168_1_40` sender direkte til TV'et:
 
 ```yaml
 action: notify.android_tv_fire_tv_192_168_1_40

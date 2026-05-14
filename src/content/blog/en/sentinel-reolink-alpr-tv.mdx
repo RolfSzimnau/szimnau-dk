@@ -43,7 +43,9 @@ The best result from either attempt wins. It gets stored in `input_text.last_5_p
 
 ## What lands on the TV
 
-`notify.android_tv` sends to the TV directly:
+One app makes this work on the TV side: **[Notifications for Android TV](https://play.google.com/store/apps/details?id=de.cyberdream.androidtv.notifications.phone)** (free, Google Play). It runs a small HTTP server on port 7676 that HA's "Notifications for Android TV / Fire TV" integration posts to. No account, no cloud — the notification goes directly from HA to the TV over the local network. Install the app, note the TV's IP, add the integration in HA under Settings → Devices & Services, and you get a `notify.android_tv_*` service.
+
+`notify.android_tv_fire_tv_192_168_1_40` sends to the TV directly:
 
 ```yaml
 action: notify.android_tv_fire_tv_192_168_1_40
