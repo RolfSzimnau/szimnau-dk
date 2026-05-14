@@ -12,8 +12,6 @@ Natural daylight isn't white. At noon it's a cool neutral — around 5500K. In t
 
 The WiZ bulbs support colour temperature natively. The **WiZ** integration is built into HA — it auto-discovers bulbs on the local network with no HACS needed. Home Assistant knows the exact elevation of the sun at any moment via the built-in `sun.sun` entity. Connecting the two takes one automation.
 
-![Home Assistant home screen — lights automatically shift colour temperature with the sun throughout the day](/blog-images/hjem-conditional.jpg)
-
 ## The sun entity
 
 HA's `sun.sun` entity has an `elevation` attribute — the angle of the sun above (or below) the horizon in degrees. At solar noon in Denmark in summer it reaches around 55°. In winter it barely clears 15°. At sunrise and sunset it's 0°. At night it's negative.

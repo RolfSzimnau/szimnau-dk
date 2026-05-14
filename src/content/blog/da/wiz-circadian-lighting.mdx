@@ -12,8 +12,6 @@ Naturligt dagslys er ikke hvidt. Ved middagstid er det et køligt neutralt — o
 
 WiZ-pærerne understøtter farvetemperatur nativt. **WiZ**-integrationen er indbygget i HA — den opdager pærer automatisk på lokalt netværk, ingen HACS nødvendig. Home Assistant kender solens præcise høj over horisonten til enhver tid via den indbyggede `sun.sun`-entitet. At forbinde de to kræver én automation.
 
-![Home Assistant startskærm — lysene skifter automatisk farvetemperatur med solen i løbet af dagen](/blog-images/hjem-conditional.jpg)
-
 ## Sol-entiteten
 
 HA's `sun.sun`-entitet har et `elevation`-attribut — vinklen på solen over (eller under) horisonten i grader. Ved solartidspunktet i Danmark om sommeren når den op på ca. 55°. Om vinteren rammer den knap 15°. Ved solopgang og solnedgang er den 0°. Om natten er den negativ.

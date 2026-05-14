@@ -12,8 +12,6 @@ Natürliches Tageslicht ist nicht weiß. Mittags ist es ein kühles Neutral — 
 
 Die WiZ-Lampen unterstützen Farbtemperatur nativ. Die **WiZ**-Integration ist in HA eingebaut — sie erkennt Lampen automatisch im lokalen Netzwerk, kein HACS nötig. Home Assistant kennt den genauen Elevationswinkel der Sonne zu jedem Zeitpunkt über die eingebaute `sun.sun`-Entität. Die beiden zu verbinden erfordert eine einzige Automatisierung.
 
-![Home Assistant Startbildschirm — Lampen verschieben automatisch die Farbtemperatur mit der Sonne im Tagesverlauf](/blog-images/hjem-conditional.jpg)
-
 ## Die Sonnen-Entität
 
 HA's `sun.sun`-Entität hat ein `elevation`-Attribut — den Winkel der Sonne über (oder unter) dem Horizont in Grad. Beim Sonnenhöchststand in Dänemark im Sommer erreicht er etwa 55°. Im Winter schafft er kaum 15°. Bei Sonnenauf- und -untergang ist er 0°. Nachts ist er negativ.
