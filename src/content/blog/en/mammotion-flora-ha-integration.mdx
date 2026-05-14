@@ -1,6 +1,6 @@
 ---
 title: "Mammotion Flora in Home Assistant — What Actually Works"
-description: "How I integrated the Mammotion Flora (Luba Mini) into Home Assistant after ditching a Husqvarna 213C ride-on. GPS boundary mowing, weather-aware scheduling, and the satellite count quirk nobody warns you about."
+description: "How I integrated the Mammotion Flora (Luba Mini 2) into Home Assistant after ditching a Husqvarna 213C ride-on. GPS boundary mowing, weather-aware scheduling, and the satellite count quirk nobody warns you about."
 pubDate: 2025-01-10
 tags: ["mammotion", "lawn-mower", "home-assistant", "review"]
 lang: "en"
@@ -12,11 +12,11 @@ My Husqvarna 213C ran for years and never once talked to Home Assistant. A ride-
 
 That got old fast.
 
-I replaced it with a **Mammotion Flora** (Luba Mini) earlier this year, mainly because it has a real HA integration. Here's what I found after a few months of running it.
+I replaced it with a **Mammotion Luba Mini 2** (I named it Flora) earlier this year, mainly because it has a real HA integration. Here's what I found after a few months of running it.
 
 ## The Setup
 
-The Flora uses GPS + RTK for navigation — no perimeter wire. You draw the boundary in the Mammotion app once, and after that the mower handles it from coordinates. The Vision Module is a small camera on the body that detects obstacles.
+The Flora uses GPS + RTK for navigation — no perimeter wire. RTK corrections come from iNav NetRTK. You draw the boundary in the Mammotion app once, and after that the mower handles it from coordinates. The Vision Module is a small camera on the body that detects obstacles.
 
 Installing the integration: HACS → search Mammotion → authenticate with your account. After that, you get:
 
