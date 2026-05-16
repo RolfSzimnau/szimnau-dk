@@ -1,0 +1,79 @@
+---
+title: "Udelys på Solnedgangs-Tidsplan — Govee og LEDVANCE Uden Manuelle Justeringer"
+description: "Hvordan jeg automatiserede Govee- og LEDVANCE lyskæder til at tænde ved solnedgang og slukke ved midnat — én automation der tilpasser sig alle årstider."
+pubDate: 2025-11-28
+tags: ["govee", "ledvance", "lys", "udendørs", "automation", "home-assistant"]
+lang: "da"
+translationKey: "outdoor-lights-sunset-schedule"
+heroImage: "/blog-images/Hjem_Lys.jpg"
+---
+
+I Danmark er solnedgangen i december kl. 15:37. I juni er den 21:58. Det er mere end seks timers forskel. Jeg indstillede altid udelysene til et fast klokkeslæt, justerede det to gange om året og ramte det aldrig helt rigtigt. I starten af november var det mørkt kl. 17:00 og lysene kom ikke tændt før 20:00. I april tændte de op i fuldt dagslys.
+
+Det er et problem der løser sig selv, hvis man bruger solen i stedet for uret.
+
+## Opsætningen
+
+To typer udendørs lys: **Govee**-lys på terrassen og varmt gyldne lyskæder fra Bauhaus styret via **LEDVANCE SMART+**. Begge er integreret i HA — Govee via HACS, LEDVANCE SMART+ er indbygget og finder enheder automatisk på det lokale netværk.
+
+Lyskæderne er varmt gyldne i sig selv — omkring 2200K. De kræver ingen sceneindstilling eller farvetemperatur-kommando. De skal bare tændes.
+
+## Automationen
+
+Én automation styrer begge. Tænd-triggeren bruger HAs sol-platform med 15 minutters offset:
+
+```yaml
+alias: Udelys — Solnedgang tænd
+trigger:
+  - platform: sun
+    event: sunset
+    offset: "+00:15:00"
+action:
+  - service: light.turn_on
+    target:
+      entity_id:
+        - light.govee_outdoor
+        - light.bauhaus_string_lights
+    data:
+      brightness_pct: 100
+```
+
+15-minutters offset betyder at lysene tænder når det faktisk er mørkt — ikke i det øjeblik solen teknisk set går ned, da der stadig er rigeligt restlys.
+
+Sluk-triggeren er et fast tidspunkt:
+
+```yaml
+alias: Udelys — Midnat sluk
+trigger:
+  - platform: time
+    at: "00:00:00"
+action:
+  - service: light.turn_off
+    target:
+      entity_id:
+        - light.govee_outdoor
+        - light.bauhaus_string_lights
+```
+
+## Dashboardet
+
+Et par Mushroom template chips der viser næste udløsertid. Solnedgangstidspunktet beregnes fra sol-entiteten og opdateres dagligt:
+
+```yaml
+- type: custom:mushroom-chips-card
+  chips:
+    - type: template
+      icon: mdi:weather-sunset
+      content: >
+        Tænd: {{ (as_timestamp(state_attr('sun.sun','next_setting'))
+               + 15 * 60) | timestamp_custom('%H:%M') }}
+    - type: template
+      icon: mdi:weather-night
+      content: "Sluk: 00:00"
+```
+
+Den seneste solnedgang i Danmark er ca. 22:00 i juni, den tidligste ca. 15:30 i december. Lysene følger det automatisk, år efter år, uden at nogen rører automationen.
+
+## Hvad der ændrede sig
+
+De to uger i overgangsperioderne — marts og oktober — hvor lysene altid var forkerte, er væk. To triggere, to handlinger. Men det er en af de automationer der gør at huset føles som om det ved hvad tid på året det er.

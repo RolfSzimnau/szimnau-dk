@@ -1,10 +1,10 @@
 ---
-title: "WiZ Außenbeleuchtung nach Sonnenuntergang — Keine manuellen Saisonanpassungen mehr"
-description: "Wie ich die Außenflutlichter automatisiert habe — 15 Minuten nach Sonnenuntergang ein, Mitternacht aus — eine Automatisierung die sich jeder Jahreszeit anpasst ohne sie wieder anfassen zu müssen."
+title: "Außenbeleuchtung nach Sonnenuntergang — Govee und LEDVANCE ohne Saisonanpassungen"
+description: "Wie ich Govee-Lichter und LEDVANCE Lichterketten automatisiert habe — bei Sonnenuntergang ein, Mitternacht aus — eine Automatisierung die sich jeder Jahreszeit anpasst."
 pubDate: 2025-11-28
-tags: ["wiz", "licht", "außen", "automatisierung", "home-assistant"]
+tags: ["govee", "ledvance", "licht", "außen", "automatisierung", "home-assistant"]
 lang: "de"
-translationKey: "wiz-outdoor-lights"
+translationKey: "outdoor-lights-sunset-schedule"
 heroImage: "/blog-images/Hjem_Lys.jpg"
 ---
 
@@ -14,11 +14,13 @@ Die Lösung ist im Nachhinein offensichtlich: keine Uhrzeiten verwenden, sondern
 
 ## Die Einrichtung
 
-Zwei WiZ Flutlichter an der Hausfront. Die **WiZ-Integration** ist in HA eingebaut — sie erkennt Lampen automatisch im lokalen Netzwerk, kein HACS nötig.
+Zwei Arten von Außenbeleuchtung: **Govee**-Lichter auf der Terrasse und warm-goldene Lichterketten von Bauhaus, gesteuert über **LEDVANCE SMART+**. Beide sind in HA integriert — Govee über HACS, LEDVANCE SMART+ ist eingebaut und erkennt Geräte automatisch im lokalen Netzwerk.
 
-## Die zwei Automatisierungen
+Die Lichterketten sind von Natur aus warm-golden — etwa 2200K. Sie brauchen keine Szene oder Farbtemperatur-Befehl. Sie müssen einfach nur eingeschaltet werden.
 
-Der Einschalt-Trigger nutzt HAs eingebaute Sonnen-Plattform mit einem Offset:
+## Die Automatisierung
+
+Eine Automatisierung steuert beide. Der Einschalt-Trigger nutzt HAs Sonnen-Plattform mit 15 Minuten Offset:
 
 ```yaml
 alias: Außenlichter — Sonnenuntergang ein
@@ -29,14 +31,16 @@ trigger:
 action:
   - service: light.turn_on
     target:
-      entity_id: light.flood_lights
+      entity_id:
+        - light.govee_outdoor
+        - light.bauhaus_string_lights
     data:
       brightness_pct: 100
 ```
 
 Der 15-Minuten-Offset bedeutet dass die Lichter angehen wenn es tatsächlich dunkel ist — nicht in dem Moment wenn die Sonne technisch gesehen untergeht, wenn noch genug Restlicht vorhanden ist.
 
-Der Ausschalt-Trigger ist eine feste Uhrzeit. Mitternacht ist hier die richtige Wahl: die Lichter haben nachts einen praktischen Zweck, aber es gibt keinen Grund sie bis zum Morgen laufen zu lassen.
+Der Ausschalt-Trigger ist eine feste Uhrzeit:
 
 ```yaml
 alias: Außenlichter — Mitternacht aus
@@ -46,12 +50,14 @@ trigger:
 action:
   - service: light.turn_off
     target:
-      entity_id: light.flood_lights
+      entity_id:
+        - light.govee_outdoor
+        - light.bauhaus_string_lights
 ```
 
 ## Das Dashboard
 
-Ein Paar Mushroom Template Chips die die nächste Auslösezeit für jede Automatisierung anzeigen. Die Sonnenuntergangszeit wird aus der Sonnen-Entität berechnet und aktualisiert sich täglich ohne manuellen Eingriff:
+Ein Paar Mushroom Template Chips die die nächste Auslösezeit anzeigen. Die Sonnenuntergangszeit wird aus der Sonnen-Entität berechnet und aktualisiert sich täglich:
 
 ```yaml
 - type: custom:mushroom-chips-card
@@ -66,7 +72,7 @@ Ein Paar Mushroom Template Chips die die nächste Auslösezeit für jede Automat
       content: "Aus: 00:00"
 ```
 
-In Dänemark verlagert sich der Sonnenuntergang zwischen Juni und Dezember um mehr als sechs Stunden. Die Lichter folgen dem automatisch — frühestens um etwa 15:30 Uhr im Dezember, spätestens um etwa 22:00 Uhr im Juni. Keine dieser Zeiten erfordert eine Anpassung.
+In Dänemark verlagert sich der Sonnenuntergang zwischen Juni und Dezember um mehr als sechs Stunden. Die Lichter folgen dem automatisch — frühestens um etwa 15:30 Uhr im Dezember, spätestens um etwa 22:00 Uhr im Juni.
 
 ## Was sich geändert hat
 

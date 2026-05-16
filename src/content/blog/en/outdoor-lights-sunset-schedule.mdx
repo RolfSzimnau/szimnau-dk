@@ -1,0 +1,79 @@
+---
+title: "Outdoor Lights on a Sunset Schedule — Govee and LEDVANCE"
+description: "How I stopped manually adjusting the outdoor light timer twice a year — a simple HA automation that turns on Govee and LEDVANCE string lights at sunset and off at midnight, every season."
+pubDate: 2025-11-28
+tags: ["govee", "ledvance", "lights", "outdoor", "automation", "home-assistant"]
+lang: "en"
+translationKey: "outdoor-lights-sunset-schedule"
+heroImage: "/blog-images/Hjem_Lys.jpg"
+---
+
+Twice a year I'd go into the app and adjust the outdoor light timer. Once in spring when 21:00 was already pushing dusk. Once in autumn when it was dark at 17:30 and the lights weren't coming on until an hour later. I never quite got it right — there's always a week or two where the schedule is visibly wrong, lights flicking on in broad daylight or leaving the garden dark for an hour after sunset.
+
+The fix is obvious in retrospect: stop using clock times and use the sun instead.
+
+## The setup
+
+Two types of outdoor lights: **Govee** lights on the terrace, and warm gold string lights from Bauhaus controlled via **LEDVANCE SMART+**. Both are integrated into HA — Govee via HACS, LEDVANCE SMART+ is built in and auto-discovers devices on the local network.
+
+The string lights are warm gold by nature — around 2200K. They don't need a scene or a colour temperature command. They just need to be on.
+
+## The automation
+
+One automation controls both. The on-trigger uses HA's built-in sun platform with a 15-minute offset:
+
+```yaml
+alias: Outdoor lights — Sunset on
+trigger:
+  - platform: sun
+    event: sunset
+    offset: "+00:15:00"
+action:
+  - service: light.turn_on
+    target:
+      entity_id:
+        - light.govee_outdoor
+        - light.bauhaus_string_lights
+    data:
+      brightness_pct: 100
+```
+
+The 15-minute offset means the lights come on after it's actually dark — not the moment the sun technically sets, when there's still plenty of ambient light.
+
+The off-trigger is a fixed time:
+
+```yaml
+alias: Outdoor lights — Midnight off
+trigger:
+  - platform: time
+    at: "00:00:00"
+action:
+  - service: light.turn_off
+    target:
+      entity_id:
+        - light.govee_outdoor
+        - light.bauhaus_string_lights
+```
+
+## The dashboard
+
+A pair of Mushroom template chips showing the next trigger time. The sunset calculation pulls from the sun entity and updates daily:
+
+```yaml
+- type: custom:mushroom-chips-card
+  chips:
+    - type: template
+      icon: mdi:weather-sunset
+      content: >
+        On: {{ (as_timestamp(state_attr('sun.sun','next_setting'))
+             + 15 * 60) | timestamp_custom('%H:%M') }}
+    - type: template
+      icon: mdi:weather-night
+      content: "Off: 00:00"
+```
+
+In Denmark the sunset shift between June and December is about six hours. The lights track that automatically — as late as around 22:15 in summer, as early as around 15:30 in mid-December.
+
+## What changed
+
+The two transition weeks in March and October where the schedule was always wrong are gone. Two triggers, two actions — but it's one of those things that makes the house feel like it actually knows what time of year it is.
