@@ -5,12 +5,16 @@ pubDate: 2025-12-12
 tags: ["wiz", "lys", "circadian", "automation", "home-assistant"]
 lang: "da"
 translationKey: "wiz-circadian-lighting"
-heroImage: "/blog-images/lys-glass-cards.jpg"
+heroImage: "/blog-images/hjem_circadian-lighting.jpg"
 ---
 
 Naturligt dagslys er ikke hvidt. Ved middagstid er det et køligt neutralt — omkring 5500K. Om morgenen og aftenen er det varmt orange. Efter solnedgang er det som stearinlys. Din krop bruger disse skift til at regulere årvågenhed og søvn. De fleste smart-belysningssystemer ignorerer dette fuldstændigt og sidder ved den samme farvetemperatur hele dagen — typisk noget generisk omkring 3000K — uanset hvad solen laver udenfor.
 
 WiZ-pærerne understøtter farvetemperatur nativt. **WiZ**-integrationen er indbygget i HA — den opdager pærer automatisk på lokalt netværk, ingen HACS nødvendig. Home Assistant kender solens præcise høj over horisonten til enhver tid via den indbyggede `sun.sun`-entitet. At forbinde de to kræver én automation.
+
+## Hardwaren
+
+Fire WiZ-pærer i stuen: to **WiZ Plafond superslim Ø43cm 22W** loftlamper og to **WiZ Smart E27 13W** i hjørnelamperne. Begge typer understøtter farvetemperatur nativt — Plafonderne er tunable white; E27'erne er RGBW og kan skifte til farve såvel som varm hvid.
 
 ## Sol-entiteten
 

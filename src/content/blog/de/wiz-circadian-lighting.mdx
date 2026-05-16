@@ -5,12 +5,16 @@ pubDate: 2025-12-12
 tags: ["wiz", "licht", "zirkadian", "automatisierung", "home-assistant"]
 lang: "de"
 translationKey: "wiz-circadian-lighting"
-heroImage: "/blog-images/lys-glass-cards.jpg"
+heroImage: "/blog-images/hjem_circadian-lighting.jpg"
 ---
 
 Natürliches Tageslicht ist nicht weiß. Mittags ist es ein kühles Neutral — etwa 5500K. Morgens und abends ist es warm orange. Nach Sonnenuntergang wie Kerzenlicht. Der Körper nutzt diese Verschiebungen um Wachheit und Schlaf zu regulieren. Die meisten Smart-Beleuchtungssysteme ignorieren das völlig und sitzen den ganzen Tag bei derselben Farbtemperatur — meistens irgendwas Generisches um 3000K — unabhängig davon was die Sonne draußen gerade macht.
 
 Die WiZ-Lampen unterstützen Farbtemperatur nativ. Die **WiZ**-Integration ist in HA eingebaut — sie erkennt Lampen automatisch im lokalen Netzwerk, kein HACS nötig. Home Assistant kennt den genauen Elevationswinkel der Sonne zu jedem Zeitpunkt über die eingebaute `sun.sun`-Entität. Die beiden zu verbinden erfordert eine einzige Automatisierung.
+
+## Die Hardware
+
+Vier WiZ-Lampen im Wohnzimmer: zwei **WiZ Plafond superslim Ø43cm 22W** Deckenleuchten und zwei **WiZ Smart E27 13W** in den Ecklampen. Beide Typen unterstützen Farbtemperatur nativ — die Plafonds sind Tunable White; die E27s sind RGBW und können sowohl Farbe als auch Warmweiß darstellen.
 
 ## Die Sonnen-Entität
 
