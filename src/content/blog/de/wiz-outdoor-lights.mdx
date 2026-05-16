@@ -1,0 +1,73 @@
+---
+title: "WiZ Außenbeleuchtung nach Sonnenuntergang — Keine manuellen Saisonanpassungen mehr"
+description: "Wie ich die Außenflutlichter automatisiert habe — 15 Minuten nach Sonnenuntergang ein, Mitternacht aus — eine Automatisierung die sich jeder Jahreszeit anpasst ohne sie wieder anfassen zu müssen."
+pubDate: 2025-11-28
+tags: ["wiz", "licht", "außen", "automatisierung", "home-assistant"]
+lang: "de"
+translationKey: "wiz-outdoor-lights"
+heroImage: "/blog-images/Hjem_Lys.jpg"
+---
+
+Zweimal im Jahr änderte ich den Timer für die Außenlichter. Einmal im Frühling, wenn 21:00 Uhr noch helles Abendlicht war. Einmal im Herbst, wenn es um 17:00 Uhr dunkel war und die Lichter nicht vor 20:00 Uhr angingen. Ich traf es nie ganz richtig — in den Übergangswochen war der Timer immer falsch, Lichter die im Tageslicht aufflackerten oder den Garten eine Stunde nach Sonnenuntergang noch dunkel ließen.
+
+Die Lösung ist im Nachhinein offensichtlich: keine Uhrzeiten verwenden, sondern die Sonne.
+
+## Die Einrichtung
+
+Zwei WiZ Flutlichter an der Hausfront. Die **WiZ-Integration** ist in HA eingebaut — sie erkennt Lampen automatisch im lokalen Netzwerk, kein HACS nötig.
+
+## Die zwei Automatisierungen
+
+Der Einschalt-Trigger nutzt HAs eingebaute Sonnen-Plattform mit einem Offset:
+
+```yaml
+alias: Außenlichter — Sonnenuntergang ein
+trigger:
+  - platform: sun
+    event: sunset
+    offset: "+00:15:00"
+action:
+  - service: light.turn_on
+    target:
+      entity_id: light.flood_lights
+    data:
+      brightness_pct: 100
+```
+
+Der 15-Minuten-Offset bedeutet dass die Lichter angehen wenn es tatsächlich dunkel ist — nicht in dem Moment wenn die Sonne technisch gesehen untergeht, wenn noch genug Restlicht vorhanden ist.
+
+Der Ausschalt-Trigger ist eine feste Uhrzeit. Mitternacht ist hier die richtige Wahl: die Lichter haben nachts einen praktischen Zweck, aber es gibt keinen Grund sie bis zum Morgen laufen zu lassen.
+
+```yaml
+alias: Außenlichter — Mitternacht aus
+trigger:
+  - platform: time
+    at: "00:00:00"
+action:
+  - service: light.turn_off
+    target:
+      entity_id: light.flood_lights
+```
+
+## Das Dashboard
+
+Ein Paar Mushroom Template Chips die die nächste Auslösezeit für jede Automatisierung anzeigen. Die Sonnenuntergangszeit wird aus der Sonnen-Entität berechnet und aktualisiert sich täglich ohne manuellen Eingriff:
+
+```yaml
+- type: custom:mushroom-chips-card
+  chips:
+    - type: template
+      icon: mdi:weather-sunset
+      content: >
+        Ein: {{ (as_timestamp(state_attr('sun.sun','next_setting'))
+              + 15 * 60) | timestamp_custom('%H:%M') }}
+    - type: template
+      icon: mdi:weather-night
+      content: "Aus: 00:00"
+```
+
+In Dänemark verlagert sich der Sonnenuntergang zwischen Juni und Dezember um mehr als sechs Stunden. Die Lichter folgen dem automatisch — frühestens um etwa 15:30 Uhr im Dezember, spätestens um etwa 22:00 Uhr im Juni. Keine dieser Zeiten erfordert eine Anpassung.
+
+## Was sich geändert hat
+
+Die Übergangswochen im März und Oktober, in denen der Timer immer falsch war, sind weg. Zwei Trigger, zwei Aktionen — aber eine dieser Automatisierungen die das Haus so wirken lässt als würde es wissen, welche Jahreszeit gerade ist.
