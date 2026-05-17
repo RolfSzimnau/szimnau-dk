@@ -16,7 +16,7 @@ Die Lösung war ein Fenstersensor und eine einzige Automatisierung. Die extra St
 
 Ein **IKEA MYGGBETT** Tür-/Fenstersensor an Louises Fenster (`binary_sensor.myggbett_door_window_sensor_door`). Der Heizkörper ist ein Erstgenerations-**Mill**-Gerät — `climate.louise` — das nur zwei Modi unterstützt: `heat` und `off`. Das gleiche Erstgenerationsmodell steht auch in meinem Büro.
 
-Das Schlafzimmer und die Küche laufen mit neueren Mill-Heizkörpern, die mehr HVAC-Modi bieten. Das Blueprint funktioniert auch mit denen — `hvac_mode: "off"` ist über alle Mill-Generationen hinweg gültig. Der eine Vorbehalt betrifft die Schließ-Aktion: Sie kodiert `hvac_mode: heat` fest, was für die Erstgenerationsmodelle die nur `heat` oder `off` können in Ordnung ist, aber für einen neueren Mill möchte man vielleicht den vorherigen Modus wiederherstellen statt davon auszugehen dass er immer auf Heizen stand.
+Das Schlafzimmer und die Küche laufen mit neueren Mill-Heizkörpern mit mehr HVAC-Modi. Das Blueprint behandelt sie alle — es speichert den genauen Zustand vor dem Ausschalten und stellt ihn beim Schließen des Fensters präzise wieder her, unabhängig von Modus oder Temperatur.
 
 Das Wohnzimmer hat eine Daikin-Wärmepumpe die über Tado gesteuert wird — eine andere Integration mit eigenen Modi. Die bekommt ihren eigenen Ansatz.
 
@@ -62,6 +62,34 @@ Die Automatisierungsinstanz für Louises Zimmer sind drei Zeilen:
       climate_entity: climate.louise
       delay_minutes: 1
 ```
+
+## Zustand speichern und wiederherstellen
+
+Das Blueprint schaltet den Heizkörper nicht einfach aus — es speichert zuerst den genauen Zustand über eine dynamische Szene:
+
+```yaml
+- action: scene.create
+  data:
+    scene_id: "{{ this.entity_id | replace('automation.', '') }}"
+    snapshot_entities:
+      - !input climate_entity
+- action: climate.set_hvac_mode
+  target:
+    entity_id: !input climate_entity
+  data:
+    hvac_mode: "off"
+```
+
+Die Szenen-ID wird aus der eigenen Entity-ID der Automatisierung abgeleitet — eindeutig pro Instanz, keine manuelle Benennung nötig. Wenn das Fenster schließt, stellt das Blueprint genau diese Szene wieder her:
+
+```yaml
+- action: scene.turn_on
+  target:
+    entity_id: "scene.{{ this.entity_id | replace('automation.', '') }}"
+  continue_on_error: true
+```
+
+Das bedeutet es stellt wieder her was der Heizkörper gerade tat — 18°C, 22°C, bereits aus — nicht nur einen fest kodierten `heat`-Modus. `continue_on_error: true` behandelt den Fall bei dem das Fenster schließt bevor die Automatisierung jemals ausgelöst wurde (noch kein Snapshot vorhanden).
 
 ## Die 1-Minuten-Verzögerung
 

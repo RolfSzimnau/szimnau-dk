@@ -16,7 +16,7 @@ Løsningen var en vinduessensor og én automation. Den ekstra time jeg brugte va
 
 En **IKEA MYGGBETT** dør/vinduessensor på Louises vindue (`binary_sensor.myggbett_door_window_sensor_door`). Radiatoren er en første-generations **Mill**-enhed — `climate.louise` — som kun understøtter to modes: `heat` og `off`. Jeg har den samme første-gen model på mit kontor.
 
-Soveværelset og køkkenet kører nyere Mill-radiatorer der eksponerer flere HVAC-modes. Blueprint'et virker stadig med dem — `hvac_mode: "off"` er gyldigt på tværs af alle Mill-generationer. Den ene forbehold er lukning-handlingen: den hardkoder `hvac_mode: heat`, hvilket er fint for første-gen modellerne der kun kan `heat` eller `off`, men for en nyere Mill vil du måske foretrække at gendanne den tidligere tilstand frem for at antage at den altid stod på heat.
+Soveværelset og køkkenet kører nyere Mill-radiatorer med flere HVAC-modes. Blueprint'et håndterer dem alle — det gemmer den præcise tilstand før slukning og gendanner den præcist når vinduet lukkes, uanset hvilken mode eller temperatur radiatoren stod på.
 
 Stuen har en Daikin varmepumpe styret af Tado — en anden integration med sine egne modes. Den får sin egen tilgang.
 
@@ -62,6 +62,34 @@ Automation-instansen for Louises værelse er tre linjer:
       climate_entity: climate.louise
       delay_minutes: 1
 ```
+
+## Gem og gendan tilstand
+
+Blueprint'et slukker ikke bare radiatoren — det gemmer den præcise tilstand først via en dynamisk scene:
+
+```yaml
+- action: scene.create
+  data:
+    scene_id: "{{ this.entity_id | replace('automation.', '') }}"
+    snapshot_entities:
+      - !input climate_entity
+- action: climate.set_hvac_mode
+  target:
+    entity_id: !input climate_entity
+  data:
+    hvac_mode: "off"
+```
+
+Scene-ID'et udledes af automationens eget entity ID — unikt per instans, ingen manuel navngivning nødvendig. Når vinduet lukkes, gendanner Blueprint'et præcis den gemte scene:
+
+```yaml
+- action: scene.turn_on
+  target:
+    entity_id: "scene.{{ this.entity_id | replace('automation.', '') }}"
+  continue_on_error: true
+```
+
+Det betyder at den gendanner hvad radiatoren lavede — 18°C, 22°C, allerede slukket — ikke bare en hardkodet `heat`-mode. `continue_on_error: true` håndterer det tilfælde hvor vinduet lukkes inden automationen nogensinde er kørt (ingen snapshot eksisterer endnu).
 
 ## 1-minuts forsinkelsen
 

@@ -16,7 +16,7 @@ The fix was a window sensor and one automation. The part I spent an extra hour o
 
 An **IKEA MYGGBETT** door/window sensor on Louise's window (`binary_sensor.myggbett_door_window_sensor_door`). The radiator is a first-generation **Mill** unit — `climate.louise` — which only supports two modes: `heat` and `off`. I have the same first-gen model in my office.
 
-The master bedroom and kitchen run newer-gen Mill radiators, which expose more HVAC modes. The Blueprint still works with those — setting `hvac_mode: "off"` is valid across all Mill generations. The one caveat is the closing action: it hardcodes `hvac_mode: heat`, which is fine for the first-gen models that can only be `heat` or `off`, but for a newer Mill you might prefer restoring the previous mode rather than assuming it was always on heat.
+The master bedroom and kitchen run newer-gen Mill radiators with more HVAC modes. The Blueprint handles all of them — it snapshots the exact state before turning off and restores it precisely when the window closes, regardless of which mode or temperature the radiator was at.
 
 The living room is a Daikin heat pump controlled by Tado — a different integration with its own modes. That one gets its own approach.
 
@@ -62,6 +62,34 @@ The automation instance for Louise's room is three lines:
       climate_entity: climate.louise
       delay_minutes: 1
 ```
+
+## State snapshot and restore
+
+The Blueprint doesn't just turn the radiator off — it saves the exact state first using a dynamic scene:
+
+```yaml
+- action: scene.create
+  data:
+    scene_id: "{{ this.entity_id | replace('automation.', '') }}"
+    snapshot_entities:
+      - !input climate_entity
+- action: climate.set_hvac_mode
+  target:
+    entity_id: !input climate_entity
+  data:
+    hvac_mode: "off"
+```
+
+The scene ID is derived from the automation's own entity ID — unique per instance, no manual naming needed. When the window closes, the Blueprint restores that exact scene:
+
+```yaml
+- action: scene.turn_on
+  target:
+    entity_id: "scene.{{ this.entity_id | replace('automation.', '') }}"
+  continue_on_error: true
+```
+
+This means it restores whatever the radiator was doing — 18°C, 22°C, already off — not just a hardcoded `heat` mode. The `continue_on_error: true` handles the edge case where the window closes before the automation has ever fired (no snapshot exists yet).
 
 ## The 1-minute delay
 
