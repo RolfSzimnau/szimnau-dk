@@ -1,0 +1,103 @@
+---
+title: "Vindue Åbner, Varmen Stopper — Et Blueprint til Hvert Rum"
+description: "Hvordan jeg automatiserede radiatoren i Louises værelse til at slukke når vinduet åbnes og tænde igen når det lukkes — bygget som et Blueprint så næste rum tager 30 sekunder at tilføje."
+pubDate: 2026-06-05
+tags: ["home-assistant", "blueprint", "varme", "ikea", "mill", "automation"]
+lang: "da"
+translationKey: "window-heating-automation"
+heroImage: "/blog-images/home_MYGGBETT.jpg"
+---
+
+Radiatoren i Louises værelse kørte for fuld varme med vinduet åbent. Hun er tolv — at huske at lukke vinduet er ikke noget der sker konsekvent. Jeg lagde mærke til at vinduet havde stået åbent i en time, varmen på, udetemperatur på cirka 4°C. Det er penge ud af vinduet — bogstaveligt talt — og det ville blive ved med at ske.
+
+Løsningen var en vinduessensor og én automation. Den ekstra time jeg brugte var på at bygge den som et Blueprint, så næste gang det samme mønster dukker op i et andet rum, tager det 30 sekunder, ikke en hel eftermiddag.
+
+## Hardwaren
+
+En **IKEA MYGGBETT** dør/vinduessensor på Louises vindue (`binary_sensor.myggbett_door_window_sensor_door`). Radiatoren er en **Mill**-enhed — `climate.louise` — som kun understøtter to modes: `heat` og `off`.
+
+Mill har en indbygget åbent-vindue-detektion, men den virker ved at registrere temperaturfald — langsom til at reagere og overser korte åbninger fuldstændigt. MYGGBETT-sensoren er øjeblikkelig og præcis.
+
+## Blueprint'et
+
+I stedet for at hardkode Louises entities byggede jeg logikken som et Blueprint på `/config/blueprints/automation/homeassistant/window_heating_control.yaml`. Inputfelterne tager en vinduessensor, en climate-entity og en konfigurerbar forsinkelse:
+
+```yaml
+blueprint:
+  name: "Vindue → Varme slukker"
+  domain: automation
+  input:
+    window_sensor:
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: window
+    climate_entity:
+      selector:
+        entity:
+          domain: climate
+    delay_minutes:
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 10
+          unit_of_measurement: min
+```
+
+Automation-instansen for Louises værelse er tre linjer:
+
+```yaml
+- alias: "Vindue → Varme: Louises værelse"
+  use_blueprint:
+    path: homeassistant/window_heating_control.yaml
+    input:
+      window_sensor: binary_sensor.myggbett_door_window_sensor_door
+      climate_entity: climate.louise
+      delay_minutes: 1
+```
+
+## 1-minuts forsinkelsen
+
+`for: minutes: !input delay_minutes` på åbnet-triggeren er det der gør det praktisk. Når vinduet åbnes starter HA en intern nedtælling. Hvis vinduet lukkes inden minuttet er gået, annulleres triggeren — automationen kører slet ikke. En hurtig udluftning slukker ikke varmen.
+
+`mode: restart` håndterer kanttilfældet hvor en lukning-trigger ankommer mens en åbnet-trigger stadig tæller ned. Lukning-triggeren vinder øjeblikkeligt og tænder varmen igen — ingen kø, ingen race condition.
+
+## Notifikationer
+
+Når varmen slukker sker to ting: en push-notifikation sendes til alle enheder via `notify.alle_enheder`, og en stemmebesked afspilles på køkkenhøjtaleren:
+
+```yaml
+- action: notify.alle_enheder
+  data:
+    title: "Vindue åbent 🪟"
+    message: "Louises vindue har stået åbent i 1 minut — varmen er slukket"
+- action: tts.cloud_say
+  target:
+    entity_id: media_player.hojtaler_kokken
+  data:
+    message: "Louises vindue er åbent. Varmen er slukket."
+    language: da-DK
+```
+
+## Dashboard-kortet
+
+AlertTicker-kortet (`custom:alert-ticker-card`) finder vinduessensorer automatisk via `device_class: window` — ingen manuel entity-liste, så det dækker sensorer der tilføjes senere:
+
+```yaml
+type: custom:alert-ticker-card
+show_when_clear: true
+clear_message: "Alle vinduer lukket — varme aktiv"
+alerts:
+  - device_class: window
+    state: "on"
+    message: "{name} er åbent — varme kan være deaktiveret"
+    theme: window
+    priority: 2
+```
+
+Når alle vinduer er lukket viser kortet et grønt "alt OK" slide. Når et er åbent skifter det til en animeret alert med sensorens friendly name i beskeden.
+
+## At tilføje næste rum
+
+Indstillinger → Automationer → Opret → Fra Blueprint → vælg "Vindue → Varme slukker" → vælg sensor og radiator → gem. Ingen ny kode. Det er hele pointen med at bygge det som et Blueprint fra starten frem for en hardkodet automation.

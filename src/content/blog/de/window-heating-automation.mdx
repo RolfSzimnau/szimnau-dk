@@ -1,0 +1,103 @@
+---
+title: "Fenster öffnet, Heizung stoppt — Ein Blueprint für jedes Zimmer"
+description: "Wie ich den Heizkörper in Louises Zimmer automatisiert habe — aus wenn das Fenster auf ist, an wenn es geschlossen wird — als wiederverwendbares Blueprint damit das nächste Zimmer 30 Sekunden dauert."
+pubDate: 2026-06-05
+tags: ["home-assistant", "blueprint", "heizung", "ikea", "mill", "automatisierung"]
+lang: "de"
+translationKey: "window-heating-automation"
+heroImage: "/blog-images/home_MYGGBETT.jpg"
+---
+
+Der Heizkörper in Louises Zimmer lief auf Hochtouren — bei offenem Fenster. Sie ist zwölf, und daran zu denken das Fenster zu schließen passiert nicht zuverlässig. Ich bemerkte dass das Fenster eine Stunde offen gestanden hatte, Heizung an, Außentemperatur um die 4°C. Kein Drama, aber eine vorhersehbare Verschwendung die sich wiederholen würde — Geld zum Fenster hinauswerfen, buchstäblich.
+
+Die Lösung war ein Fenstersensor und eine einzige Automatisierung. Die extra Stunde investierte ich darin sie als Blueprint zu bauen — damit das nächste Zimmer 30 Sekunden braucht, nicht einen weiteren Nachmittag.
+
+## Die Hardware
+
+Ein **IKEA MYGGBETT** Tür-/Fenstersensor an Louises Fenster (`binary_sensor.myggbett_door_window_sensor_door`). Der Heizkörper ist ein **Mill**-Gerät — `climate.louise` — das nur zwei Modi unterstützt: `heat` und `off`.
+
+Mill hat eine eingebaute Offenes-Fenster-Erkennung, die aber über Temperaturabfall funktioniert — langsam und blind für kurze Öffnungen. Der MYGGBETT-Sensor reagiert sofort und präzise.
+
+## Das Blueprint
+
+Anstatt Louises Entities fest zu kodieren habe ich die Logik als Blueprint unter `/config/blueprints/automation/homeassistant/window_heating_control.yaml` gebaut. Die Eingabefelder nehmen einen Fenstersensor, eine Climate-Entity und eine konfigurierbare Verzögerung:
+
+```yaml
+blueprint:
+  name: "Fenster → Heizung aus"
+  domain: automation
+  input:
+    window_sensor:
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: window
+    climate_entity:
+      selector:
+        entity:
+          domain: climate
+    delay_minutes:
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 10
+          unit_of_measurement: min
+```
+
+Die Automatisierungsinstanz für Louises Zimmer sind drei Zeilen:
+
+```yaml
+- alias: "Fenster → Heizung: Louises Zimmer"
+  use_blueprint:
+    path: homeassistant/window_heating_control.yaml
+    input:
+      window_sensor: binary_sensor.myggbett_door_window_sensor_door
+      climate_entity: climate.louise
+      delay_minutes: 1
+```
+
+## Die 1-Minuten-Verzögerung
+
+`for: minutes: !input delay_minutes` am Geöffnet-Trigger macht das praktisch nutzbar. Wenn das Fenster aufgeht startet HA intern einen Countdown. Schließt das Fenster bevor die Minute abgelaufen ist, wird der Trigger abgebrochen — die Automatisierung läuft überhaupt nicht. Ein kurzes Lüften schaltet die Heizung nicht ab.
+
+`mode: restart` behandelt den Grenzfall in dem ein Schließen-Trigger eintrifft während ein Geöffnet-Trigger noch herunterzählt. Der Schließen-Trigger gewinnt sofort und schaltet die Heizung wieder ein — keine Warteschlange, keine Race Condition.
+
+## Benachrichtigungen
+
+Wenn die Heizung abschaltet passieren zwei Dinge: eine Push-Benachrichtigung geht über `notify.alle_enheder` an alle Geräte, und eine Sprachansage wird auf dem Küchenlautsprecher abgespielt:
+
+```yaml
+- action: notify.alle_enheder
+  data:
+    title: "Fenster offen 🪟"
+    message: "Louises Fenster steht seit 1 Minute offen — Heizung ist aus"
+- action: tts.cloud_say
+  target:
+    entity_id: media_player.hojtaler_kokken
+  data:
+    message: "Louises Fenster ist offen. Die Heizung ist aus."
+    language: da-DK
+```
+
+## Die Dashboard-Karte
+
+Die AlertTicker-Karte (`custom:alert-ticker-card`) erkennt Fenstersensoren automatisch über `device_class: window` — keine manuelle Entity-Liste, deckt also auch später hinzugefügte Sensoren ab:
+
+```yaml
+type: custom:alert-ticker-card
+show_when_clear: true
+clear_message: "Alle Fenster geschlossen — Heizung aktiv"
+alerts:
+  - device_class: window
+    state: "on"
+    message: "{name} ist offen — Heizung möglicherweise aus"
+    theme: window
+    priority: 2
+```
+
+Bei geschlossenen Fenstern zeigt die Karte eine grüne "alles in Ordnung" Folie. Bei offenem Fenster wechselt sie zu einer animierten Warnung mit dem Friendly Name des Sensors in der Nachricht.
+
+## Das nächste Zimmer hinzufügen
+
+Einstellungen → Automatisierungen → Erstellen → Aus Blueprint → "Fenster → Heizung aus" auswählen → Sensor und Heizkörper wählen → Speichern. Kein neuer Code. Das ist der ganze Punkt daran es von Anfang an als Blueprint zu bauen statt als fest kodierte Automatisierung.

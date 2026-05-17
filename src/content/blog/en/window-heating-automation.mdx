@@ -1,0 +1,103 @@
+---
+title: "Window Opens, Heating Stops — A Blueprint for Every Room"
+description: "How I automated the radiator in Louise's room to turn off when the window opens and back on when it closes — built as a reusable Blueprint so the next room takes 30 seconds to add."
+pubDate: 2026-06-05
+tags: ["home-assistant", "blueprint", "heating", "ikea", "mill", "automation"]
+lang: "en"
+translationKey: "window-heating-automation"
+heroImage: "/blog-images/home_MYGGBETT.jpg"
+---
+
+The radiator in Louise's room was running at full heat with the window wide open. She's twelve — keeping her window shut isn't something that happens reliably. I noticed the window had been open for an hour, heat on, outside temperature around 4°C. Not a disaster, but a predictable waste that would keep repeating.
+
+The fix was a window sensor and one automation. The part I spent an extra hour on was building it as a Blueprint so when the same pattern comes up in another room, it takes 30 seconds, not another afternoon.
+
+## The hardware
+
+An **IKEA MYGGBETT** door/window sensor on Louise's window (`binary_sensor.myggbett_door_window_sensor_door`). The radiator is a **Mill** unit — `climate.louise` — which only supports two modes: `heat` and `off`.
+
+The Mill has a built-in open window detection feature, but it works by sensing temperature drops — slow to react, and it misses short openings completely. The MYGGBETT sensor is instant and precise.
+
+## The Blueprint
+
+Rather than hardcoding Louise's entities, I built the logic as a Blueprint at `/config/blueprints/automation/homeassistant/window_heating_control.yaml`. The inputs are a window sensor, a climate entity, and a configurable delay:
+
+```yaml
+blueprint:
+  name: "Window → Heating off"
+  domain: automation
+  input:
+    window_sensor:
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: window
+    climate_entity:
+      selector:
+        entity:
+          domain: climate
+    delay_minutes:
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 10
+          unit_of_measurement: min
+```
+
+The automation instance for Louise's room is three lines:
+
+```yaml
+- alias: "Window → Heating: Louise's room"
+  use_blueprint:
+    path: homeassistant/window_heating_control.yaml
+    input:
+      window_sensor: binary_sensor.myggbett_door_window_sensor_door
+      climate_entity: climate.louise
+      delay_minutes: 1
+```
+
+## The 1-minute delay
+
+The `for: minutes: !input delay_minutes` on the opened trigger is what makes this practical. When the window opens, HA starts an internal countdown. If the window closes before the minute is up, the trigger is cancelled — the automation never fires. A quick airing doesn't kill the heat.
+
+`mode: restart` handles the edge case where a closing trigger arrives while an opened-trigger is still counting down. The closing trigger wins immediately and turns the heat back on — no queuing, no race condition.
+
+## Notifications
+
+When the heating switches off, two things happen: a push notification goes to all devices via `notify.alle_enheder`, and a voice announcement plays on the kitchen speaker:
+
+```yaml
+- action: notify.alle_enheder
+  data:
+    title: "Window open"
+    message: "Louise's window has been open for 1 minute — heating is off"
+- action: tts.cloud_say
+  target:
+    entity_id: media_player.hojtaler_kokken
+  data:
+    message: "Louise's window is open. Heating is off."
+    language: da-DK
+```
+
+## The dashboard card
+
+The AlertTicker card (`custom:alert-ticker-card`) picks up window sensors by `device_class: window` — no manual entity list needed, so it covers any sensors added later:
+
+```yaml
+type: custom:alert-ticker-card
+show_when_clear: true
+clear_message: "All windows closed — heating active"
+alerts:
+  - device_class: window
+    state: "on"
+    message: "{name} is open — heating may be off"
+    theme: window
+    priority: 2
+```
+
+When all windows are closed, the card shows a green "all clear" slide. When one is open, it switches to an animated alert with the sensor's friendly name in the message.
+
+## Adding the next room
+
+Settings → Automations → Create → From Blueprint → select "Window → Heating off" → pick the sensor and radiator → save. No new code. That's the whole point of building it as a Blueprint from the start rather than a hardcoded automation.
