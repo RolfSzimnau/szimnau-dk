@@ -5,7 +5,7 @@ pubDate: 2026-06-05
 tags: ["home-assistant", "blueprint", "varme", "ikea", "mill", "automation"]
 lang: "da"
 translationKey: "window-heating-automation"
-heroImage: "/blog-images/home_MYGGBETT.jpg"
+heroImage: "/blog-images/Hjem_MYGGBETT_Hero.jpg.png"
 ---
 
 Radiatoren i Louises værelse kørte for fuld varme med vinduet åbent. Hun er tolv — at huske at lukke vinduet er ikke noget der sker konsekvent. Jeg lagde mærke til at vinduet havde stået åbent i en time, varmen på, udetemperatur på cirka 4°C. Det er penge ud af vinduet — bogstaveligt talt — og det ville blive ved med at ske.
@@ -17,6 +17,8 @@ Løsningen var en vinduessensor og én automation. Den ekstra time jeg brugte va
 En **IKEA MYGGBETT** dør/vinduessensor på Louises vindue (`binary_sensor.myggbett_door_window_sensor_door`). Radiatoren er en **Mill**-enhed — `climate.louise` — som kun understøtter to modes: `heat` og `off`.
 
 Mill har en indbygget åbent-vindue-detektion, men den virker ved at registrere temperaturfald — langsom til at reagere og overser korte åbninger fuldstændigt. MYGGBETT-sensoren er øjeblikkelig og præcis.
+
+![IKEA MYGGBETT sensor monteret på Louises vindue](/blog-images/home_MYGGBETT.jpg)
 
 ## Blueprint'et
 

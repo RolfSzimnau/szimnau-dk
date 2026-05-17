@@ -5,7 +5,7 @@ pubDate: 2026-06-05
 tags: ["home-assistant", "blueprint", "heating", "ikea", "mill", "automation"]
 lang: "en"
 translationKey: "window-heating-automation"
-heroImage: "/blog-images/home_MYGGBETT.jpg"
+heroImage: "/blog-images/Hjem_MYGGBETT_Hero.jpg.png"
 ---
 
 The radiator in Louise's room was running at full heat with the window wide open. She's twelve — keeping her window shut isn't something that happens reliably. I noticed the window had been open for an hour, heat on, outside temperature around 4°C. Not a disaster, but a predictable waste that would keep repeating.
@@ -17,6 +17,8 @@ The fix was a window sensor and one automation. The part I spent an extra hour o
 An **IKEA MYGGBETT** door/window sensor on Louise's window (`binary_sensor.myggbett_door_window_sensor_door`). The radiator is a **Mill** unit — `climate.louise` — which only supports two modes: `heat` and `off`.
 
 The Mill has a built-in open window detection feature, but it works by sensing temperature drops — slow to react, and it misses short openings completely. The MYGGBETT sensor is instant and precise.
+
+![IKEA MYGGBETT sensor mounted on Louise's window](/blog-images/home_MYGGBETT.jpg)
 
 ## The Blueprint
 
