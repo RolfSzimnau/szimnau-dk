@@ -14,7 +14,11 @@ The fix was a window sensor and one automation. The part I spent an extra hour o
 
 ## The hardware
 
-An **IKEA MYGGBETT** door/window sensor on Louise's window (`binary_sensor.myggbett_door_window_sensor_door`). The radiator is a **Mill** unit — `climate.louise` — which only supports two modes: `heat` and `off`.
+An **IKEA MYGGBETT** door/window sensor on Louise's window (`binary_sensor.myggbett_door_window_sensor_door`). The radiator is a first-generation **Mill** unit — `climate.louise` — which only supports two modes: `heat` and `off`. I have the same first-gen model in my office.
+
+The master bedroom and kitchen run newer-gen Mill radiators, which expose more HVAC modes. The Blueprint still works with those — setting `hvac_mode: "off"` is valid across all Mill generations. The one caveat is the closing action: it hardcodes `hvac_mode: heat`, which is fine for the first-gen models that can only be `heat` or `off`, but for a newer Mill you might prefer restoring the previous mode rather than assuming it was always on heat.
+
+The living room is a Daikin heat pump controlled by Tado — a different integration with its own modes. That one gets its own approach.
 
 The Mill has a built-in open window detection feature, but it works by sensing temperature drops — slow to react, and it misses short openings completely. The MYGGBETT sensor is instant and precise.
 
@@ -103,3 +107,5 @@ When all windows are closed, the card shows a green "all clear" slide. When one 
 ## Adding the next room
 
 Settings → Automations → Create → From Blueprint → select "Window → Heating off" → pick the sensor and radiator → save. No new code. That's the whole point of building it as a Blueprint from the start rather than a hardcoded automation.
+
+The office gets a sensor next — same first-gen Mill, same Blueprint, identical configuration. The master bedroom and kitchen Mill radiators will work too once they have window sensors. The Daikin in the living room is a different story: Tado manages that one and will need its own logic when the time comes.

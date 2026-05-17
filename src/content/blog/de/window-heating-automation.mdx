@@ -14,7 +14,11 @@ Die Lösung war ein Fenstersensor und eine einzige Automatisierung. Die extra St
 
 ## Die Hardware
 
-Ein **IKEA MYGGBETT** Tür-/Fenstersensor an Louises Fenster (`binary_sensor.myggbett_door_window_sensor_door`). Der Heizkörper ist ein **Mill**-Gerät — `climate.louise` — das nur zwei Modi unterstützt: `heat` und `off`.
+Ein **IKEA MYGGBETT** Tür-/Fenstersensor an Louises Fenster (`binary_sensor.myggbett_door_window_sensor_door`). Der Heizkörper ist ein Erstgenerations-**Mill**-Gerät — `climate.louise` — das nur zwei Modi unterstützt: `heat` und `off`. Das gleiche Erstgenerationsmodell steht auch in meinem Büro.
+
+Das Schlafzimmer und die Küche laufen mit neueren Mill-Heizkörpern, die mehr HVAC-Modi bieten. Das Blueprint funktioniert auch mit denen — `hvac_mode: "off"` ist über alle Mill-Generationen hinweg gültig. Der eine Vorbehalt betrifft die Schließ-Aktion: Sie kodiert `hvac_mode: heat` fest, was für die Erstgenerationsmodelle die nur `heat` oder `off` können in Ordnung ist, aber für einen neueren Mill möchte man vielleicht den vorherigen Modus wiederherstellen statt davon auszugehen dass er immer auf Heizen stand.
+
+Das Wohnzimmer hat eine Daikin-Wärmepumpe die über Tado gesteuert wird — eine andere Integration mit eigenen Modi. Die bekommt ihren eigenen Ansatz.
 
 Mill hat eine eingebaute Offenes-Fenster-Erkennung, die aber über Temperaturabfall funktioniert — langsam und blind für kurze Öffnungen. Der MYGGBETT-Sensor reagiert sofort und präzise.
 
@@ -103,3 +107,5 @@ Bei geschlossenen Fenstern zeigt die Karte eine grüne "alles in Ordnung" Folie.
 ## Das nächste Zimmer hinzufügen
 
 Einstellungen → Automatisierungen → Erstellen → Aus Blueprint → "Fenster → Heizung aus" auswählen → Sensor und Heizkörper wählen → Speichern. Kein neuer Code. Das ist der ganze Punkt daran es von Anfang an als Blueprint zu bauen statt als fest kodierte Automatisierung.
+
+Das Büro bekommt als nächstes einen Sensor — gleicher Erstgenerations-Mill, gleiches Blueprint, identische Konfiguration. Die Mill-Heizkörper im Schlafzimmer und in der Küche funktionieren ebenfalls sobald sie Fenstersensoren haben. Die Daikin im Wohnzimmer ist eine andere Geschichte: Tado verwaltet die und braucht eine eigene Logik wenn die Zeit kommt.

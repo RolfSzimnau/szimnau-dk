@@ -14,7 +14,11 @@ Løsningen var en vinduessensor og én automation. Den ekstra time jeg brugte va
 
 ## Hardwaren
 
-En **IKEA MYGGBETT** dør/vinduessensor på Louises vindue (`binary_sensor.myggbett_door_window_sensor_door`). Radiatoren er en **Mill**-enhed — `climate.louise` — som kun understøtter to modes: `heat` og `off`.
+En **IKEA MYGGBETT** dør/vinduessensor på Louises vindue (`binary_sensor.myggbett_door_window_sensor_door`). Radiatoren er en første-generations **Mill**-enhed — `climate.louise` — som kun understøtter to modes: `heat` og `off`. Jeg har den samme første-gen model på mit kontor.
+
+Soveværelset og køkkenet kører nyere Mill-radiatorer der eksponerer flere HVAC-modes. Blueprint'et virker stadig med dem — `hvac_mode: "off"` er gyldigt på tværs af alle Mill-generationer. Den ene forbehold er lukning-handlingen: den hardkoder `hvac_mode: heat`, hvilket er fint for første-gen modellerne der kun kan `heat` eller `off`, men for en nyere Mill vil du måske foretrække at gendanne den tidligere tilstand frem for at antage at den altid stod på heat.
+
+Stuen har en Daikin varmepumpe styret af Tado — en anden integration med sine egne modes. Den får sin egen tilgang.
 
 Mill har en indbygget åbent-vindue-detektion, men den virker ved at registrere temperaturfald — langsom til at reagere og overser korte åbninger fuldstændigt. MYGGBETT-sensoren er øjeblikkelig og præcis.
 
@@ -103,3 +107,5 @@ Når alle vinduer er lukket viser kortet et grønt "alt OK" slide. Når et er å
 ## At tilføje næste rum
 
 Indstillinger → Automationer → Opret → Fra Blueprint → vælg "Vindue → Varme slukker" → vælg sensor og radiator → gem. Ingen ny kode. Det er hele pointen med at bygge det som et Blueprint fra starten frem for en hardkodet automation.
+
+Kontoret får sensor næste — samme første-gen Mill, samme Blueprint, identisk konfiguration. Soveværelsets og køkkenets Mill-radiatorer virker også, når de får vinduessensorer. Daikinaggregatet i stuen er en anden sag: Tado styrer den og skal have sin egen logik når den tid kommer.
