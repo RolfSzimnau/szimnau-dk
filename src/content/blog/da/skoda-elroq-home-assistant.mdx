@@ -119,6 +119,26 @@ Det virker godt om vinteren. En varm bil om morgenen er en underapprecieret luks
 
 Ét problem: begivenhedsnavnet skal matche præcist. Jeg har omdøbt begivenheden to gange og gemt det i tide til at undre mig over hvorfor bilen ikke var varm. Det er en skrøbelig strengmatch og jeg har ikke fundet en bedre tilgang endnu.
 
+## Kabeladvarsel
+
+At glemme at sætte bilen til opladning er den eneste fejl der rent faktisk koster noget. Bilen står natten over, trækker intet fra nettet, og du kører om morgenen med den ladning du havde dagen før.
+
+AlertTicker-kortet håndterer det. Mellem kl. 21 og 06, hvis `binary_sensor.elroq_plugged_in` er off, vises en advarselsbanner på tværs af alle dashboard-views:
+
+```yaml
+type: custom:alert-ticker-card
+alerts:
+  - entity: binary_sensor.elroq_plugged_in
+    state: "off"
+    message: "Elroq is not plugged in"
+    theme: warning
+    priority: 1
+    time_from: "21:00"
+    time_to: "06:00"
+```
+
+Tidsvinduet er vigtigt — om dagen er bilen konstant fra laderen. Advarslen er kun relevant om natten når den burde lade. Uden for det vindue er den stille uanset kabeltilstand.
+
 ## Hvad der mangler
 
 Integrationen eksponerer ikke opladningssessionsdata — ingen kWh tilføjet i den aktuelle session, ingen opladningshistorik. Du kan se den aktuelle effektafsætning, men ikke hvor længe den har kørt eller hvad det har kostet. Til smart-opladningsautomatisering er det fint; til at overvåge dine faktiske opladningsomkostninger er det et hul.

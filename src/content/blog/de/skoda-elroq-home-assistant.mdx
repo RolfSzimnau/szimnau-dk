@@ -119,6 +119,26 @@ Im Winter funktioniert das gut. Ein warmes Auto am Morgen ist ein unterschätzte
 
 Ein Problem: der Terminname muss exakt übereinstimmen. Ich habe den Termin zweimal umbenannt und jedes Mal erst gemerkt, als das Auto kalt war. Es ist ein zerbrechlicher Zeichenkettenvergleich und ich habe noch keine bessere Lösung gefunden.
 
+## Kabelwarnung
+
+Das Ladekabel nicht einzustecken ist der einzige Fehler der wirklich etwas kostet. Das Auto steht über Nacht, zieht nichts aus dem Netz, und man fährt morgens mit dem Ladestand vom Vortag los.
+
+Die AlertTicker-Karte übernimmt das. Zwischen 21:00 und 06:00 Uhr, wenn `binary_sensor.elroq_plugged_in` aus ist, erscheint ein Warnbanner in jeder Dashboard-Ansicht:
+
+```yaml
+type: custom:alert-ticker-card
+alerts:
+  - entity: binary_sensor.elroq_plugged_in
+    state: "off"
+    message: "Elroq is not plugged in"
+    theme: warning
+    priority: 1
+    time_from: "21:00"
+    time_to: "06:00"
+```
+
+Das Zeitfenster ist wichtig — tagsüber ist das Auto ständig vom Ladegerät getrennt. Die Warnung ist nur nachts relevant wenn es laden sollte. Außerhalb dieses Fensters ist sie still unabhängig vom Kabelstatus.
+
 ## Was fehlt
 
 Die Integration zeigt keine Ladesitzungsdaten — keine kWh in der aktuellen Sitzung, keine Ladehistorie. Man sieht die aktuelle Leistungsaufnahme, aber nicht wie lange sie läuft oder was es kostet. Für die Smart-Charging-Automatisierung ist das in Ordnung; um die tatsächlichen Ladekosten zu überwachen, fehlt das.

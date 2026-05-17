@@ -121,6 +121,26 @@ This works well in winter. In practice it means the car is warm when I leave —
 
 One problem: the calendar trigger fires based on the event summary matching exactly. If I rename the event or add something to the title, the condition fails silently and the car doesn't pre-condition. I've had that happen twice. It's a fragile string match and I haven't found a better approach yet.
 
+## Cable alert
+
+Forgetting to plug in is the one failure mode that actually costs something. The car sits overnight, draws nothing from the grid, and you leave in the morning with whatever charge you had the day before.
+
+The AlertTicker card handles this. Between 21:00 and 06:00, if `binary_sensor.elroq_plugged_in` is off, a warning banner appears across every dashboard view:
+
+```yaml
+type: custom:alert-ticker-card
+alerts:
+  - entity: binary_sensor.elroq_plugged_in
+    state: "off"
+    message: "Elroq is not plugged in"
+    theme: warning
+    priority: 1
+    time_from: "21:00"
+    time_to: "06:00"
+```
+
+The time window matters — during the day it's off the charger constantly. The alert is only relevant at night when it should be charging. Outside that window it's silent regardless of plug state.
+
 ## What's missing
 
 The integration doesn't expose charging session data — no kWh added in the current session, no charge history. You can see the current power draw but not how long it's been running or how much it's added. For smart charging automation this is fine; for monitoring your actual charging costs it's a gap.
