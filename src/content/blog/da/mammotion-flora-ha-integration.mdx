@@ -119,6 +119,10 @@ Modulet kan altså fejle. Vinterpause og fugtdannelse er en kombination, man ska
 
 Integrationen har en latens-udfordring. Kommandoer tager 30-60 sekunder at slå igennem. Hvis du trykker `start_mow` og straks tjekker tilstanden, er den stadig `docked`. For automatiseringer er det ligegyldigt. For at sidde og trykke på dashboardet og vente på feedback er det frustrerende.
 
+Jeg kæmper også med en periodisk "Robot out of task area"-fejl — altid i nærheden af no go-zonerne rundt om blomsterbedene. Min teori er multipath-interferens: GPS-signalerne kaster sig af de faste barrierer, så Flora et kort sekund tror, hun er stukket af over grænsen. Så stopper hun og venter.
+
+Det er netop her, integrationen til Home Assistant virkelig mangler. Der er ingen error code-sensor. Ingen push-besked, når hun sidder forvirret midt i bedene — jeg er nødt til at åbne Mammotion-appen for at opdage, at noget er galt.
+
 Initial opsætning af grænsen kræver appen — ingen vej uden om. Når det er gjort én gang behøver du aldrig appen igen. Men du behøver den den første gang.
 
-Alt i alt: skiftet var det værd. Klipperen er nu en del af smart-hjemmet i stedet for et separat apparat der bare kørte rundt og håbede på det bedste.
+Alt i alt: mere end det hele værd. Fejlene er reelle, og den manglende error-sensor er en ægte mangel — men jeg er oprigtigt vild med maskinen. Flora er ikke længere et separat apparat der bare kører rundt. Hun er en del af smart-hjemmet, og det er svært at give afkald på, når man først har prøvet det.
