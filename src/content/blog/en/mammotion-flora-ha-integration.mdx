@@ -16,7 +16,9 @@ I replaced it with a **Mammotion Luba Mini 2** (I named it Flora) earlier this y
 
 ## The Setup
 
-The Flora uses GPS + RTK for navigation — no perimeter wire. RTK corrections come from iNav NetRTK. You draw the boundary in the Mammotion app once, and after that the mower handles it from coordinates. The Vision Module is a small camera on the body that detects obstacles.
+The Flora uses GPS + RTK for navigation — no perimeter wire. RTK corrections come from iNav NetRTK over 4G. I dropped the physical RTK base station antenna in the garden in favour of Network RTK, which routes correction data through the mobile network and Mammotion's cloud. No antenna on the roof, no cable run to the garden. The trade-off is that every position correction makes a round trip over the internet — and that turns out to matter more than you'd expect. More on this in What's rough.
+
+You draw the boundary in the Mammotion app once, and after that the mower handles it from coordinates. The Vision Module is a small camera on the body that detects obstacles.
 
 ![Flora after a session in the garden](/blog-images/Hjem_Luba.jpg)
 
@@ -127,12 +129,44 @@ The module can fail. Winter storage and condensation are a real combination to w
 
 ## What's rough
 
-The HA integration has a latency problem. Commands take 30–60 seconds to reflect. If you send `start_mow` and immediately check the state, it's still `docked`. This is fine for automations (who cares if the state updates 45 seconds later) but confusing if you're watching the dashboard and pressing buttons.
+The HA integration has a latency problem. Commands take 30–60 seconds to reflect. I used to assume it was a lazy API. After running Flora on 4G Network RTK for a full season, I think the real explanation is structural: Flora's entire navigation loop runs through Mammotion's cloud. Every RTK correction travels over 4G to their servers and back for each position fix. The cloud is already under constant load just keeping her on course — HA status calls have to wait in that queue. The latency isn't a bug, it's the architecture.
 
-I also get a periodic "Robot out of task area" error — always near the no-go zones around the flower beds. My theory is multipath interference: GPS signals bouncing off the raised beds and fixed garden structures, causing Flora to briefly register herself as outside the boundary. She stops and waits.
+It's still annoying on the dashboard. The workaround I use is a small script that calls `start_mow` and forces an entity refresh five seconds later — enough time for the command to register, fast enough that the dashboard doesn't sit there looking wrong:
 
-This is where the HA integration really falls short. There's no error code sensor. No push notification when she's sitting confused in the middle of the garden — I have to open the Mammotion app to find out anything went wrong.
+```yaml
+alias: Flora — Start and refresh
+sequence:
+  - service: lawn_mower.start_mow
+    target:
+      entity_id: lawn_mower.flora
+  - delay:
+      seconds: 5
+  - service: homeassistant.update_entity
+    target:
+      entity_id: lawn_mower.flora
+```
+
+The "Robot out of task area" error is still happening periodically, always near the no-go zones around the flower beds. My original theory was pure multipath — GPS signals bouncing off the raised beds. After a full season watching it, I think it's a combination: multipath creates a momentary position ambiguity, and 4G latency prevents the RTK correction from arriving fast enough to resolve it. When the signal bounces off a raised bed, Flora needs an immediate correction to confirm she's inside the boundary. If the mobile network has a micro-dip in ping at that exact moment, the correction doesn't arrive in time and she stops. Two problems hitting at once, each making the other worse.
+
+The real gap is that there's no error code sensor in the integration. No push notification when she's been sitting stuck in the garden for 20 minutes — I have to open the Mammotion app to find out anything went wrong. Until that sensor exists, I run this automation:
+
+```yaml
+alias: Flora — Stuck paused alert
+trigger:
+  - platform: state
+    entity_id: lawn_mower.flora
+    to: "paused"
+    for:
+      minutes: 10
+action:
+  - service: notify.mobile_app
+    data:
+      title: "Flora has stopped"
+      message: "Flora has been paused for 10 minutes — check the garden."
+```
+
+Blunt, but it works. She's either stuck or done early, and either way I want to know.
 
 Initial boundary setup requires the Mammotion app and a Mammotion cloud account — there's no way around that. The GPS boundary data lives in their cloud and the app is the only interface to draw it. Once set up, you never need the app again. But you do need it that first time.
 
-Overall: worth it, and then some. The errors are real and the missing error sensor is a genuine gap — but I'm genuinely thrilled with this machine. Flora isn't a standalone appliance that just drives around anymore. She's part of how the house runs, and that's hard to give up once you've had it.
+Overall: worth it, and then some. Flora is more internet-reliant than any garden tool I've owned — the 4G dependency runs deeper than it first appears — but I'm genuinely thrilled with her. She's part of how the house runs now, and that's hard to give up once you've had it.
