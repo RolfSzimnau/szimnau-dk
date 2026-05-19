@@ -16,7 +16,9 @@ Ich ersetzte ihn durch einen **Mammotion Luba Mini 2** (ich nannte ihn Flora) An
 
 ## Einrichtung
 
-Der Flora nutzt GPS + RTK zur Navigation — kein Begrenzungsdraht. RTK-Korrekturen kommen von iNav NetRTK. Die Grenze wird einmalig in der Mammotion-App gezeichnet, danach hält sich der Mäher innerhalb der Koordinaten. Das Vision Module ist eine kleine Kamera am Gehäuse, die Hindernisse erkennt.
+Der Flora nutzt GPS + RTK zur Navigation — kein Begrenzungsdraht. RTK-Korrekturen kommen von iNav NetRTK über 4G. Ich habe die physische RTK-Basisstation im Garten zugunsten von Network RTK aufgegeben, das Korrekturdaten über das Mobilfunknetz und Mammotions Cloud leitet. Keine Antenne auf dem Dach, kein Kabel in den Garten. Der Kompromiss: Jede Positionskorrektur macht eine Runde über das Internet — und das hat größere Auswirkungen als man zunächst denkt. Mehr dazu unter Was mühsam ist.
+
+Die Grenze wird einmalig in der Mammotion-App gezeichnet, danach hält sich der Mäher innerhalb der Koordinaten. Das Vision Module ist eine kleine Kamera am Gehäuse, die Hindernisse erkennt.
 
 ![Flora nach einer Runde im Garten](/blog-images/Hjem_Luba.jpg)
 
@@ -117,12 +119,44 @@ Das Modul kann ausfallen. Winterlagerung und Kondensation sind eine Kombination,
 
 ## Was mühsam ist
 
-Die Integration hat ein Latenzproblem. Befehle brauchen 30-60 Sekunden um durchzuschlagen. Sendest du `start_mow` und prüfst sofort den Zustand, ist er noch `docked`. Für Automatisierungen ist das egal. Für das Sitzen am Dashboard und das Warten auf Feedback ist es frustrierend.
+Die Integration hat ein Latenzproblem. Befehle brauchen 30-60 Sekunden um durchzuschlagen. Ich dachte lange, es sei einfach ein träges API. Nach einem vollen Betriebsjahr mit 4G Network RTK glaube ich, die Erklärung ist struktureller Natur: Floras gesamte Navigationsschleife läuft über Mammotions Cloud. Jede RTK-Korrektur reist über 4G zu deren Servern und zurück — für jede einzelne Positionsbestimmung. Die Cloud ist bereits unter konstantem Last, nur um sie auf Kurs zu halten. HA-Statusabfragen warten in dieser Schlange. Das ist kein Fehler, das ist die Architektur.
 
-Dazu kommt ein periodischer "Robot out of task area"-Fehler — immer in der Nähe der No-Go-Zonen rund um die Blumenbeete. Meine Theorie ist Mehrwegeausbreitung: GPS-Signale, die an den festen Gartenstrukturen reflektiert werden und Flora kurzzeitig glauben lassen, sie sei außerhalb der Grenze. Sie hält an und wartet.
+Auf dem Dashboard ist das trotzdem nervig. Mein Workaround ist ein kleines Skript, das `start_mow` sendet und fünf Sekunden später ein Entity-Refresh erzwingt — genug Zeit damit der Befehl registriert wird, schnell genug damit das Dashboard nicht falsch aussieht:
 
-Genau hier fehlt der HA-Integration etwas Entscheidendes. Es gibt keinen Fehlercode-Sensor. Keine Push-Benachrichtigung, wenn sie verwirrt mitten im Beet steht — ich muss die Mammotion-App öffnen, um überhaupt zu merken, dass etwas schiefgelaufen ist.
+```yaml
+alias: Flora — Start und Aktualisierung
+sequence:
+  - service: lawn_mower.start_mow
+    target:
+      entity_id: lawn_mower.flora
+  - delay:
+      seconds: 5
+  - service: homeassistant.update_entity
+    target:
+      entity_id: lawn_mower.flora
+```
+
+Der "Robot out of task area"-Fehler tritt weiterhin periodisch auf, immer in der Nähe der No-Go-Zonen rund um die Blumenbeete. Meine ursprüngliche Theorie war Mehrwegeausbreitung — GPS-Signale, die an den Hochbeeten reflektiert werden. Nach einer ganzen Saison Beobachtung glaube ich, es ist eine Kombination: Mehrwegeausbreitung erzeugt eine momentane Positionsunsicherheit, und 4G-Latenz verhindert, dass die RTK-Korrektur rechtzeitig ankommt. Wenn das Signal an einem Hochbeet reflektiert wird, braucht Flora sofort eine Korrektur um zu bestätigen, dass sie noch innerhalb der Grenze ist. Hat das Mobilnetz genau in diesem Moment einen Mikro-Einbruch beim Ping, kommt die Korrektur nicht rechtzeitig an und sie stoppt. Zwei Probleme, die gleichzeitig auftreten und sich gegenseitig verstärken.
+
+Die eigentliche Lücke ist das Fehlen eines Fehlercode-Sensors in der Integration. Keine Push-Benachrichtigung, wenn sie 20 Minuten lang im Garten feststeht — ich muss die Mammotion-App öffnen, um überhaupt zu merken, dass etwas schiefgelaufen ist. Bis es diesen Sensor gibt, läuft bei mir diese Automatisierung:
+
+```yaml
+alias: Flora — Warnung bei Pause
+trigger:
+  - platform: state
+    entity_id: lawn_mower.flora
+    to: "paused"
+    for:
+      minutes: 10
+action:
+  - service: notify.mobile_app
+    data:
+      title: "Flora hat angehalten"
+      message: "Flora steht seit 10 Minuten auf Pause — bitte Garten prüfen."
+```
+
+Grob, aber es funktioniert. Sie ist entweder festgefahren oder früher fertig als geplant — beides möchte ich wissen.
 
 Die anfängliche Grenzeinrichtung erfordert die App — kein Weg daran vorbei. Ist das einmal erledigt, braucht man die App nie wieder. Aber man braucht sie dieses eine Mal.
 
-Insgesamt: mehr als der richtige Entscheid. Die Fehler sind real, der fehlende Fehlercode-Sensor ist eine echte Lücke — aber ich bin wirklich begeistert von dieser Maschine. Flora ist kein separates Gerät mehr, das einfach herumfährt. Sie ist Teil des Smart Homes, und das möchte man nicht mehr missen, wenn man es einmal erlebt hat.
+Insgesamt: mehr als der richtige Entscheid. Flora ist internet-abhängiger als jedes Gartengerät, das ich je besessen habe — die 4G-Abhängigkeit geht tiefer als man anfangs denkt — aber ich bin wirklich begeistert von ihr. Sie ist jetzt Teil des Smart Homes, und das möchte man nicht mehr missen, wenn man es einmal erlebt hat.
