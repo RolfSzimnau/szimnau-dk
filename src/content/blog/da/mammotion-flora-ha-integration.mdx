@@ -16,7 +16,9 @@ Jeg erstattede den med en **Mammotion Luba Mini 2** (jeg kalder den Flora) tidli
 
 ## Opsætning
 
-Flora bruger GPS + RTK til navigation — intet perimeterkabel. RTK-korrektioner leveres af iNav NetRTK. Grænsen tegnes i Mammotion-appen én gang, og derefter holder klipperen sig inden for koordinaterne. Vision-modulet er et lille kamera på kroppen der registrerer forhindringer.
+Flora bruger GPS + RTK til navigation — intet perimeterkabel. RTK-korrektioner leveres af iNav NetRTK over 4G. Jeg droppede den fysiske RTK-basestation i haven til fordel for Network RTK, som sender korrektionsdata via mobilnettet og Mammotions cloud. Ingen antenne på taget, intet kabel ud i haven. Prisen er, at hvert positionstjek gør en tur via internettet — og det viser sig at have større betydning, end man umiddelbart tror. Mere om det under "Hvad der er træls".
+
+Grænsen tegnes i Mammotion-appen én gang, og derefter holder klipperen sig inden for koordinaterne. Vision-modulet er et lille kamera på kroppen der registrerer forhindringer.
 
 ![Flora efter en tur i haven](/blog-images/Hjem_Luba.jpg)
 
@@ -117,12 +119,44 @@ Modulet kan altså fejle. Vinterpause og fugtdannelse er en kombination, man ska
 
 ## Hvad der er træls
 
-Integrationen har en latens-udfordring. Kommandoer tager 30-60 sekunder at slå igennem. Hvis du trykker `start_mow` og straks tjekker tilstanden, er den stadig `docked`. For automatiseringer er det ligegyldigt. For at sidde og trykke på dashboardet og vente på feedback er det frustrerende.
+Integrationen har en latens-udfordring. Kommandoer tager 30-60 sekunder at slå igennem. Jeg troede længe, det bare var et langsomt API. Efter at have kørt Flora på 4G Network RTK i en hel sæson tror jeg, forklaringen er mere strukturel: Floras hele navigationsloop kører via Mammotions cloud. Hvert RTK-korrektionssignal rejser over 4G til deres servere og tilbage ved hvert enkelt positionstjek. Cloud-API'et er allerede under konstant belastning blot for at holde hende på ret kurs — HA's statustjek må vente i den kø. Det er ikke en fejl, det er arkitekturen.
 
-Jeg kæmper også med en periodisk "Robot out of task area"-fejl — altid i nærheden af no go-zonerne rundt om blomsterbedene. Min teori er multipath-interferens: GPS-signalerne kaster sig af de faste barrierer, så Flora et kort sekund tror, hun er stukket af over grænsen. Så stopper hun og venter.
+Det er stadig irriterende på dashboardet. Mit workaround er et lille script, der sender `start_mow` og tvinger et entity-refresh fem sekunder efter — nok tid til at kommandoen er registreret, hurtigt nok til at dashboardet ikke sidder og ser forkert ud:
 
-Det er netop her, integrationen til Home Assistant virkelig mangler. Der er ingen error code-sensor. Ingen push-besked, når hun sidder forvirret midt i bedene — jeg er nødt til at åbne Mammotion-appen for at opdage, at noget er galt.
+```yaml
+alias: Flora — Start og opdater
+sequence:
+  - service: lawn_mower.start_mow
+    target:
+      entity_id: lawn_mower.flora
+  - delay:
+      seconds: 5
+  - service: homeassistant.update_entity
+    target:
+      entity_id: lawn_mower.flora
+```
+
+"Robot out of task area"-fejlen sker stadig periodisk, altid ved no go-zonerne rundt om blomsterbedene. Min oprindelige teori var ren multipath — GPS-signaler der kastes af de hævede bede. Efter en hel sæson med at observere det tror jeg, det er en kombination: multipath skaber et øjebliks positionsusikkerhed, og 4G-latens forhindrer RTK-korrektionen i at nå frem hurtigt nok til at opklare det. Når signalet bouncer af et højbed, har Flora brug for en øjeblikkelig korrektion for at bekræfte, hun er inden for grænsen. Har mobilnettet et mikro-dyk i ping præcist i det sekund, når korrektionen ikke frem i tide og hun stopper. To problemer der rammer samtidig og gør hinanden værre.
+
+Den reelle mangel er, at der ingen error code-sensor er i integrationen. Ingen push-besked, når hun har stået fastlåst i haven i 20 minutter — jeg er nødt til at åbne Mammotion-appen for at opdage, at noget er galt. Indtil den sensor findes, kører jeg denne automatisering:
+
+```yaml
+alias: Flora — Advarselsbesked ved pause
+trigger:
+  - platform: state
+    entity_id: lawn_mower.flora
+    to: "paused"
+    for:
+      minutes: 10
+action:
+  - service: notify.mobile_app
+    data:
+      title: "Flora er stoppet"
+      message: "Flora har stået på pause i 10 minutter — tjek haven."
+```
+
+Primitiv, men den virker. Hun er enten fastlåst eller færdig tidligere end planlagt — begge dele vil jeg gerne vide.
 
 Initial opsætning af grænsen kræver appen — ingen vej uden om. Når det er gjort én gang behøver du aldrig appen igen. Men du behøver den den første gang.
 
-Alt i alt: mere end det hele værd. Fejlene er reelle, og den manglende error-sensor er en ægte mangel — men jeg er oprigtigt vild med maskinen. Flora er ikke længere et separat apparat der bare kører rundt. Hun er en del af smart-hjemmet, og det er svært at give afkald på, når man først har prøvet det.
+Alt i alt: mere end det hele værd. Flora er mere internet-afhængig end noget haveredskab jeg nogensinde har ejet — 4G-afhængigheden stikker dybere end man umiddelbart forventer — men jeg er oprigtigt vild med hende. Hun er en del af smart-hjemmet nu, og det er svært at give afkald på, når man først har prøvet det.
