@@ -22,7 +22,7 @@ HACS installieren, über Integrationen hinzufügen, Gebiet auswählen. Man bekom
 sensor.energi_data_service    — aktueller Stundenpreis (DKK/kWh inkl. MwSt.)
 ```
 
-Die `today`- und `tomorrow`-Attribute enthalten die vollständigen 24-Stunden-Preisarrays. Die Preise für morgen kommen gegen 13 Uhr, wenn die Nord-Pool-Auktion abrechnet.
+Die Attribute `raw_today` und `raw_tomorrow` enthalten die vollständigen 24-Stunden-Preisarrays als `{hour, price}`-Objekte, wobei `hour` ein ISO-Datetime-String ist. Die Preise für morgen kommen gegen 13 Uhr, wenn die Nord-Pool-Auktion abrechnet.
 
 ## Das Diagramm
 
@@ -38,9 +38,9 @@ series:
   - entity: sensor.energi_data_service
     type: column
     data_generator: |
-      return entity.attributes.today
-        .concat(entity.attributes.tomorrow || [])
-        .map(h => [new Date().setHours(h.hour, 0, 0, 0), h.price]);
+      return entity.attributes.raw_today
+        .concat(entity.attributes.raw_tomorrow || [])
+        .map(h => [new Date(h.hour).getTime(), h.price]);
     color_threshold:
       - value: 0
         color: '#4caf50'
@@ -54,6 +54,8 @@ Grün unter 1 DKK, Orange bis 1,50, Rot darüber. Das `concat` behandelt den Fal
 
 ## Das günstigste Fenster finden
 
+### Als Template-Sensor
+
 Ein Template-Sensor, der den günstigsten zusammenhängenden 2-Stunden-Block findet, der heute noch übrig ist:
 
 ```yaml
@@ -61,14 +63,14 @@ template:
   - sensor:
       - name: "Günstigstes Ladefenster"
         state: >
-          {% set prices = state_attr('sensor.energi_data_service', 'today') %}
+          {% set prices = state_attr('sensor.energi_data_service', 'raw_today') %}
           {% if prices %}
             {% set ns = namespace(best_hour=0, best_avg=999) %}
             {% for i in range(prices | length - 1) %}
               {% set avg = (prices[i].price + prices[i+1].price) / 2 %}
-              {% if avg < ns.best_avg and prices[i].hour >= now().hour %}
+              {% if avg < ns.best_avg and as_datetime(prices[i].hour).hour >= now().hour %}
                 {% set ns.best_avg = avg %}
-                {% set ns.best_hour = prices[i].hour %}
+                {% set ns.best_hour = as_datetime(prices[i].hour).hour %}
               {% endif %}
             {% endfor %}
             {{ '%02d:00' % ns.best_hour }}
@@ -78,6 +80,45 @@ template:
 ```
 
 Wird als `02:00` oder `14:00` auf dem Dashboard angezeigt. Nicht direkt in der Ladeautomatisierung verwendet — die läuft stündlich und entscheidet anhand des aktuellen Preises — aber nützlich zur Überprüfung, ob das Auto zu einer vernünftigen Zeit lädt.
+
+### Als Dashboard-Karte
+
+Wer den Template-Sensor ganz vermeiden möchte: Diese Markdown-Karte berechnet das günstigste Fenster direkt und zeigt auch den morgigen Tag, sobald die Preise verfügbar sind:
+
+```yaml
+type: markdown
+content: >
+  {%- set d=state_attr("sensor.energi_data_service","raw_today") -%}
+  {%- set r=state_attr("sensor.energi_data_service","raw_tomorrow") -%}
+  {%- set tv=state_attr("sensor.energi_data_service","tomorrow_valid") -%}
+  {%- set tm=d|map(attribute="price")|min -%}{%- set th=tm*1.25 -%}
+  {%- set t=namespace(mi=0,s=0,e=0) -%}
+  {%- for h in d -%}{%- if h.price==tm -%}{%- set t.mi=loop.index0 -%}{%- endif -%}{%- endfor -%}
+  {%- set t.s=t.mi -%}{%- set t.e=t.mi -%}
+  {%- for i in range(23) -%}{%- if t.s>0 and d[t.s-1].price<=th -%}{%- set t.s=t.s-1 -%}{%- endif -%}{%- endfor -%}
+  {%- for i in range(23) -%}{%- if t.e<23 and d[t.e+1].price<=th -%}{%- set t.e=t.e+1 -%}{%- endif -%}{%- endfor -%}
+  {%- set ts=t.s -%}{%- set te=t.e+1 -%}{%- set tmi=t.mi -%}
+  {%- if tv and r -%}
+  {%- set rm=r|map(attribute="price")|min -%}{%- set rh=rm*1.25 -%}
+  {%- set n=namespace(mi=0,s=0,e=0) -%}
+  {%- for h in r -%}{%- if h.price==rm -%}{%- set n.mi=loop.index0 -%}{%- endif -%}{%- endfor -%}
+  {%- set n.s=n.mi -%}{%- set n.e=n.mi -%}
+  {%- for i in range(23) -%}{%- if n.s>0 and r[n.s-1].price<=rh -%}{%- set n.s=n.s-1 -%}{%- endif -%}{%- endfor -%}
+  {%- for i in range(23) -%}{%- if n.e<23 and r[n.e+1].price<=rh -%}{%- set n.e=n.e+1 -%}{%- endif -%}{%- endfor -%}
+  {%- set rs=n.s -%}{%- set re=n.e+1 -%}{%- set rmi=n.mi -%}
+  {%- endif -%}
+  ⚡ **Günstigster Strom**
+
+  **Heute** · {{ "%02d:00"|format(ts) }}–{{ "%02d:00"|format(te) }} · niedrigster **{{ "%.2f"|format(tm)|replace(".",",") }} DKK/kWh** um {{ "%02d:00"|format(tmi) }}
+  {%- if tv and r %}
+
+  **Morgen** · {{ "%02d:00"|format(rs) }}–{{ "%02d:00"|format(re) }} · niedrigster **{{ "%.2f"|format(rm)|replace(".",",") }} DKK/kWh** um {{ "%02d:00"|format(rmi) }}
+  {%- endif %}
+
+  💡 Spülmaschine oder Waschmaschine mittags starten, um am meisten zu sparen
+```
+
+Die Logik: Minimumspreis für den Tag finden, dann das Fenster auf alle benachbarten Stunden innerhalb von 25% dieses Minimums ausweiten. Die Karte wird automatisch aktualisiert, sobald sich der Sensor ändert — keine separate Automatisierung nötig.
 
 ## Die Ladeautomatisierung
 
@@ -123,4 +164,4 @@ Es gibt einen `input_boolean.elroq_force_charge`-Override für Morgen, an denen 
 
 Erster vollständiger Monat: ca. 28% niedrigere Ladekosten im Vergleich zu dauerhaftem Nachtladen. Die Einsparungen kommen fast ausschließlich von den Nächten mit großen Preisspreads — es gibt Wochen in Dänemark, in denen der Spread gering ist und die Automatisierung keinen Unterschied macht.
 
-Was ich nicht erwartet hatte: Es veränderte, wie ich über andere Geräte nachdenke. Das Strompreisdiagramm ist jetzt eine der meistgeprüften Karten auf meinem Dashboard, und ich ertappe mich dabei, Spülmaschine und Trockner danach zu timen. Diese Verhaltensänderung spart wahrscheinlich mehr als das automatisierte Laden selbst.
+Was ich nicht erwartet hatte: Es veränderte, wie ich über andere Geräte nachdenke. Das Strompreisdiagramm ist jetzt eine der meistgeprüften Karten auf meinem Dashboard — und ich habe seitdem die Fenster-Karte oben hinzugefügt, die automatisch die beste Zeit zum Betrieb von Spülmaschine oder Waschmaschine anzeigt. Diese Verhaltensänderung spart wahrscheinlich mehr als das automatisierte Laden selbst.

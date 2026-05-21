@@ -22,7 +22,7 @@ Installer fra HACS, tilføj via Integrationer, vælg dit område. Du får:
 sensor.energi_data_service    — aktuel timepris (kr/kWh inkl. moms)
 ```
 
-`today`- og `tomorrow`-attributterne indeholder de fulde 24-timers prisarrays. Morgendagens priser dukker op omkring kl. 13 når Nord Pool-auktionen afregnes.
+`raw_today`- og `raw_tomorrow`-attributterne indeholder de fulde 24-timers prisarrays som `{hour, price}`-objekter, hvor `hour` er en ISO datetime-streng. Morgendagens priser dukker op omkring kl. 13 når Nord Pool-auktionen afregnes.
 
 ## Diagrammet
 
@@ -38,9 +38,9 @@ series:
   - entity: sensor.energi_data_service
     type: column
     data_generator: |
-      return entity.attributes.today
-        .concat(entity.attributes.tomorrow || [])
-        .map(h => [new Date().setHours(h.hour, 0, 0, 0), h.price]);
+      return entity.attributes.raw_today
+        .concat(entity.attributes.raw_tomorrow || [])
+        .map(h => [new Date(h.hour).getTime(), h.price]);
     color_threshold:
       - value: 0
         color: '#4caf50'
@@ -54,6 +54,8 @@ Grøn under 1 kr, orange op til 1,50, rød derover. `concat`-delen håndterer at
 
 ## Det billigste vindue
 
+### Som template-sensor
+
 En template-sensor der finder det billigste sammenhængende 2-timers blok der er tilbage i dag:
 
 ```yaml
@@ -61,14 +63,14 @@ template:
   - sensor:
       - name: "Billigste opladningsvindue"
         state: >
-          {% set prices = state_attr('sensor.energi_data_service', 'today') %}
+          {% set prices = state_attr('sensor.energi_data_service', 'raw_today') %}
           {% if prices %}
             {% set ns = namespace(best_hour=0, best_avg=999) %}
             {% for i in range(prices | length - 1) %}
               {% set avg = (prices[i].price + prices[i+1].price) / 2 %}
-              {% if avg < ns.best_avg and prices[i].hour >= now().hour %}
+              {% if avg < ns.best_avg and as_datetime(prices[i].hour).hour >= now().hour %}
                 {% set ns.best_avg = avg %}
-                {% set ns.best_hour = prices[i].hour %}
+                {% set ns.best_hour = as_datetime(prices[i].hour).hour %}
               {% endif %}
             {% endfor %}
             {{ '%02d:00' % ns.best_hour }}
@@ -78,6 +80,45 @@ template:
 ```
 
 Vises som `02:00` eller `14:00` på dashboardet. Ikke brugt direkte i opladningsautomatiseringen — den kører hvert time og beslutter ud fra den aktuelle pris — men nyttig til at verificere at bilen lader på et fornuftigt tidspunkt.
+
+### Som et dashboard-kort
+
+Vil du undgå template-sensoren helt, kan dette markdown-kort beregne og vise det billigste vindue direkte — inklusiv i morgen når morgendagens priser er tilgængelige:
+
+```yaml
+type: markdown
+content: >
+  {%- set d=state_attr("sensor.energi_data_service","raw_today") -%}
+  {%- set r=state_attr("sensor.energi_data_service","raw_tomorrow") -%}
+  {%- set tv=state_attr("sensor.energi_data_service","tomorrow_valid") -%}
+  {%- set tm=d|map(attribute="price")|min -%}{%- set th=tm*1.25 -%}
+  {%- set t=namespace(mi=0,s=0,e=0) -%}
+  {%- for h in d -%}{%- if h.price==tm -%}{%- set t.mi=loop.index0 -%}{%- endif -%}{%- endfor -%}
+  {%- set t.s=t.mi -%}{%- set t.e=t.mi -%}
+  {%- for i in range(23) -%}{%- if t.s>0 and d[t.s-1].price<=th -%}{%- set t.s=t.s-1 -%}{%- endif -%}{%- endfor -%}
+  {%- for i in range(23) -%}{%- if t.e<23 and d[t.e+1].price<=th -%}{%- set t.e=t.e+1 -%}{%- endif -%}{%- endfor -%}
+  {%- set ts=t.s -%}{%- set te=t.e+1 -%}{%- set tmi=t.mi -%}
+  {%- if tv and r -%}
+  {%- set rm=r|map(attribute="price")|min -%}{%- set rh=rm*1.25 -%}
+  {%- set n=namespace(mi=0,s=0,e=0) -%}
+  {%- for h in r -%}{%- if h.price==rm -%}{%- set n.mi=loop.index0 -%}{%- endif -%}{%- endfor -%}
+  {%- set n.s=n.mi -%}{%- set n.e=n.mi -%}
+  {%- for i in range(23) -%}{%- if n.s>0 and r[n.s-1].price<=rh -%}{%- set n.s=n.s-1 -%}{%- endif -%}{%- endfor -%}
+  {%- for i in range(23) -%}{%- if n.e<23 and r[n.e+1].price<=rh -%}{%- set n.e=n.e+1 -%}{%- endif -%}{%- endfor -%}
+  {%- set rs=n.s -%}{%- set re=n.e+1 -%}{%- set rmi=n.mi -%}
+  {%- endif -%}
+  ⚡ **Billigste strøm**
+
+  **I dag** · {{ "%02d:00"|format(ts) }}–{{ "%02d:00"|format(te) }} · lavest **{{ "%.2f"|format(tm)|replace(".",",") }} kr/kWh** kl. {{ "%02d:00"|format(tmi) }}
+  {%- if tv and r %}
+
+  **I morgen** · {{ "%02d:00"|format(rs) }}–{{ "%02d:00"|format(re) }} · lavest **{{ "%.2f"|format(rm)|replace(".",",") }} kr/kWh** kl. {{ "%02d:00"|format(rmi) }}
+  {%- endif %}
+
+  💡 Start opvaskemaskinen eller vaskemaskinen midt på dagen for at spare mest
+```
+
+Logikken: find minimumsprisen for dagen, udvid derefter vinduet til at inkludere alle tilstødende timer inden for 25% af det minimum. Kortet opdaterer sig automatisk når sensoren ændrer sig — ingen separat automatisering nødvendig.
 
 ## Opladningsautomatiseringen
 
@@ -123,4 +164,4 @@ Der er en `input_boolean.elroq_force_charge`-override til de morgener hvor jeg h
 
 Første hele måned: ca. 28% lavere opladningsomkostning sammenlignet med altid-tændt natopladning. Besparelsen kommer næsten udelukkende fra nætterne med store prisspænd — der er uger i Danmark hvor spændet er lille og automatiseringen ikke gør nogen forskel.
 
-Det jeg ikke forventede: det ændrede hvordan jeg tænker på at køre andre apparater. Elprisdiagrammet er nu et af de mest tjekkkede kort på mit dashboard, og jeg finder mig selv i at time opvaskemaskinen og tørretumbleren ud fra det. Den adfærdsændring sparer sandsynligvis mere end den automatiserede EV-opladning gør.
+Det jeg ikke forventede: det ændrede hvordan jeg tænker på at køre andre apparater. Elprisdiagrammet er nu et af de mest tjekkede kort på mit dashboard — og jeg har siden tilføjet vindue-kortet ovenfor, som automatisk viser det bedste tidspunkt til at køre opvaskemaskinen eller vaskemaskinen. Den adfærdsændring sparer sandsynligvis mere end den automatiserede EV-opladning gør.
