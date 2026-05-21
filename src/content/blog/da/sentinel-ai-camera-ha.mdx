@@ -1,8 +1,8 @@
 ---
 title: "AI-kamera i Home Assistant — Notifikationer der rent faktisk giver mening"
-description: "Sådan fik jeg Sentinel-kameraet til at sende nyttige beskeder i stedet for 40 bevægelsesbeskeder om dagen. LLM Vision, armed_away som eneste betingelse, og oprydning fra 5 til 3 automatiseringer."
+description: "Sådan fik jeg Sentinel-kameraet til at sende nyttige beskeder i stedet for 40 bevægelsesbeskeder om dagen — én automatisering, en lydløs-kontakt og handlingsknapper."
 pubDate: 2025-02-07
-tags: ["kamera", "ai-vision", "sikkerhed", "home-assistant"]
+tags: ["kamera", "sikkerhed", "home-assistant"]
 lang: "da"
 translationKey: "sentinel-ai-camera-ha"
 heroImage: "/blog-images/overvagning-sentinel.jpg"
@@ -10,7 +10,7 @@ heroImage: "/blog-images/overvagning-sentinel.jpg"
 
 De første par uger efter jeg installerede Sentinel-kameraet havde jeg bevægelsesnotifikationer slået til. Hver eneste notifikation sagde "Bevægelse registreret." Fugle, skygger, en plastikpose der blæste forbi linsen klokken tre om natten. Jeg slog dem alle fra og lod kameraet sidde der og ikke gøre ret meget nyttigt i endnu en måned.
 
-Løsningen var to ting i den rigtige rækkefølge: LLM Vision til beskrivelser og `armed_away` som den eneste betingelse der egentlig betyder noget.
+Løsningen var enklere end forventet: trigger kun på person og køretøj — ikke rå bevægelse — og giv notifikationen tre knapper der rent faktisk gør noget.
 
 ## Hvad integrationen giver
 
@@ -25,100 +25,120 @@ binary_sensor.sentinel_vehicle
 
 Person og køretøj kommer fra kameraets eget AI-chip. Rimelig præcis — bedre end ren bevægelse, ikke fejlfri. Dyresensoren har fanget rigtige ræve og også en stor plastikpose der bevægede sig på en måde der åbenbart lignede et levende væsen.
 
-## LLM Vision
+## Én automatisering for begge triggers
 
-[LLM Vision](https://github.com/valentinfrlch/ha-llmvision)-integrationen (HACS) henter et snapshot fra kameraet og sender det til en sprogmodel med en prompt. Svaret kommer tilbage som en streng du kan bruge i en notifikation.
-
-LLM Vision understøtter OpenAI, Anthropic, Google og lokale Ollama-modeller. OpenAI er hvad jeg bruger — du skal bruge en API-nøgle fra platform.openai.com. GPT-4o-mini koster brøkdele af en øre per billede; ved én eller to køretøjshændelser om dagen er det ubetydeligt.
+Person- og køretøjshændelser går gennem én enkelt automatisering i `single`-tilstand. Tilstanden håndterer deduplicering — hvis sensoren triggerer igen mens automatiseringen stadig kører (inkl. 60 sekunders cooldown-forsinkelse til sidst), kasseres triggeren lydløst.
 
 ```yaml
-service: llmvision.image_analyzer
-data:
-  provider: openai
-  model: gpt-4o-mini
-  message: >
-    Beskriv hvad du ser i én sætning, under 20 ord.
-    Fokusér på hvem eller hvad der er til stede og hvad de gør.
-  image_entities:
-    - camera.sentinel
-  max_tokens: 60
-response_variable: ai_result
-```
-
-Kvaliteten varierer. "Person går mod hoveddøren med en pakke" er glimrende. "En figur er synlig i billedet nær en struktur" er mindre glimrende. Gennemsnitligt er det godt nok til at man på et øjeblik kan se om en notifikation er værd at åbne.
-
-Jeg styrer det med `input_boolean.sentinel_ai_analysis`. Når det er slået fra sender notifikationerne stadig — bare med en generisk besked og snapshot. Kontakten eksisterer fordi jeg ikke har brug for AI-beskrivelser klokken to om natten når notifikationen allerede vækker mig.
-
-## Den eneste betingelse der betyder noget
-
-Alt går gennem én kontrol: `alarm_control_panel.home_alarm` tilstand `armed_away`. Er jeg hjemme — ingen notifikationer.
-
-```yaml
-alias: Sentinel — Personalarm
+alias: Sentinel — Kamera & Notifikation
+mode: single
+max_exceeded: silent
 trigger:
   - platform: state
     entity_id: binary_sensor.sentinel_person
+    from: "off"
     to: "on"
+    id: person
+  - platform: state
+    entity_id: binary_sensor.sentinel_vehicle
+    from: "off"
+    to: "on"
+    id: bil
 condition:
   - condition: state
-    entity_id: alarm_control_panel.home_alarm
-    state: armed_away
+    entity_id: input_boolean.sentinel_notifikation_lydlos
+    state: "off"
 action:
-  - choose:
-      - conditions:
-          - condition: state
-            entity_id: input_boolean.sentinel_ai_analysis
-            state: "on"
-        sequence:
-          - service: llmvision.image_analyzer
-            data:
-              provider: openai
-              model: gpt-4o-mini
-              message: Beskriv hvad du ser i én sætning, under 20 ord.
-              image_entities: [camera.sentinel]
-              max_tokens: 60
-            response_variable: ai_result
-          - service: notify.alle_enheder
-            data:
-              title: "Person ved kamera"
-              message: "{{ ai_result.response_text }}"
-              data:
-                image: /api/camera_proxy/camera.sentinel
-    default:
-      - service: notify.alle_enheder
-        data:
-          title: "Person ved kamera"
-          message: "Tjek snapshot."
-          data:
-            image: /api/camera_proxy/camera.sentinel
+  - variables:
+      notif_title: "{{ '\U0001F697 Bil ved indkørslen' if trigger.id == 'bil' else '\U0001F464 Person ved indkørslen' }}"
+      notif_message: "{{ 'Sentinel har registreret et køretøj' if trigger.id == 'bil' else 'Sentinel har registreret en person' }}"
+  - action: camera.snapshot
+    data:
+      entity_id: camera.sentinel_fluent
+      filename: /config/www/sentinel_latest.jpg
+  - action: notify.alle_enheder
+    data:
+      title: "{{ notif_title }}"
+      message: "{{ notif_message }}"
+      data:
+        ttl: 0
+        priority: high
+        channel: Overvågning
+        tag: sentinel_alert
+        entity_id: camera.sentinel_fluent
+        camera_stream: true
+        image: /api/camera_proxy/camera.sentinel_snapshots_fluent
+        actions:
+          - action: URI
+            title: Se Kamera
+            uri: homeassistant://navigate/nyt-mobil/overvagning
+          - action: sentinel_flood_on
+            title: Tænd Flood
+          - action: sentinel_mute_30
+            title: Lydløs 30 min
+        clickAction: /nyt-mobil/overvagning
+  - delay:
+      seconds: 60
 ```
 
-## Fra 5 til 3 automatiseringer
+`camera.snapshot`-kaldet gemmer et nyt stillbillede til `/local/sentinel_latest.jpg` inden notifikationen sendes. Selve notifikationen indeholder en live kamera-stream (`camera_stream: true`) — på Android med HA companion-appen udvides den til et live feed direkte i notifikationen.
 
-Jeg havde samlet fem automatiseringer op omkring dette kamera. Bevægelsesalarm, personalarm, en separat der kaldte LLM Vision og gemte resultatet, en natundertrykkelse der slukkede for alarmer mellem midnat og 7, og en rate-limiter så jeg ikke brændte API-kreditter af.
+## Lydløs-kontakten
 
-Problemet var ikke nogen enkelt automatisering — det var at de alle var delvist ansvarlige for den samme beslutning. Om der skulle notificeres. Natundertrykkelsen kom ind imellem i konflikt med `armed_away`-logikken. Rate-limiteren var et stumpt instrument der lejlighedsvis tav en legitim alarm ned.
+Den eneste betingelse er `input_boolean.sentinel_notifikation_lydlos` med tilstanden `off`. Det er portvogtoren. Den er enklere end en `armed_away`-betingelse — ingen alarmcentral nødvendig, fungerer uanset hjemme/væk-tilstand, og selve notifikationen kan slå den til via Lydløs-knappen.
 
-Jeg slettede alle fem og startede forfra med tre:
+En separat automatisering nulstiller den til `off` ved midnat hver nat, så jeg aldrig behøver huske at slå den fra igen.
 
-1. **Personalarm** — håndterer AI-valget internt med `choose`
-2. **Køretøjsalarm** — ingen AI, bare snapshot + notifikation
-3. **AI-kontakt nulstilling** — kører ved midnat og slår `sentinel_ai_analysis` til igen
+## Handlingsknapper
 
-Natundertrykkelsen er væk fordi `armed_away` allerede håndterer det. Rate-limiteren er væk fordi AI-kontakten gør det job mere bevidst.
+Notifikationen har tre knapper:
+
+- **Se Kamera** — dybde-link til Overvågning-visningen i HA companion-appen
+- **Tænd Flood** — tænder `light.sentinel_floodlight` via en separat automatisering der lytter efter `sentinel_flood_on`-mobilhandlingshændelsen
+- **Lydløs 30 min** — slår lydløs-kontakten til i 30 minutter og nulstiller den derefter
+
+Håndtering af lydløs-handlingen:
+
+```yaml
+alias: Sentinel — Lydløs 30 min
+trigger:
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: sentinel_mute_30
+action:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.sentinel_notifikation_lydlos
+  - delay:
+      minutes: 30
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.sentinel_notifikation_lydlos
+```
+
+## Fire TV-notifikation
+
+Den samme automatisering sender også til TV'et i stuen:
+
+```yaml
+  - action: notify.android_tv_fire_tv_192_168_1_40
+    data:
+      message: "{{ '\U0001F697 Bil registreret ved indkørslen' if trigger.id == 'bil' else '\U0001F464 Person registreret udenfor' }}"
+      data:
+        image: "http://192.168.1.171:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
+        interrupt: 1
+```
+
+`?t=`-parameteren tvinger et nyt billede til at blive hentet — uden den viser Fire TV et cachet stillbillede fra den forrige hændelse. `interrupt: 1` får det til at dukke op selv under afspilning.
 
 ## Dashboard
 
-Dashboardet bruger `custom:advanced-camera-card` (HACS) til live-feed og `custom:mushroom-chips-card` (HACS, Mushroom-suite) til statuskortene:
+Overvågnings-visningen viser statuskort og en 24-timers logbog:
 
 ```yaml
 type: vertical-stack
 cards:
-  - type: custom:advanced-camera-card
-    cameras:
-      - camera_entity: camera.sentinel
-    view:
-      default: live
   - type: custom:mushroom-chips-card
     chips:
       - type: entity
@@ -129,8 +149,8 @@ cards:
         entity: binary_sensor.sentinel_vehicle
         icon: mdi:car
       - type: entity
-        entity: input_boolean.sentinel_ai_analysis
-        icon: mdi:brain
+        entity: input_boolean.sentinel_notifikation_lydlos
+        icon: mdi:bell-off
         tap_action:
           action: toggle
   - type: logbook
@@ -140,4 +160,4 @@ cards:
     hours_to_show: 24
 ```
 
-Logbogen i bunden er den del jeg faktisk bruger mest. Efter en rejse ruller jeg 24-timers loggen igennem for at se hvad der triggede mens jeg var væk. Det er mindre angstfremkaldende end at genafspille push-notifikationer én ad gangen.
+Logbogen er det jeg bruger mest efter en rejse — rul gennem 24 timers hændelser i ét sweep i stedet for at gengive push-notifikationer én ad gangen.

@@ -1,8 +1,8 @@
 ---
 title: "KI-Kamera in Home Assistant — Benachrichtigungen, die keinen verrückt machen"
-description: "Wie ich die Sentinel-Kamera dazu gebracht habe, nützliche Meldungen zu schicken statt 40 Bewegungsalarme am Tag — LLM Vision, armed_away als einzige Bedingung, 5 Automatisierungen auf 3 reduziert."
+description: "Wie ich die Sentinel-Kamera dazu gebracht habe, nützliche Meldungen zu schicken statt 40 Bewegungsalarme am Tag — eine Automatisierung, ein Stummschalten-Schalter und Aktionsschaltflächen."
 pubDate: 2025-02-07
-tags: ["kamera", "ki-vision", "sicherheit", "home-assistant"]
+tags: ["kamera", "sicherheit", "home-assistant"]
 lang: "de"
 translationKey: "sentinel-ai-camera-ha"
 heroImage: "/blog-images/overvagning-sentinel.jpg"
@@ -10,7 +10,7 @@ heroImage: "/blog-images/overvagning-sentinel.jpg"
 
 Die ersten zwei Wochen nach der Installation der Sentinel-Kamera hatte ich Bewegungsbenachrichtigungen aktiviert. Jede einzelne sagte "Bewegung erkannt." Vögel, Schatten, eine Plastiktüte, die nachts um drei an der Linse vorbeiwehte. Ich schaltete alle aus und ließ die Kamera für einen weiteren Monat nutzlos herumstehen.
 
-Die Lösung waren zwei Dinge in der richtigen Reihenfolge: LLM Vision für Beschreibungen und `armed_away` als einzige Bedingung, die wirklich zählt.
+Die Lösung war einfacher als erwartet: nur bei Personen und Fahrzeugen auslösen — nicht bei roher Bewegungserkennung — und der Benachrichtigung drei Schaltflächen geben, die tatsächlich etwas tun.
 
 ## Was die Integration bietet
 
@@ -25,97 +25,121 @@ binary_sensor.sentinel_vehicle
 
 Personen- und Fahrzeugerkennung kommen vom KI-Chip der Kamera. Ziemlich präzise — besser als reine Bewegungserkennung, nicht fehlerfrei. Der Tiersensor hat echte Füchse erkannt und auch, denkwürdig, eine große Plastiktüte, die sich auf eine Weise bewegte, die offenbar lebendig wirkte.
 
-## LLM Vision
+## Eine Automatisierung für beide Auslöser
 
-Die [LLM Vision](https://github.com/valentinfrlch/ha-llmvision)-Integration (HACS) holt einen Snapshot von der Kamera und sendet ihn mit einem Prompt an ein Sprachmodell. Für den `openai`-Provider wird ein OpenAI API-Schlüssel benötigt — `gpt-4o-mini` ist günstig (Bruchteile eines Cents pro Bild), aber kostet etwas. Die Ausgaben summieren sich bei häufig ausgelösten Kameras schnell, daher der `sentinel_ai_analysis`-Schalter. Die Antwort kommt als Zeichenkette zurück, die in einer Benachrichtigung verwendet werden kann.
-
-```yaml
-service: llmvision.image_analyzer
-data:
-  provider: openai
-  model: gpt-4o-mini
-  message: >
-    Beschreibe was du siehst in einem Satz, unter 20 Wörter.
-    Fokussiere dich darauf, wer oder was anwesend ist und was sie tun.
-  image_entities:
-    - camera.sentinel
-  max_tokens: 60
-response_variable: ai_result
-```
-
-Die Qualität schwankt. "Person geht auf die Haustür zu und trägt ein Paket" ist gut. "Eine Gestalt ist im Bild in der Nähe einer Struktur sichtbar" ist weniger gut. Im Durchschnitt reicht es, um auf einen Blick zu sehen, ob eine Benachrichtigung es wert ist, sie zu öffnen.
-
-Ich steuere das mit `input_boolean.sentinel_ai_analysis`. Ist es ausgeschaltet, gehen Benachrichtigungen trotzdem raus — nur mit einer generischen Nachricht und dem Snapshot. Der Schalter existiert, weil ich nachts um zwei keine KI-Beschreibungen brauche, wenn die Benachrichtigung mich bereits aufweckt.
-
-## Die einzige Bedingung, die zählt
-
-Alles läuft durch eine Prüfung: `alarm_control_panel.home_alarm` Zustand `armed_away`. Bin ich zuhause — keine Benachrichtigungen.
+Personen- und Fahrzeugereignisse laufen durch eine einzige Automatisierung im `single`-Modus. Der Modus übernimmt die Deduplizierung — wenn der Sensor erneut auslöst, während die Automatisierung noch läuft (einschließlich einer 60-Sekunden-Cooldown-Verzögerung am Ende), wird der Auslöser lautlos verworfen.
 
 ```yaml
-alias: Sentinel — Personenalarm
+alias: Sentinel — Kamera & Benachrichtigung
+mode: single
+max_exceeded: silent
 trigger:
   - platform: state
     entity_id: binary_sensor.sentinel_person
+    from: "off"
     to: "on"
+    id: person
+  - platform: state
+    entity_id: binary_sensor.sentinel_vehicle
+    from: "off"
+    to: "on"
+    id: fahrzeug
 condition:
   - condition: state
-    entity_id: alarm_control_panel.home_alarm
-    state: armed_away
+    entity_id: input_boolean.sentinel_notifikation_lydlos
+    state: "off"
 action:
-  - choose:
-      - conditions:
-          - condition: state
-            entity_id: input_boolean.sentinel_ai_analysis
-            state: "on"
-        sequence:
-          - service: llmvision.image_analyzer
-            data:
-              provider: openai
-              model: gpt-4o-mini
-              message: Beschreibe was du siehst in einem Satz, unter 20 Wörter.
-              image_entities: [camera.sentinel]
-              max_tokens: 60
-            response_variable: ai_result
-          - service: notify.all_devices
-            data:
-              title: "Person an der Kamera"
-              message: "{{ ai_result.response_text }}"
-              data:
-                image: /api/camera_proxy/camera.sentinel
-    default:
-      - service: notify.all_devices
-        data:
-          title: "Person an der Kamera"
-          message: "Snapshot prüfen."
-          data:
-            image: /api/camera_proxy/camera.sentinel
+  - variables:
+      notif_title: "{{ '\U0001F697 Fahrzeug an der Einfahrt' if trigger.id == 'fahrzeug' else '\U0001F464 Person an der Einfahrt' }}"
+      notif_message: "{{ 'Sentinel hat ein Fahrzeug erkannt' if trigger.id == 'fahrzeug' else 'Sentinel hat eine Person erkannt' }}"
+  - action: camera.snapshot
+    data:
+      entity_id: camera.sentinel_fluent
+      filename: /config/www/sentinel_latest.jpg
+  - action: notify.alle_enheder
+    data:
+      title: "{{ notif_title }}"
+      message: "{{ notif_message }}"
+      data:
+        ttl: 0
+        priority: high
+        channel: Sicherheit
+        tag: sentinel_alert
+        entity_id: camera.sentinel_fluent
+        camera_stream: true
+        image: /api/camera_proxy/camera.sentinel_snapshots_fluent
+        actions:
+          - action: URI
+            title: Kamera anzeigen
+            uri: homeassistant://navigate/nyt-mobil/overvagning
+          - action: sentinel_flood_on
+            title: Flutlicht einschalten
+          - action: sentinel_mute_30
+            title: 30 Min. stumm
+        clickAction: /nyt-mobil/overvagning
+  - delay:
+      seconds: 60
 ```
 
-## Von 5 auf 3 Automatisierungen
+Der `camera.snapshot`-Aufruf speichert ein frisches Standbild unter `/local/sentinel_latest.jpg`, bevor die Benachrichtigung gesendet wird. Die Benachrichtigung selbst enthält einen Live-Kamera-Stream (`camera_stream: true`) — auf Android mit der HA-Companion-App wird dieser direkt in der Benachrichtigung angezeigt.
 
-Ich hatte fünf Automatisierungen um diese Kamera aufgebaut. Bewegungsalarm, Personenalarm, eine separate die LLM Vision aufrief und das Ergebnis speicherte, eine Nachtsupprimierung die Alarme zwischen Mitternacht und 7 Uhr abschaltete, und ein Rate-Limiter damit ich keine API-Credits verbrannte.
+## Der Stummschalten-Schalter
 
-Das Problem war nicht eine einzelne Automatisierung — es war, dass sie alle teilweise für dieselbe Entscheidung verantwortlich waren. Ob benachrichtigt werden soll. Die Nachtsupprimierung kam manchmal in Konflikt mit der `armed_away`-Logik. Der Rate-Limiter war ein stumpfes Instrument, das gelegentlich einen legitimen Alarm zum Schweigen brachte.
+Die einzige Bedingung ist `input_boolean.sentinel_notifikation_lydlos` (Benachrichtigung stumm) mit dem Zustand `off`. Das ist das einzige Gate. Es ist einfacher als eine `armed_away`-Bedingung — kein Alarmfeld erforderlich, funktioniert unabhängig vom Zuhause/Abwesend-Status, und die Benachrichtigung selbst kann ihn über die Stumm-Schaltfläche umschalten.
 
-Ich löschte alle fünf und fing mit dreien neu an:
+Eine separate Automatisierung setzt ihn jede Nacht um Mitternacht auf `off` zurück, sodass ich nie daran denken muss, ihn wieder einzuschalten.
 
-1. **Personenalarm** — verwaltet die KI-Wahl intern mit `choose`
-2. **Fahrzeugsalarm** — keine KI, nur Snapshot + Benachrichtigung
-3. **KI-Schalter-Reset** — läuft um Mitternacht, schaltet `sentinel_ai_analysis` wieder ein
+## Aktionsschaltflächen
 
-Die Nachtsupprimierung ist weg, weil `armed_away` das bereits übernimmt. Der Rate-Limiter ist weg, weil der KI-Schalter diese Aufgabe bewusster erfüllt.
+Die Benachrichtigung hat drei Schaltflächen:
 
-## Dashboard
+- **Kamera anzeigen** — Deep-Link zur Sicherheitsansicht in der HA-Companion-App
+- **Flutlicht einschalten** — aktiviert `light.sentinel_floodlight` über eine separate Automatisierung, die auf das `sentinel_flood_on`-Mobile-Aktionsereignis hört
+- **30 Min. stumm** — schaltet den Stummschalten-Schalter für 30 Minuten ein und setzt ihn danach zurück
+
+Behandlung der Stumm-Aktion:
+
+```yaml
+alias: Sentinel — 30 Min. stumm
+trigger:
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: sentinel_mute_30
+action:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.sentinel_notifikation_lydlos
+  - delay:
+      minutes: 30
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.sentinel_notifikation_lydlos
+```
+
+## Fire TV-Benachrichtigung
+
+Dieselbe Automatisierung sendet auch an den Fernseher im Wohnzimmer:
+
+```yaml
+  - action: notify.android_tv_fire_tv_192_168_1_40
+    data:
+      message: "{{ '\U0001F697 Fahrzeug an der Einfahrt erkannt' if trigger.id == 'fahrzeug' else '\U0001F464 Person draußen erkannt' }}"
+      data:
+        image: "http://192.168.1.171:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
+        interrupt: 1
+```
+
+Der `?t=`-Parameter erzwingt das Laden eines neuen Bildes — ohne ihn zeigt der Fire TV ein zwischengespeichertes Standbild vom vorherigen Ereignis. `interrupt: 1` lässt es auch während der Wiedergabe erscheinen.
+
+## Das Dashboard
+
+Die Sicherheitsansicht zeigt Status-Chips und ein 24-Stunden-Logbuch:
 
 ```yaml
 type: vertical-stack
 cards:
-  - type: custom:advanced-camera-card  # HACS
-    cameras:
-      - camera_entity: camera.sentinel
-    view:
-      default: live
-  - type: custom:mushroom-chips-card  # HACS
+  - type: custom:mushroom-chips-card
     chips:
       - type: entity
         entity: binary_sensor.sentinel_person
@@ -125,8 +149,8 @@ cards:
         entity: binary_sensor.sentinel_vehicle
         icon: mdi:car
       - type: entity
-        entity: input_boolean.sentinel_ai_analysis
-        icon: mdi:brain
+        entity: input_boolean.sentinel_notifikation_lydlos
+        icon: mdi:bell-off
         tap_action:
           action: toggle
   - type: logbook
@@ -136,4 +160,4 @@ cards:
     hours_to_show: 24
 ```
 
-Das Logbuch unten ist das, was ich tatsächlich am meisten nutze. Nach einer Reise scrolle ich das 24-Stunden-Protokoll durch, um zu sehen, was ausgelöst hat während ich weg war. Weniger Angst einflößend als Push-Benachrichtigungen einzeln nachzuspielen.
+Das Logbuch unten ist das, was ich nach einer Reise am häufigsten nutze — einmal durch 24 Stunden Ereignisse scrollen, statt Push-Benachrichtigungen einzeln nachzuspielen.
