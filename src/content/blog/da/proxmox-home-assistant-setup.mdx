@@ -41,23 +41,33 @@ Installationsprogrammet er ligetil. Værd at lægge mærke til:
 - **Management-IP**: giv den en statisk IP nu — du tilgår web-UI'et på `https://DIN-IP:8006` fra det tidspunkt
 - **Hostname**: jeg bruger `proxmox.local` — let at huske, virker med mDNS
 
-Opdater pakkelisten og anvend eventuelle ventende opdateringer fra Proxmox-skallen inden du gør andet.
+Det første du bør køre efter installationen er Proxmox post-install-hjælperen fra [community-scripts.github.io/ProxmoxVE](https://community-scripts.github.io/ProxmoxVE/) — en community-vedligeholdt samling af scripts til Proxmox. Post-install-scriptet fjerner abonnements-nag-skærmen, skifter til det gratis repository og anvender fornuftige startindstillinger:
+
+```bash
+bash -c "$(wget -qLO - https://github.com/community-scripts/ProxmoxVE/raw/main/misc/post-pve-install.sh)"
+```
 
 ## Oprettelse af Home Assistant VM
 
-Proxmox-community'et vedligeholder et hjælpescript der automatiserer HA OS VM-oprettelsen. Kør dette i Proxmox-skallen:
+Den samme community-scripts-samling indeholder et script der fuldt automatiserer HA OS VM — det downloader det seneste billede, opretter VM'en med fornuftige standardindstillinger og starter den:
 
 ```bash
-bash -c "$(wget -qLO - https://github.com/tteck/Proxmox/raw/main/vm/haos-vm.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/haos-vm.sh)"
 ```
 
-Scriptet downloader det seneste HA OS-billede, opretter en VM med fornuftige standardindstillinger og starter den. Jeg bruger disse ressourceindstillinger:
+Jeg bruger disse ressourceindstillinger:
 
 ```
 RAM:    4096 MB
 Kerner: 4 vCPU
 Disk:   32 GB (kan udvides)
 Net:    VirtIO bridge (vmbr0)
+```
+
+Et valgfrit men nyttigt script fra samme samling: CPU scaling governor. Det lader dig låse CPU'en til performance-tilstand i stedet for at lade styresystemet nedskalere den, hvilket hjælper med at holde HA's responstider konsistente:
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/scaling-governor.sh)"
 ```
 
 4 GB RAM lyder som meget til HA alene, men add-ons spiser hukommelse hurtigt. Kørende det fulde setup — HA OS, Matter-server, Mosquitto broker, Studio Code Server og et par til — ser jeg typisk 2,5–3 GB i brug.

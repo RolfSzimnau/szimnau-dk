@@ -41,23 +41,33 @@ The installer is straightforward. Things worth paying attention to:
 - **Management IP**: give it a static IP now — you'll be accessing the web UI at `https://YOUR-IP:8006` from that point on
 - **Hostname**: I use `proxmox.local` — easy to remember, works with mDNS
 
-After install, update the package list and apply any pending updates from the Proxmox shell before doing anything else.
+After install, the first thing to run is the Proxmox post-install helper from [community-scripts.github.io/ProxmoxVE](https://community-scripts.github.io/ProxmoxVE/) — a community-maintained collection of scripts for Proxmox. The post-install script removes the subscription nag, switches to the free repository, and applies sensible initial settings:
+
+```bash
+bash -c "$(wget -qLO - https://github.com/community-scripts/ProxmoxVE/raw/main/misc/post-pve-install.sh)"
+```
 
 ## Creating the Home Assistant VM
 
-The Proxmox community maintains a helper script that automates the HA OS VM creation. Run this in the Proxmox shell:
+The same community-scripts collection includes a script that fully automates the HA OS VM — it downloads the latest image, creates the VM with sensible defaults, and boots it:
 
 ```bash
-bash -c "$(wget -qLO - https://github.com/tteck/Proxmox/raw/main/vm/haos-vm.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/haos-vm.sh)"
 ```
 
-The script downloads the latest HA OS image, creates a VM with sensible defaults, and boots it. I use these resource settings:
+I use these resource settings:
 
 ```
 RAM:   4096 MB
 Cores: 4 vCPU
 Disk:  32 GB (expandable later)
 Net:   VirtIO bridge (vmbr0)
+```
+
+One optional but useful script from the same collection: the CPU scaling governor. It lets you lock the CPU to performance mode rather than letting the OS downclock it, which helps keep HA response times consistent:
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/scaling-governor.sh)"
 ```
 
 4 GB RAM sounds like a lot for HA alone, but add-ons eat memory fast. Running the full stack — HA OS, Matter server, Mosquitto broker, Studio Code Server, and a few more — I typically see 2.5–3 GB in use.
