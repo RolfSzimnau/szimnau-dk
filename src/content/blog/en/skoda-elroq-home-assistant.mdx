@@ -17,15 +17,15 @@ The [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) integration
 After setup, the Elroq shows up as a device with:
 
 ```
-sensor.elroq_battery_level       — state of charge (%)
-sensor.elroq_charging_power      — current charge rate (kW)
-sensor.elroq_range               — estimated range (km)
-sensor.elroq_target_soc          — charge limit set in car (%)
-binary_sensor.elroq_plugged_in
-binary_sensor.elroq_charging
-binary_sensor.elroq_doors_locked
-climate.elroq_air_conditioning   — remote HVAC
-switch.elroq_charging            — start/stop
+sensor.skoda_elroq_battery_level       — state of charge (%)
+sensor.skoda_elroq_charging_power      — current charge rate (kW)
+sensor.skoda_elroq_range               — estimated range (km)
+number.skoda_elroq_charge_limit          — charge limit set in car (%)
+binary_sensor.skoda_elroq_charger_connected
+sensor.skoda_elroq_charging_state
+binary_sensor.skoda_elroq_doors_locked
+climate.skoda_elroq_air_conditioning   — remote HVAC
+switch.skoda_elroq_charging            — start/stop
 ```
 
 The `climate` entity is the one I use most. Set it to a temperature, call `climate.turn_on`, and the car starts heating or cooling from whatever power source it's connected to. If it's plugged in, it draws from the grid. If not, from the battery — which is why I skip pre-conditioning if the battery is below 30%.
@@ -52,30 +52,30 @@ card_mod:
       content: '' !important;
       position: absolute !important;
       left: 0; top: 0;
-      width: {{ states('sensor.elroq_battery_level') | int(0) }}% !important;
+      width: {{ states('sensor.skoda_elroq_battery_level') | int(0) }}% !important;
       height: 100% !important;
       background: linear-gradient(90deg, rgba(76,175,80,0.18), rgba(129,199,132,0.05)) !important;
       pointer-events: none !important;
     }
 cards:
   - type: custom:mushroom-template-card
-    primary: "{{ states('sensor.elroq_battery_level') }}%  ·  {{ states('sensor.elroq_range') }} km"
+    primary: "{{ states('sensor.skoda_elroq_battery_level') }}%  ·  {{ states('sensor.skoda_elroq_range') }} km"
     secondary: Škoda Elroq
     icon: mdi:car-electric
     icon_color: >
-      {% set soc = states('sensor.elroq_battery_level') | int(0) %}
+      {% set soc = states('sensor.skoda_elroq_battery_level') | int(0) %}
       {% if soc > 60 %}green{% elif soc > 30 %}orange{% else %}red{% endif %}
 ```
 
 The gradient is subtle — you don't really notice it as a progress bar, it just makes the card feel different at 20% versus 80%. Took a few iterations to get the opacity right so it reads as information without dominating the card.
 
-The car icon gets one more layer when `binary_sensor.elroq_charging` is on: a glowing ring that cycles through cyan and green — the same colors as the LED ring on the Elroq's front bumper while it charges. Add a `card_mod` block directly on the mushroom card inside the stack:
+The car icon gets one more layer when `sensor.skoda_elroq_charging_state` is `charging`: a glowing ring that cycles through cyan and green — the same colors as the LED ring on the Elroq's front bumper while it charges. Add a `card_mod` block directly on the mushroom card inside the stack:
 
 ```yaml
     card_mod:
       style: |
         mushroom-shape-icon {
-          {% if is_state('binary_sensor.elroq_charging', 'on') %}
+          {% if is_state('sensor.skoda_elroq_charging_state', 'charging') %}
           animation: charge-ring 2s linear infinite;
           {% endif %}
         }
@@ -104,15 +104,15 @@ condition:
   - condition: template
     value_template: "{{ 'Drive to office' in trigger.calendar_event.summary }}"
   - condition: numeric_state
-    entity_id: sensor.elroq_battery_level
+    entity_id: sensor.skoda_elroq_battery_level
     above: 30
 action:
   - service: climate.turn_on
     target:
-      entity_id: climate.elroq_air_conditioning
+      entity_id: climate.skoda_elroq_air_conditioning
   - service: climate.set_temperature
     target:
-      entity_id: climate.elroq_air_conditioning
+      entity_id: climate.skoda_elroq_air_conditioning
     data:
       temperature: 21
 ```
@@ -125,12 +125,12 @@ One problem: the calendar trigger fires based on the event summary matching exac
 
 Forgetting to plug in is the one failure mode that actually costs something. The car sits overnight, draws nothing from the grid, and you leave in the morning with whatever charge you had the day before.
 
-The AlertTicker card handles this. Between 21:00 and 06:00, if `binary_sensor.elroq_plugged_in` is off, a warning banner appears across every dashboard view:
+The AlertTicker card handles this. Between 21:00 and 06:00, if `binary_sensor.skoda_elroq_charger_connected` is off, a warning banner appears across every dashboard view:
 
 ```yaml
 type: custom:alert-ticker-card
 alerts:
-  - entity: binary_sensor.elroq_plugged_in
+  - entity: binary_sensor.skoda_elroq_charger_connected
     state: "off"
     message: "Elroq is not plugged in"
     theme: warning

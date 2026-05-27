@@ -15,15 +15,15 @@ Min Škoda er det eneste i huset der ikke taler med Home Assistant automatisk. A
 ## Hvad du faktisk får
 
 ```
-sensor.elroq_battery_level       — ladestilstand (%)
-sensor.elroq_charging_power      — aktuel ladehastighed (kW)
-sensor.elroq_range               — estimeret rækkevidde (km)
-sensor.elroq_target_soc          — lademål sat i bilen (%)
-binary_sensor.elroq_plugged_in
-binary_sensor.elroq_charging
-binary_sensor.elroq_doors_locked
-climate.elroq_air_conditioning   — fjernbetjent HVAC
-switch.elroq_charging            — start/stop
+sensor.skoda_elroq_battery_level       — ladestilstand (%)
+sensor.skoda_elroq_charging_power      — aktuel ladehastighed (kW)
+sensor.skoda_elroq_range               — estimeret rækkevidde (km)
+number.skoda_elroq_charge_limit          — lademål sat i bilen (%)
+binary_sensor.skoda_elroq_charger_connected
+sensor.skoda_elroq_charging_state
+binary_sensor.skoda_elroq_doors_locked
+climate.skoda_elroq_air_conditioning   — fjernbetjent HVAC
+switch.skoda_elroq_charging            — start/stop
 ```
 
 `climate`-entiteten er den jeg bruger mest. Sæt en temperatur, kald `climate.turn_on`, og bilen begynder at varme eller køle fra den strømkilde den er tilsluttet. Er den i stikkontakt, trækker den fra nettet. Er den ikke — fra batteriet. Derfor springer jeg forvarming over hvis batteriet er under 30%.
@@ -50,30 +50,30 @@ card_mod:
       content: '' !important;
       position: absolute !important;
       left: 0; top: 0;
-      width: {{ states('sensor.elroq_battery_level') | int(0) }}% !important;
+      width: {{ states('sensor.skoda_elroq_battery_level') | int(0) }}% !important;
       height: 100% !important;
       background: linear-gradient(90deg, rgba(76,175,80,0.18), rgba(129,199,132,0.05)) !important;
       pointer-events: none !important;
     }
 cards:
   - type: custom:mushroom-template-card
-    primary: "{{ states('sensor.elroq_battery_level') }}%  ·  {{ states('sensor.elroq_range') }} km"
+    primary: "{{ states('sensor.skoda_elroq_battery_level') }}%  ·  {{ states('sensor.skoda_elroq_range') }} km"
     secondary: Škoda Elroq
     icon: mdi:car-electric
     icon_color: >
-      {% set soc = states('sensor.elroq_battery_level') | int(0) %}
+      {% set soc = states('sensor.skoda_elroq_battery_level') | int(0) %}
       {% if soc > 60 %}green{% elif soc > 30 %}orange{% else %}red{% endif %}
 ```
 
 Gradienten er subtil — du lægger ikke mærke til den som en statusbjælke, det gør bare kortet føles anderledes ved 20% versus 80%. Det tog et par iterationer at få opaciteten rigtig.
 
-Bilikonen får et ekstra lag når `binary_sensor.elroq_charging` er tændt: en lysende ring der pulserer i cyan og grønt — de samme farver som LED-ringen på Elroq'ens forreste kofanger mens den lader. Tilføj en `card_mod`-blok direkte på mushroom-kortet inde i stacken:
+Bilikonen får et ekstra lag når `sensor.skoda_elroq_charging_state` er `charging`: en lysende ring der pulserer i cyan og grønt — de samme farver som LED-ringen på Elroq'ens forreste kofanger mens den lader. Tilføj en `card_mod`-blok direkte på mushroom-kortet inde i stacken:
 
 ```yaml
     card_mod:
       style: |
         mushroom-shape-icon {
-          {% if is_state('binary_sensor.elroq_charging', 'on') %}
+          {% if is_state('sensor.skoda_elroq_charging_state', 'charging') %}
           animation: charge-ring 2s linear infinite;
           {% endif %}
         }
@@ -102,15 +102,15 @@ condition:
   - condition: template
     value_template: "{{ 'Kør til kontor' in trigger.calendar_event.summary }}"
   - condition: numeric_state
-    entity_id: sensor.elroq_battery_level
+    entity_id: sensor.skoda_elroq_battery_level
     above: 30
 action:
   - service: climate.turn_on
     target:
-      entity_id: climate.elroq_air_conditioning
+      entity_id: climate.skoda_elroq_air_conditioning
   - service: climate.set_temperature
     target:
-      entity_id: climate.elroq_air_conditioning
+      entity_id: climate.skoda_elroq_air_conditioning
     data:
       temperature: 21
 ```
@@ -123,12 +123,12 @@ Det virker godt om vinteren. En varm bil om morgenen er en underapprecieret luks
 
 At glemme at sætte bilen til opladning er den eneste fejl der rent faktisk koster noget. Bilen står natten over, trækker intet fra nettet, og du kører om morgenen med den ladning du havde dagen før.
 
-AlertTicker-kortet håndterer det. Mellem kl. 21 og 06, hvis `binary_sensor.elroq_plugged_in` er off, vises en advarselsbanner på tværs af alle dashboard-views:
+AlertTicker-kortet håndterer det. Mellem kl. 21 og 06, hvis `binary_sensor.skoda_elroq_charger_connected` er off, vises en advarselsbanner på tværs af alle dashboard-views:
 
 ```yaml
 type: custom:alert-ticker-card
 alerts:
-  - entity: binary_sensor.elroq_plugged_in
+  - entity: binary_sensor.skoda_elroq_charger_connected
     state: "off"
     message: "Elroq is not plugged in"
     theme: warning

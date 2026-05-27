@@ -146,7 +146,7 @@ trigger:
 condition:
   - condition: template
     value_template: >
-      {{ state_attr(trigger.entity_id.replace('_window',''), 'hvac_action') == 'heating' }}
+      {{ state_attr(trigger.entity_id | replace('binary_sensor.', 'climate.') | replace('_window', ''), 'hvac_action') == 'heating' }}
 action:
   - service: notify.all_devices
     data:

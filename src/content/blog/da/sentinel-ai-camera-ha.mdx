@@ -53,8 +53,9 @@ action:
       notif_title: "{{ '\U0001F697 Bil ved indkørslen' if trigger.id == 'bil' else '\U0001F464 Person ved indkørslen' }}"
       notif_message: "{{ 'Sentinel har registreret et køretøj' if trigger.id == 'bil' else 'Sentinel har registreret en person' }}"
   - action: camera.snapshot
-    data:
+    target:
       entity_id: camera.sentinel_fluent
+    data:
       filename: /config/www/sentinel_latest.jpg
   - action: notify.alle_enheder
     data:
@@ -67,7 +68,7 @@ action:
         tag: sentinel_alert
         entity_id: camera.sentinel_fluent
         camera_stream: true
-        image: /api/camera_proxy/camera.sentinel_snapshots_fluent
+        image: /api/camera_proxy/camera.sentinel_fluent
         actions:
           - action: URI
             title: Se Kamera

@@ -113,8 +113,7 @@ trigger:
 condition:
   - condition: template
     value_template: >
-      {{ states | selectattr('domain', 'eq', 'media_player')
-         | selectattr('state', 'eq', 'playing') | list | count > 0 }}
+      {{ states.media_player | selectattr('state', 'eq', 'playing') | list | count > 0 }}
 action:
   - service: script.alle_hojtalere_pause
 ```

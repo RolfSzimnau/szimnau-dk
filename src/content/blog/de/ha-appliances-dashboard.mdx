@@ -49,17 +49,21 @@ sequence:
       prices: "{{ state_attr('sensor.energi_data_service', 'raw_today') | default([]) }}"
       now_h: "{{ now().hour }}"
       duration_h: 2
-      best: >
-        {{ prices
-           | selectattr('hour.hour', 'ge', now_h | int)
-           | sort(attribute='price')
-           | first }}
+      best_hour: >
+        {% set ns = namespace(hour=none, price=999) %}
+        {% for h in prices %}
+          {% if as_datetime(h.hour).hour >= now_h | int and h.price < ns.price %}
+            {% set ns.price = h.price %}
+            {% set ns.hour = h.hour %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.hour }}
   - service: select.select_option
     target:
       entity_id: select.dishwasher_finish_at
     data:
       option: >
-        {{ (as_datetime(best.hour) + timedelta(hours=duration_h))
+        {{ (as_datetime(best_hour) + timedelta(hours=duration_h))
            .strftime('%H:%M') }}
   - service: button.press
     target:

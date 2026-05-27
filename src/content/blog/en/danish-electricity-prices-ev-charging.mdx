@@ -129,10 +129,10 @@ trigger:
     minutes: "0"
 condition:
   - condition: state
-    entity_id: binary_sensor.elroq_plugged_in
+    entity_id: binary_sensor.skoda_elroq_charger_connected
     state: "on"
   - condition: numeric_state
-    entity_id: sensor.elroq_battery_level
+    entity_id: sensor.skoda_elroq_battery_level
     below: 90
 action:
   - choose:
@@ -143,7 +143,7 @@ action:
         sequence:
           - service: switch.turn_on
             target:
-              entity_id: switch.elroq_charging
+              entity_id: switch.skoda_elroq_charging
       - conditions:
           - condition: numeric_state
             entity_id: sensor.energi_data_service
@@ -151,12 +151,12 @@ action:
         sequence:
           - service: switch.turn_off
             target:
-              entity_id: switch.elroq_charging
+              entity_id: switch.skoda_elroq_charging
 ```
 
 Below 1.00 DKK — charge. Above 1.50 — stop. Between those two numbers — leave it alone. The dead zone between 1.00 and 1.50 is deliberate: without it the switch would toggle on and off every hour when prices hover around the threshold, which isn't good for the charger or the car.
 
-There's a `input_boolean.elroq_force_charge` override for mornings when I need a full charge regardless of price. The EV entities (`switch.elroq_charging`, `binary_sensor.elroq_plugged_in`) come from the [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) integration (HACS) — authenticate with your Škoda Connect account to get them.
+There's a `input_boolean.elroq_force_charge` override for mornings when I need a full charge regardless of price. The EV entities (`switch.skoda_elroq_charging`, `binary_sensor.skoda_elroq_charger_connected`) come from the [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) integration (HACS) — authenticate with your Škoda Connect account to get them.
 
 ## Does it actually save money?
 

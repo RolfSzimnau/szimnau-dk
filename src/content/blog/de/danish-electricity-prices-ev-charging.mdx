@@ -122,7 +122,7 @@ Die Logik: Minimumspreis für den Tag finden, dann das Fenster auf alle benachba
 
 ## Die Ladeautomatisierung
 
-Die Automatisierung verwendet `switch.elroq_charging` aus der [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-Integration (HACS) zum Starten und Stoppen des Ladevorgangs.
+Die Automatisierung verwendet `switch.skoda_elroq_charging` aus der [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-Integration (HACS) zum Starten und Stoppen des Ladevorgangs.
 
 ```yaml
 alias: Elroq — Smart laden
@@ -131,10 +131,10 @@ trigger:
     minutes: "0"
 condition:
   - condition: state
-    entity_id: binary_sensor.elroq_plugged_in
+    entity_id: binary_sensor.skoda_elroq_charger_connected
     state: "on"
   - condition: numeric_state
-    entity_id: sensor.elroq_battery_level
+    entity_id: sensor.skoda_elroq_battery_level
     below: 90
 action:
   - choose:
@@ -145,7 +145,7 @@ action:
         sequence:
           - service: switch.turn_on
             target:
-              entity_id: switch.elroq_charging
+              entity_id: switch.skoda_elroq_charging
       - conditions:
           - condition: numeric_state
             entity_id: sensor.energi_data_service
@@ -153,7 +153,7 @@ action:
         sequence:
           - service: switch.turn_off
             target:
-              entity_id: switch.elroq_charging
+              entity_id: switch.skoda_elroq_charging
 ```
 
 Unter 1,00 DKK — laden. Über 1,50 DKK — stoppen. Dazwischen — nichts ändern. Die Todeszone ist absichtlich: ohne sie würde der Schalter jede Stunde hin und her schalten, wenn die Preise um den Schwellenwert schweben.

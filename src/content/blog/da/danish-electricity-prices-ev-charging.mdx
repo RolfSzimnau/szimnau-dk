@@ -122,7 +122,7 @@ Logikken: find minimumsprisen for dagen, udvid derefter vinduet til at inkludere
 
 ## Opladningsautomatiseringen
 
-Automationen bruger `switch.elroq_charging` fra [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-integrationen (HACS) til at starte og stoppe opladningen.
+Automationen bruger `switch.skoda_elroq_charging` fra [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-integrationen (HACS) til at starte og stoppe opladningen.
 
 ```yaml
 alias: Elroq — Smart opladning
@@ -131,10 +131,10 @@ trigger:
     minutes: "0"
 condition:
   - condition: state
-    entity_id: binary_sensor.elroq_plugged_in
+    entity_id: binary_sensor.skoda_elroq_charger_connected
     state: "on"
   - condition: numeric_state
-    entity_id: sensor.elroq_battery_level
+    entity_id: sensor.skoda_elroq_battery_level
     below: 90
 action:
   - choose:
@@ -145,7 +145,7 @@ action:
         sequence:
           - service: switch.turn_on
             target:
-              entity_id: switch.elroq_charging
+              entity_id: switch.skoda_elroq_charging
       - conditions:
           - condition: numeric_state
             entity_id: sensor.energi_data_service
@@ -153,7 +153,7 @@ action:
         sequence:
           - service: switch.turn_off
             target:
-              entity_id: switch.elroq_charging
+              entity_id: switch.skoda_elroq_charging
 ```
 
 Under 1,00 kr — oplad. Over 1,50 kr — stop. Imellem de to tal — rør den ikke. Dødszonen er bevidst: uden den ville kontakten toggle frem og tilbage hver time når priserne svæver omkring tærsklen.

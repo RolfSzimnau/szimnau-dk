@@ -1,6 +1,6 @@
 ---
 title: "Running Sonos and Google Nest Speakers as One System in Home Assistant"
-description: "How I unified a Sonos living room speaker with four Google Nest Audio speakers across the house using Home Assistant scripts — no third-party bridges, no subscription."
+description: "Unifying a Sonos speaker with four Google Nest Audio speakers via Home Assistant scripts — no third-party bridges, no subscription."
 pubDate: 2026-01-23
 tags: ["sonos", "google-nest", "audio", "home-assistant", "multiroom"]
 lang: "en"
@@ -113,8 +113,7 @@ trigger:
 condition:
   - condition: template
     value_template: >
-      {{ states | selectattr('domain', 'eq', 'media_player')
-         | selectattr('state', 'eq', 'playing') | list | count > 0 }}
+      {{ states.media_player | selectattr('state', 'eq', 'playing') | list | count > 0 }}
 action:
   - service: script.alle_hojtalere_pause
 ```
