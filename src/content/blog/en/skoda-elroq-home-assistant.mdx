@@ -17,7 +17,7 @@ The [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) integration
 After setup, the Elroq shows up as a device with:
 
 ```
-sensor.skoda_elroq_battery_level       — state of charge (%)
+sensor.skoda_elroq_battery_percentage  — state of charge (%)
 sensor.skoda_elroq_charging_power      — current charge rate (kW)
 sensor.skoda_elroq_range               — estimated range (km)
 number.skoda_elroq_charge_limit          — charge limit set in car (%)
@@ -52,18 +52,18 @@ card_mod:
       content: '' !important;
       position: absolute !important;
       left: 0; top: 0;
-      width: {{ states('sensor.skoda_elroq_battery_level') | int(0) }}% !important;
+      width: {{ states('sensor.skoda_elroq_battery_percentage') | int(0) }}% !important;
       height: 100% !important;
       background: linear-gradient(90deg, rgba(76,175,80,0.18), rgba(129,199,132,0.05)) !important;
       pointer-events: none !important;
     }
 cards:
   - type: custom:mushroom-template-card
-    primary: "{{ states('sensor.skoda_elroq_battery_level') }}%  ·  {{ states('sensor.skoda_elroq_range') }} km"
+    primary: "{{ states('sensor.skoda_elroq_battery_percentage') }}%  ·  {{ states('sensor.skoda_elroq_range') }} km"
     secondary: Škoda Elroq
     icon: mdi:car-electric
     icon_color: >
-      {% set soc = states('sensor.skoda_elroq_battery_level') | int(0) %}
+      {% set soc = states('sensor.skoda_elroq_battery_percentage') | int(0) %}
       {% if soc > 60 %}green{% elif soc > 30 %}orange{% else %}red{% endif %}
 ```
 
@@ -104,7 +104,7 @@ condition:
   - condition: template
     value_template: "{{ 'Drive to office' in trigger.calendar_event.summary }}"
   - condition: numeric_state
-    entity_id: sensor.skoda_elroq_battery_level
+    entity_id: sensor.skoda_elroq_battery_percentage
     above: 30
 action:
   - service: climate.turn_on
@@ -148,3 +148,100 @@ The integration doesn't expose charging session data — no kWh added in the cur
 Door and window state is aggregate. You know if *any* door is unlocked, but not which one. Useful for "did I lock the car" but useless for "which window did I leave open."
 
 For the latency problem specifically: if you're standing next to the car and pressing "start charge" in the HA dashboard, expect to wait a minute before the switch state updates. It's cloud-round-trip latency and there's nothing to be done about it. Use the app for anything interactive.
+
+## Tracking battery and range over time
+
+After a while, the data I actually wanted wasn't the current state — it was the trend. Is the battery draining overnight? How does range change as the temperature drops?
+
+`custom:apexcharts-card` (HACS) answers both. Battery percentage over 5 days — charging sessions show up as sharp upward spikes, overnight drain as gentle slopes:
+
+```yaml
+type: custom:apexcharts-card
+graph_span: 5d
+header:
+  show: true
+  title: Battery
+  show_states: true
+  colorize_states: true
+apex_config:
+  chart:
+    background: transparent
+    toolbar:
+      show: false
+  theme:
+    mode: dark
+  yaxis:
+    min: 0
+    max: 100
+series:
+  - entity: sensor.skoda_elroq_battery_percentage
+    name: Battery %
+    color: "#4CAF50"
+    stroke_width: 2
+    fill_raw: last
+    type: line
+    unit: "%"
+```
+
+Range and outside temperature on a dual-axis chart. The two lines move nearly independently in summer. It's a winter story: on the MEB platform, expect 20–30% range reduction below freezing:
+
+```yaml
+type: custom:apexcharts-card
+graph_span: 5d
+header:
+  show: true
+  title: Range & Temperature
+  show_states: true
+  colorize_states: true
+yaxis:
+  - id: range_axis
+    min: 0
+    max: 600
+    apex_config:
+      title:
+        text: km
+  - id: temp_axis
+    opposite: true
+    min: -10
+    max: 40
+    apex_config:
+      title:
+        text: °C
+apex_config:
+  chart:
+    background: transparent
+    toolbar:
+      show: false
+  theme:
+    mode: dark
+series:
+  - entity: sensor.skoda_elroq_range
+    name: Range (km)
+    yaxis_id: range_axis
+    color: "#2196F3"
+    stroke_width: 2
+    fill_raw: last
+    unit: km
+  - entity: sensor.skoda_elroq_outside_temperature
+    name: Temp (°C)
+    yaxis_id: temp_axis
+    color: "#FF9800"
+    stroke_width: 2
+    fill_raw: last
+    unit: °C
+```
+
+One thing to watch: the MySkoda integration creates 56 entities. Recording all of them adds up fast — window states, door states, software version, inspection dates. Most change rarely and have no graphing value. Exclude the bulk and keep only what you want to track historically:
+
+```yaml
+recorder:
+  exclude:
+    entity_globs:
+      - sensor.skoda_elroq_*
+  include:
+    entities:
+      - sensor.skoda_elroq_battery_percentage
+      - sensor.skoda_elroq_range
+      - sensor.skoda_elroq_outside_temperature
+      - sensor.skoda_elroq_charging_state
+```

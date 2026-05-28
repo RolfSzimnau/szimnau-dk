@@ -15,7 +15,7 @@ Min Škoda er det eneste i huset der ikke taler med Home Assistant automatisk. A
 ## Hvad du faktisk får
 
 ```
-sensor.skoda_elroq_battery_level       — ladestilstand (%)
+sensor.skoda_elroq_battery_percentage  — ladestilstand (%)
 sensor.skoda_elroq_charging_power      — aktuel ladehastighed (kW)
 sensor.skoda_elroq_range               — estimeret rækkevidde (km)
 number.skoda_elroq_charge_limit          — lademål sat i bilen (%)
@@ -50,18 +50,18 @@ card_mod:
       content: '' !important;
       position: absolute !important;
       left: 0; top: 0;
-      width: {{ states('sensor.skoda_elroq_battery_level') | int(0) }}% !important;
+      width: {{ states('sensor.skoda_elroq_battery_percentage') | int(0) }}% !important;
       height: 100% !important;
       background: linear-gradient(90deg, rgba(76,175,80,0.18), rgba(129,199,132,0.05)) !important;
       pointer-events: none !important;
     }
 cards:
   - type: custom:mushroom-template-card
-    primary: "{{ states('sensor.skoda_elroq_battery_level') }}%  ·  {{ states('sensor.skoda_elroq_range') }} km"
+    primary: "{{ states('sensor.skoda_elroq_battery_percentage') }}%  ·  {{ states('sensor.skoda_elroq_range') }} km"
     secondary: Škoda Elroq
     icon: mdi:car-electric
     icon_color: >
-      {% set soc = states('sensor.skoda_elroq_battery_level') | int(0) %}
+      {% set soc = states('sensor.skoda_elroq_battery_percentage') | int(0) %}
       {% if soc > 60 %}green{% elif soc > 30 %}orange{% else %}red{% endif %}
 ```
 
@@ -102,7 +102,7 @@ condition:
   - condition: template
     value_template: "{{ 'Kør til kontor' in trigger.calendar_event.summary }}"
   - condition: numeric_state
-    entity_id: sensor.skoda_elroq_battery_level
+    entity_id: sensor.skoda_elroq_battery_percentage
     above: 30
 action:
   - service: climate.turn_on
@@ -144,3 +144,100 @@ Tidsvinduet er vigtigt — om dagen er bilen konstant fra laderen. Advarslen er 
 Integrationen eksponerer ikke opladningssessionsdata — ingen kWh tilføjet i den aktuelle session, ingen opladningshistorik. Du kan se den aktuelle effektafsætning, men ikke hvor længe den har kørt eller hvad det har kostet. Til smart-opladningsautomatisering er det fint; til at overvåge dine faktiske opladningsomkostninger er det et hul.
 
 For latens-problemet specifikt: hvis du står ved siden af bilen og trykker "start opladning" i HA-dashboardet, så forvent at vente et minut inden kontaktens tilstand opdateres. Brug appen til alt der kræver øjeblikkelig reaktion.
+
+## Spor batteri og rækkevidde over tid
+
+Efter et stykke tid er det ikke den aktuelle tilstand jeg vil se — det er tendensen. Dræner batteriet om natten? Hvordan ændrer rækkevidden sig når temperaturen falder?
+
+`custom:apexcharts-card` (HACS) besvarer begge spørgsmål. Batteri-procent over 5 dage — opladningssessioner viser sig som skarpe opadgående spidser, nattedræn som blide hældninger:
+
+```yaml
+type: custom:apexcharts-card
+graph_span: 5d
+header:
+  show: true
+  title: Batteri
+  show_states: true
+  colorize_states: true
+apex_config:
+  chart:
+    background: transparent
+    toolbar:
+      show: false
+  theme:
+    mode: dark
+  yaxis:
+    min: 0
+    max: 100
+series:
+  - entity: sensor.skoda_elroq_battery_percentage
+    name: Batteri %
+    color: "#4CAF50"
+    stroke_width: 2
+    fill_raw: last
+    type: line
+    unit: "%"
+```
+
+Rækkevidde og udetemperatur på et dual-akse-diagram. De to linjer bevæger sig næsten uafhængigt om sommeren. Det er en vinterhistorie: på MEB-platformen kan du forvente 20–30% rækkevidde-tab under frysepunktet:
+
+```yaml
+type: custom:apexcharts-card
+graph_span: 5d
+header:
+  show: true
+  title: Rækkevidde & Temperatur
+  show_states: true
+  colorize_states: true
+yaxis:
+  - id: range_axis
+    min: 0
+    max: 600
+    apex_config:
+      title:
+        text: km
+  - id: temp_axis
+    opposite: true
+    min: -10
+    max: 40
+    apex_config:
+      title:
+        text: °C
+apex_config:
+  chart:
+    background: transparent
+    toolbar:
+      show: false
+  theme:
+    mode: dark
+series:
+  - entity: sensor.skoda_elroq_range
+    name: Rækkevidde (km)
+    yaxis_id: range_axis
+    color: "#2196F3"
+    stroke_width: 2
+    fill_raw: last
+    unit: km
+  - entity: sensor.skoda_elroq_outside_temperature
+    name: Temp (°C)
+    yaxis_id: temp_axis
+    color: "#FF9800"
+    stroke_width: 2
+    fill_raw: last
+    unit: °C
+```
+
+En ting at holde øje med: MySkoda-integrationen opretter 56 entiteter. At optage dem alle hober sig hurtigt op — vinduestilstande, dørtilstande, softwareversion, serviceintervaller. De fleste ændrer sig sjældent og har ingen grafværdi. Ekskluder størstedelen og behold kun det du vil følge historisk:
+
+```yaml
+recorder:
+  exclude:
+    entity_globs:
+      - sensor.skoda_elroq_*
+  include:
+    entities:
+      - sensor.skoda_elroq_battery_percentage
+      - sensor.skoda_elroq_range
+      - sensor.skoda_elroq_outside_temperature
+      - sensor.skoda_elroq_charging_state
+```
