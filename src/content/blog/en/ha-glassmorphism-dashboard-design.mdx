@@ -14,7 +14,7 @@ What follows is the exact CSS, with the things that tripped me up explained.
 
 ![Home Assistant dashboard with glassmorphism glass cards on a dark navy background](/blog-images/robot-roborock.jpg)
 
-## The six constants
+## The six CSS constants for every glassmorphism card
 
 Every outer card uses exactly these values. No variation.
 
@@ -150,10 +150,12 @@ card_mod:
 
 The `"."` key is the correct one for mushroom cards in HA 2024+. Not `ha-card`, not the component name — `"."`. I spent longer than I'd like to admit testing other selectors before this one worked.
 
-## The consistency problem
+## Achieving visual consistency across HA dashboards
 
 YAML doesn't have variables. Every card that uses the glass treatment gets its own copy of those six CSS lines. When I want to adjust the background opacity across the whole dashboard, I change it in 25 places.
 
 My workaround: a `snippets.yaml` file sitting in my config folder with the full outer card template as a comment. Paste from there when creating new cards. It's not elegant but it's maintainable.
 
 The right solution is custom CSS properties in the theme — `var(--glass-bg)` defined once, referenced everywhere. This works if you maintain a custom theme YAML. I haven't made that leap yet.
+
+For a full working example of these patterns applied to a real dashboard — glass cards, badge suppression, section dividers — see the [Tado climate dashboard post](/en/blog/tado-home-assistant-dashboard/).

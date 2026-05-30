@@ -10,21 +10,21 @@ heroImage: "/blog-images/Hjem_MYGGBETT_Hero.jpg.png"
 
 The radiator in Louise's room was running at full heat with the window wide open. She's almost twenty — keeping her window shut isn't something that happens reliably. I noticed the window had been open for an hour, heat on, outside temperature around 4°C. Not a disaster, but a predictable waste that would keep repeating.
 
-The fix was a window sensor and one automation. The part I spent an extra hour on was building it as a Blueprint so when the same pattern comes up in another room, it takes 30 seconds, not another afternoon.
+The fix was a window sensor and one Home Assistant automation. The part I spent an extra hour on was building it as a Blueprint so when the same pattern comes up in another room, it takes 30 seconds, not another afternoon.
 
-## The hardware
+## Hardware needed: IKEA window sensor + Mill radiator
 
 An **IKEA MYGGBETT** door/window sensor on Louise's window (`binary_sensor.myggbett_door_window_sensor_door`). The radiator is a first-generation **Mill** unit — `climate.louise` — which only supports two modes: `heat` and `off`. I have the same first-gen model in my office.
 
 The master bedroom and kitchen run newer-gen Mill radiators with more HVAC modes. The Blueprint handles all of them — it snapshots the exact state before turning off and restores it precisely when the window closes, regardless of which mode or temperature the radiator was at.
 
-The living room is a Daikin heat pump controlled by Tado — a different integration with its own modes. That one gets its own approach.
+The living room is a Daikin heat pump controlled by [Tado](/en/blog/tado-home-assistant-dashboard/) — a different integration with its own modes. That one gets its own approach.
 
 The Mill has a built-in open window detection feature, but it works by sensing temperature drops — slow to react, and it misses short openings completely. The MYGGBETT sensor is instant and precise.
 
 ![IKEA MYGGBETT sensor mounted on Louise's window](/blog-images/home_MYGGBETT.jpg)
 
-## The Blueprint
+## Building the Home Assistant Blueprint
 
 Rather than hardcoding Louise's entities, I built the logic as a Blueprint at `/config/blueprints/automation/homeassistant/window_heating_control.yaml`. The inputs are a window sensor, a climate entity, and a configurable delay:
 
@@ -132,7 +132,7 @@ alerts:
 
 When all windows are closed, the card shows a green "all clear" slide. When one is open, it switches to an animated alert with the sensor's friendly name in the message.
 
-## Adding the next room
+## Reusing the Blueprint in other rooms
 
 Settings → Automations → Create → From Blueprint → select "Window → Heating off" → pick the sensor and radiator → save. No new code. That's the whole point of building it as a Blueprint from the start rather than a hardcoded automation.
 

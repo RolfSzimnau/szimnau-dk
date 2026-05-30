@@ -6,6 +6,11 @@ tags: ["proxmox", "home-assistant", "getting-started", "virtualization"]
 lang: "en"
 translationKey: "proxmox-home-assistant-setup"
 heroImage: "/blog-images/proxmox-optiplex.jpg"
+faqs:
+  - question: "Why run Home Assistant on Proxmox instead of directly on hardware?"
+    answer: "Proxmox gives you VM snapshots before every update, USB passthrough for Zigbee/Z-Wave dongles, and the ability to run other services alongside Home Assistant — all on the same machine."
+  - question: "What hardware specs are recommended for Home Assistant on Proxmox?"
+    answer: "A Dell OptiPlex 7060 with 16 GB RAM and a 256 GB SSD works well. Assign 2 CPU cores and 4 GB RAM to the Home Assistant VM. An SSD is essential — SD cards fail under HA's write load."
 ---
 
 My Home Assistant setup had been running on a Raspberry Pi 4 for two years when, on a Wednesday evening in October, I came home to find it dead. The SD card had silently corrupted itself. No warning. No graceful shutdown. Just a cold house and nothing working.
@@ -18,7 +23,7 @@ The obvious move would be installing HA OS directly on the OptiPlex. I chose Pro
 
 The other reason: snapshots. Before every HA update, I take a Proxmox snapshot. If something breaks, rolling back takes 10 seconds. On the Pi, a bad update could mean an hour of recovery work.
 
-## The Hardware: Dell OptiPlex 7060
+## Hardware: Dell OptiPlex 7060 as Home Assistant host
 
 I picked up a refurbished OptiPlex 7060 for under €150 on eBay. It came with 16 GB RAM which I immediately upgraded to 32 GB — 8 GB sticks were €12 each and the OptiPlex takes them easily.
 
@@ -108,9 +113,9 @@ Name: pre-update-YYYY-MM-DD
 
 The snapshot takes under 30 seconds. If the update works fine, I delete the snapshot a day later. If something breaks — and with 30+ integrations, something occasionally does — I roll back in 10 seconds and the house is back to its previous state.
 
-On the Raspberry Pi I was always slightly nervous about updates because recovery was slow and painful. With Proxmox snapshots, I apply updates the day they drop without any hesitation.
+On the Raspberry Pi I was always slightly nervous about updates because recovery was slow and painful. With Proxmox snapshots, I apply updates the day they drop without any hesitation. Pair this with [automated nightly tests against your live Home Assistant instance](/en/blog/ha-nightly-health-check/) and you'll catch broken integrations before you actually need them.
 
-## What the Move Actually Solved
+## What moving to Proxmox actually solved
 
 Three years on the Pi meant three SD card replacements and two corruption events. The OptiPlex has been running since late 2022 without a single hardware incident. The NVMe SSD doesn't care about power cuts. Proxmox writes to journaled filesystems. The Pi was never the right tool for infrastructure that controls heating, security cameras, and EV charging — it just happened to be cheap and easy to start with.
 

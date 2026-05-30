@@ -10,9 +10,9 @@ heroImage: "/blog-images/Hjem_MYGGBETT_Hero.jpg.png"
 
 Radiatoren i Louises værelse kørte for fuld varme med vinduet åbent. Hun er snart tyve — at huske at lukke vinduet er ikke noget der sker konsekvent. Jeg lagde mærke til at vinduet havde stået åbent i en time, varmen på, udetemperatur på cirka 4°C. Det er penge ud af vinduet — bogstaveligt talt — og det ville blive ved med at ske.
 
-Løsningen var en vinduessensor og én automation. Den ekstra time jeg brugte var på at bygge den som et Blueprint, så næste gang det samme mønster dukker op i et andet rum, tager det 30 sekunder, ikke en hel eftermiddag.
+Løsningen var en vinduessensor og én Home Assistant-automation. Den ekstra time jeg brugte var på at bygge den som et Blueprint, så næste gang det samme mønster dukker op i et andet rum, tager det 30 sekunder, ikke en hel eftermiddag.
 
-## Hardwaren
+## Hardware: IKEA vinduessensor + Mill-radiator
 
 En **IKEA MYGGBETT** dør/vinduessensor på Louises vindue (`binary_sensor.myggbett_door_window_sensor_door`). Radiatoren er en første-generations **Mill**-enhed — `climate.louise` — som kun understøtter to modes: `heat` og `off`. Jeg har den samme første-gen model på mit kontor.
 
@@ -24,7 +24,7 @@ Mill har en indbygget åbent-vindue-detektion, men den virker ved at registrere 
 
 ![IKEA MYGGBETT sensor monteret på Louises vindue](/blog-images/home_MYGGBETT.jpg)
 
-## Blueprint'et
+## Byg Home Assistant Blueprint'et
 
 I stedet for at hardkode Louises entities byggede jeg logikken som et Blueprint på `/config/blueprints/automation/homeassistant/window_heating_control.yaml`. Inputfelterne tager en vinduessensor, en climate-entity og en konfigurerbar forsinkelse:
 
@@ -132,7 +132,7 @@ alerts:
 
 Når alle vinduer er lukket viser kortet et grønt "alt OK" slide. Når et er åbent skifter det til en animeret alert med sensorens friendly name i beskeden.
 
-## At tilføje næste rum
+## Genbruge Blueprint'et i andre rum
 
 Indstillinger → Automationer → Opret → Fra Blueprint → vælg "Vindue → Varme slukker" → vælg sensor og radiator → gem. Ingen ny kode. Det er hele pointen med at bygge det som et Blueprint fra starten frem for en hardkodet automation.
 

@@ -6,13 +6,18 @@ tags: ["ev", "skoda-elroq", "myskoda", "home-assistant", "testbericht"]
 lang: "de"
 translationKey: "skoda-elroq-home-assistant"
 heroImage: "/blog-images/skoda-elroq.jpg"
+faqs:
+  - question: "What data does the MySkoda Home Assistant integration provide?"
+    answer: "The MySkoda integration (HACS) provides battery level, charging state, range, mileage, GPS location, and climate pre-conditioning status. It polls the Škoda Connect cloud API with a 15–60 second latency."
+  - question: "What is missing from the MySkoda Home Assistant integration?"
+    answer: "The integration cannot control charging limits, does not support real-time streaming, and has no push notifications — it relies entirely on polling. Charge scheduling must be done via Home Assistant automations, not the integration itself."
 ---
 
 Das Škoda ist das einzige im Haus, das nicht automatisch mit Home Assistant spricht. Alle anderen Geräte sind entweder nativ oder über HACS eingebunden. Das Auto lebte in seiner eigenen App — und das nagte an mir. Nicht dramatisch. Nur ein konstantes kleines Unbehagen.
 
 Die [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-Integration löst das. HACS, mit dem Škoda Connect-Konto authentifizieren, und das Auto taucht als Gerät auf. API-Polling mit 15-60 Sekunden Latenz bei Befehlen — das ist eine Cloud-Einschränkung, nicht HA.
 
-## Was man wirklich bekommt
+## Was die MySkoda-Integration in Home Assistant bietet
 
 ```
 sensor.skoda_elroq_battery_percentage  — Ladezustand (%)
@@ -28,7 +33,7 @@ switch.skoda_elroq_charging            — starten/stoppen
 
 Die `climate`-Entität nutze ich am meisten. Temperatur einstellen, `climate.turn_on` aufrufen, und das Auto beginnt zu heizen oder zu kühlen — je nach verfügbarer Stromquelle. Ist es angeschlossen, läuft es über das Netz. Wenn nicht, über den Akku. Deshalb überspringe ich die Vorwärmung, wenn der Akku unter 30% liegt.
 
-## Die Dashboard-Karte
+## Das EV-Dashboard aufbauen
 
 Ich wollte den Ladestand sofort sichtbar haben ohne viel Platz einzunehmen. Die Lösung ist ein grüner Verlauf hinter dem Karteninhalt über `ha-card::after` — er füllt die Karte proportional zum Ladestand. Die Karte verwendet `custom:stack-in-card` und `custom:mushroom-template-card` (beide HACS, Mushroom-Suite), mit `card_mod` (HACS) für das CSS:
 
@@ -119,7 +124,7 @@ Im Winter funktioniert das gut. Ein warmes Auto am Morgen ist ein unterschätzte
 
 Ein Problem: der Terminname muss exakt übereinstimmen. Ich habe den Termin zweimal umbenannt und jedes Mal erst gemerkt, als das Auto kalt war. Es ist ein zerbrechlicher Zeichenkettenvergleich und ich habe noch keine bessere Lösung gefunden.
 
-## Kabelwarnung
+## Automatisierung zur Ladekabel-Warnung
 
 Das Ladekabel nicht einzustecken ist der einzige Fehler der wirklich etwas kostet. Das Auto steht über Nacht, zieht nichts aus dem Netz, und man fährt morgens mit dem Ladestand vom Vortag los.
 
@@ -139,7 +144,7 @@ alerts:
 
 Das Zeitfenster ist wichtig — tagsüber ist das Auto ständig vom Ladegerät getrennt. Die Warnung ist nur nachts relevant wenn es laden sollte. Außerhalb dieses Fensters ist sie still unabhängig vom Kabelstatus.
 
-## Was fehlt
+## Was der MySkoda-Integration noch fehlt
 
 Die Integration zeigt keine Ladesitzungsdaten — keine kWh in der aktuellen Sitzung, keine Ladehistorie. Man sieht die aktuelle Leistungsaufnahme, aber nicht wie lange sie läuft oder was es kostet. Für die Smart-Charging-Automatisierung ist das in Ordnung; um die tatsächlichen Ladekosten zu überwachen, fehlt das.
 

@@ -6,13 +6,18 @@ tags: ["home-assistant", "github-actions", "testing", "proxmox", "automation"]
 lang: "en"
 translationKey: "ha-nightly-health-check"
 heroImage: "/blog-images/home-assistant-proxmox-github-actions-ci.webp"
+faqs:
+  - question: "Why does Home Assistant testing require a self-hosted GitHub Actions runner?"
+    answer: "GitHub's cloud runners cannot reach your local Home Assistant instance. A self-hosted runner installed on the same network as your HA server can make direct API calls to test live entities, services, and dashboard resources."
+  - question: "What should nightly Home Assistant tests cover?"
+    answer: "Critical automations and scripts, notification services, custom Lovelace card resources, and key entity states. The goal is catching silent breakages — integrations that stop working after a HA update without throwing visible errors."
 ---
 
-The dishwasher notification worked perfectly for months. Then one day it didn't. The `notify.android_tv` service had silently disappeared after a HA restart, and I only found out when I was standing in the kitchen waiting for an alert that never came.
+The dishwasher notification worked perfectly for months. Then one day it didn't. The `notify.android_tv` service had silently disappeared after a Home Assistant restart, and I only found out when I was standing in the kitchen waiting for an alert that never came.
 
 That was the last time I found out about a broken integration by accidentally needing it.
 
-## The idea
+## Why I built nightly tests for Home Assistant
 
 Every night at 02:00, a script runs all my Home Assistant patterns through a test suite and checks that everything still works. If anything fails, a GitHub issue opens automatically with the exact error and a list of likely causes. By morning I know what broke and roughly why.
 
@@ -22,7 +27,7 @@ The whole thing runs on GitHub Actions. The tests are plain Node.js. There are n
 
 GitHub's cloud runners can't reach a Home Assistant instance on a local network. The tests call the HA REST API and WebSocket directly, so the runner has to be on the same network as HA.
 
-The solution: a lightweight Linux container on the Proxmox host that already runs HA. One extra LXC container — Debian 12, 1 vCPU, 512 MB RAM — registered as a self-hosted GitHub Actions runner. It starts automatically with Proxmox and costs essentially nothing in resources.
+The solution: a lightweight Linux container on the [Proxmox host](/en/blog/proxmox-home-assistant-setup/) that already runs HA. One extra LXC container — Debian 12, 1 vCPU, 512 MB RAM — registered as a self-hosted GitHub Actions runner. It starts automatically with Proxmox and costs essentially nothing in resources.
 
 The runner gets a label (`home-network`) so the workflow only ever runs on hardware that can actually reach HA:
 
@@ -57,7 +62,7 @@ const HA_TOKEN = process.env.HA_TOKEN;
 if (!HA_URL || !HA_TOKEN) throw new Error('HA_URL and HA_TOKEN env vars required');
 ```
 
-## The schedule
+## Scheduling the nightly test run with GitHub Actions
 
 ```yaml
 on:
@@ -68,7 +73,7 @@ on:
 
 `workflow_dispatch` means I can also trigger it manually from the GitHub Actions tab when I want to verify something after making changes.
 
-## What gets tested
+## What the 22 Home Assistant tests cover
 
 The test suite uses Node's built-in `node:test` runner — no Jest, no Mocha, no extra dependencies. Each test file covers one area.
 
@@ -197,7 +202,7 @@ Since setting this up, it has caught:
 
 None of these would have been obvious until I specifically needed the thing that was broken. Now they're GitHub issues by 02:05.
 
-## The broader point
+## Why automated monitoring matters for Home Assistant
 
 Twenty-nine years of infrastructure work means I treat home automation the same way I treat production systems: things break silently, at inconvenient times, and the only way to know before it matters is to check continuously. A nightly test run against a live HA instance is the minimum viable monitoring for a setup you actually depend on.
 

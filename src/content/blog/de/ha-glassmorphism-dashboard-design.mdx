@@ -14,7 +14,7 @@ Was folgt ist das genaue CSS, mit Erklärungen zu den Stellen, die mich stolpern
 
 ![Home Assistant Dashboard mit Glassmorphism-Karten auf dunkelblauem Hintergrund](/blog-images/robot-roborock.jpg)
 
-## Die sechs Konstanten
+## Die sechs CSS-Konstanten für jede Glassmorphism-Karte
 
 Jede äußere Karte verwendet exakt diese Werte. Keine Abweichung.
 
@@ -150,7 +150,7 @@ card_mod:
 
 Der `"."`-Schlüssel ist der richtige für Mushroom-Karten in HA 2024+. Nicht `ha-card`, nicht der Komponentenname — `"."`. Ich testete deutlich zu viele andere Selektoren, bevor dieser funktionierte.
 
-## Das Konsistenz-Problem
+## Visuelle Konsistenz in HA-Dashboards erreichen
 
 YAML hat keine Variablen. Jede Karte mit Glasbehandlung bekommt ihre eigene Kopie der sechs CSS-Zeilen. Will man die Hintergrund-Deckkraft im ganzen Dashboard anpassen, ändert man sie an 25 Stellen.
 

@@ -6,13 +6,18 @@ tags: ["ev", "skoda-elroq", "myskoda", "home-assistant", "review"]
 lang: "en"
 translationKey: "skoda-elroq-home-assistant"
 heroImage: "/blog-images/skoda-elroq.jpg"
+faqs:
+  - question: "What data does the MySkoda Home Assistant integration provide?"
+    answer: "The MySkoda integration (HACS) provides battery level, charging state, range, mileage, GPS location, and climate pre-conditioning status. It polls the Škoda Connect cloud API with a 15–60 second latency."
+  - question: "What is missing from the MySkoda Home Assistant integration?"
+    answer: "The integration cannot control charging limits, does not support real-time streaming, and has no push notifications — it relies entirely on polling. Charge scheduling must be done via Home Assistant automations, not the integration itself."
 ---
 
-The My Škoda app is fine. It does everything it's supposed to do. But it's one more app that knows something my home automation doesn't, and that bothered me more than it probably should.
+The My Škoda app is fine. It does everything it's supposed to do. But it's one more app that knows something my Home Assistant doesn't, and that bothered me more than it probably should.
 
 The [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) integration (HACS) fixes that. It authenticates with your Škoda Connect account and polls the cloud API. The polling latency is real — commands take 15–60 seconds to reflect — but for most use cases that's fine.
 
-## What you actually get
+## What the MySkoda integration gives you in Home Assistant
 
 After setup, the Elroq shows up as a device with:
 
@@ -30,7 +35,7 @@ switch.skoda_elroq_charging            — start/stop
 
 The `climate` entity is the one I use most. Set it to a temperature, call `climate.turn_on`, and the car starts heating or cooling from whatever power source it's connected to. If it's plugged in, it draws from the grid. If not, from the battery — which is why I skip pre-conditioning if the battery is below 30%.
 
-## The dashboard card
+## Building the EV dashboard card
 
 I wanted the battery level visible at a glance without taking up much space. The solution is a green gradient behind the card content via `ha-card::after` — it fills the card proportionally to the charge level. The card uses `custom:stack-in-card` and `custom:mushroom-template-card` (both HACS, part of the Mushroom suite), with `card_mod` (HACS) for the CSS:
 
@@ -121,7 +126,7 @@ This works well in winter. In practice it means the car is warm when I leave —
 
 One problem: the calendar trigger fires based on the event summary matching exactly. If I rename the event or add something to the title, the condition fails silently and the car doesn't pre-condition. I've had that happen twice. It's a fragile string match and I haven't found a better approach yet.
 
-## Cable alert
+## Charging cable alert automation
 
 Forgetting to plug in is the one failure mode that actually costs something. The car sits overnight, draws nothing from the grid, and you leave in the morning with whatever charge you had the day before.
 
@@ -141,7 +146,9 @@ alerts:
 
 The time window matters — during the day it's off the charger constantly. The alert is only relevant at night when it should be charging. Outside that window it's silent regardless of plug state.
 
-## What's missing
+For automating *when* to charge based on hourly spot prices, [I've written a full guide for Danish EV owners](/en/blog/danish-electricity-prices-ev-charging/).
+
+## What the MySkoda integration still lacks
 
 The integration doesn't expose charging session data — no kWh added in the current session, no charge history. You can see the current power draw but not how long it's been running or how much it's added. For smart charging automation this is fine; for monitoring your actual charging costs it's a gap.
 
@@ -245,3 +252,5 @@ recorder:
       - sensor.skoda_elroq_outside_temperature
       - sensor.skoda_elroq_charging_state
 ```
+
+My HA instance runs on [Proxmox VE on a Dell OptiPlex 7060](/en/blog/proxmox-home-assistant-setup/), where snapshot-before-update is a one-click habit — worth reading if you're still on a Pi and wondering whether the move is worth it.

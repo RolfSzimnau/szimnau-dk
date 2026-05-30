@@ -6,13 +6,18 @@ tags: ["home-assistant", "github-actions", "testing", "proxmox", "automation"]
 lang: "da"
 translationKey: "ha-nightly-health-check"
 heroImage: "/blog-images/home-assistant-proxmox-github-actions-ci.webp"
+faqs:
+  - question: "Why does Home Assistant testing require a self-hosted GitHub Actions runner?"
+    answer: "GitHub's cloud runners cannot reach your local Home Assistant instance. A self-hosted runner installed on the same network as your HA server can make direct API calls to test live entities, services, and dashboard resources."
+  - question: "What should nightly Home Assistant tests cover?"
+    answer: "Critical automations and scripts, notification services, custom Lovelace card resources, and key entity states. The goal is catching silent breakages — integrations that stop working after a HA update without throwing visible errors."
 ---
 
-Opvaskemaskine-notifikationen virkede perfekt i måneder. Så en dag gjorde den det ikke. `notify.android_tv`-servicen var stille og roligt forsvundet efter en HA-genstart, og jeg fandt først ud af det da jeg stod i køkkenet og ventede på en alarm der aldrig kom.
+Opvaskemaskine-notifikationen virkede perfekt i måneder. Så en dag gjorde den det ikke. `notify.android_tv`-servicen var stille og roligt forsvundet efter en Home Assistant-genstart, og jeg fandt først ud af det da jeg stod i køkkenet og ventede på en alarm der aldrig kom.
 
 Det var sidste gang jeg fandt ud af en ødelagt integration ved at have brug for den på det forkerte tidspunkt.
 
-## Idéen
+## Hvorfor jeg byggede natlige tests til Home Assistant
 
 Hver nat kl. 02:00 kører et script alle mine Home Assistant-mønstre igennem en testsuite og kontrollerer at alt stadig virker. Hvis noget fejler, åbnes et GitHub-issue automatisk med den præcise fejl og en liste over sandsynlige årsager. Næste morgen ved jeg hvad der gik i stykker og nogenlunde hvorfor.
 
@@ -57,7 +62,7 @@ const HA_TOKEN = process.env.HA_TOKEN;
 if (!HA_URL || !HA_TOKEN) throw new Error('HA_URL and HA_TOKEN env vars required');
 ```
 
-## Tidsplanen
+## Planlæg den natlige testkørsel med GitHub Actions
 
 ```yaml
 on:
@@ -68,7 +73,7 @@ on:
 
 `workflow_dispatch` betyder at jeg også kan udløse det manuelt fra GitHub Actions-fanen når jeg vil verificere noget efter at have lavet ændringer.
 
-## Hvad der testes
+## Hvad de 22 Home Assistant-tests dækker
 
 Testsuiten bruger Node's indbyggede `node:test`-runner — ingen Jest, ingen Mocha, ingen ekstra afhængigheder. Hver testfil dækker ét område.
 
@@ -197,7 +202,7 @@ Siden opsætningen har det fanget:
 
 Ingen af disse ville have været åbenlyse inden jeg specifikt havde brug for det der var gået i stykker. Nu er de GitHub-issues kl. 02:05.
 
-## Det større perspektiv
+## Hvorfor automatiseret overvågning er vigtigt for Home Assistant
 
 Ni-og-tyve år med infrastruktur betyder at jeg behandler hjemmeautomatisering på samme måde som produktionssystemer: ting går i stykker stille og roligt, på ubelejlige tidspunkter, og den eneste måde at vide det inden det betyder noget er at tjekke løbende. En nightly testkørsel mod en live HA-instans er minimum levedygtig overvågning for et setup man faktisk er afhængig af.
 

@@ -6,6 +6,11 @@ tags: ["proxmox", "home-assistant", "einstieg", "virtualisierung"]
 lang: "de"
 translationKey: "proxmox-home-assistant-setup"
 heroImage: "/blog-images/proxmox-optiplex.jpg"
+faqs:
+  - question: "Why run Home Assistant on Proxmox instead of directly on hardware?"
+    answer: "Proxmox gives you VM snapshots before every update, USB passthrough for Zigbee/Z-Wave dongles, and the ability to run other services alongside Home Assistant — all on the same machine."
+  - question: "What hardware specs are recommended for Home Assistant on Proxmox?"
+    answer: "A Dell OptiPlex 7060 with 16 GB RAM and a 256 GB SSD works well. Assign 2 CPU cores and 4 GB RAM to the Home Assistant VM. An SSD is essential — SD cards fail under HA's write load."
 ---
 
 Mein Home Assistant-Setup lief seit zwei Jahren auf einem Raspberry Pi 4, als ich an einem Mittwochabend im Oktober nach Hause kam und ihn tot vorfand. Die SD-Karte hatte sich still selbst zerstört. Keine Warnung. Kein sauberes Herunterfahren. Nur ein kaltes Haus und nichts, das funktionierte.
@@ -18,7 +23,7 @@ Der naheliegende Schritt wäre, HA OS direkt auf dem OptiPlex zu installieren. I
 
 Der andere Grund: Snapshots. Vor jedem HA-Update erstelle ich einen Proxmox-Snapshot. Wenn etwas kaputt geht, dauert ein Rollback 10 Sekunden. Auf dem Pi konnte ein schlechtes Update eine Stunde Wiederherstellungsarbeit bedeuten.
 
-## Die Hardware: Dell OptiPlex 7060
+## Hardware: Dell OptiPlex 7060 als Home Assistant-Host
 
 Ich fand einen refurbished OptiPlex 7060 für unter 150€ auf eBay. Er kam mit 16 GB RAM, das ich sofort auf 32 GB aufrüstete — 8-GB-Sticks kosteten je 12€ und der OptiPlex nimmt sie problemlos.
 
@@ -110,7 +115,7 @@ Der Snapshot dauert unter 30 Sekunden. Funktioniert das Update einwandfrei, lös
 
 Auf dem Raspberry Pi war ich bei Updates immer leicht nervös, weil die Wiederherstellung langsam und mühsam war. Mit Proxmox-Snapshots spiele ich Updates am Tag ihres Erscheinens ohne jedes Zögern ein.
 
-## Was der Umzug wirklich gelöst hat
+## Was der Wechsel zu Proxmox wirklich gelöst hat
 
 Drei Jahre auf dem Pi bedeuteten drei SD-Karten-Auswechslungen und zwei Korruptionsvorfälle. Der OptiPlex läuft seit Ende 2022 ohne einen einzigen Hardware-Zwischenfall. Die NVMe SSD kümmert sich nicht um Stromausfälle. Proxmox schreibt auf journalisierte Dateisysteme. Der Pi war nie das richtige Werkzeug für Infrastruktur, die Heizung, Sicherheitskameras und EV-Laden steuert — er war einfach billig und einfach zu starten.
 

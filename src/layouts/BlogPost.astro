@@ -11,9 +11,10 @@ interface Props {
   heroImage?: string;
   tags: string[];
   translationKey: string;
+  faqs?: Array<{ question: string; answer: string }>;
 }
 
-const { title, description, lang, pubDate, updatedDate, heroImage, tags } = Astro.props;
+const { title, description, lang, pubDate, updatedDate, heroImage, tags, faqs } = Astro.props;
 
 const formattedDate = pubDate.toLocaleDateString(
   lang === 'da' ? 'da-DK' : lang === 'de' ? 'de-DE' : 'en-US',
@@ -46,6 +47,17 @@ const jsonLd = {
 
 <Base title={title} description={description} lang={lang} type="article" pubDate={pubDate} heroImage={heroImage}>
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  {faqs && faqs.length > 0 && (
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map(f => ({
+        '@type': 'Question',
+        name: f.question,
+        acceptedAnswer: { '@type': 'Answer', text: f.answer }
+      }))
+    })} />
+  )}
   <article class="max-w-3xl mx-auto px-6 py-24">
     <header class="mb-12">
       <h1 class="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary leading-tight mb-6">
