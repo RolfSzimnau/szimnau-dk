@@ -38,6 +38,41 @@ jobs:
     timeout-minutes: 5
 ```
 
+## Opsætning af Proxmox LXC-runneren
+
+Runneren bor i en dedikeret LXC-container på samme Proxmox-vært som Home Assistant. Opret den via Proxmox UI: **Create CT** → Debian 12-skabelon, 1 vCPU, 512 MB RAM, bridget netværk (`vmbr0`). Start containeren og åbn dens konsol.
+
+Installer Node.js:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+Installer GitHub Actions-runneren. Gå til dit repository → **Settings → Actions → Runners → New self-hosted runner** og kopier de download- og konfigurationskommandoer GitHub genererer. Konfigurationstrinnet er der hvor du angiver runner-navn og labels:
+
+```bash
+./config.sh \
+  --url https://github.com/DIN_BRUGER/DIT_REPO \
+  --token DIT_TOKEN \
+  --name proxmox-runner \
+  --labels home-network \
+  --unattended
+```
+
+`home-network`-labelet er det der binder denne runner til workflowets `runs-on: [self-hosted, home-network]`. Uden det vil GitHub ikke sende jobbet til denne maskine.
+
+Installer og start runneren som en systemd-service så den overlever genstarter:
+
+```bash
+sudo ./svc.sh install
+sudo ./svc.sh start
+```
+
+Når runneren er registreret og idle, vises den under **Settings → Actions → Runners** i repositoryet:
+
+![GitHub self-hosted runner registreret med home-network-label](/blog-images/Github_Runners.jpg)
+
 ## Legitimationsoplysninger: den rigtige måde
 
 Testene skal bruge et long-lived HA-token. Den korrekte tilgang er at gemme det som en GitHub Actions-hemmelighed — aldrig hardkode det i repositoryet.
@@ -61,6 +96,29 @@ const HA_URL = process.env.HA_URL;
 const HA_TOKEN = process.env.HA_TOKEN;
 if (!HA_URL || !HA_TOKEN) throw new Error('HA_URL and HA_TOKEN env vars required');
 ```
+
+## Repository-struktur
+
+Én workflowfil, testfiler grupperet under `tests/ha/` og en delt helper til alle HA API-kald:
+
+```
+.
+├── .github/
+│   └── workflows/
+│       └── ha-nightly.yml
+├── tests/
+│   └── ha/
+│       ├── smoke.test.mjs
+│       ├── notifications.test.mjs
+│       ├── automations.test.mjs
+│       ├── integrations.test.mjs
+│       └── custom-cards.test.mjs
+├── lib/
+│   └── ha-client.mjs
+└── package.json
+```
+
+`package.json` behøver kun `"type": "module"` — ingen test-framework-afhængighed, da Node's indbyggede `node:test` håndterer det hele.
 
 ## Planlæg den natlige testkørsel med GitHub Actions
 

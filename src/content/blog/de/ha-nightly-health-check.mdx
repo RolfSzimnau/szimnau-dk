@@ -38,6 +38,41 @@ jobs:
     timeout-minutes: 5
 ```
 
+## Den Proxmox-LXC-Runner einrichten
+
+Der Runner lebt in einem dedizierten LXC-Container auf demselben Proxmox-Host wie Home Assistant. Erstelle ihn über die Proxmox-UI: **Create CT** → Debian-12-Template, 1 vCPU, 512 MB RAM, Bridged-Netzwerk (`vmbr0`). Container starten, dann die Konsole öffnen.
+
+Node.js installieren:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+Den GitHub-Actions-Runner installieren. Gehe zu deinem Repository → **Settings → Actions → Runners → New self-hosted runner** und kopiere die von GitHub generierten Download- und Konfigurationsbefehle. Der Konfigurationsschritt ist der Ort, wo du Runner-Name und Labels setzt:
+
+```bash
+./config.sh \
+  --url https://github.com/DEIN_USER/DEIN_REPO \
+  --token DEIN_TOKEN \
+  --name proxmox-runner \
+  --labels home-network \
+  --unattended
+```
+
+Das Label `home-network` verbindet diesen Runner mit dem `runs-on: [self-hosted, home-network]` des Workflows. Ohne es leitet GitHub den Job nicht an diese Maschine weiter.
+
+Abschließend den Runner als systemd-Dienst installieren und starten, damit er Neustarts überlebt:
+
+```bash
+sudo ./svc.sh install
+sudo ./svc.sh start
+```
+
+Wenn der Runner registriert und im Leerlauf ist, erscheint er unter **Settings → Actions → Runners** im Repository:
+
+![Registrierter GitHub-Self-hosted-Runner mit home-network-Label](/blog-images/Github_Runners.jpg)
+
 ## Zugangsdaten: der richtige Weg
 
 Die Tests benötigen ein langlebiges HA-Token. Der richtige Ansatz ist, es als GitHub-Actions-Secret zu speichern — niemals im Repository hardcoden.
@@ -61,6 +96,29 @@ const HA_URL = process.env.HA_URL;
 const HA_TOKEN = process.env.HA_TOKEN;
 if (!HA_URL || !HA_TOKEN) throw new Error('HA_URL and HA_TOKEN env vars required');
 ```
+
+## Repository-Struktur
+
+Eine Workflow-Datei, Testdateien unter `tests/ha/` und ein gemeinsamer Helper für alle HA-API-Aufrufe:
+
+```
+.
+├── .github/
+│   └── workflows/
+│       └── ha-nightly.yml
+├── tests/
+│   └── ha/
+│       ├── smoke.test.mjs
+│       ├── notifications.test.mjs
+│       ├── automations.test.mjs
+│       ├── integrations.test.mjs
+│       └── custom-cards.test.mjs
+├── lib/
+│   └── ha-client.mjs
+└── package.json
+```
+
+`package.json` benötigt nur `"type": "module"` — keine Test-Framework-Abhängigkeit, da Node's eingebautes `node:test` alles übernimmt.
 
 ## Den nächtlichen Testlauf mit GitHub Actions planen
 
