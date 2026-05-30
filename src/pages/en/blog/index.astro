@@ -23,21 +23,11 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
   <div class="max-w-6xl mx-auto px-6 py-24">
     <header class="mb-12">
       <p class="font-mono text-blue text-sm mb-3 tracking-wider uppercase">// Blog</p>
-      <h1 class="font-heading text-4xl sm:text-5xl font-bold text-text-primary mb-4">{t('blog.title')}</h1>
+      <h1 class="font-heading text-4xl sm:text-5xl font-bold text-text-primary mb-4">{t('blog.page.title')}</h1>
       <p class="text-text-muted max-w-2xl">
         Real-world Home Assistant guides, hardware reviews, and automation blueprints. No fluff — just what works.
       </p>
     </header>
-
-    {allTags.length > 0 && (
-      <div class="flex flex-wrap gap-2 mb-10">
-        {allTags.map(tag => (
-          <span class="font-mono text-xs text-blue border border-blue/20 bg-blue-glow px-3 py-1 rounded-full">
-            #{tag}
-          </span>
-        ))}
-      </div>
-    )}
 
     {posts.length === 0 ? (
       <div class="glass-card p-12 text-center">
@@ -59,6 +49,16 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
             />
           );
         })}
+      </div>
+    )}
+
+    {allTags.length > 0 && (
+      <div class="flex flex-wrap gap-2 mt-12">
+        {allTags.map(tag => (
+          <span class="font-mono text-xs text-blue border border-blue/20 bg-blue-glow px-3 py-1 rounded-full">
+            #{tag}
+          </span>
+        ))}
       </div>
     )}
   </div>
