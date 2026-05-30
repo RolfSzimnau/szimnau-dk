@@ -38,6 +38,41 @@ jobs:
     timeout-minutes: 5
 ```
 
+## Setting up the Proxmox LXC runner
+
+The runner lives in a dedicated LXC container on the same Proxmox host as Home Assistant. Create it through the Proxmox UI: **Create CT** → Debian 12 template, 1 vCPU, 512 MB RAM, bridged network (`vmbr0`). Start the container, then open its console.
+
+Install Node.js:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+Install the GitHub Actions runner. Go to your repository → **Settings → Actions → Runners → New self-hosted runner** and copy the download and configuration commands GitHub generates. The configuration step is where you set the runner name and labels:
+
+```bash
+./config.sh \
+  --url https://github.com/YOUR_USER/YOUR_REPO \
+  --token YOUR_TOKEN \
+  --name proxmox-runner \
+  --labels home-network \
+  --unattended
+```
+
+The `home-network` label is what ties this runner to the workflow's `runs-on: [self-hosted, home-network]`. Without it, GitHub won't route the job to this machine.
+
+Finally, install and start the runner as a systemd service so it survives reboots:
+
+```bash
+sudo ./svc.sh install
+sudo ./svc.sh start
+```
+
+When the runner is registered and idle, it appears under **Settings → Actions → Runners** in the repository:
+
+![GitHub self-hosted runner registered with home-network label](/blog-images/Github_Runners.jpg)
+
 ## Credentials: the right way
 
 The tests need a long-lived HA token. The correct approach is to store it as a GitHub Actions secret — never hardcode it in the repository.
@@ -61,6 +96,29 @@ const HA_URL = process.env.HA_URL;
 const HA_TOKEN = process.env.HA_TOKEN;
 if (!HA_URL || !HA_TOKEN) throw new Error('HA_URL and HA_TOKEN env vars required');
 ```
+
+## Repository structure
+
+One workflow file, test files grouped under `tests/ha/`, and a shared helper for all HA API calls:
+
+```
+.
+├── .github/
+│   └── workflows/
+│       └── ha-nightly.yml
+├── tests/
+│   └── ha/
+│       ├── smoke.test.mjs
+│       ├── notifications.test.mjs
+│       ├── automations.test.mjs
+│       ├── integrations.test.mjs
+│       └── custom-cards.test.mjs
+├── lib/
+│   └── ha-client.mjs
+└── package.json
+```
+
+`package.json` only needs `"type": "module"` — no test framework dependency, since Node's built-in `node:test` handles everything.
 
 ## Scheduling the nightly test run with GitHub Actions
 
