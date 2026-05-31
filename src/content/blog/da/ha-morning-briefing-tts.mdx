@@ -1,8 +1,8 @@
 ---
 title: "Home Assistant Morgenbriefing — TTS med kalender, vejr og elpris"
-description: "Sådan byggede jeg en daglig kl. 06:00 talebesked i Home Assistant med Google AI TTS, calendar.get_events på tværs af tre familiekalendere, EV-ladestatus, Waze-pendlertrafik, live elpris og affaldstæller."
+description: "Sådan byggede jeg en daglig kl. 06:00 talebesked i Home Assistant med Google AI TTS (Gemini), calendar.get_events på tværs af tre familiekalendere, EV-ladestatus, Waze-pendlertrafik, live elpris og affaldstæller."
 pubDate: 2026-05-31
-tags: ["home-assistant", "tts", "automation", "kalender", "google", "elpris"]
+tags: ["home-assistant", "tts", "automation", "kalender", "google", "gemini", "elpris"]
 lang: "da"
 translationKey: "ha-morning-briefing-tts"
 heroImage: "/blog-images/ha-morning-briefing-tts.jpg"
@@ -214,3 +214,5 @@ Tilføj dette blok i beskedtemplate'en, lige før elprisen:
 ## Hvorfor `tts.speak` og ikke den gamle service
 
 Home Assistant 2024+ bruger `tts.speak` kaldt på TTS-motor-entiteten, med `media_player_entity_id` som datafelt. Den gamle `tts.google_translate_say`-service virker stadig men er forældet. Det nye mønster adskiller motoren fra afspilleren — lettere at skifte begge uafhængigt.
+
+`tts.google_ai_tts` leveres af **Google Generative AI**-integrationen — den samme integration der driver Gemini-samtaleagenten i Home Assistant. Den kræver en Google AI Studio API-nøgle, men producerer naturlig, menneskelignende tale sammenlignet med den robotagtige lyd fra den gratis Google Translate TTS.

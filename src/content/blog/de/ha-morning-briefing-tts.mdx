@@ -1,8 +1,8 @@
 ---
 title: "Home Assistant Morgen-Briefing — TTS mit Kalender, Wetter und Strompreis"
-description: "Wie ich ein tägliches 06:00-Uhr-Sprachbriefing in Home Assistant mit Google AI TTS, calendar.get_events über drei Familienkalender, EV-Ladestatus, Waze-Pendelverkehr, Live-Strompreis und Müllabfuhr-Countdown gebaut habe."
+description: "Wie ich ein tägliches 06:00-Uhr-Sprachbriefing in Home Assistant mit Google AI TTS (Gemini), calendar.get_events über drei Familienkalender, EV-Ladestatus, Waze-Pendelverkehr, Live-Strompreis und Müllabfuhr-Countdown gebaut habe."
 pubDate: 2026-05-31
-tags: ["home-assistant", "tts", "automation", "kalender", "google", "strompreis"]
+tags: ["home-assistant", "tts", "automation", "kalender", "google", "gemini", "strompreis"]
 lang: "de"
 translationKey: "ha-morning-briefing-tts"
 heroImage: "/blog-images/ha-morning-briefing-tts.jpg"
@@ -190,3 +190,5 @@ Diesen Block in die Nachrichten-Vorlage einfügen, direkt vor dem Strompreis:
 ## Warum `tts.speak` und nicht der alte Service
 
 Home Assistant 2024+ verwendet `tts.speak` auf der TTS-Engine-Entität, mit `media_player_entity_id` als Datenfeld. Der alte `tts.google_translate_say`-Service funktioniert noch, ist aber veraltet. Das neue Muster trennt Engine und Abspielgerät — beide können unabhängig voneinander ausgetauscht werden.
+
+`tts.google_ai_tts` wird von der **Google Generative AI**-Integration bereitgestellt — derselben Integration, die auch den Gemini-Konversationsagenten in Home Assistant antreibt. Sie erfordert einen Google AI Studio API-Schlüssel, erzeugt aber natürlich klingende Sprache im Vergleich zur roboterhaften Ausgabe der kostenlosen Google Translate TTS-Option.
