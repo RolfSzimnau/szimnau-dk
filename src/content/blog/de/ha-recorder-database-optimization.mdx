@@ -1,0 +1,97 @@
+---
+title: "Home Assistant Recorder: Datenbankwachstum von 160 MB/Tag auf unter 50 MB reduziert"
+description: "Meine Home Assistant SQLite-Datenbank erreichte 963 MB in sechs Tagen. Hier ist die exakte Recorder-Konfiguration, die das tägliche Wachstum um über 70 % reduziert hat — mit vollständigem YAML und Begründung."
+pubDate: 2026-05-31
+tags: ["home-assistant", "database", "recorder", "optimierung", "sqlite"]
+lang: "de"
+translationKey: "ha-recorder-database-optimization"
+faqs:
+  - question: "How do I check if my Home Assistant recorder database is too large?"
+    answer: "Go to Settings → System → System Health. The recorder section shows 'estimated_db_size'. For a 5-day retention period, anything above 500 MB suggests noisy entities worth investigating. You can also run recorder.purge with repack: true and compare the before/after size."
+  - question: "Does excluding entities from the recorder affect automations or dashboards?"
+    answer: "No. The recorder only controls historical data for the History panel and energy dashboards. Automations, scripts, and real-time Lovelace card states are completely unaffected by recorder exclusions — they read from the state machine, not the database."
+---
+
+Meine Home Assistant SQLite-Datenbank erreichte 963 MB in nur sechs Tagen — etwa 160 MB pro Tag bei einer 5-Tage-Aufbewahrungszeit. Das ist mehr als das Dreifache dessen, was ein gut konfiguriertes Setup erzeugen sollte.
+
+Das Problem war nicht eine einzelne Ursache. Es waren ein Dutzend Home Assistant-Integrationen, die still und leise Zustandsänderungen protokollierten, die niemand jemals im History-Panel nachschlägt. Hier ist die genaue Konfiguration, die das Wachstum auf unter 50 MB pro Tag reduziert hat.
+
+## Warum die Home Assistant Recorder-Datenbank unbemerkt wächst
+
+Home Assistants Recorder protokolliert standardmäßig jede Zustandsänderung für jede Entität. Das ist das richtige Verhalten für Sensoren, die tatsächlich historisch relevant sind — Temperatur, Energieverbrauch, Anwesenheit. Die meisten Installationen häufen jedoch hunderte von Entitäten an, die keinen historischen Wert haben:
+
+- **Interne Integrationsdiagnostik** — Tado exponiert 22 Sensoren, die eigene API-Quoten, Polling-Intervalle und Rate-Limit-Schwellenwerte verfolgen.
+- **Dauerhaft nicht verfügbare Entitäten** — FlightRadar24-Flughafensensoren, die nie online kamen, protokollieren weiterhin Zustandsänderungen.
+- **Update-Entitäten** — 59 Update-Entitäten für Firmware und HACS. Das sind Momentaufnahmen, keine Zeitreihen.
+- **Gerätestatistiken** — UniFi Access Points protokollieren jede Minute CPU- und Speicherauslastung.
+
+## Die vollständige Recorder-Konfiguration
+
+Ersetze den `recorder:`-Block in `configuration.yaml`. Bearbeite ihn über das **Studio Code Server**-Add-on:
+
+```yaml
+recorder:
+  purge_keep_days: 5
+  exclude:
+    domains:
+      - update                          # 59 Entitäten — Momentaufnahmen, keine Zeitreihen
+    entity_globs:
+      - sensor.skoda_elroq_*           # EV-Integrationsmetadaten (siehe include-Ausnahmen)
+      - sensor.tado_szimnau_*          # ~22 interne Tado-Polling-Diagnosesensoren
+      - sensor.flightradar24_airport_* # 12 Sensoren, alle dauerhaft nicht verfügbar
+      - sensor.u6_lite_*               # UniFi AP-Stats — CPU/Speicher ändern sich jede Minute
+      - sensor.uap_ac_pro_*            # Gleiches für zweiten Access Point
+      - sensor.air_conditioning_next_* # Tado Zeitplan-Prognosesensoren
+    entities:
+      - sensor.energi_data_service
+      - sensor.pixel_10_last_notification
+      - sensor.pixel_10_active_notification_count
+      - sensor.pixel_10_media_session
+      - sensor.pixel_10_car_speed
+      - sensor.pixel_10_car_battery
+      - sensor.pixel_10_car_range_remaining
+      - sensor.pixel_10_car_odometer
+      - sensor.pixel_10_car_charging_status
+      - sensor.pixel_10_car_ev_connector_type
+      - sensor.pixel_10_car_fuel
+      - sensor.pixel_10_car_fuel_type
+      - sensor.pixel_10_car_name
+      - image.skoda_elroq_main_render_of_vehicle
+      - sensor.skoda_elroq_last_operation
+      - sensor.skoda_elroq_last_service_event
+      - sensor.skoda_elroq_software_version
+      - sensor.skoda_elroq_next_inspection_2
+  include:
+    entities:
+      - sensor.skoda_elroq_battery_percentage
+      - sensor.skoda_elroq_range
+      - sensor.skoda_elroq_charging_state
+```
+
+Der `include:`-Block überschreibt den `sensor.skoda_elroq_*`-Glob für die drei Entitäten, die ich tatsächlich im History-Panel verfolge.
+
+## Begründung der Ausschlüsse
+
+**`domains: update`** ist der einfachste Gewinn. Alle Firmware- und HACS-Update-Tracker gehören nicht in die Zeitreihenspeicherung.
+
+**`sensor.tado_szimnau_*`** ist der wirkungsvollste Glob. Die Tado-Integration exponiert detaillierte interne Diagnosesensoren, die sich bei jedem API-Aufruf aktualisieren — mehrmals pro Stunde über mehrere Zonen hinweg.
+
+**`sensor.u6_lite_*` und `sensor.uap_ac_pro_*`** erfassen UniFi Access Point-Diagnostik. CPU- und Speicherauslastung ändern sich jede Minute und erzeugen tausende Datenpunkte pro Woche ohne praktischen Wert.
+
+## Änderungen ohne Neustart anwenden
+
+Nach dem Speichern von `configuration.yaml` den Recorder neu laden und die Datenbank in einem Schritt komprimieren:
+
+```
+Developer Tools → Actions → recorder.purge
+  keep_days: 5
+  repack: true
+```
+
+`repack: true` führt SQLites `VACUUM`-Operation aus, die die Datenbankdatei physisch verkleinert. Ohne diese Option bleibt die Datei auf ihrer Maximalgröße, auch nachdem alte Einträge entfernt wurden.
+
+Die neuen Ausschlüsse treten sofort nach dem Neuladen in Kraft. Historische Daten für ausgeschlossene Entitäten werden durch die normale tägliche Bereinigung in den nächsten fünf Tagen gelöscht.
+
+## Was in der Historie behalten werden sollte
+
+Klimasensoren, Energiesensoren, EV-Akku und Reichweite sowie Sicherheitszustände gehören alle in die Historie. Das Ziel ist keine möglichst kleine Datenbank — sondern eine Datenbank, in der jede Zeile ihren Platz verdient.

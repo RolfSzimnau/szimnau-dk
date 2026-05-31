@@ -1,0 +1,99 @@
+---
+title: "Home Assistant Recorder: Sådan reducerede jeg databasevæksten fra 160 MB/dag til under 50 MB"
+description: "Min Home Assistant SQLite-database nåede 963 MB på seks dage. Her er den præcise recorder-konfiguration der reducerede den daglige vækst med over 70% — med komplet YAML og begrundelse."
+pubDate: 2026-05-31
+tags: ["home-assistant", "database", "recorder", "optimering", "sqlite"]
+lang: "da"
+translationKey: "ha-recorder-database-optimization"
+faqs:
+  - question: "How do I check if my Home Assistant recorder database is too large?"
+    answer: "Go to Settings → System → System Health. The recorder section shows 'estimated_db_size'. For a 5-day retention period, anything above 500 MB suggests noisy entities worth investigating. You can also run recorder.purge with repack: true and compare the before/after size."
+  - question: "Does excluding entities from the recorder affect automations or dashboards?"
+    answer: "No. The recorder only controls historical data for the History panel and energy dashboards. Automations, scripts, and real-time Lovelace card states are completely unaffected by recorder exclusions — they read from the state machine, not the database."
+---
+
+Min Home Assistant SQLite-database nåede 963 MB på bare seks dage — omtrent 160 MB om dagen med en 5-dages opbevaringstid. Det er mere end tre gange hvad et veloptimeret setup bør producere.
+
+Problemet var ikke én stor synder. Det var et dusin Home Assistant-integrationer der stille og roligt loggede tilstandsændringer som aldrig bliver slået op i History-panelet. Her er den præcise konfiguration der reducerede væksten til under 50 MB om dagen — og begrundelsen bag hver ekskludering.
+
+## Hvorfor Home Assistant recorder-databasen vokser uden at du opdager det
+
+Home Assistants recorder logger som udgangspunkt alle tilstandsændringer for alle entiteter. Det er den rigtige adfærd for sensorer du faktisk interesserer dig for — temperatur, energiforbrug, tilstedeværelse. Men de fleste installationer samler hundredvis af entiteter der ikke har nogen historisk værdi:
+
+- **Interne integrationsdiagnostik** — Tado eksponerer 22 sensorer der sporer sin egen API-kvote, polling-intervaller og rate limit-tærskler. Disse ændrer sig konstant og er ubrugelige som historik.
+- **Permanent unavailable entiteter** — FlightRadar24 lufthavnssensorer der aldrig kom online logger stadig tilstandsændringer.
+- **Update-entiteter** — 59 update-entiteter på tværs af firmware og HACS. Det er øjebliksdata, ikke tidsserier.
+- **Enhedsstatistik** — UniFi access points logger CPU- og hukommelsesprocent hvert minut.
+
+## Den komplette recorder-konfiguration
+
+Erstat `recorder:`-blokken i `configuration.yaml`. Rediger via **Studio Code Server**-add-on'et:
+
+```yaml
+recorder:
+  purge_keep_days: 5
+  exclude:
+    domains:
+      - update                          # 59 entiteter — øjebliksdata, ikke tidsserier
+    entity_globs:
+      - sensor.skoda_elroq_*           # EV-integrationsmetadata (se include-undtagelser)
+      - sensor.tado_szimnau_*          # ~22 interne Tado polling-diagnostiksensorer
+      - sensor.flightradar24_airport_* # 12 sensorer, alle permanent unavailable
+      - sensor.u6_lite_*               # UniFi AP-stats — CPU/hukommelse ændres hvert minut
+      - sensor.uap_ac_pro_*            # Samme for anden access point
+      - sensor.air_conditioning_next_* # Tados schedule-fremskrivningssensorer
+    entities:
+      - sensor.energi_data_service
+      - sensor.pixel_10_last_notification
+      - sensor.pixel_10_active_notification_count
+      - sensor.pixel_10_media_session
+      - sensor.pixel_10_car_speed
+      - sensor.pixel_10_car_battery
+      - sensor.pixel_10_car_range_remaining
+      - sensor.pixel_10_car_odometer
+      - sensor.pixel_10_car_charging_status
+      - sensor.pixel_10_car_ev_connector_type
+      - sensor.pixel_10_car_fuel
+      - sensor.pixel_10_car_fuel_type
+      - sensor.pixel_10_car_name
+      - image.skoda_elroq_main_render_of_vehicle
+      - sensor.skoda_elroq_last_operation
+      - sensor.skoda_elroq_last_service_event
+      - sensor.skoda_elroq_software_version
+      - sensor.skoda_elroq_next_inspection_2
+  include:
+    entities:
+      - sensor.skoda_elroq_battery_percentage
+      - sensor.skoda_elroq_range
+      - sensor.skoda_elroq_charging_state
+```
+
+`include:`-blokken tilsidesætter `sensor.skoda_elroq_*`-glob'en for de tre entiteter jeg faktisk bruger i History-panelet.
+
+## Begrundelsen bag ekskluderingerne
+
+**`domains: update`** er den nemmeste gevinst. Alle firmware- og HACS-opdateringsenheder hører ikke hjemme i tidsserie-lagring.
+
+**`sensor.tado_szimnau_*`** er den glob med størst effekt. Tado-integrationen eksponerer detaljerede interne diagnostiksensorer: API-kald tilbage i dag, aktuelt polling-interval, rate limit-tærskler, kvote-nulstillingshistorik. Disse opdateres ved hvert API-kald — adskillige gange i timen på tværs af flere zoner.
+
+**`sensor.flightradar24_airport_*`** rammer 12 lufthavnsstatistiksensorer der var fejlkonfigureret og sidder fast i `unavailable`. En entitet i vedvarende unavailable-tilstand genererer stadig recorder-skrivninger.
+
+**`sensor.u6_lite_*` og `sensor.uap_ac_pro_*`** dækker UniFi access point-diagnostik. CPU og hukommelsesudnyttelse ændres hvert minut — tusindvis af datapunkter om ugen uden handlingsværdi.
+
+## Anvend ændringerne uden genstart
+
+Efter du har gemt `configuration.yaml`, reload recorder og komprimer databasen i ét trin:
+
+```
+Developer Tools → Actions → recorder.purge
+  keep_days: 5
+  repack: true
+```
+
+`repack: true` kører SQLites `VACUUM`-operation, der fysisk krymper databasefilen. Uden den forbliver filen på sin maksimale størrelse selv efter at gamle poster er fjernet.
+
+De nye ekskluderinger træder i kraft med det samme. Historiske data for ekskluderede entiteter renses af den normale daglige purge over de næste fem dage.
+
+## Hvad der er værd at beholde i historikken
+
+Klimasensorer, energisensorer, EV-batteri og rækkevidde samt sikkerhedstilstande hører alle hjemme i historikken. Målet er ikke den mindst mulige database — det er en database hvor hver række tjener et formål.
