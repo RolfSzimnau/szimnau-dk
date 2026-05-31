@@ -27,6 +27,14 @@ const hardware = [
     link: 'https://www.home-assistant.io',
   },
   {
+    name: 'Home Assistant Connect ZBT-2',
+    category: 'Thread & Zigbee Radio',
+    description: 'Dual-radio USB stick running as an OpenThread Border Router. Alongside the Google TV Streamer it forms a redundant Thread mesh — IKEA and other Thread sensors pair directly with HA without a third-party hub.',
+    status: 'running' as const,
+    icon: '📶',
+    link: 'https://www.home-assistant.io/connectzbt2',
+  },
+  {
     name: 'UniFi Network',
     category: 'Networking',
     description: 'UniFi Ultra gateway, 8-port PoE switch, and two APs covering the house — rock-solid IoT VLAN isolation.',
@@ -109,7 +117,7 @@ const hardware = [
   {
     name: 'IKEA Home Smart',
     category: 'Smart Devices',
-    description: 'Dirigera hub with TRADFRI blinds and smart plugs. Zigbee local control via native HA integration.',
+    description: 'IKEA Thread sensors running on the shared Thread mesh. Two border routers (HA ZBT-2 and Google TV Streamer) provide redundant routing — devices pair directly into HA without a separate hub.',
     status: 'active' as const,
     icon: '🏗️',
     link: 'https://www.ikea.com',
