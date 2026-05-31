@@ -84,9 +84,9 @@ If two people share the same event, it gets read twice. For a family briefing th
 ```yaml
 alias: "Morgenbriefing: TTS kl. 06"
 description: >
-  Daily spoken briefing on the kitchen speaker at 06:00.
-  Covers weather, family calendar events, garbage collection,
-  Elroq range warning, and electricity spot price.
+  Daily spoken briefing on the kitchen speaker at 06:00. Covers weather,
+  family calendar events, garbage collection, EV charge status and
+  preconditioning confirmation, commute traffic, and electricity spot price.
 mode: single
 trigger:
   - platform: time
@@ -130,6 +130,11 @@ action:
         {% set affald = states('sensor.affalddk_bytoften_1_naeste_afhentning') | int(99) %}
         {% set elpris = states('sensor.energi_data_service') | float(0) | round(2) %}
         {% set km = states('sensor.skoda_elroq_range') | int(0) %}
+        {% set bat = states('sensor.skoda_elroq_battery_percentage') | int(0) %}
+        {% set maal = states('sensor.skoda_elroq_target_battery_percentage') | int(80) %}
+        {% set lader = states('sensor.skoda_elroq_charging_state') %}
+        {% set ac = states('climate.skoda_elroq_air_conditioning') %}
+        {% set rejsetid = states('sensor.rejsetid_vejle_travel_time') | float(0) | round(0) | int %}
         God morgen! I dag er det {{ dag }}.
         Temperaturen ude er {{ temp }} grader.
         {% if events | length > 0 %}
@@ -142,6 +147,15 @@ action:
         {% endif %}
         {% if km > 0 and km < 100 %}Elroq har kun {{ km }} kilometer tilbage.
         {% endif %}
+        {% if lader == 'charging' %}Elroq lader: {{ bat }}% ud af {{ maal }}%.
+        {% elif bat < maal %}Elroq er {{ bat }}% – har ikke nået målet på {{ maal }}%.
+        {% endif %}
+        {% if ac != 'off' %}Elroq varmer op.
+        {% endif %}
+        {% if now().weekday() < 5 and rejsetid > 0 %}
+        {% if rejsetid > 40 %}Trafik til Vejle: {{ rejsetid }} minutter – forvent forsinkelse.
+        {% else %}Kørsel til Vejle tager {{ rejsetid }} minutter.
+        {% endif %}{% endif %}
         Elprisen er {{ elpris }} kroner per kilowattime.
 ```
 
@@ -167,6 +181,33 @@ condition:
 ```
 
 **Different garbage sensor** — the `sensor.affalddk_bytoften_1_naeste_afhentning` entity comes from the [Affald.dk](https://www.home-assistant.io/integrations/afvd/) integration and returns the number of days until the next collection. Replace with your own waste collection sensor and adjust the threshold values.
+
+## Adding EV charge status and preconditioning
+
+Two sensors from the MyŠkoda integration (or any EV integration that exposes charge state) make the briefing aware of whether the car is ready for the day.
+
+**Charge status** — the briefing only speaks when something needs attention. If the car hit its target overnight, nothing is said.
+
+```jinja2
+{% set bat = states('sensor.skoda_elroq_battery_percentage') | int(0) %}
+{% set maal = states('sensor.skoda_elroq_target_battery_percentage') | int(80) %}
+{% set lader = states('sensor.skoda_elroq_charging_state') %}
+{% if lader == 'charging' %}Elroq lader: {{ bat }}% ud af {{ maal }}%.
+{% elif bat < maal %}Elroq er {{ bat }}% – har ikke nået målet på {{ maal }}%.
+{% endif %}
+```
+
+`sensor.skoda_elroq_target_battery_percentage` is set in the MyŠkoda app and exposed directly as a HA sensor. If your EV integration doesn't expose the charge target, replace `maal` with a hardcoded number like `80`.
+
+**Preconditioning confirmation** — if a morning warmup automation runs a few minutes before 06:00, the briefing can confirm it actually started:
+
+```jinja2
+{% set ac = states('climate.skoda_elroq_air_conditioning') %}
+{% if ac != 'off' %}Elroq varmer op.
+{% endif %}
+```
+
+This works because the warmup automation runs at 05:55 — five minutes before the briefing. By 06:00, `climate.skoda_elroq_air_conditioning` is either active (one short confirmation line) or still `off` (silent — the warmup automation handles its own failure alert separately).
 
 ## Adding a traffic report
 
