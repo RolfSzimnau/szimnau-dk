@@ -1,0 +1,151 @@
+---
+title: "Home Assistant Morgenbriefing — TTS med kalender, vejr og elpris"
+description: "Sådan byggede jeg en daglig kl. 06:00 talebesked i Home Assistant med Google AI TTS, calendar.get_events på tværs af tre familiekalendere, live elpris og affaldstæller."
+pubDate: 2026-05-31
+tags: ["home-assistant", "tts", "automation", "kalender", "google", "elpris"]
+lang: "da"
+translationKey: "ha-morning-briefing-tts"
+faqs:
+  - question: "Can I use Google Translate TTS instead of Google AI TTS for the Home Assistant morning briefing?"
+    answer: "Yes. Replace the target entity_id with tts.google_translate_en_com (or your configured Google Translate TTS entity) and remove the language field. Google Translate TTS is free but sounds more robotic. Google AI TTS requires a Google AI Studio API key but produces natural-sounding speech."
+  - question: "How do I add more calendars to the Home Assistant morning briefing automation?"
+    answer: "Add another calendar.get_events action with a new response_variable name, then append that variable's events list to the combined events list in the TTS message template. The pattern is: set events = events_a + events_b + events_c. Each calendar.get_events call must have its own unique response_variable."
+---
+
+Hver morgen åbnede jeg Home Assistant-appen for at tjekke dagens kalender, kigge på vejret og vurdere om aftenen var et godt tidspunkt at starte opvaskemaskinen baseret på elprisen. Tre separate opslag inden kaffen.
+
+Morgenbriefing-automationen erstattede det hele. Kl. 06:00 læser køkkenhøjttaleren dagens aftaler op på tværs af tre familiekalendere, udetemperaturen, en affaldspåmindelse når afhentning er i morgen og den aktuelle elpris. Det hele tager cirka 15 sekunder.
+
+## Hvad briefingen siger
+
+På en typisk morgen lyder det sådan her:
+
+> *"God morgen! I dag er det mandag. Temperaturen ude er 14 grader. Du har 2 aftaler i dag: tandlæge, teammøde. Husk: affald hentes i morgen. Elprisen er 0,42 kroner per kilowattime."*
+
+På en rolig dag uden aftaler og ingen nært forestående afhentning trimmes den ned til vejr og pris. Intet læses op hvis der ikke er noget at sige.
+
+## Nøglemønsteret: `calendar.get_events` med `response_variable`
+
+De fleste Home Assistant-automatiseringsguides stopper ved at trigge på en kalenderbegivenhed. Denne automation tager en anden tilgang: den forespørger aktivt kalenderen på dagens begivenheder og bruger svaret i en template.
+
+`calendar.get_events`-handlingen returnerer et struktureret svar som kan gemmes i en variabel og tilgås i efterfølgende trin:
+
+```yaml
+- action: calendar.get_events
+  target:
+    entity_id: calendar.rolf_szimnau_dk
+  data:
+    start_date_time: "{{ today_at('00:00') }}"
+    end_date_time: "{{ today_at('23:59') }}"
+  response_variable: kalender
+```
+
+Svaret er en dict med entitets-ID som nøgle. Tilgå begivenhedslisten sådan:
+
+```jinja2
+{% set events = kalender['calendar.rolf_szimnau_dk']['events'] %}
+```
+
+Hver begivenhed i listen har et `summary`-felt (begivenhedens titel). Til en talebesked er det det eneste der er brug for.
+
+## Tilføjelse af flere kalendere
+
+Kør en separat `calendar.get_events`-handling for hver kalender med sin egen `response_variable`, og kombiner derefter listerne i template'en:
+
+```yaml
+- action: calendar.get_events
+  target:
+    entity_id: calendar.annette_szimnau_dk
+  data:
+    start_date_time: "{{ today_at('00:00') }}"
+    end_date_time: "{{ today_at('23:59') }}"
+  response_variable: kalender_annette
+```
+
+I beskedtemplate'en:
+
+```jinja2
+{% set events = events_rolf + events_annette + events_louise %}
+```
+
+## Den komplette automation
+
+```yaml
+alias: "Morgenbriefing: TTS kl. 06"
+mode: single
+trigger:
+  - platform: time
+    at: "06:00:00"
+action:
+  - action: calendar.get_events
+    target:
+      entity_id: calendar.rolf_szimnau_dk
+    data:
+      start_date_time: "{{ today_at('00:00') }}"
+      end_date_time: "{{ today_at('23:59') }}"
+    response_variable: kalender
+  - action: calendar.get_events
+    target:
+      entity_id: calendar.annette_szimnau_dk
+    data:
+      start_date_time: "{{ today_at('00:00') }}"
+      end_date_time: "{{ today_at('23:59') }}"
+    response_variable: kalender_annette
+  - action: calendar.get_events
+    target:
+      entity_id: calendar.louise_szimnau_dk
+    data:
+      start_date_time: "{{ today_at('00:00') }}"
+      end_date_time: "{{ today_at('23:59') }}"
+    response_variable: kalender_louise
+  - action: tts.speak
+    target:
+      entity_id: tts.google_ai_tts
+    data:
+      media_player_entity_id: media_player.hojtaler_kokken
+      language: da
+      message: >-
+        {% set dage = ['mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag', 'søndag'] %}
+        {% set dag = dage[now().weekday()] %}
+        {% set events_rolf = kalender['calendar.rolf_szimnau_dk']['events'] %}
+        {% set events_annette = kalender_annette['calendar.annette_szimnau_dk']['events'] %}
+        {% set events_louise = kalender_louise['calendar.louise_szimnau_dk']['events'] %}
+        {% set events = events_rolf + events_annette + events_louise %}
+        {% set temp = state_attr('weather.forecast_home', 'temperature') %}
+        {% set affald = states('sensor.affalddk_bytoften_1_naeste_afhentning') | int(99) %}
+        {% set elpris = states('sensor.energi_data_service') | float(0) | round(2) %}
+        {% set km = states('sensor.skoda_elroq_range') | int(0) %}
+        God morgen! I dag er det {{ dag }}.
+        Temperaturen ude er {{ temp }} grader.
+        {% if events | length > 0 %}
+        Du har {{ events | length }} aftale{% if events | length > 1 %}r{% endif %} i dag:
+        {% for event in events %}{{ event.summary }}{% if not loop.last %}, {% endif %}{% endfor %}.
+        {% else %}Ingen aftaler i dag.
+        {% endif %}
+        {% if affald <= 1 %}Husk: affald hentes i dag!
+        {% elif affald <= 2 %}Husk: affald hentes i morgen.
+        {% endif %}
+        {% if km > 0 and km < 100 %}Elroq har kun {{ km }} kilometer tilbage.
+        {% endif %}
+        Elprisen er {{ elpris }} kroner per kilowattime.
+```
+
+## Tilpasning
+
+**Kun hverdage** — tilføj en betingelse over handlingerne:
+
+```yaml
+condition:
+  - condition: time
+    weekday: [mon, tue, wed, thu, fri]
+```
+
+**Anden højttaler** — erstat `media_player.hojtaler_kokken` med en vilkårlig HA media player-entitet.
+
+**Anden TTS-motor** — byt `tts.google_ai_tts` ud med `tts.google_translate_en_com` for den gratis mulighed.
+
+**Anden elpris-sensor** — erstat `sensor.energi_data_service` med din spot-prissensor.
+
+## Hvorfor `tts.speak` og ikke den gamle service
+
+Home Assistant 2024+ bruger `tts.speak` kaldt på TTS-motor-entiteten, med `media_player_entity_id` som datafelt. Den gamle `tts.google_translate_say`-service virker stadig men er forældet. Det nye mønster adskiller motoren fra afspilleren — lettere at skifte begge uafhængigt.
