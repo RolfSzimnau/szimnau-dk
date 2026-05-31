@@ -1,7 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
 import HardwareLab from '../../components/HardwareLab.astro';
-import SponsorshipCTA from '../../components/SponsorshipCTA.astro';
 import BlogCard from '../../components/BlogCard.astro';
 import { useTranslations } from '../../i18n/utils';
 import { getCollection } from 'astro:content';
@@ -96,6 +95,4 @@ const posts = allPosts
   <!-- Hardware Lab -->
   <HardwareLab lang={lang} />
 
-  <!-- Sponsorship -->
-  <SponsorshipCTA lang={lang} />
 </Base>
