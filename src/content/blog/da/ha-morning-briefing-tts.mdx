@@ -56,7 +56,7 @@ Kør en separat `calendar.get_events`-handling for hver kalender med sin egen `r
 ```yaml
 - action: calendar.get_events
   target:
-    entity_id: calendar.annette_szimnau_dk
+    entity_id: calendar.annette_familie
   data:
     start_date_time: "{{ today_at('00:00') }}"
     end_date_time: "{{ today_at('23:59') }}"
@@ -87,14 +87,14 @@ action:
     response_variable: kalender
   - action: calendar.get_events
     target:
-      entity_id: calendar.annette_szimnau_dk
+      entity_id: calendar.annette_familie
     data:
       start_date_time: "{{ today_at('00:00') }}"
       end_date_time: "{{ today_at('23:59') }}"
     response_variable: kalender_annette
   - action: calendar.get_events
     target:
-      entity_id: calendar.louise_szimnau_dk
+      entity_id: calendar.louise_familie
     data:
       start_date_time: "{{ today_at('00:00') }}"
       end_date_time: "{{ today_at('23:59') }}"
@@ -109,8 +109,8 @@ action:
         {% set dage = ['mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag', 'søndag'] %}
         {% set dag = dage[now().weekday()] %}
         {% set events_rolf = kalender['calendar.rolf_szimnau_dk']['events'] %}
-        {% set events_annette = kalender_annette['calendar.annette_szimnau_dk']['events'] %}
-        {% set events_louise = kalender_louise['calendar.louise_szimnau_dk']['events'] %}
+        {% set events_annette = kalender_annette['calendar.annette_familie']['events'] %}
+        {% set events_louise = kalender_louise['calendar.louise_familie']['events'] %}
         {% set events = events_rolf + events_annette + events_louise %}
         {% set temp = state_attr('weather.forecast_home', 'temperature') %}
         {% set affald = states('sensor.affalddk_bytoften_1_naeste_afhentning') | int(99) %}
