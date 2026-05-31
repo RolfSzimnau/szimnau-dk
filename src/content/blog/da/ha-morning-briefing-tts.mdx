@@ -147,6 +147,29 @@ condition:
 
 **Anden elpris-sensor** — erstat `sensor.energi_data_service` med din spot-prissensor.
 
+## Tilføj trafikinformation
+
+Waze Travel Time-integrationen opretter en sensor med aktuel rejsetid inkl. live trafik. Ingen API-nøgle kræves — Waze-data er gratis.
+
+**Installer via:** Settings → Devices & Services → Tilføj integration → *Waze Travel Time*
+
+Brug **GPS-koordinater** (`breddegrad,længdegrad`-format) til origin og destination fremfor adresser. Waze's adresse-parsing er upålidelig for danske adresser — koordinater er entydige. Find dine ved at højreklikke på en placering i Google Maps og kopiere koordinatparret.
+
+Sæt **Region** til `EU` og **Rutetype** til `hurtigste`. Giv sensoren et beskrivende navn, f.eks. *Rejsetid Vejle* — HA genererer entitets-ID'et ud fra det, typisk `sensor.rejsetid_vejle_travel_time`.
+
+Tilføj dette blok i beskedtemplate'en, lige før elprisen:
+
+```jinja2
+{% set rejsetid = states('sensor.rejsetid_vejle_travel_time') | float(0) | round(0) | int %}
+{% if now().weekday() < 5 and rejsetid > 0 %}
+{% if rejsetid > 40 %}Trafik til arbejde: {{ rejsetid }} minutter i dag – forvent forsinkelse.
+{% else %}Kørsel til arbejde: {{ rejsetid }} minutter.
+{% endif %}
+{% endif %}
+```
+
+`now().weekday() < 5` springer automatisk weekend over. Juster 40-minutters-grænsen til din normale pendlingstid plus en buffer.
+
 ## Hvorfor `tts.speak` og ikke den gamle service
 
 Home Assistant 2024+ bruger `tts.speak` kaldt på TTS-motor-entiteten, med `media_player_entity_id` som datafelt. Den gamle `tts.google_translate_say`-service virker stadig men er forældet. Det nye mønster adskiller motoren fra afspilleren — lettere at skifte begge uafhængigt.

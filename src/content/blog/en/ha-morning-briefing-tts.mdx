@@ -168,6 +168,29 @@ condition:
 
 **Different garbage sensor** — the `sensor.affalddk_bytoften_1_naeste_afhentning` entity comes from the [Affald.dk](https://www.home-assistant.io/integrations/afvd/) integration and returns the number of days until the next collection. Replace with your own waste collection sensor and adjust the threshold values.
 
+## Adding a traffic report
+
+The Waze Travel Time integration adds a sensor showing current door-to-door travel time including live traffic. No API key required — Waze data is free.
+
+**Install:** Settings → Devices & Services → Add integration → *Waze Travel Time*
+
+When configuring origin and destination, use **GPS coordinates** (`lat,lon` format) rather than street addresses. Waze's address parsing is unreliable for Danish addresses — coordinates are unambiguous. Find yours by right-clicking a location in Google Maps and copying the coordinate pair.
+
+Set **Region** to `EU` and **Route type** to `fastest`. Give the sensor a descriptive name like *Commute to Vejle* — Home Assistant generates the entity ID from it, typically `sensor.commute_to_vejle_travel_time`.
+
+Add this block to the TTS message template, just before the electricity price line:
+
+```jinja2
+{% set commute = states('sensor.commute_to_vejle_travel_time') | float(0) | round(0) | int %}
+{% if now().weekday() < 5 and commute > 0 %}
+{% if commute > 40 %}Traffic to work: {{ commute }} minutes today – expect delays.
+{% else %}Drive to work: {{ commute }} minutes.
+{% endif %}
+{% endif %}
+```
+
+`now().weekday() < 5` skips weekends automatically. Adjust the 40-minute threshold to your normal commute plus a reasonable buffer — if your baseline is 25 minutes, 35 is a sensible warning point.
+
 ## Why `tts.speak` and not the older service
 
 Home Assistant 2024+ uses `tts.speak` called on the TTS engine entity (`target: entity_id: tts.google_ai_tts`), with `media_player_entity_id` as a data field. The older `tts.google_translate_say` service still works but is deprecated. The new pattern separates the engine (which produces audio) from the player (which plays it), making it easier to switch either independently.

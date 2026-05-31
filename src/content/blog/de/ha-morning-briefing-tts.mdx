@@ -123,6 +123,29 @@ condition:
 
 **Andere TTS-Engine** — `tts.google_ai_tts` durch `tts.google_translate_en_com` für die kostenlose Option ersetzen.
 
+## Verkehrsinformationen hinzufügen
+
+Die Waze Travel Time-Integration erstellt einen Sensor mit der aktuellen Fahrtzeit inkl. Live-Verkehr. Kein API-Schlüssel erforderlich — Waze-Daten sind kostenlos.
+
+**Installation:** Einstellungen → Geräte & Dienste → Integration hinzufügen → *Waze Travel Time*
+
+Für Herkunft und Ziel **GPS-Koordinaten** (`Breitengrad,Längengrad`-Format) statt Adressen verwenden. Waze's Adress-Parsing ist für dänische Adressen unzuverlässig — Koordinaten sind eindeutig. Die eigenen Koordinaten lassen sich durch Rechtsklick auf einen Ort in Google Maps ermitteln.
+
+**Region** auf `EU` und **Routentyp** auf `schnellste` setzen. Dem Sensor einen beschreibenden Namen geben, z.B. *Pendelzeit Vejle* — HA generiert daraus die Entitäts-ID, typischerweise `sensor.pendelzeit_vejle_travel_time`.
+
+Diesen Block in die Nachrichten-Vorlage einfügen, direkt vor dem Strompreis:
+
+```jinja2
+{% set fahrzeit = states('sensor.pendelzeit_vejle_travel_time') | float(0) | round(0) | int %}
+{% if now().weekday() < 5 and fahrzeit > 0 %}
+{% if fahrzeit > 40 %}Verkehr zur Arbeit: {{ fahrzeit }} Minuten heute – Verzögerungen möglich.
+{% else %}Fahrtzeit zur Arbeit: {{ fahrzeit }} Minuten.
+{% endif %}
+{% endif %}
+```
+
+`now().weekday() < 5` überspringt Wochenenden automatisch. Den 40-Minuten-Schwellenwert an die normale Pendelzeit plus einen Puffer anpassen.
+
 ## Warum `tts.speak` und nicht der alte Service
 
 Home Assistant 2024+ verwendet `tts.speak` auf der TTS-Engine-Entität, mit `media_player_entity_id` als Datenfeld. Der alte `tts.google_translate_say`-Service funktioniert noch, ist aber veraltet. Das neue Muster trennt Engine und Abspielgerät — beide können unabhängig voneinander ausgetauscht werden.
