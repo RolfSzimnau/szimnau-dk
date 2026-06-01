@@ -118,7 +118,7 @@ action:
       entity_id: tts.google_ai_tts
     data:
       media_player_entity_id: media_player.hojtaler_kokken
-      language: da
+      language: da-DK
       message: >-
         {% set dage = ['mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag', 'søndag'] %}
         {% set dag = dage[now().weekday()] %}
@@ -163,7 +163,7 @@ action:
 
 **Different speaker** — replace `media_player.hojtaler_kokken` with any HA media player entity. The `tts.speak` action works with Google Home, Nest Audio, Sonos, and any media player that supports audio playback. For [Sonos and Google Nest speakers running together](/en/blog/sonos-google-nest-home-assistant/), target the specific device rather than a speaker group to avoid TTS queueing issues.
 
-**Different TTS engine** — swap `tts.google_ai_tts` for `tts.google_translate_en_com` for the free option. Remove the `language: da` field and write the message in English if using the English Google Translate engine.
+**Different TTS engine** — swap `tts.google_ai_tts` for `tts.google_translate_en_com` for the free option. Remove the `language: da-DK` field and write the message in English if using the English Google Translate engine.
 
 **Different electricity sensor** — replace `sensor.energi_data_service` with your spot price sensor. The [Energi Data Service integration](/en/blog/danish-electricity-prices-ev-charging/) provides Danish hourly spot prices including VAT and grid tariffs.
 
