@@ -13,6 +13,10 @@ faqs:
     answer: "The integration cannot control charging limits, does not support real-time streaming, and has no push notifications — it relies entirely on polling. Charge scheduling must be done via Home Assistant automations, not the integration itself."
 ---
 
+<div style="background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+  <strong>Opdatering juni 2026:</strong> Volkswagen-gruppen lukkede deres API den 27. maj 2026. MySkoda-integrationen virker ikke længere — batteristatus, forvarming og alle andre sensorer er nede. Følg <a href="https://github.com/skodaconnect/homeassistant-myskoda/issues">GitHub-issues</a> for et evt. fix. Resten af artiklen beskriver opsætningen som den fungerede.
+</div>
+
 Min Škoda er det eneste i huset der ikke taler med Home Assistant automatisk. Alle andre enheder er enten integreret native eller via HACS. Bilen levede i sin egen app, og det nag jeg. Ikke dramatisk — bare en konstant lille irritation.
 
 [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-integrationen løser det. HACS, godkend med din Škoda Connect-konto, og bilen dukker op som en enhed. API-polling med 15-60 sekunders latens på kommandoer — det er cloud-begrænsning, ikke HA.

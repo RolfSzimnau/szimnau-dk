@@ -13,6 +13,10 @@ faqs:
     answer: "The integration cannot control charging limits, does not support real-time streaming, and has no push notifications — it relies entirely on polling. Charge scheduling must be done via Home Assistant automations, not the integration itself."
 ---
 
+<div style="background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+  <strong>Update June 2026:</strong> Volkswagen Group closed their API on 27 May 2026. The MySkoda integration no longer works — battery status, pre-conditioning, and all other sensors are down. Follow <a href="https://github.com/skodaconnect/homeassistant-myskoda/issues">GitHub issues</a> for a potential fix. The rest of this article describes the setup as it worked.
+</div>
+
 The My Škoda app is fine. It does everything it's supposed to do. But it's one more app that knows something my Home Assistant doesn't, and that bothered me more than it probably should.
 
 The [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) integration (HACS) fixes that. It authenticates with your Škoda Connect account and polls the cloud API. The polling latency is real — commands take 15–60 seconds to reflect — but for most use cases that's fine.
