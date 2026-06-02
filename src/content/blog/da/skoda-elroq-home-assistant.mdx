@@ -17,16 +17,15 @@ faqs:
 
 **API-nedlukning — 27. maj 2026**
 
-VW lukkede sin cloud-API den 27. maj 2026. Det bryder MySkoda-integrationen for alle VW-gruppe biler (VW, Audi, Škoda, Cupra).
+VW krævede den 27. maj 2026 kryptografisk app-attestering på deres API, hvilket effektivt blokerer alle open source-projekter — herunder MySkoda-integrationen for VW, Audi, Škoda og Cupra.
 
-Hvad der ikke virker: batteristatus og rækkevidde i dashboardet, kabeladvarsel om natten, forvarming fra Google Kalender.
+Hvad der ikke virker: batteristatus og rækkevidde, kabeladvarsel om natten, forvarming fra Google Kalender.
 
-| Løsning | Pris | Status |
-|---|---|---|
-| OBD-II adapter (OBDLINK MX+) | ~500 kr | Virker — kun læsning, ingen kommandoer |
-| Volteras (officiel partner) | Abonnement | Virker — ingen HA-integration endnu |
-| Vente på community-fix | Gratis | Ustabilt |
-| EU Data Act | Gratis | Sandsynligvis sept. 2026 — VW tvinges lovmæssigt |
+Mulige alternativer:
+- **OBD-II adapter (OBDLINK MX+, ~500 kr)** — virker, men kun læsning, ingen fjernkommandoer
+- **Volteras** (officiel partner, abonnement) — virker, men ingen HA-integration endnu
+- **Community-fix** — gratis, men ustabilt
+- **EU Data Act, 12. sept. 2026** — VW tvinges lovmæssigt til at åbne adgangen
 
 Se [GitHub-issues](https://github.com/skodaconnect/homeassistant-myskoda/issues) for seneste status.
 

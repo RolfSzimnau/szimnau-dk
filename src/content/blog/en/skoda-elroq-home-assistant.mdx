@@ -17,16 +17,15 @@ faqs:
 
 **API shutdown — 27 May 2026**
 
-VW shut down their cloud API on 27 May 2026, breaking the MySkoda integration for all VW Group cars (VW, Audi, Škoda, Cupra).
+On 27 May 2026, VW required cryptographic app attestation on their API, effectively blocking all open-source projects — including the MySkoda integration for VW, Audi, Škoda and Cupra.
 
-What no longer works: battery status and range in the dashboard, overnight cable-connected warning, calendar-triggered pre-conditioning.
+What no longer works: battery status and range, overnight cable-connected warning, calendar-triggered pre-conditioning.
 
-| Option | Cost | Status |
-|---|---|---|
-| OBD-II adapter (OBDLINK MX+) | ~€45 | Works — read-only, no remote commands |
-| Volteras (official partner) | Subscription | Works — no HA integration yet |
-| Wait for community fix | Free | Unstable |
-| EU Data Act | Free | Likely Sept. 2026 — VW legally required to open access |
+Possible alternatives:
+- **OBD-II adapter (OBDLINK MX+, ~€45)** — works, but read-only, no remote commands
+- **Volteras** (official partner, subscription) — works, but no HA integration yet
+- **Community fix** — free, but unstable
+- **EU Data Act, 12 Sept. 2026** — VW legally required to reopen access
 
 See [GitHub issues](https://github.com/skodaconnect/homeassistant-myskoda/issues) for the latest status.
 
