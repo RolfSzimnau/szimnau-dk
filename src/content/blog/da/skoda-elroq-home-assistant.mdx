@@ -13,6 +13,25 @@ faqs:
     answer: "The integration cannot control charging limits, does not support real-time streaming, and has no push notifications — it relies entirely on polling. Charge scheduling must be done via Home Assistant automations, not the integration itself."
 ---
 
+<div style="background:rgba(185,28,28,0.15);border:1px solid rgba(239,68,68,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**API-nedlukning — 27. maj 2026**
+
+VW lukkede sin cloud-API den 27. maj 2026. Det bryder MySkoda-integrationen for alle VW-gruppe biler (VW, Audi, Škoda, Cupra).
+
+Hvad der ikke virker: batteristatus og rækkevidde i dashboardet, kabeladvarsel om natten, forvarming fra Google Kalender.
+
+| Løsning | Pris | Status |
+|---|---|---|
+| OBD-II adapter (OBDLINK MX+) | ~500 kr | Virker — kun læsning, ingen kommandoer |
+| Volteras (officiel partner) | Abonnement | Virker — ingen HA-integration endnu |
+| Vente på community-fix | Gratis | Ustabilt |
+| EU Data Act | Gratis | Sandsynligvis sept. 2026 — VW tvinges lovmæssigt |
+
+Se [GitHub-issues](https://github.com/skodaconnect/homeassistant-myskoda/issues) for seneste status.
+
+</div>
+
 Min Škoda er det eneste i huset der ikke taler med Home Assistant automatisk. Alle andre enheder er enten integreret native eller via HACS. Bilen levede i sin egen app, og det nag jeg. Ikke dramatisk — bare en konstant lille irritation.
 
 [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-integrationen løser det. HACS, godkend med din Škoda Connect-konto, og bilen dukker op som en enhed. API-polling med 15-60 sekunders latens på kommandoer — det er cloud-begrænsning, ikke HA.

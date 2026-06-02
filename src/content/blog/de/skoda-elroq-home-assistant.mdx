@@ -13,6 +13,25 @@ faqs:
     answer: "The integration cannot control charging limits, does not support real-time streaming, and has no push notifications — it relies entirely on polling. Charge scheduling must be done via Home Assistant automations, not the integration itself."
 ---
 
+<div style="background:rgba(185,28,28,0.15);border:1px solid rgba(239,68,68,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**API-Abschaltung — 27. Mai 2026**
+
+VW hat seine Cloud-API am 27. Mai 2026 abgeschaltet. Das bricht die MySkoda-Integration für alle Fahrzeuge der VW-Gruppe (VW, Audi, Škoda, Cupra).
+
+Was nicht mehr funktioniert: Batteriestatus und Reichweite im Dashboard, nächtliche Kabelwarnung, kalenderbasierte Vorkonditionierung.
+
+| Lösung | Kosten | Status |
+|---|---|---|
+| OBD-II-Adapter (OBDLINK MX+) | ~45 € | Funktioniert — nur lesen, keine Befehle |
+| Volteras (offizieller Partner) | Abo | Funktioniert — noch keine HA-Integration |
+| Auf Community-Fix warten | Kostenlos | Instabil |
+| EU Data Act | Kostenlos | Wahrscheinlich Sept. 2026 — VW gesetzlich verpflichtet |
+
+Aktueller Stand: [GitHub-Issues](https://github.com/skodaconnect/homeassistant-myskoda/issues).
+
+</div>
+
 Das Škoda ist das einzige im Haus, das nicht automatisch mit Home Assistant spricht. Alle anderen Geräte sind entweder nativ oder über HACS eingebunden. Das Auto lebte in seiner eigenen App — und das nagte an mir. Nicht dramatisch. Nur ein konstantes kleines Unbehagen.
 
 Die [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-Integration löst das. HACS, mit dem Škoda Connect-Konto authentifizieren, und das Auto taucht als Gerät auf. API-Polling mit 15-60 Sekunden Latenz bei Befehlen — das ist eine Cloud-Einschränkung, nicht HA.
