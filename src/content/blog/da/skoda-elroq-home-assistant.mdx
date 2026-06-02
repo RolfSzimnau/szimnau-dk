@@ -15,17 +15,15 @@ faqs:
 
 <div style="background:rgba(185,28,28,0.15);border:1px solid rgba(239,68,68,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-**API-nedlukning — 27. maj 2026**
+**API-begrænsninger — maj 2026**
 
-VW krævede den 27. maj 2026 kryptografisk app-attestering på deres API, hvilket effektivt blokerer alle open source-projekter — herunder MySkoda-integrationen for VW, Audi, Škoda og Cupra.
+VW Group har indført app-attestering, som gradvist begrænser tredjepartsadgang. Integrationen virker delvist, men ikke fuldt ud:
 
-Hvad der ikke virker: batteristatus og rækkevidde, kabeladvarsel om natten, forvarming fra Google Kalender.
+- **Aflæsning (batteri, rækkevidde, ladestatus)** — virker stadig via polling
+- **Realtidskommandoer (forvarming, start/stop ladning)** — brudt siden ~7. maj via MQTT
+- **Push-opdateringer fra bilen** — brudt
 
-Mulige alternativer:
-- **OBD-II adapter (OBDLINK MX+, ~500 kr)** — virker, men kun læsning, ingen fjernkommandoer
-- **Volteras** (officiel partner, abonnement) — virker, men ingen HA-integration endnu
-- **Community-fix** — gratis, men ustabilt
-- **EU Data Act, 12. sept. 2026** — VW tvinges lovmæssigt til at åbne adgangen
+Automationer der afhænger af kommandoer — som forvarming fra Google Kalender — er upålidelige. VW har meddelt at apps uden formel aftale med VW Group Info Services fremadrettet ikke vil have adgang. EU Data Act (12. sept. 2026) kan ændre dette lovmæssigt.
 
 Se [GitHub-issues](https://github.com/skodaconnect/homeassistant-myskoda/issues) for seneste status.
 
