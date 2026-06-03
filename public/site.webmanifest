@@ -1,19 +1,11 @@
 {
-  "name": "Szimnau",
-  "short_name": "Szimnau",
-  "icons": [
-    {
-      "src": "/android-chrome-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/android-chrome-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ],
-  "theme_color": "#163943",
-  "background_color": "#163943",
-  "display": "standalone"
+  "name":"Szimnau",
+  "short_name":"Szimnau",
+  "theme_color":"#041526",
+  "background_color":"#041526",
+  "display":"standalone",
+  "icons":[
+    {"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"},
+    {"src":"/android-chrome-512x512.png","sizes":"512x512","type":"image/png"}
+  ]
 }
