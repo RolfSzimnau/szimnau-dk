@@ -22,7 +22,9 @@ const {
 } = Astro.props;
 
 const siteTitle = `${title} | szimnau.dk`;
-const ogImage = heroImage ?? 'https://szimnau.dk/og-default.png';
+const ogImage = heroImage
+  ? `https://szimnau.dk${heroImage}`
+  : 'https://szimnau.dk/og-default.png';
 
 const locales: Lang[] = ['en', 'da', 'de'];
 

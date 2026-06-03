@@ -80,8 +80,12 @@ const jsonLd = {
     {heroImage && (
       <img
         src={heroImage}
-        alt={description}
-        loading="lazy"
+        alt={title}
+        width="768"
+        height="432"
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
         class="w-full rounded-2xl mb-12 border border-glass-border"
       />
     )}

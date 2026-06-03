@@ -29,6 +29,10 @@ const readTime = Math.ceil(description.split(' ').length / 200) + 3;
       <img
         src={heroImage}
         alt={title}
+        width="400"
+        height="192"
+        loading="lazy"
+        decoding="async"
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
       />
     </div>
