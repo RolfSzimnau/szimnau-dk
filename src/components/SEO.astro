@@ -23,8 +23,8 @@ const {
 
 const siteTitle = `${title} | szimnau.dk`;
 const ogImage = heroImage
-  ? `https://szimnau.dk${heroImage}`
-  : 'https://szimnau.dk/og-default.png';
+  ? `https://www.szimnau.dk${heroImage}`
+  : 'https://www.szimnau.dk/og-default.png';
 
 const locales: Lang[] = ['en', 'da', 'de'];
 
@@ -41,7 +41,7 @@ const personJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Person',
   name: 'Rolf Szimnau',
-  url: 'https://szimnau.dk',
+  url: 'https://www.szimnau.dk',
   sameAs: [
     'https://twitter.com/rszimnau',
     'https://github.com/RolfSzimnau',
@@ -54,13 +54,13 @@ const websiteJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'szimnau.dk',
-  url: 'https://szimnau.dk',
+  url: 'https://www.szimnau.dk',
   author: personJsonLd,
   description: 'Home Automation & Home Assistant authority site by Rolf Szimnau.',
   inLanguage: lang,
   potentialAction: {
     '@type': 'SearchAction',
-    target: 'https://szimnau.dk/en/blog/',
+    target: 'https://www.szimnau.dk/en/blog/',
   },
 };
 ---
