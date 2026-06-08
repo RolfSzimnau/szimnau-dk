@@ -22,9 +22,10 @@ const {
 } = Astro.props;
 
 const siteTitle = `${title} | szimnau.dk`;
+const siteOrigin = Astro.site?.origin ?? 'https://szimnau.dk';
 const ogImage = heroImage
-  ? `https://szimnau.dk${heroImage}`
-  : 'https://szimnau.dk/og-default.png';
+  ? `${siteOrigin}${heroImage}`
+  : `${siteOrigin}/og-default.png`;
 
 const locales: Lang[] = ['en', 'da', 'de'];
 
@@ -41,7 +42,7 @@ const personJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Person',
   name: 'Rolf Szimnau',
-  url: 'https://szimnau.dk',
+  url: siteOrigin,
   sameAs: [
     'https://twitter.com/rszimnau',
     'https://github.com/RolfSzimnau',
@@ -54,20 +55,17 @@ const websiteJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'szimnau.dk',
-  url: 'https://szimnau.dk',
+  url: siteOrigin,
   author: personJsonLd,
   description: 'Home Automation & Home Assistant authority site by Rolf Szimnau.',
   inLanguage: lang,
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: 'https://szimnau.dk/en/blog/',
-  },
 };
 ---
 
 <title>{siteTitle}</title>
 <meta name="description" content={description} />
 <meta name="author" content="Rolf Szimnau" />
+<meta name="robots" content="index, follow" />
 <link rel="canonical" href={canonicalURL} />
 
 {locales.map(l => (
