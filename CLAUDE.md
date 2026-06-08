@@ -11,6 +11,14 @@ npm install
 
 Build output goes to `dist/`. Always run a full build to validate before committing.
 
+### Shiki language identifiers
+
+Use the correct Shiki language name in code blocks — wrong names produce build warnings and disable syntax highlighting:
+
+| Do NOT use | Use instead |
+|------------|-------------|
+| `jinja2`   | `jinja`     |
+
 ---
 
 ## SEO Standards — Non-Negotiable
