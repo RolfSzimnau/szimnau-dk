@@ -43,7 +43,7 @@ The `calendar.get_events` action returns a structured response that you can stor
 
 The response is a dict keyed by entity ID. Access the event list like this:
 
-```jinja2
+```jinja
 {% set events = kalender['calendar.rolf_szimnau_dk']['events'] %}
 ```
 
@@ -73,7 +73,7 @@ To merge events from several family members, run a separate `calendar.get_events
 
 In the message template:
 
-```jinja2
+```jinja
 {% set events = events_rolf + events_annette + events_louise %}
 ```
 
@@ -188,7 +188,7 @@ Two sensors from the MyŠkoda integration (or any EV integration that exposes ch
 
 **Charge status** — the briefing only speaks when something needs attention. If the car hit its target overnight, nothing is said.
 
-```jinja2
+```jinja
 {% set bat = states('sensor.skoda_elroq_battery_percentage') | int(0) %}
 {% set maal = states('sensor.skoda_elroq_target_battery_percentage') | int(80) %}
 {% set lader = states('sensor.skoda_elroq_charging_state') %}
@@ -201,7 +201,7 @@ Two sensors from the MyŠkoda integration (or any EV integration that exposes ch
 
 **Preconditioning confirmation** — if a morning warmup automation runs a few minutes before 06:00, the briefing can confirm it actually started:
 
-```jinja2
+```jinja
 {% set ac = states('climate.skoda_elroq_air_conditioning') %}
 {% if ac != 'off' %}Elroq varmer op.
 {% endif %}
@@ -221,7 +221,7 @@ Set **Region** to `EU` and **Route type** to `fastest`. Give the sensor a descri
 
 Add this block to the TTS message template, just before the electricity price line:
 
-```jinja2
+```jinja
 {% set commute = states('sensor.commute_to_vejle_travel_time') | float(0) | round(0) | int %}
 {% if now().weekday() < 5 and commute > 0 %}
 {% if commute > 40 %}Traffic to work: {{ commute }} minutes today – expect delays.

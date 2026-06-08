@@ -43,7 +43,7 @@ De fleste Home Assistant-automatiseringsguides stopper ved at trigge på en kale
 
 Svaret er en dict med entitets-ID som nøgle. Tilgå begivenhedslisten sådan:
 
-```jinja2
+```jinja
 {% set events = kalender['calendar.rolf_szimnau_dk']['events'] %}
 ```
 
@@ -65,7 +65,7 @@ Kør en separat `calendar.get_events`-handling for hver kalender med sin egen `r
 
 I beskedtemplate'en:
 
-```jinja2
+```jinja
 {% set events = events_rolf + events_annette + events_louise %}
 ```
 
@@ -167,7 +167,7 @@ To sensorer fra MyŠkoda-integrationen giver briefingen besked om bilen er klar 
 
 **Ladestatus** — briefingen taler kun, når der er noget at gøre. Nåede bilen sit mål natten over, siges der ingenting.
 
-```jinja2
+```jinja
 {% set bat = states('sensor.skoda_elroq_battery_percentage') | int(0) %}
 {% set maal = states('sensor.skoda_elroq_target_battery_percentage') | int(80) %}
 {% set lader = states('sensor.skoda_elroq_charging_state') %}
@@ -180,7 +180,7 @@ To sensorer fra MyŠkoda-integrationen giver briefingen besked om bilen er klar 
 
 **Forvarmningsbekræftelse** — hvis en morgenopvarmningsautomation kører få minutter før kl. 06:00, kan briefingen bekræfte at den faktisk startede:
 
-```jinja2
+```jinja
 {% set ac = states('climate.skoda_elroq_air_conditioning') %}
 {% if ac != 'off' %}Elroq varmer op.
 {% endif %}
@@ -200,7 +200,7 @@ Sæt **Region** til `EU` og **Rutetype** til `hurtigste`. Giv sensoren et beskri
 
 Tilføj dette blok i beskedtemplate'en, lige før elprisen:
 
-```jinja2
+```jinja
 {% set rejsetid = states('sensor.rejsetid_vejle_travel_time') | float(0) | round(0) | int %}
 {% if now().weekday() < 5 and rejsetid > 0 %}
 {% if rejsetid > 40 %}Trafik til arbejde: {{ rejsetid }} minutter i dag – forvent forsinkelse.
