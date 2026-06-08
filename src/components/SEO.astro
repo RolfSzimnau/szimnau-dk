@@ -29,12 +29,18 @@ const ogImage = heroImage
 
 const locales: Lang[] = ['en', 'da', 'de'];
 
+const localeMap: Record<Lang, string> = {
+  en: 'en-US',
+  da: 'da-DK',
+  de: 'de-DE',
+};
+
 function buildAlternate(targetLang: Lang): string {
   const url = new URL(canonicalURL);
   const parts = url.pathname.split('/').filter(Boolean);
   if (['en', 'da', 'de'].includes(parts[0])) parts[0] = targetLang;
   else parts.unshift(targetLang);
-  url.pathname = '/' + parts.join('/');
+  url.pathname = '/' + parts.join('/') + '/';
   return url.toString();
 }
 
@@ -69,7 +75,7 @@ const websiteJsonLd = {
 <link rel="canonical" href={canonicalURL} />
 
 {locales.map(l => (
-  <link rel="alternate" hreflang={l} href={buildAlternate(l)} />
+  <link rel="alternate" hreflang={localeMap[l]} href={buildAlternate(l)} />
 ))}
 <link rel="alternate" hreflang="x-default" href={buildAlternate('en')} />
 
