@@ -84,6 +84,8 @@ result.sort(key=lambda x: (
 
 The result: incomplete items before complete, then alphabetical by store, then alphabetical within a store. All Netto items together, then ABC Lavpris, then Bilka.
 
+<img src="/blog-images/etilbudsavis-shopping-list.webp" alt="eTilbudsavis shopping list in the Home Assistant companion app, sorted by store with price and date visible" style="max-width: 360px; display: block; margin: 2rem auto; border-radius: 16px;" />
+
 Two things worth knowing before you edit the file. First, `todo.py` lives at `/config/custom_components/etilbudsavis/todo.py` on your HA machine — HACS updates will overwrite it. The changes are small enough that reapplying them takes a few minutes. Second, after editing any Python file in a custom component, a **full HA restart** is required. `reload_config_entry` doesn't flush Python's module cache — only a restart does.
 
 ## Zones and proximity notifications

@@ -84,6 +84,8 @@ result.sort(key=lambda x: (
 
 Resultatet: ufuldførte varer før afkrydsede, derefter alfabetisk efter butik, derefter alfabetisk inden for butikken.
 
+<img src="/blog-images/etilbudsavis-shopping-list.webp" alt="eTilbudsavis indkøbsliste i Home Assistant companion-appen, sorteret efter butik med pris og dato synlig" style="max-width: 360px; display: block; margin: 2rem auto; border-radius: 16px;" />
+
 To ting er værd at vide inden du redigerer filen. For det første ligger `todo.py` på `/config/custom_components/etilbudsavis/todo.py` på HA-maskinen — HACS-opdateringer overskriver den. Ændringerne er små nok til at det tager et par minutter at genoprette dem. For det andet kræver ændringer i Python-filer i custom components en **fuld HA-genstart** — `reload_config_entry` tømmer ikke Pythons module cache.
 
 ## Zoner og proximity-notifikationer

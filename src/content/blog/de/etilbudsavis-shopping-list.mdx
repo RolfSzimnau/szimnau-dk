@@ -84,6 +84,8 @@ result.sort(key=lambda x: (
 
 Das Ergebnis: unerledigte Artikel vor erledigten, dann alphabetisch nach Geschäft, dann alphabetisch innerhalb eines Geschäfts.
 
+<img src="/blog-images/etilbudsavis-shopping-list.webp" alt="eTilbudsavis Einkaufsliste in der Home Assistant Companion-App, nach Geschäft sortiert mit Preis und Datum" style="max-width: 360px; display: block; margin: 2rem auto; border-radius: 16px;" />
+
 Zwei Dinge sind vor der Bearbeitung wichtig. Erstens liegt `todo.py` unter `/config/custom_components/etilbudsavis/todo.py` auf der HA-Maschine — HACS-Updates überschreiben die Datei. Die Änderungen sind klein genug, um sie in wenigen Minuten erneut einzupflegen. Zweitens erfordert jede Änderung an Python-Dateien in Custom Components einen **vollständigen HA-Neustart** — `reload_config_entry` leert den Python-Modulcache nicht.
 
 ## Zonen und Proximity-Benachrichtigungen
