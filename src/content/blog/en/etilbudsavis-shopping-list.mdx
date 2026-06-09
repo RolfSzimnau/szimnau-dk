@@ -88,7 +88,7 @@ Two things worth knowing before you edit the file. First, `todo.py` lives at `/c
 
 ## Zones and proximity notifications
 
-This is the part from the Facebook post. Home Assistant has a `zone` entity type — you place a circle around a location and the companion app on your phone tracks when you enter or leave it. I created zones for each store: Min Kobmand in Jordrup, ABC Lavpris in Egtved, and Bilka, Lidl, Føtex, and two Netto locations in Kolding.
+This is the part from the Facebook post. Home Assistant has a `zone` entity type — you place a circle around a location and the companion app on your phone tracks when you enter or leave it. I created zones for each store I actually shop at: Min Kobmand, ABC Lavpris, Bilka, Lidl, Føtex, and two Netto locations.
 
 An automation triggers when either my Pixel 10 or my wife's Pixel 9a enters any of those zones:
 
@@ -100,20 +100,34 @@ trigger:
       - device_tracker.pixel_9a
     zone: zone.bilka
     event: enter
+  # ... repeated for each store zone
 ```
 
-The automation maps each zone to a store name in a `variables` block, then calls `todo.get_items` and filters items whose `description` starts with that store name:
+The automation maps each zone entity to a store name in a `variables` block. Two Netto locations point to the same name — they produce the same notification either way:
 
 ```yaml
 variables:
   butik_lookup:
+    zone.min_kobmand: "Min Kobmand"
+    zone.abc_lavpris: "ABC Lavpris"
     zone.bilka: "Bilka"
+    zone.lidl_vejlevej: "Lidl"
+    zone.lidl_mosevej: "Lidl"
+    zone.fotex: "Føtex"
     zone.netto_hylkedalvej: "Netto"
     zone.netto_stadionvej: "Netto"
   butik_navn: "{{ butik_lookup[trigger.zone] | default('') }}"
 ```
 
+The action then calls `todo.get_items`, filters items whose `description` starts with the store name, and sends a push if any match:
+
 ```yaml
+- target:
+    entity_id: todo.min_indkobsliste
+  data:
+    status: needs_action
+  response_variable: todo_svar
+  action: todo.get_items
 - variables:
     varer: >
       {% set alle = todo_svar['todo.min_indkobsliste']['items'] | default([]) %}
@@ -132,6 +146,6 @@ variables:
   action: notify.alle_enheder
 ```
 
-`regex_match` matches from the start of the string, so "Netto" matches "Netto – 12,95 kr. · til 12/6" without needing a contains check. Both Netto locations in Kolding share the same zone name in the lookup, so they produce the same notification.
+`regex_match` matches from the start of the string, so "Netto" matches "Netto – 12,95 kr. · til 12/6" without needing a contains check. Replace `notify.alle_enheder` with your own notify service — that's just the group I use to reach both phones at once.
 
 The first time it fired I was walking into Bilka. Phone buzzed — two items on the list. I already knew that. I'd written the list myself. But having it appear on the screen at the exact moment I walked through the door is a different thing than remembering to open an app.

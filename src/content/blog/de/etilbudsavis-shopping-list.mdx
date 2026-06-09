@@ -88,7 +88,7 @@ Zwei Dinge sind vor der Bearbeitung wichtig. Erstens liegt `todo.py` unter `/con
 
 ## Zonen und Proximity-Benachrichtigungen
 
-Das ist der Teil aus dem Facebook-Kommentar. Home Assistant hat einen `zone`-Entitätstyp — man legt einen Radius um eine Adresse fest und die Companion-App trackt, wann das Telefon diese Zone betritt oder verlässt. Ich habe Zonen für alle relevanten Geschäfte angelegt: Min Kobmand in Jordrup, ABC Lavpris in Egtved und Bilka, Lidl, Føtex sowie zwei Netto-Filialen in Kolding.
+Das ist der Teil aus dem Facebook-Kommentar. Home Assistant hat einen `zone`-Entitätstyp — man legt einen Radius um eine Adresse fest und die Companion-App trackt, wann das Telefon diese Zone betritt oder verlässt. Ich habe Zonen für die Geschäfte angelegt, in denen wir tatsächlich einkaufen: Min Kobmand, ABC Lavpris, Bilka, Lidl, Føtex und zwei Netto-Filialen.
 
 Eine Automation löst aus, wenn mein Pixel 10 oder das Pixel 9a meiner Frau eine dieser Zonen betritt:
 
@@ -100,20 +100,34 @@ trigger:
       - device_tracker.pixel_9a
     zone: zone.bilka
     event: enter
+  # ... für jede weitere Geschäftszone wiederholen
 ```
 
-Die Automation ordnet jede Zone einem Geschäftsnamen in einem `variables`-Block zu und ruft dann `todo.get_items` ab. Artikel, deren `description` mit dem Geschäftsnamen beginnt, werden herausgefiltert:
+Die Automation ordnet jede Zone einem Geschäftsnamen in einem `variables`-Block zu. Zwei Netto-Standorte zeigen auf denselben Namen — sie lösen dieselbe Benachrichtigung aus:
 
 ```yaml
 variables:
   butik_lookup:
+    zone.min_kobmand: "Min Kobmand"
+    zone.abc_lavpris: "ABC Lavpris"
     zone.bilka: "Bilka"
+    zone.lidl_vejlevej: "Lidl"
+    zone.lidl_mosevej: "Lidl"
+    zone.fotex: "Føtex"
     zone.netto_hylkedalvej: "Netto"
     zone.netto_stadionvej: "Netto"
   butik_navn: "{{ butik_lookup[trigger.zone] | default('') }}"
 ```
 
+Die Aktion ruft dann `todo.get_items` ab, filtert Artikel deren `description` mit dem Geschäftsnamen beginnt, und sendet eine Push-Benachrichtigung wenn Treffer vorhanden sind:
+
 ```yaml
+- target:
+    entity_id: todo.min_indkobsliste
+  data:
+    status: needs_action
+  response_variable: todo_svar
+  action: todo.get_items
 - variables:
     varer: >
       {% set alle = todo_svar['todo.min_indkobsliste']['items'] | default([]) %}
@@ -132,6 +146,6 @@ variables:
   action: notify.alle_enheder
 ```
 
-`regex_match` matcht vom Anfang des Strings, sodass „Netto" auf „Netto – 12,95 kr. · til 12/6" passt, ohne einen contains-Check zu brauchen. Beide Netto-Filialen in Kolding lösen dieselbe Benachrichtigung aus.
+`regex_match` matcht vom Anfang des Strings, sodass „Netto" auf „Netto – 12,95 kr. · til 12/6" passt, ohne einen contains-Check zu brauchen. `notify.alle_enheder` durch den eigenen Notify-Service ersetzen — das ist die Gruppe, die bei mir beide Telefone gleichzeitig erreicht.
 
 Das erste Mal funktionierte es vor dem Netto auf dem Hylkedalvej. Telefon vibriert. Zwei Artikel auf der Liste. Ich wusste es eigentlich — ich hatte die Liste selbst geschrieben. Aber es auf dem Display zu sehen genau in dem Moment, in dem man das Geschäft betritt, ist etwas anderes als daran zu denken, die App zu öffnen.
