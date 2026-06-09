@@ -16,6 +16,8 @@ Ugen forinden havde nogen i en dansk Facebook-gruppe nævnt at Home Assistant ku
 
 Udgangspunktet er en HACS-integration lavet af [CagosDk](https://github.com/CagosDk/hacs-etilbudsavis). Tilføj den via HACS → Integrationer → Brugerdefinerede repositories, indsæt GitHub-URL'en og tilføj integrationen. Den opretter en `todo`-entity for hvert af dine eTilbudsavis-lister — min hedder `todo.min_indkobsliste`. Derfra optræder den som et normalt HA-todo-kort og i companion-appen på telefonen.
 
+<img src="/blog-images/etilbudsavis-shopping-Chip.webp" alt="Home Assistant dashboard med et indkøbskurv-chip der viser antal varer på listen" style="max-width: 480px; display: block; margin: 2rem auto; border-radius: 12px;" />
+
 Et-app-problemet var løst. Men standardvisningen viser kun varenavne — ingen butik, ingen pris, ingen dato. Med femten varer fra fire butikker er det ikke nyttigt når man har travlt.
 
 ## Ændringer i todo.py: description og sortering
