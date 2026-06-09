@@ -1,0 +1,81 @@
+---
+title: "eTilbudsavis in Home Assistant: Sorted by Store, with Proximity Alerts"
+description: "How I connected eTilbudsavis to Home Assistant, customised the todo list to show store and price per item, then added zone-based push notifications that fire when I walk into a store with items on the list."
+pubDate: 2026-06-09
+tags: ["home-assistant", "shopping", "automation", "hacs", "todo", "zones"]
+lang: "en"
+translationKey: "etilbudsavis-shopping-list"
+heroImage: "/blog-images/etilbudsavis-shopping-list.webp"
+---
+
+Someone in a Danish Facebook group mentioned that you could set up Home Assistant to send a push notification when you walked into a store that had items on your shopping list. I didn't know that was possible. I kept scrolling.
+
+A few days later I was standing in Netto with my phone out — eTilbudsavis open in one tab, a separate notes list in another — trying to remember if I'd added the thing my wife asked for to the right place. That Facebook comment came back.
+
+## The integration: CagosDk on GitHub
+
+The starting point is a HACS custom integration by [CagosDk](https://github.com/CagosDk/hacs-etilbudsavis). Add it via HACS → Integrations → Custom Repositories, paste the GitHub URL, and add the integration. It creates a `todo` entity for each of your eTilbudsavis shopping lists — mine is `todo.min_indkobsliste`. From there it shows up as a native HA todo card and in the iOS/Android companion app.
+
+That alone solved the two-app problem. But the default view shows only item names — no store, no price, no date. With fifteen items from four different stores, the list isn't useful when you're in a hurry.
+
+## Sorting by store, price in the description
+
+eTilbudsavis attaches store info and offer data to each item in the API. The integration's `todo.py` maps these onto the `description` field of each todo item. With a small modification to that file, the description now shows:
+
+```
+Netto – 12,95 kr. · til 12/6
+```
+
+And the list is sorted: all Netto items together, then ABC Lavpris, then Bilka. Completed items drop to the bottom regardless of store.
+
+The sort key in the `todo_items` property is `(completed, store.lower(), summary.lower())`. One line. The description builder appends price and date only when the API returns them — no crash, no blank field if they're missing.
+
+## Zones and proximity notifications
+
+This is the part from the Facebook post. Home Assistant has a `zone` entity type — you place a circle around a location and the companion app on your phone tracks when you enter or leave it. I created zones for each store: Min Kobmand in Jordrup, ABC Lavpris in Egtved, and Bilka, Lidl, Føtex, and two Netto locations in Kolding.
+
+An automation triggers when either my Pixel 10 or my wife's Pixel 9a enters any of those zones:
+
+```yaml
+trigger:
+  - platform: zone
+    entity_id:
+      - device_tracker.pixel_10
+      - device_tracker.pixel_9a
+    zone: zone.bilka
+    event: enter
+```
+
+The automation maps each zone to a store name in a `variables` block, then calls `todo.get_items` and filters items whose `description` starts with that store name:
+
+```yaml
+variables:
+  butik_lookup:
+    zone.bilka: "Bilka"
+    zone.netto_hylkedalvej: "Netto"
+    zone.netto_stadionvej: "Netto"
+  butik_navn: "{{ butik_lookup[trigger.zone] | default('') }}"
+```
+
+```yaml
+- variables:
+    varer: >
+      {% set alle = todo_svar['todo.min_indkobsliste']['items'] | default([]) %}
+      {% set ns = namespace(liste=[]) %}
+      {% for vare in alle %}
+        {% if vare.description | default('') | regex_match(butik_navn) %}
+          {% set ns.liste = ns.liste + [vare.summary] %}
+        {% endif %}
+      {% endfor %}
+      {{ ns.liste }}
+- condition: template
+  value_template: "{{ varer | count > 0 }}"
+- data:
+    title: "🛒 {{ butik_navn }} – {{ varer | count }} item(s) on the list"
+    message: "{{ varer | join('\n') }}"
+  action: notify.alle_enheder
+```
+
+`regex_match` matches from the start of the string, so "Netto" matches "Netto – 12,95 kr. · til 12/6" without needing a contains check. Both Netto locations in Kolding share the same zone name in the lookup, so they produce the same notification.
+
+The first time it fired I was walking into Bilka. Phone buzzed — two items on the list. I already knew that. I'd written the list myself. But having it appear on the screen at the exact moment I walked through the door is a different thing than remembering to open an app.

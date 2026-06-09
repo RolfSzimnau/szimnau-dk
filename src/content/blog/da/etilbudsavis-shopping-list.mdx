@@ -1,0 +1,81 @@
+---
+title: "eTilbudsavis i Home Assistant — Sorteret efter Butik med Notifikation ved Ankomst"
+description: "Hvordan jeg fik eTilbudsavis-indkøbslisten ind i Home Assistant, tilpassede den til at vise butik og pris pr. vare, og lavede en automation der sender en push-notifikation når jeg ankommer til en butik med varer på listen."
+pubDate: 2026-06-09
+tags: ["home-assistant", "indkøb", "automation", "hacs", "todo", "zoner"]
+lang: "da"
+translationKey: "etilbudsavis-shopping-list"
+heroImage: "/blog-images/etilbudsavis-shopping-list.webp"
+---
+
+En i en dansk Facebook-gruppe nævnte at det var muligt at få Home Assistant til at sende en notifikation når man trådte ind i en butik med varer på indkøbslisten. Jeg tænkte: det vidste jeg ikke. Og scrollede videre.
+
+Ugen efter ringede min kone fra Bilka. Stod Coca-Cola på listen? Og til hvilken pris? Jeg anede det ikke, for tilbuddene lå i eTilbudsavis-appen og listen lå i en note et andet sted. Det Facebook-opslag dukkede op igen.
+
+## Integrationen — CagosDk på GitHub
+
+Udgangspunktet er en HACS-integration lavet af [CagosDk](https://github.com/CagosDk/hacs-etilbudsavis). Tilføj den via HACS → Integrationer → Brugerdefinerede repositories, indsæt GitHub-URL'en og tilføj integrationen. Den opretter en `todo`-entity for hvert af dine eTilbudsavis-lister — min hedder `todo.min_indkobsliste`. Derfra optræder den som et normalt HA-todo-kort og i companion-appen på telefonen.
+
+Et-app-problemet var løst. Men standardvisningen viser kun varenavne — ingen butik, ingen pris, ingen dato. Med femten varer fra fire butikker er det ikke nyttigt når man har travlt.
+
+## Sorteret efter butik, pris i description
+
+eTilbudsavis vedhæfter butikinfo og tilbudsdata til hvert item i API'en. Integrationens `todo.py` kan mappe disse felter til `description`-feltet på hvert todo-item. Med en lille ændring i den fil viser description nu:
+
+```
+Netto – 12,95 kr. · til 12/6
+```
+
+Og listen er sorteret: alle Netto-varer samlet, derefter ABC Lavpris, derefter Bilka. Afkrydsede varer ryger til bunden uanset butik.
+
+Sorteringsnøglen i `todo_items`-propertyen er `(completed, store.lower(), summary.lower())`. Én linje. Description-builderen tilføjer kun pris og dato når API'en returnerer dem — ingen fejl, intet tomt felt hvis de mangler.
+
+## Zoner og proximity-notifikationer
+
+Det er den del Facebook-kommentaren handlede om. Home Assistant har en `zone`-entity-type — man tegner en cirkel rundt om en adresse og companion-appen tracker hvornår telefonen befinder sig inden for den radius. Jeg oprettede zoner for alle relevante butikker: Min Kobmand i Jordrup, ABC Lavpris i Egtved og Bilka, Lidl, Føtex samt to Netto-adresser i Kolding.
+
+En automation triggerer når enten min Pixel 10 eller min kones Pixel 9a ankommer til en af zonerne:
+
+```yaml
+trigger:
+  - platform: zone
+    entity_id:
+      - device_tracker.pixel_10
+      - device_tracker.pixel_9a
+    zone: zone.bilka
+    event: enter
+```
+
+Automationen kobler hvert zone-entity til et butiksnavn i et `variables`-blok og kalder derefter `todo.get_items`. Varer hvis `description` starter med butiksnavnet filtreres ud:
+
+```yaml
+variables:
+  butik_lookup:
+    zone.bilka: "Bilka"
+    zone.netto_hylkedalvej: "Netto"
+    zone.netto_stadionvej: "Netto"
+  butik_navn: "{{ butik_lookup[trigger.zone] | default('') }}"
+```
+
+```yaml
+- variables:
+    varer: >
+      {% set alle = todo_svar['todo.min_indkobsliste']['items'] | default([]) %}
+      {% set ns = namespace(liste=[]) %}
+      {% for vare in alle %}
+        {% if vare.description | default('') | regex_match(butik_navn) %}
+          {% set ns.liste = ns.liste + [vare.summary] %}
+        {% endif %}
+      {% endfor %}
+      {{ ns.liste }}
+- condition: template
+  value_template: "{{ varer | count > 0 }}"
+- data:
+    title: "🛒 {{ butik_navn }} – {{ varer | count }} vare(r) på listen"
+    message: "{{ varer | join('\n') }}"
+  action: notify.alle_enheder
+```
+
+`regex_match` matcher fra starten af strengen, så "Netto" matcher "Netto – 12,95 kr. · til 12/6" uden at bruge contains. Det betyder at begge Netto-adresser i Kolding udløser den samme notifikation.
+
+Første gang det virkede stod jeg foran Netto på Hylkedalvej. Telefonen vibrerede. To varer. Jeg vidste godt hvad der stod på listen — jeg havde selv skrevet den — men det er noget andet at have den på skærmen i det øjeblik man træder ind ad døren.
