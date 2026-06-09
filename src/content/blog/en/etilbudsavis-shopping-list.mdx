@@ -18,17 +18,73 @@ The starting point is a HACS custom integration by [CagosDk](https://github.com/
 
 That alone solved the two-app problem. But the default view shows only item names — no store, no price, no date. With fifteen items from four different stores, the list isn't useful when you're in a hurry.
 
-## Sorting by store, price in the description
+## Modifying todo.py: description and sort order
 
-eTilbudsavis attaches store info and offer data to each item in the API. The integration's `todo.py` maps these onto the `description` field of each todo item. With a small modification to that file, the description now shows:
+The integration stores all item data from the eTilbudsavis API in the coordinator — including `business.name` (store), `offer.price`, and `offer.validUntil`. By default `todo.py` only puts the store name in the `description` field. To get price and date in there, I added two helper functions and changed the sort key.
 
+The description builder:
+
+```python
+def _build_description(store: str, offer: dict | None, now: datetime) -> str | None:
+    if not store:
+        return None
+    offer = offer or {}
+    price = offer.get("price")
+    valid_until_str = offer.get("validUntil")
+    desc = store
+    if price is not None:
+        price_str = f"{price:.2f}".replace(".", ",")
+        desc += f" - {price_str} kr."
+    if valid_until_str:
+        try:
+            valid_until = datetime.fromisoformat(valid_until_str.replace("Z", "+00:00"))
+            if (valid_until - now).total_seconds() > 0:
+                desc += f" til {valid_until.day}/{valid_until.month}"
+        except ValueError:
+            pass
+    return desc
 ```
-Netto – 12,95 kr. · til 12/6
+
+Both `price` and `validUntil` use `.get()` — if the API doesn't return them for shopping list items, they're simply skipped. The result is always valid: at minimum just the store name.
+
+There's a second helper for expired offers. If `validUntil` is in the past, the item's summary gets a prefix so it stands out:
+
+```python
+def _expiry_prefix(offer: dict | None, now: datetime) -> str:
+    if not offer:
+        return ""
+    valid_until_str = offer.get("validUntil")
+    if not valid_until_str:
+        return ""
+    try:
+        valid_until = datetime.fromisoformat(valid_until_str.replace("Z", "+00:00"))
+    except ValueError:
+        return ""
+    if (valid_until - now).days < 0:
+        return "UDLOBET!!! "
+    return ""
 ```
 
-And the list is sorted: all Netto items together, then ABC Lavpris, then Bilka. Completed items drop to the bottom regardless of store.
+In the `todo_items` property, both functions are called per item, and the sort key gets the extra store dimension:
 
-The sort key in the `todo_items` property is `(completed, store.lower(), summary.lower())`. One line. The description builder appends price and date only when the API returns them — no crash, no blank field if they're missing.
+```python
+store = (item.get("business") or {}).get("name") or ""
+prefix = _expiry_prefix(item.get("offer"), now)
+summary = f"{prefix}{count}x {name}"
+description = _build_description(store, item.get("offer"), now)
+
+result.append((store, TodoItem(...)))
+
+result.sort(key=lambda x: (
+    x[1].status == TodoItemStatus.COMPLETED,
+    x[0].lower(),   # store — groups items together
+    x[1].summary.lower(),
+))
+```
+
+The result: incomplete items before complete, then alphabetical by store, then alphabetical within a store. All Netto items together, then ABC Lavpris, then Bilka.
+
+Two things worth knowing before you edit the file. First, `todo.py` lives at `/config/custom_components/etilbudsavis/todo.py` on your HA machine — HACS updates will overwrite it. The changes are small enough that reapplying them takes a few minutes. Second, after editing any Python file in a custom component, a **full HA restart** is required. `reload_config_entry` doesn't flush Python's module cache — only a restart does.
 
 ## Zones and proximity notifications
 

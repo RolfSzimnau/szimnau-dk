@@ -18,17 +18,73 @@ Udgangspunktet er en HACS-integration lavet af [CagosDk](https://github.com/Cago
 
 Et-app-problemet var løst. Men standardvisningen viser kun varenavne — ingen butik, ingen pris, ingen dato. Med femten varer fra fire butikker er det ikke nyttigt når man har travlt.
 
-## Sorteret efter butik, pris i description
+## Ændringer i todo.py: description og sortering
 
-eTilbudsavis vedhæfter butikinfo og tilbudsdata til hvert item i API'en. Integrationens `todo.py` kan mappe disse felter til `description`-feltet på hvert todo-item. Med en lille ændring i den fil viser description nu:
+Integrationen gemmer alle data fra eTilbudsavis API'en i coordinatoren — herunder `business.name` (butik), `offer.price` og `offer.validUntil`. Som standard sætter `todo.py` kun butiksnavnet i `description`-feltet. For at få pris og dato med tilføjede jeg to hjælpefunktioner og ændrede sorteringsnøglen.
 
+Description-builderen:
+
+```python
+def _build_description(store: str, offer: dict | None, now: datetime) -> str | None:
+    if not store:
+        return None
+    offer = offer or {}
+    price = offer.get("price")
+    valid_until_str = offer.get("validUntil")
+    desc = store
+    if price is not None:
+        price_str = f"{price:.2f}".replace(".", ",")
+        desc += f" - {price_str} kr."
+    if valid_until_str:
+        try:
+            valid_until = datetime.fromisoformat(valid_until_str.replace("Z", "+00:00"))
+            if (valid_until - now).total_seconds() > 0:
+                desc += f" til {valid_until.day}/{valid_until.month}"
+        except ValueError:
+            pass
+    return desc
 ```
-Netto – 12,95 kr. · til 12/6
+
+Både `price` og `validUntil` hentes med `.get()` — hvis API'en ikke returnerer dem for shopping list-items, springes de bare over. Resultatet er altid gyldigt: som minimum kun butiksnavnet.
+
+Den anden hjælpefunktion håndterer udløbne tilbud. Hvis `validUntil` er i fortiden, får varens summary et præfix så det er tydeligt:
+
+```python
+def _expiry_prefix(offer: dict | None, now: datetime) -> str:
+    if not offer:
+        return ""
+    valid_until_str = offer.get("validUntil")
+    if not valid_until_str:
+        return ""
+    try:
+        valid_until = datetime.fromisoformat(valid_until_str.replace("Z", "+00:00"))
+    except ValueError:
+        return ""
+    if (valid_until - now).days < 0:
+        return "UDLOBET!!! "
+    return ""
 ```
 
-Og listen er sorteret: alle Netto-varer samlet, derefter ABC Lavpris, derefter Bilka. Afkrydsede varer ryger til bunden uanset butik.
+I `todo_items`-propertyen kaldes begge funktioner per vare, og sorteringsnøglen får butiksdimensionen:
 
-Sorteringsnøglen i `todo_items`-propertyen er `(completed, store.lower(), summary.lower())`. Én linje. Description-builderen tilføjer kun pris og dato når API'en returnerer dem — ingen fejl, intet tomt felt hvis de mangler.
+```python
+store = (item.get("business") or {}).get("name") or ""
+prefix = _expiry_prefix(item.get("offer"), now)
+summary = f"{prefix}{count}x {name}"
+description = _build_description(store, item.get("offer"), now)
+
+result.append((store, TodoItem(...)))
+
+result.sort(key=lambda x: (
+    x[1].status == TodoItemStatus.COMPLETED,
+    x[0].lower(),   # butik — samler varer fra samme butik
+    x[1].summary.lower(),
+))
+```
+
+Resultatet: ufuldførte varer før afkrydsede, derefter alfabetisk efter butik, derefter alfabetisk inden for butikken.
+
+To ting er værd at vide inden du redigerer filen. For det første ligger `todo.py` på `/config/custom_components/etilbudsavis/todo.py` på HA-maskinen — HACS-opdateringer overskriver den. Ændringerne er små nok til at det tager et par minutter at genoprette dem. For det andet kræver ændringer i Python-filer i custom components en **fuld HA-genstart** — `reload_config_entry` tømmer ikke Pythons module cache.
 
 ## Zoner og proximity-notifikationer
 

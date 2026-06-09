@@ -18,17 +18,73 @@ Der Ausgangspunkt ist eine HACS-Integration von [CagosDk](https://github.com/Cag
 
 Das Zwei-App-Problem war damit gelöst. Die Standardansicht zeigt aber nur Artikelnamen — kein Geschäft, kein Preis, kein Datum. Bei fünfzehn Artikeln aus vier verschiedenen Geschäften hilft das wenig, wenn es schnell gehen muss.
 
-## Nach Geschäft sortiert, Preis in der Beschreibung
+## Anpassungen in todo.py: Beschreibung und Sortierung
 
-eTilbudsavis liefert pro Artikel Geschäftsinformationen und Angebotsdaten über die API. Die `todo.py` der Integration kann diese Felder auf das `description`-Feld des Todo-Items abbilden. Mit einer kleinen Anpassung zeigt die Beschreibung jetzt:
+Die Integration speichert alle API-Daten im Coordinator — darunter `business.name` (Geschäft), `offer.price` und `offer.validUntil`. Standardmäßig schreibt `todo.py` nur den Geschäftsnamen ins `description`-Feld. Um Preis und Datum hinzuzubekommen, habe ich zwei Hilfsfunktionen ergänzt und den Sortierschlüssel geändert.
 
+Der Description-Builder:
+
+```python
+def _build_description(store: str, offer: dict | None, now: datetime) -> str | None:
+    if not store:
+        return None
+    offer = offer or {}
+    price = offer.get("price")
+    valid_until_str = offer.get("validUntil")
+    desc = store
+    if price is not None:
+        price_str = f"{price:.2f}".replace(".", ",")
+        desc += f" - {price_str} kr."
+    if valid_until_str:
+        try:
+            valid_until = datetime.fromisoformat(valid_until_str.replace("Z", "+00:00"))
+            if (valid_until - now).total_seconds() > 0:
+                desc += f" til {valid_until.day}/{valid_until.month}"
+        except ValueError:
+            pass
+    return desc
 ```
-Netto – 12,95 kr. · til 12/6
+
+Sowohl `price` als auch `validUntil` werden per `.get()` abgerufen — fehlen sie in der API-Antwort, werden sie einfach übersprungen. Das Ergebnis ist immer gültig: mindestens der Geschäftsname.
+
+Die zweite Hilfsfunktion behandelt abgelaufene Angebote. Liegt `validUntil` in der Vergangenheit, bekommt die Artikelzusammenfassung ein Präfix:
+
+```python
+def _expiry_prefix(offer: dict | None, now: datetime) -> str:
+    if not offer:
+        return ""
+    valid_until_str = offer.get("validUntil")
+    if not valid_until_str:
+        return ""
+    try:
+        valid_until = datetime.fromisoformat(valid_until_str.replace("Z", "+00:00"))
+    except ValueError:
+        return ""
+    if (valid_until - now).days < 0:
+        return "UDLOBET!!! "
+    return ""
 ```
 
-Die Liste ist sortiert: alle Netto-Artikel zusammen, dann ABC Lavpris, dann Bilka. Abgehakte Artikel landen unabhängig vom Geschäft am Ende.
+In der `todo_items`-Property werden beide Funktionen pro Artikel aufgerufen, und der Sortierschlüssel bekommt die Geschäftsdimension:
 
-Der Sortierschlüssel in der `todo_items`-Property lautet `(completed, store.lower(), summary.lower())`. Eine Zeile. Preis und Datum werden nur angehängt, wenn die API sie zurückgibt — kein Absturz, kein leeres Feld wenn sie fehlen.
+```python
+store = (item.get("business") or {}).get("name") or ""
+prefix = _expiry_prefix(item.get("offer"), now)
+summary = f"{prefix}{count}x {name}"
+description = _build_description(store, item.get("offer"), now)
+
+result.append((store, TodoItem(...)))
+
+result.sort(key=lambda x: (
+    x[1].status == TodoItemStatus.COMPLETED,
+    x[0].lower(),   # Geschäft — gruppiert Artikel zusammen
+    x[1].summary.lower(),
+))
+```
+
+Das Ergebnis: unerledigte Artikel vor erledigten, dann alphabetisch nach Geschäft, dann alphabetisch innerhalb eines Geschäfts.
+
+Zwei Dinge sind vor der Bearbeitung wichtig. Erstens liegt `todo.py` unter `/config/custom_components/etilbudsavis/todo.py` auf der HA-Maschine — HACS-Updates überschreiben die Datei. Die Änderungen sind klein genug, um sie in wenigen Minuten erneut einzupflegen. Zweitens erfordert jede Änderung an Python-Dateien in Custom Components einen **vollständigen HA-Neustart** — `reload_config_entry` leert den Python-Modulcache nicht.
 
 ## Zonen und Proximity-Benachrichtigungen
 
