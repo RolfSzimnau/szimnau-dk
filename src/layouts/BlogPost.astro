@@ -33,12 +33,21 @@ const jsonLd = {
   author: {
     '@type': 'Person',
     name: 'Rolf Szimnau',
-    url: siteOrigin,
+    url: `${siteOrigin}/en/about/`,
+    sameAs: [
+      'https://www.linkedin.com/in/szimnau/',
+      'https://github.com/RolfSzimnau',
+      'https://twitter.com/rszimnau',
+    ],
   },
   publisher: {
     '@type': 'Person',
     name: 'Rolf Szimnau',
-    url: siteOrigin,
+    url: `${siteOrigin}/en/about/`,
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': Astro.url.href,
   },
   image: heroImage ? `${siteOrigin}${heroImage}` : `${siteOrigin}/og-default.png`,
   url: Astro.url.href,
