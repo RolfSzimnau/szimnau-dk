@@ -1,0 +1,143 @@
+---
+title: "Google Find My i Home Assistant: Spor enheder på et mørkt dashboard"
+description: "Sådan integrerer du FMDN med Home Assistant, fikser 'unavailable'-tilstanden, dark-themer Leaflet-kortet via shadow DOM-injektion, og forstår præcis hvornår Google Find My ikke er det rigtige værktøj."
+pubDate: 2026-06-14
+tags: ["google", "find-my", "fmdn", "tracking", "dashboard", "home-assistant"]
+lang: "da"
+translationKey: "google-find-my-home-assistant"
+heroImage: "/blog-images/google-find-my-home-assistant.jpg"
+faqs:
+  - question: "Why do my Google Find My devices show as unavailable in Home Assistant?"
+    answer: "The FMDN integration doesn't cache historical positions. On startup it waits for the next crowd-sourced Bluetooth ping, which can take minutes to hours. Press the 'Locate Now' button entity in Developer Tools to force an immediate position update from Google's network."
+  - question: "Can I use Google Find My to remind me when I leave my keys at home?"
+    answer: "Not reliably. FMDN depends on nearby Android phones pinging your tracker via Bluetooth, which can take anywhere from one minute to half an hour. For immediate key detection at the door, an ESP32 with a BLE proxy integration is the correct tool — it reports within seconds."
+---
+
+Der er to fundamentalt forskellige use cases for sporing af genstande, og de fleste opdager forskellen på den hårde måde. **Google Find My** (FMDN) er bygget til én af dem: du har mistet din taske et sted i byen og skal indkredse den til et kvarter. Det gør den godt. Den anden gør den ikke godt: du vil vide, om dine nøgler hænger på krogen, inden du låser hoveddøren.
+
+At få FMDN ind i Home Assistant er ligetil. At få det til at se godt ud på et mørkt glassmorphism-dashboard er det ikke — Leaflet-kortfliserne renderes inde i et shadow DOM, som hverken `card_mod` eller inline CSS kan nå. Dette indlæg dækker hele opsætningen, de to fejl du vil løbe ind i, og hvorfor du måske vil have en ESP32 alligevel.
+
+## Hvad FMDN faktisk gør
+
+Googles Find My Device Network fungerer på crowd-sourcet Bluetooth. Hver Android-telefon med Google Play Services scanner passivt efter Bluetooth Low Energy-annoncering i nærheden. Når den ser din FMDN-registrerede enhed — et Pebblebee Clip, en Chipolo, en Pixel-telefon — registrerer den GPS-koordinaterne og rapporterer dem anonymt og krypteret til Google. Din enhed opretter aldrig selv forbindelse til internettet. Positionen du ser er det seneste tidspunkt, hvor en tilfældig Android-telefon gik forbi den.
+
+I praksis i en by betyder det positionsopdateringer hvert par minutter. I et landligt hus midt om natten med din telefon allerede i lommen betyder det at vente, til den næste bil kører forbi din postkasse.
+
+Home Assistant-integrationen, **FMDN** på HACS, forespørger Googles API og eksponerer hver sporet enhed som en `device_tracker`-entitet med breddegrad, længdegrad og et sidst-set-tidsstempel. Den opretter også knapentiteter for `locate_now`, `play_sound` og `stop_sound`.
+
+## Installation
+
+Installer begge komponenter fra HACS:
+- **FMDN** — integrationen (søg: "Find My Device")
+- **GoogleFindMy-Card** — Lovelace-kortkortet
+
+Efter installation af FMDN, konfigurer den under **Indstillinger → Enheder og tjenester → Tilføj integration → FMDN**. Du skal godkende med en Google-konto, der har Find My Device aktiveret.
+
+Genstart Home Assistant. Dine enheder vises som `device_tracker.*_last_location`-entiteter plus knapentiteter for hver handling.
+
+## "Unavailable"-tilstanden
+
+Ved første indlæsning — og efter enhver genstart — vil dine sporingsentiteter vise `unavailable`. Integrationen henter ikke historiske positioner ved opstart. Den sidder og venter på den næste planlagte polling.
+
+Løsningen er øjeblikkelig: gå til **Udviklerværktøjer → Tjenester**, kald `button.press` på `button.<enhed>_locate_now`-entiteten for hver tracker. Dette tvinger FMDN til at anmode om en frisk position fra Googles netværk med det samme. Inden for 10–30 sekunder opdateres entitetstilstanden og kortet udfyldes.
+
+```yaml
+service: button.press
+target:
+  entity_id:
+    - button.google_pixel_10_locate_now
+    - button.galaxy_tab_a9_locate_now
+    - button.pebblebee_clip_locate_now
+```
+
+Efter den første vellykkede lokalisering overtager normal polling, og `unavailable` vender ikke tilbage, medmindre trackeren virkelig ikke kan findes.
+
+## Det mørke kortproblem
+
+`googlefindmy-card` indlejrer et Leaflet.js-kort der renderer OpenStreetMap-fliser. På et mørkt dashboard er resultatet stødende: lyse hvide og grå kortfliser omgivet af dine mørke glassmorphism-kort.
+
+Den oplagte løsning — at målrette `.leaflet-tile` via `card_mod` — virker ikke. Leaflet renderes inde i sit eget shadow DOM, indlejret inde i kortets shadow DOM. `$`-piercingoperatoren i `card_mod` går kun ét niveau dybt. CSS injiceret udefra når aldrig fliserne.
+
+Løsningen er en JavaScript-ressource der krydser shadow roots og injicerer et `<style>`-element direkte:
+
+```js
+// Gem som /config/www/findmy-dark.js
+(function () {
+  const DARK_CSS = `
+    ha-card { background: transparent !important; box-shadow: none !important; border: none !important; }
+    .card-header { background: rgba(18,18,25,0.90) !important; border-bottom: 1px solid rgba(255,255,255,0.08) !important; }
+    .map-container { background: #1a1c26 !important; }
+    .leaflet-container { background: #1a1c26 !important; }
+    .leaflet-layer img, .leaflet-tile { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85) !important; }
+    .leaflet-tile-container img { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85) !important; }
+    .device-sidebar { background: rgba(18,18,25,0.92) !important; }
+    .device-card { background: rgba(30,30,45,0.7) !important; }
+    .device-name { color: #e0e0e0 !important; }
+    .device-location, .device-time { color: #888 !important; }
+  `;
+
+  function injectIntoCard(card) {
+    const sr = card.shadowRoot;
+    if (!sr || sr.querySelector('style[data-findmy-dark]')) return;
+    const style = document.createElement('style');
+    style.setAttribute('data-findmy-dark', '1');
+    style.textContent = DARK_CSS;
+    sr.appendChild(style);
+  }
+
+  function scan() {
+    function findDeep(root) {
+      root.querySelectorAll('googlefindmy-card').forEach(injectIntoCard);
+      root.querySelectorAll('*').forEach(el => { if (el.shadowRoot) findDeep(el.shadowRoot); });
+    }
+    findDeep(document);
+  }
+
+  [0, 200, 500, 1000, 2000, 4000].forEach(d => setTimeout(scan, d));
+  setInterval(scan, 3000);
+})();
+```
+
+Filteret `invert(1) hue-rotate(180deg)` vender kortfarverne — hvid bliver mørk grå, blåt vand bliver varm brun. Den yderligere `brightness(0.95) contrast(0.85)` dæmper det lidt, så det ikke ligner et Halloween-tema. OpenStreetMap i mørkt tema ser faktisk ret fornuftigt ud på den måde.
+
+Registrer scriptet som en Lovelace-ressource under **Indstillinger → Dashboards → Ressourcer → Tilføj ressource**:
+- URL: `/local/findmy-dark.js`
+- Type: JavaScript Module
+
+## Avatar-problemet (Galaxy Tab A9)
+
+FMDN sætter `entity_picture` på hver sporingsentitet ved hjælp af Google-profilbilledet fra den konto, der senest så enheden. For Tab A9 var det et mørkt cirkulært portræt — vist af `mushroom-entity-card` som en rund avatar i stedet for tablet-ikonet du konfigurerede.
+
+Det frustrerende er: `mushroom-shape-avatar` og `mushroom-shape-icon` eksisterer ikke i DOM'et på samme tid. Når et `entity_picture` er til stede, renderer Mushroom avataren og renderer aldrig ikonet overhovedet. At skjule avataren med CSS afslører ingenting — der er ikke noget ikon nedenunder.
+
+To fixes er nødvendige i kombination:
+
+**1. Fjern `entity_picture` fra entitetstilstanden** — tilføj til `configuration.yaml`:
+
+```yaml
+homeassistant:
+  customize:
+    device_tracker.galaxy_tab_a9:
+      entity_picture: null
+```
+
+**2. Fortæl kortet om ikke at bruge entitetsbilleder** — sæt i kortkonfigurationen:
+
+```yaml
+- type: custom:mushroom-entity-card
+  entity: device_tracker.galaxy_tab_a9
+  name: Tab A9
+  icon: mdi:tablet-android
+  use_entity_picture: false
+```
+
+Det første fix fjerner billedet fra entitetstilstanden. Det andet sikrer, at Mushroom-kortet aldrig anmoder om et billede, selv hvis et vises i fremtidige opdateringer. Begge er nødvendige.
+
+## Hvornår FMDN ikke er det rigtige værktøj
+
+Forskellen er værd at sige direkte:
+
+- **Mistet genstandssporing** (hvor lagde jeg min taske for tre timer siden?) — FMDN er fremragende. Crowd-sourcet dækning er god i befolkede områder, og en 15 minutter gammel position er stadig nyttig.
+- **Tilstedeværelsesdetektion** (er denne specifikke mærkede genstand inden for 5 meter fra min hoveddør lige nu?) — FMDN er det forkerte værktøj. En ESP32 med ESPHome BLE-proxy-integrationen registrerer Bluetooth-annoncering i realtid, typisk inden for 5–10 sekunder efter at trackeren kommer inden for rækkevidde.
+
+FMDN og en BLE-proxy er supplerende, ikke konkurrerende. FMDN fortæller dig, hvor dit Clip er, når du har mistet det. ESP32'en ved din dør fortæller dig øjeblikkeligt, når det er hjemme. Begge kan være i Home Assistant på samme tid.

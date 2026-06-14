@@ -1,0 +1,326 @@
+---
+title: "Google Find My in Home Assistant: Track Devices on a Dark Dashboard"
+description: "How to integrate FMDN with Home Assistant, fix the 'unavailable' state, dark-theme the Leaflet map via shadow DOM injection, and understand exactly when Google Find My isn't the right tool."
+pubDate: 2026-06-14
+tags: ["google", "find-my", "fmdn", "tracking", "dashboard", "home-assistant"]
+lang: "en"
+translationKey: "google-find-my-home-assistant"
+heroImage: "/blog-images/google-find-my-home-assistant.jpg"
+faqs:
+  - question: "Why do my Google Find My devices show as unavailable in Home Assistant?"
+    answer: "The FMDN integration doesn't cache historical positions. On startup it waits for the next crowd-sourced Bluetooth ping, which can take minutes to hours. Press the 'Locate Now' button entity in Developer Tools to force an immediate position update from Google's network."
+  - question: "Can I use Google Find My to remind me when I leave my keys at home?"
+    answer: "Not reliably. FMDN depends on nearby Android phones pinging your tracker via Bluetooth, which can take anywhere from one minute to half an hour. For immediate key detection at the door, an ESP32 with a BLE proxy integration is the correct tool — it reports within seconds."
+---
+
+There are two fundamentally different use cases for item tracking, and most people discover the difference the hard way. **Google Find My** (FMDN) is built for one of them: you lost your bag somewhere in the city and need to narrow it down to a neighbourhood. It does that well. It does not do the other one well: you want to know whether your keys are on the hook before you lock the front door.
+
+Getting FMDN into Home Assistant is straightforward. Getting it looking good on a dark glassmorphism dashboard is not — the Leaflet map tiles render inside a shadow DOM that neither `card_mod` nor inline CSS can reach. This post covers the full setup, the two bugs you'll hit, and why you may want an ESP32 anyway.
+
+## What FMDN actually does
+
+Google's Find My Device Network works on crowd-sourced Bluetooth. Every Android phone running Google Play Services passively scans for nearby Bluetooth Low Energy advertisements. When it sees your FMDN-registered device — a Pebblebee Clip, a Chipolo, a Pixel phone — it records the GPS coordinates and reports them to Google anonymously and encrypted. Your device never connects to the internet itself. The position you see is the last time any Android phone happened to walk past it.
+
+In practice, in a city, this means position updates every few minutes. In a rural house at midnight with your phone already in your pocket, it means waiting until the next car drives past your letterbox.
+
+The Home Assistant integration, **FMDN** on HACS, polls Google's API and exposes each tracked device as a `device_tracker` entity with latitude, longitude, and a last-seen timestamp. It also creates button entities for `locate_now`, `play_sound`, and `stop_sound`.
+
+## Installation
+
+Install both components from HACS:
+- **FMDN** — the integration (search: "Find My Device")
+- **GoogleFindMy-Card** — the Lovelace map card
+
+After installing FMDN, configure it under **Settings → Devices & Services → Add Integration → FMDN**. You'll need to authenticate with a Google account that has Find My Device enabled.
+
+Restart Home Assistant. Your devices appear as `device_tracker.*_last_location` entities, plus button entities for each action.
+
+## The "unavailable" state
+
+On first load — and after any restart — your tracker entities will show `unavailable`. The integration doesn't pull historical positions on startup. It sits and waits for the next scheduled poll.
+
+The fix is immediate: go to **Developer Tools → Services**, call `button.press` on the `button.<device>_locate_now` entity for each tracker. This forces FMDN to request a fresh position from Google's network right now. Within 10–30 seconds the entity state updates and the map populates.
+
+```yaml
+service: button.press
+target:
+  entity_id:
+    - button.google_pixel_10_locate_now
+    - button.galaxy_tab_a9_locate_now
+    - button.pebblebee_clip_locate_now
+```
+
+After the first successful locate, normal polling takes over and `unavailable` won't return unless the tracker genuinely can't be found.
+
+## The dark map problem
+
+`googlefindmy-card` embeds a Leaflet.js map that renders OpenStreetMap tiles. On any dark dashboard the result is jarring: bright white and grey map tiles surrounded by your dark glassmorphism cards.
+
+The obvious fix — targeting `.leaflet-tile` via `card_mod` — doesn't work. Leaflet renders inside its own shadow DOM, nested inside the card's shadow DOM. The `$` piercing operator in `card_mod` only goes one level deep. CSS injected from the outside never reaches the tiles.
+
+The solution is a JavaScript resource that traverses shadow roots and injects a `<style>` element directly:
+
+```js
+// Save as /config/www/findmy-dark.js
+(function () {
+  const DARK_CSS = `
+    ha-card { background: transparent !important; box-shadow: none !important; border: none !important; }
+    .card-header { background: rgba(18,18,25,0.90) !important; border-bottom: 1px solid rgba(255,255,255,0.08) !important; }
+    .card-title { color: #e8e8e8 !important; }
+    .card-icon { color: #4d9fef !important; }
+    .control-button { background: rgba(30,30,42,0.9) !important; border-color: rgba(255,255,255,0.12) !important; color: #b0b0c0 !important; }
+    .map-container { background: #1a1c26 !important; }
+    .leaflet-container { background: #1a1c26 !important; }
+    .leaflet-layer img, .leaflet-tile { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85) !important; }
+    .leaflet-tile-container img { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85) !important; }
+    .leaflet-control-zoom a { background: rgba(25,25,35,0.9) !important; color: #ccc !important; border-color: rgba(255,255,255,0.1) !important; }
+    .leaflet-popup-content-wrapper { background: rgba(25,25,35,0.97) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #e0e0e0 !important; }
+    .device-sidebar { background: rgba(18,18,25,0.92) !important; border-left: 1px solid rgba(255,255,255,0.08) !important; }
+    .device-card { background: rgba(30,30,45,0.7) !important; border-color: rgba(255,255,255,0.07) !important; }
+    .device-name { color: #e0e0e0 !important; }
+    .device-location, .device-time { color: #888 !important; }
+    .filter-panel { background: rgba(18,18,25,0.95) !important; }
+    .time-range-btn { background: rgba(40,40,55,0.8) !important; color: #aaa !important; }
+    .time-range-btn.active { background: #1a73e8 !important; color: white !important; }
+  `;
+
+  function injectIntoCard(card) {
+    const sr = card.shadowRoot;
+    if (!sr || sr.querySelector('style[data-findmy-dark]')) return;
+    const style = document.createElement('style');
+    style.setAttribute('data-findmy-dark', '1');
+    style.textContent = DARK_CSS;
+    sr.appendChild(style);
+  }
+
+  function scan() {
+    function findDeep(root) {
+      root.querySelectorAll('googlefindmy-card').forEach(injectIntoCard);
+      root.querySelectorAll('*').forEach(el => { if (el.shadowRoot) findDeep(el.shadowRoot); });
+    }
+    findDeep(document);
+  }
+
+  // Scan at load, then at progressive delays to catch lazy-rendered cards
+  [0, 200, 500, 1000, 2000, 4000].forEach(d => setTimeout(scan, d));
+  setInterval(scan, 3000);
+})();
+```
+
+The filter `invert(1) hue-rotate(180deg)` flips the tile colours — white becomes dark grey, blue water becomes warm brown. The additional `brightness(0.95) contrast(0.85)` damps it slightly so it doesn't look like a Halloween theme. OpenStreetMap in dark mode looks actually decent this way.
+
+Register the script as a Lovelace resource under **Settings → Dashboards → Resources → Add Resource**:
+- URL: `/local/findmy-dark.js`
+- Type: JavaScript Module
+
+The `data-findmy-dark` attribute on the injected style element prevents duplicate injection on re-scans.
+
+## The avatar problem (Galaxy Tab A9)
+
+FMDN sets `entity_picture` on each tracker entity using the Google profile picture of the account that last saw the device. For the Tab A9, this was a dark circular portrait — displayed by `mushroom-entity-card` as a round avatar instead of the tablet icon you configured.
+
+The frustrating part: `mushroom-shape-avatar` and `mushroom-shape-icon` don't coexist in the DOM. When an `entity_picture` is present, Mushroom renders the avatar and never renders the icon element at all. Hiding the avatar with CSS reveals nothing — there's no icon underneath to appear.
+
+Two fixes are required in combination:
+
+**1. Remove `entity_picture` from the entity state** — add to `configuration.yaml`:
+
+```yaml
+homeassistant:
+  customize:
+    device_tracker.galaxy_tab_a9:
+      entity_picture: null
+```
+
+**2. Tell the card not to use entity pictures** — set in the card config:
+
+```yaml
+- type: custom:mushroom-entity-card
+  entity: device_tracker.galaxy_tab_a9
+  name: Tab A9
+  icon: mdi:tablet-android
+  use_entity_picture: false
+```
+
+The first fix removes the picture from the entity state so other cards don't accidentally pick it up. The second ensures the Mushroom card never requests a picture even if one appears in future updates. Both are needed — `use_entity_picture: false` alone still renders the avatar if `entity_picture` is present in the state attributes.
+
+## The dashboard card
+
+The full card block, wrapped in a `stack-in-card` for glassmorphism styling:
+
+```yaml
+- type: custom:stack-in-card
+  mode: vertical
+  card_mod:
+    style: |
+      ha-card {
+        border-radius: 28px !important;
+        background: rgba(255,255,255,0.05) !important;
+        backdrop-filter: blur(15px) !important;
+        border: 1px solid rgba(255,255,255,0.10) !important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+        overflow: hidden;
+      }
+      ha-card::before { display: none !important; }
+  cards:
+    - type: custom:googlefindmy-card
+      entities:
+        - device_tracker.google_pixel_10_last_location
+        - device_tracker.galaxy_tab_a9_last_location
+        - device_tracker.pebblebee_clip_last_location
+      show_last_seen: true
+      show_location_name: true
+      show_coordinates: false
+      enable_actions: true
+      use_leaflet_map: true
+
+    # Status row — current zone
+    - type: horizontal-stack
+      cards:
+        - type: custom:mushroom-entity-card
+          entity: device_tracker.google_pixel_10
+          name: Pixel 10
+          icon: mdi:cellphone
+          card_mod:
+            style: |
+              ha-card { background: transparent; box-shadow: none; border: none;
+                border-top: 1px solid rgba(255,255,255,0.06); }
+              ha-card::before { display: none !important; }
+        - type: custom:mushroom-entity-card
+          entity: device_tracker.galaxy_tab_a9
+          name: Tab A9
+          icon: mdi:tablet-android
+          use_entity_picture: false
+          card_mod:
+            style: |
+              ha-card { background: transparent; box-shadow: none; border: none;
+                border-top: 1px solid rgba(255,255,255,0.06); }
+              ha-card::before { display: none !important; }
+        - type: custom:mushroom-entity-card
+          entity: device_tracker.pebblebee_clip
+          name: Clip
+          icon: mdi:tag
+          card_mod:
+            style: |
+              ha-card { background: transparent; box-shadow: none; border: none;
+                border-top: 1px solid rgba(255,255,255,0.06); }
+              ha-card::before { display: none !important; }
+
+    # Locate Now row
+    - type: horizontal-stack
+      cards:
+        - type: custom:mushroom-template-card
+          primary: Pixel 10
+          icon: mdi:crosshairs-gps
+          icon_color: blue
+          tap_action:
+            action: call-service
+            service: button.press
+            target:
+              entity_id: button.google_pixel_10_locate_now
+          card_mod:
+            style: |
+              ha-card { background: transparent; box-shadow: none; border: none;
+                border-top: 1px solid rgba(255,255,255,0.06); }
+              ha-card::before { display: none !important; }
+        - type: custom:mushroom-template-card
+          primary: Tab A9
+          icon: mdi:crosshairs-gps
+          icon_color: blue
+          tap_action:
+            action: call-service
+            service: button.press
+            target:
+              entity_id: button.galaxy_tab_a9_locate_now
+          card_mod:
+            style: |
+              ha-card { background: transparent; box-shadow: none; border: none;
+                border-top: 1px solid rgba(255,255,255,0.06); }
+              ha-card::before { display: none !important; }
+        - type: custom:mushroom-template-card
+          primary: Clip
+          icon: mdi:crosshairs-gps
+          icon_color: blue
+          tap_action:
+            action: call-service
+            service: button.press
+            target:
+              entity_id: button.pebblebee_clip_locate_now
+          card_mod:
+            style: |
+              ha-card { background: transparent; box-shadow: none; border: none;
+                border-top: 1px solid rgba(255,255,255,0.06); }
+              ha-card::before { display: none !important; }
+
+    # Play Sound row (tap = play, hold = stop)
+    - type: horizontal-stack
+      cards:
+        - type: custom:mushroom-template-card
+          primary: Pixel 10
+          icon: mdi:volume-high
+          icon_color: red
+          tap_action:
+            action: call-service
+            service: button.press
+            target:
+              entity_id: button.google_pixel_10_play_sound
+          hold_action:
+            action: call-service
+            service: button.press
+            target:
+              entity_id: button.google_pixel_10_stop_sound
+          card_mod:
+            style: |
+              ha-card { background: transparent; box-shadow: none; border: none;
+                border-top: 1px solid rgba(255,255,255,0.06); }
+              ha-card::before { display: none !important; }
+        - type: custom:mushroom-template-card
+          primary: Tab A9
+          icon: mdi:volume-high
+          icon_color: red
+          tap_action:
+            action: call-service
+            service: button.press
+            target:
+              entity_id: button.galaxy_tab_a9_play_sound
+          hold_action:
+            action: call-service
+            service: button.press
+            target:
+              entity_id: button.galaxy_tab_a9_stop_sound
+          card_mod:
+            style: |
+              ha-card { background: transparent; box-shadow: none; border: none;
+                border-top: 1px solid rgba(255,255,255,0.06); }
+              ha-card::before { display: none !important; }
+        - type: custom:mushroom-template-card
+          primary: Clip
+          icon: mdi:volume-high
+          icon_color: red
+          tap_action:
+            action: call-service
+            service: button.press
+            target:
+              entity_id: button.pebblebee_clip_play_sound
+          hold_action:
+            action: call-service
+            service: button.press
+            target:
+              entity_id: button.pebblebee_clip_stop_sound
+          card_mod:
+            style: |
+              ha-card { background: transparent; box-shadow: none; border: none;
+                border-top: 1px solid rgba(255,255,255,0.06); }
+              ha-card::before { display: none !important; }
+```
+
+## When FMDN isn't the right tool
+
+If you wanted to automate "remind me if I leave without my keys," you'll find that FMDN is unreliable for this. The Pebblebee Clip's position in Google's network updates when a random Android device passes within Bluetooth range of it. In a rural house that can mean anywhere from one minute to half an hour.
+
+The distinction is worth being explicit about:
+
+- **Lost item tracking** (where did I leave my bag three hours ago?) — FMDN is excellent. Crowd-sourced coverage is good in populated areas, and a 15-minute-old position is still useful.
+- **Presence detection** (is this specific tagged object within 5 metres of my front door right now?) — FMDN is the wrong tool. An ESP32 running the ESPHome BLE proxy integration detects Bluetooth advertisements in real time, typically within 5–10 seconds of the tracker entering range.
+
+FMDN and a BLE proxy are complementary, not competing. FMDN tells you where your Clip is when you've lost it somewhere. The ESP32 at your door tells you immediately when it's home. Both can be in Home Assistant at the same time.
