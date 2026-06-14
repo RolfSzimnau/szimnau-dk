@@ -1,6 +1,6 @@
 ---
 title: "Google Find My in Home Assistant: Track Devices on a Dark Dashboard"
-description: "How to integrate FMDN with Home Assistant, fix the 'unavailable' state, dark-theme the Leaflet map via shadow DOM injection, and understand exactly when Google Find My isn't the right tool."
+description: "Full FMDN setup for Home Assistant — fix the unavailable state, dark-theme the Leaflet map via shadow DOM injection, and know when FMDN isn't the right tool."
 pubDate: 2026-06-14
 tags: ["google", "find-my", "fmdn", "tracking", "dashboard", "home-assistant"]
 lang: "en"
@@ -15,7 +15,7 @@ faqs:
 
 There are two fundamentally different use cases for item tracking, and most people discover the difference the hard way. **Google Find My** (FMDN) is built for one of them: you lost your bag somewhere in the city and need to narrow it down to a neighbourhood. It does that well. It does not do the other one well: you want to know whether your keys are on the hook before you lock the front door.
 
-Getting FMDN into Home Assistant is straightforward. Getting it looking good on a dark glassmorphism dashboard is not — the Leaflet map tiles render inside a shadow DOM that neither `card_mod` nor inline CSS can reach. This post covers the full setup, the two bugs you'll hit, and why you may want an ESP32 anyway.
+Getting FMDN into Home Assistant is straightforward. Getting it looking good on a dark glassmorphism dashboard is not — I run it alongside my [AI security camera](/en/blog/sentinel-ai-camera-ha/) on the same security view, and the bright map tiles clashed badly — the Leaflet map tiles render inside a shadow DOM that neither `card_mod` nor inline CSS can reach. This post covers the full setup, the two bugs you'll hit, and why you may want an ESP32 anyway.
 
 ## What FMDN actually does
 
@@ -58,7 +58,7 @@ After the first successful locate, normal polling takes over and `unavailable` w
 
 The obvious fix — targeting `.leaflet-tile` via `card_mod` — doesn't work. Leaflet renders inside its own shadow DOM, nested inside the card's shadow DOM. The `$` piercing operator in `card_mod` only goes one level deep. CSS injected from the outside never reaches the tiles.
 
-The solution is a JavaScript resource that traverses shadow roots and injects a `<style>` element directly:
+The solution is a JavaScript resource that traverses shadow roots and injects a `<style>` element directly. The same dark glassmorphism styling principles I use across all my dashboards — documented in [my glassmorphism dashboard design guide](/en/blog/ha-glassmorphism-dashboard-design/) — apply here, but the shadow DOM boundary means CSS alone isn't enough:
 
 ```js
 // Save as /config/www/findmy-dark.js
@@ -323,4 +323,4 @@ The distinction is worth being explicit about:
 - **Lost item tracking** (where did I leave my bag three hours ago?) — FMDN is excellent. Crowd-sourced coverage is good in populated areas, and a 15-minute-old position is still useful.
 - **Presence detection** (is this specific tagged object within 5 metres of my front door right now?) — FMDN is the wrong tool. An ESP32 running the ESPHome BLE proxy integration detects Bluetooth advertisements in real time, typically within 5–10 seconds of the tracker entering range.
 
-FMDN and a BLE proxy are complementary, not competing. FMDN tells you where your Clip is when you've lost it somewhere. The ESP32 at your door tells you immediately when it's home. Both can be in Home Assistant at the same time.
+FMDN and a BLE proxy are complementary, not competing. My setup runs Home Assistant on [Proxmox](/en/blog/proxmox-home-assistant-setup/), which also runs the ESPHome BLE proxy as a separate container — both feeding into the same HA instance. FMDN tells you where your Clip is when you've lost it somewhere. The ESP32 at your door tells you immediately when it's home. Both can be in Home Assistant at the same time.
