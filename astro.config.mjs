@@ -5,7 +5,8 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  site: 'https://szimnau.dk',
+  site: 'https://www.szimnau.dk',
+  trailingSlash: 'always',
   output: 'static',
   vite: {
     plugins: [tailwindcss()],
