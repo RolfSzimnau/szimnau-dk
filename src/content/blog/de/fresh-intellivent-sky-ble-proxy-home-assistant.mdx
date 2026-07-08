@@ -19,6 +19,8 @@ Zwei Fresh Intellivent Sky Badlüfter, beide senden Bluetooth Low Energy, beide 
 
 Der XIAO ESP32-C3 ist ein daumennagelgroßes Board — WiFi, Bluetooth 5 und ein USB-C-Anschluss, mehr muss man nicht bedenken. Ich habe es an ein USB-Netzteil im Flur zwischen den beiden Bädern angeschlossen und die Verkabelung seitdem nicht mehr angefasst.
 
+![Nahaufnahme des Seeed Studio XIAO ESP32-C3-Boards mit USB-C-Anschluss und externem Antennenstecker](/blog-images/xiao-esp32-c3-board.jpg)
+
 Es zu flashen ist kein Projekt in dem Sinne, wie "Firmware flashen" normalerweise klingt. [ESPHomes browserbasierter Projekt-Installer](https://esphome.io/projects/) hat ein fertiges **Bluetooth Proxy**-Firmware-Image — Board per USB an den Computer anschließen, den Installer in Chrome oder Edge öffnen, Board und Bluetooth-Proxy-Projekt auswählen, und es flasht über WebSerial. Kein YAML zu schreiben, kein lokal laufendes ESPHome-Dashboard. Während der geführten Einrichtung mit WLAN verbinden, und es erscheint innerhalb einer Minute in der Home-Assistant-Erkennung.
 
 Einmal als ESPHome-Gerät hinzugefügt, registriert es sich selbst als Bluetooth-Adapter unter **Einstellungen → Geräte & Dienste → Bluetooth**. Home Assistant bevorzugt automatisch Proxys gegenüber dem eigenen eingebauten Adapter für jedes Gerät, das näher an einem Proxy liegt — ganz ohne Konfiguration Ihrerseits.
@@ -32,6 +34,8 @@ Ich betreibe das parallel zu einem [Google-Find-My-Setup](/de/blog/google-find-m
 ## Die Fresh-Intellivent-Sky-Lüfter hinzufügen
 
 Freshs Intellivent Sky ist ein feuchtigkeitsgesteuerter Badlüfter mit eigener Bluetooth-Schnittstelle, normalerweise über die Fresh-SmartLink-App gesteuert. Home Assistant hat keine offizielle Integration dafür — die, die funktioniert, ist ein Community-Projekt, [`angoyd/freshintelliventHacs`](https://github.com/angoyd/freshintelliventHacs), installiert über HACS als benutzerdefiniertes Repository.
+
+![Fresh Intellivent Sky Badlüfter, montiert in einem Deckendiffusor](/blog-images/fresh-intellivent-sky-fan-ceiling.jpg)
 
 Mit dem Proxy an Ort und Stelle ist die Einrichtung im Grunde nur Erkennung: Sobald die BLE-Ankündigungen des Lüfters einen Proxy in Reichweite erreichen, bietet Home Assistant ihn unter **Einstellungen → Geräte & Dienste → Erkannt** an, mit `fresh_intellivent_sky` als Quelle. Bestätigen, und es wird ein Gerät mit fünf Sensoren erstellt:
 

@@ -19,6 +19,8 @@ Two Fresh Intellivent Sky bathroom fans, both broadcasting Bluetooth Low Energy,
 
 The XIAO ESP32-C3 is a thumbnail-sized board — WiFi, Bluetooth 5, and a USB-C port, nothing else you need to think about. I plugged it into a USB power brick in the hallway between the two bathrooms and never touched the wiring again.
 
+![Seeed Studio XIAO ESP32-C3 board close-up, showing the USB-C port and external antenna connector](/blog-images/xiao-esp32-c3-board.jpg)
+
 Flashing it is not a project in the way "flashing firmware" usually implies. [ESPHome's web-based project installer](https://esphome.io/projects/) has a ready-made **Bluetooth Proxy** firmware image — plug the board into your computer over USB, open the installer in Chrome or Edge, pick the board and the Bluetooth Proxy project, and it flashes over WebSerial. No YAML to write, no ESPHome dashboard to run locally. Connect it to WiFi during the guided setup and it shows up in Home Assistant's discovery within a minute.
 
 Once it's added as an ESPHome device, it registers itself as a Bluetooth adapter under **Settings → Devices & Services → Bluetooth**. Home Assistant automatically prefers proxies over its own onboard adapter for any device closer to a proxy, with no configuration on your end.
@@ -32,6 +34,8 @@ I run this alongside a [Google Find My setup](/en/blog/google-find-my-home-assis
 ## Adding the Fresh Intellivent Sky fans
 
 Fresh's Intellivent Sky is a humidity-sensing bathroom extractor fan with its own Bluetooth interface, controlled normally through the Fresh SmartLink app. Home Assistant has no official integration for it — the one that works is a community project, [`angoyd/freshintelliventHacs`](https://github.com/angoyd/freshintelliventHacs), installed via HACS as a custom repository.
+
+![Fresh Intellivent Sky bathroom fan installed in a ceiling diffuser](/blog-images/fresh-intellivent-sky-fan-ceiling.jpg)
 
 With the proxy in place, setup is genuinely just discovery: once the fan's BLE advertisements reach a proxy in range, Home Assistant offers it under **Settings → Devices & Services → Discovered** with `fresh_intellivent_sky` as the source. Confirm it, and it creates a device with five sensors:
 

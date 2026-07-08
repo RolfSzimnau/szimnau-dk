@@ -19,6 +19,8 @@ To Fresh Intellivent Sky-badeværelsesventilatorer, begge udsendende Bluetooth L
 
 XIAO ESP32-C3 er et kort på størrelse med en tommelfingernegl — WiFi, Bluetooth 5 og en USB-C-port, ikke andet du behøver at tænke over. Jeg satte det i en USB-strømadapter i gangen mellem de to badeværelser og har ikke rørt ledningerne siden.
 
+![Seeed Studio XIAO ESP32-C3-kort i nærbillede, med USB-C-port og ekstern antennestik](/blog-images/xiao-esp32-c3-board.jpg)
+
 At flashe det er ikke et projekt på den måde, "at flashe firmware" normalt antyder. [ESPHomes browserbaserede projekt-installer](https://esphome.io/projects/) har et færdiglavet **Bluetooth Proxy**-firmware-image — sæt kortet i computeren via USB, åbn installeren i Chrome eller Edge, vælg kortet og Bluetooth Proxy-projektet, og det flasher over WebSerial. Ingen YAML at skrive, ingen ESPHome-dashboard at køre lokalt. Forbind det til WiFi under den guidede opsætning, og det dukker op i Home Assistants discovery inden for et minut.
 
 Når det er tilføjet som en ESPHome-enhed, registrerer det sig selv som en Bluetooth-adapter under **Indstillinger → Enheder & Tjenester → Bluetooth**. Home Assistant foretrækker automatisk proxyer frem for sin egen indbyggede adapter for enhver enhed tættere på en proxy — uden nogen konfiguration fra din side.
@@ -32,6 +34,8 @@ Jeg kører dette sammen med en [Google Find My-opsætning](/da/blog/google-find-
 ## Tilføjelse af Fresh Intellivent Sky-ventilatorerne
 
 Fresh Intellivent Sky er en fugtstyret badeværelsesventilator med sin egen Bluetooth-grænseflade, normalt styret gennem Fresh SmartLink-appen. Home Assistant har ingen officiel integration til den — den der virker, er et community-projekt, [`angoyd/freshintelliventHacs`](https://github.com/angoyd/freshintelliventHacs), installeret via HACS som et brugerdefineret repository.
+
+![Fresh Intellivent Sky-badeværelsesventilator monteret i en loftsdiffusor](/blog-images/fresh-intellivent-sky-fan-ceiling.jpg)
 
 Med proxyen på plads er opsætningen reelt bare discovery: så snart ventilatorens BLE-annonceringer når en proxy inden for rækkevidde, tilbyder Home Assistant den under **Indstillinger → Enheder & Tjenester → Fundet** med `fresh_intellivent_sky` som kilde. Bekræft den, og den opretter en enhed med fem sensorer:
 
