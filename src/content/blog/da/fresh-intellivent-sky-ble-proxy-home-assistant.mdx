@@ -1,0 +1,96 @@
+---
+title: "Badeværelsesventilator-overvågning i Home Assistant: XIAO ESP32-C3 Bluetooth-proxy + Fresh Intellivent Sky"
+description: "XIAO ESP32-C3 som Bluetooth-proxy til Home Assistant, Fresh Intellivent Sky over BLE, og et nedbrud der lignede dårlig rækkevidde, men ikke var det."
+pubDate: 2026-07-08
+tags: ["esp32", "esphome", "bluetooth", "ble-proxy", "home-assistant", "ventilation"]
+lang: "da"
+translationKey: "fresh-intellivent-sky-ble-proxy-home-assistant"
+heroImage: "/blog-images/fresh-intellivent-sky-ble-proxy.jpg"
+faqs:
+  - question: "Does the Fresh Intellivent Sky Home Assistant integration let you control fan speed?"
+    answer: "No. The angoyd/freshintelliventHacs integration only exposes read-only sensors — humidity, temperature, current speed, and mode. There's no fan, switch, or select entity, so boosting the fan or changing speed still has to happen from the Fresh SmartLink app."
+  - question: "Why did one of two identical Bluetooth devices show unavailable in Home Assistant?"
+    answer: "A crashed config entry, not a range problem. The integration's own reload handler failed mid-unload and left it in Home Assistant's non-recoverable failed_unload state. Check Settings → Devices & Services → the integration's entry status before assuming a Bluetooth/range issue — only a full Home Assistant restart clears it."
+---
+
+To Fresh Intellivent Sky-badeværelsesventilatorer, begge udsendende Bluetooth Low Energy, begge længere fra Home Assistant-værten end dens indbyggede radio pålideligt rækker. Løsningen var ikke en ny HA-server eller et net af repeatere — det var en mikrocontroller til nogle få dollars og omkring ti minutter med en browser. Dette indlæg dækker opsætningen af Bluetooth-proxyen, tilføjelsen af ventilatorerne, og en fejl der lignede præcis et hardwareproblem — og ikke var det.
+
+## Hardwaren: Seeed Studio XIAO ESP32-C3
+
+XIAO ESP32-C3 er et kort på størrelse med en tommelfingernegl — WiFi, Bluetooth 5 og en USB-C-port, ikke andet du behøver at tænke over. Jeg satte det i en USB-strømadapter i gangen mellem de to badeværelser og har ikke rørt ledningerne siden.
+
+At flashe det er ikke et projekt på den måde, "at flashe firmware" normalt antyder. [ESPHomes browserbaserede projekt-installer](https://esphome.io/projects/) har et færdiglavet **Bluetooth Proxy**-firmware-image — sæt kortet i computeren via USB, åbn installeren i Chrome eller Edge, vælg kortet og Bluetooth Proxy-projektet, og det flasher over WebSerial. Ingen YAML at skrive, ingen ESPHome-dashboard at køre lokalt. Forbind det til WiFi under den guidede opsætning, og det dukker op i Home Assistants discovery inden for et minut.
+
+Når det er tilføjet som en ESPHome-enhed, registrerer det sig selv som en Bluetooth-adapter under **Indstillinger → Enheder & Tjenester → Bluetooth**. Home Assistant foretrækker automatisk proxyer frem for sin egen indbyggede adapter for enhver enhed tættere på en proxy — uden nogen konfiguration fra din side.
+
+## Hvorfor en proxy frem for bare mere rækkevidde
+
+Home Assistant-værtens Bluetooth-radio dækker cirka ét rum, måske to med fri sigtlinje. Alt derudover er en dødzone for enhver ren BLE-integration — ingen Zigbee-lignende mesh, ingen repeater-logik, bare "inden for rækkevidde" eller "ikke inden for rækkevidde". Et enkelt billigt ESP32-kort løser en hel dødzone på én gang, og du kan sætte flere op hvor som helst du har USB-strøm — hver ny en tilføjer bare dækning, ingen parring eller per-enhed-konfiguration krævet på proxysiden.
+
+Jeg kører dette sammen med en [Google Find My-opsætning](/da/blog/google-find-my-home-assistant/), der også afhænger af Bluetooth — FAQ'en der peger specifikt på en ESP32 BLE-proxy som det rigtige værktøj, når du har brug for en aflæsning inden for sekunder frem for "når en telefon nu engang går forbi."
+
+## Tilføjelse af Fresh Intellivent Sky-ventilatorerne
+
+Fresh Intellivent Sky er en fugtstyret badeværelsesventilator med sin egen Bluetooth-grænseflade, normalt styret gennem Fresh SmartLink-appen. Home Assistant har ingen officiel integration til den — den der virker, er et community-projekt, [`angoyd/freshintelliventHacs`](https://github.com/angoyd/freshintelliventHacs), installeret via HACS som et brugerdefineret repository.
+
+Med proxyen på plads er opsætningen reelt bare discovery: så snart ventilatorens BLE-annonceringer når en proxy inden for rækkevidde, tilbyder Home Assistant den under **Indstillinger → Enheder & Tjenester → Fundet** med `fresh_intellivent_sky` som kilde. Bekræft den, og den opretter en enhed med fem sensorer:
+
+- `sensor.<navn>_humidity`
+- `sensor.<navn>_temperature`
+- `sensor.<navn>_current_speed`
+- `sensor.<navn>_mode` (læsbar — Off, Trickle, Boost osv.)
+- `sensor.<navn>_mode_raw` (den numeriske kode bag)
+
+**Det er skrivebeskyttet.** Der er ingen `fan.*`, `switch.*` eller `select.*`-entitet — intet i Home Assistant kan ændre ventilatorens hastighed eller udløse en boost. Automationer bygget på denne integration kan give besked om, at du selv skal boost'e ventilatoren manuelt — de kan ikke gøre det for dig. Det er en reel begrænsning, værd at kende, før du planlægger automationer omkring den.
+
+## Fugtautomationer der rent faktisk virker med skrivebeskyttet data
+
+To ventilatorer, fem sensorer hver, ingen styring — men luftfugtighed og dens ændringshastighed er stadig nok til at bygge noget nyttigt. Mønsteret jeg landede på:
+
+- En **Derivative**-hjælper (Indstillinger → Enheder & Tjenester → Hjælpere, ingen YAML) på hver fugtighedssensor, der giver en %/min-værdi — en vedvarende stigning forbi cirka 3,3%/min flager "nogen er i bad" hurtigere, end en fast fugtighedsgrænse nogensinde kunne.
+- En automation med vedvarende grænseværdi for reel skimmelrisiko: fugtighed over 70% i 45+ minutter, uafhængigt af hastighed.
+
+Begge sender bare en notifikation — se skrivebeskyttelsesbegrænsningen ovenfor — men ændringshastigheds-triggeren fanger en brusertur, der starter, inden for et par minutter, længe før en fast "fugtighed over 65%"-grænse ville udløse.
+
+## Fejlen der lignede et rækkeviddeproblem
+
+Et par dage efter opsætningen gik alle fem sensorer på den ene ventilator "unavailable", mens den anden fortsatte med at rapportere normalt. Den oplagte antagelse er signal — proxyplacering, BLE-rækkevidde, måske skal ventilatoren parres igen. Jeg tjekkede proxyens dækning først og fandt intet galt med den.
+
+Den egentlige årsag lå i integrationens config entry, ikke radioen. Home Assistant sporer opsætningsstatus for hver integrationsinstans — én af de mulige værdier er `failed_unload`, som opstår, når en integrations egen reload/unload-handler kaster en fejl midt i nedlukningen. I praksis selvhelbreder den ikke: kun en fuld genstart rydder den. Fejlloggen viste præcis det: en options-update-listener udløste en reload, unload-halvdelen fejlede, og entryen blev efterladt død. Den identiske, upåvirkede ventilators config entry sad derimod i en normal `loaded`-status hele tiden.
+
+Intet af dette kan diagnosticeres ud fra entity-status alene — "unavailable" ser identisk ud, uanset om årsagen er "integration crashede" eller "enhed er uden for rækkevidde". Fingerpeget er i **Indstillinger → Enheder & Tjenester**, på selve integrations-entryen, eller i Home Assistant-loggen omkring det tidspunkt, hvor entiteten blev forældet. En fuld genstart ryddede den fastlåste entry med det samme; hver sensor rapporterede igen inden for to minutter.
+
+```yaml
+alias: "Bathroom: Fan Sensor Stale Alert"
+description: >
+  Notifies if a bathroom fan's sensors go and stay unavailable for over an
+  hour — includes a one-tap Restart HA action button rather than
+  restarting automatically, since staleness can also mean the fan is
+  genuinely out of range or powered off, where a restart wouldn't help.
+mode: parallel
+trigger:
+  - platform: state
+    entity_id: sensor.example_fan_mode
+    to: "unavailable"
+    for:
+      hours: 1
+action:
+  - action: notify.mobile_app_pixel_10
+    data:
+      title: "📡 Fan sensor offline"
+      message: "Unavailable for over an hour — likely a crashed integration entry, not range."
+      data:
+        actions:
+          - action: restart_ha_bathroom_fan
+            title: "Restart HA"
+```
+
+Handlingsknappen udløser en anden, lille automation, der lytter efter netop den specifikke `mobile_app_notification_action`-event og kalder `homeassistant.restart` — bevidst ikke automatisk, da en ventilator, der reelt er uden for rækkevidde, bare ville få en ubrugelig genstart i en løkke i stedet for den faktiske løsning.
+
+## At style det ind i dashboardet
+
+Begge ventilatorers kort bruger de samme frostede glas-card_mod-konstanter som resten af dashboardet — et fugtighedstrend-diagram, temperatur/mode/hastighed-fliser, og en kompakt statusflise, der kun vises, når ventilatoren er aktiv, eller fugtigheden stiger, så et inaktivt badeværelse ikke optager permanent plads på dashboardet. Den tidligere fejlramte ventilators kort bærer også en lille "Connectivity: Unavailable"-fallback-flise, drevet af den samme `mode`-sensor, der går "unavailable" — den forsvinder, i det øjeblik sensorerne begynder at rapportere igen, ingen manuel dashboard-redigering nødvendig i nogen af tilfældene.
+
+## Én ting værd at vide
+
+Hvis du udvider Home Assistants Bluetooth-rækkevidde til andet end en enkelt enhed — Govee-sensorer, andre BLE-trackere, flere af disse ventilatorer — er det proxyen ligegyldigt, hvad den proxyer. Ét XIAO ESP32-C3-kort per dødzone dækker alt inden for rækkevidde, ikke kun den enhed, du satte det op til. Det er samme logik som at køre en LoRa-gateway til en postkassesensor 200 meter væk — billig, formålsbygget radiohardware løser rækkeviddeproblemer, som ingen mængde Home Assistant-konfiguration kan.

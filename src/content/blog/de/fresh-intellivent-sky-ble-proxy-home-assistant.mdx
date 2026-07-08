@@ -1,0 +1,96 @@
+---
+title: "Badlüfter-Überwachung in Home Assistant: XIAO ESP32-C3 Bluetooth-Proxy + Fresh Intellivent Sky"
+description: "XIAO ESP32-C3 als Bluetooth-Proxy für Home Assistant, Fresh Intellivent Sky Lüfter über BLE, und ein Absturz, der wie ein Reichweitenproblem aussah."
+pubDate: 2026-07-08
+tags: ["esp32", "esphome", "bluetooth", "ble-proxy", "home-assistant", "ventilation"]
+lang: "de"
+translationKey: "fresh-intellivent-sky-ble-proxy-home-assistant"
+heroImage: "/blog-images/fresh-intellivent-sky-ble-proxy.jpg"
+faqs:
+  - question: "Does the Fresh Intellivent Sky Home Assistant integration let you control fan speed?"
+    answer: "No. The angoyd/freshintelliventHacs integration only exposes read-only sensors — humidity, temperature, current speed, and mode. There's no fan, switch, or select entity, so boosting the fan or changing speed still has to happen from the Fresh SmartLink app."
+  - question: "Why did one of two identical Bluetooth devices show unavailable in Home Assistant?"
+    answer: "A crashed config entry, not a range problem. The integration's own reload handler failed mid-unload and left it in Home Assistant's non-recoverable failed_unload state. Check Settings → Devices & Services → the integration's entry status before assuming a Bluetooth/range issue — only a full Home Assistant restart clears it."
+---
+
+Zwei Fresh Intellivent Sky Badlüfter, beide senden Bluetooth Low Energy, beide weiter vom Home Assistant-Host entfernt, als dessen eingebautes Funkmodul zuverlässig reicht. Die Lösung war kein neuer HA-Server und kein Netz aus Repeatern — sondern ein paar Euro teurer Mikrocontroller und rund zehn Minuten mit dem Browser. Dieser Beitrag behandelt die Einrichtung des Bluetooth-Proxys, das Hinzufügen der Lüfter, und einen Fehler, der exakt wie ein Hardwareproblem aussah — und keins war.
+
+## Die Hardware: Seeed Studio XIAO ESP32-C3
+
+Der XIAO ESP32-C3 ist ein daumennagelgroßes Board — WiFi, Bluetooth 5 und ein USB-C-Anschluss, mehr muss man nicht bedenken. Ich habe es an ein USB-Netzteil im Flur zwischen den beiden Bädern angeschlossen und die Verkabelung seitdem nicht mehr angefasst.
+
+Es zu flashen ist kein Projekt in dem Sinne, wie "Firmware flashen" normalerweise klingt. [ESPHomes browserbasierter Projekt-Installer](https://esphome.io/projects/) hat ein fertiges **Bluetooth Proxy**-Firmware-Image — Board per USB an den Computer anschließen, den Installer in Chrome oder Edge öffnen, Board und Bluetooth-Proxy-Projekt auswählen, und es flasht über WebSerial. Kein YAML zu schreiben, kein lokal laufendes ESPHome-Dashboard. Während der geführten Einrichtung mit WLAN verbinden, und es erscheint innerhalb einer Minute in der Home-Assistant-Erkennung.
+
+Einmal als ESPHome-Gerät hinzugefügt, registriert es sich selbst als Bluetooth-Adapter unter **Einstellungen → Geräte & Dienste → Bluetooth**. Home Assistant bevorzugt automatisch Proxys gegenüber dem eigenen eingebauten Adapter für jedes Gerät, das näher an einem Proxy liegt — ganz ohne Konfiguration Ihrerseits.
+
+## Warum ein Proxy statt einfach nur mehr Reichweite
+
+Das Bluetooth-Funkmodul des Home-Assistant-Hosts deckt etwa einen Raum ab, vielleicht zwei bei freier Sichtlinie. Alles darüber hinaus ist eine Funkloch für jede reine BLE-Integration — kein Zigbee-artiges Mesh, keine Repeater-Logik, nur "in Reichweite" oder "nicht in Reichweite". Ein einziges günstiges ESP32-Board behebt ein ganzes Funkloch auf einmal, und Sie können beliebig viele weitere dort platzieren, wo Sie USB-Strom haben — jedes weitere fügt einfach Abdeckung hinzu, keine Kopplung oder Pro-Gerät-Konfiguration auf der Proxy-Seite nötig.
+
+Ich betreibe das parallel zu einem [Google-Find-My-Setup](/de/blog/google-find-my-home-assistant/), das ebenfalls von Bluetooth abhängt — die FAQ dort nennt explizit einen ESP32-BLE-Proxy als richtiges Werkzeug, wenn man eine Ablesung innerhalb von Sekunden braucht statt "wann auch immer gerade ein Handy vorbeikommt".
+
+## Die Fresh-Intellivent-Sky-Lüfter hinzufügen
+
+Freshs Intellivent Sky ist ein feuchtigkeitsgesteuerter Badlüfter mit eigener Bluetooth-Schnittstelle, normalerweise über die Fresh-SmartLink-App gesteuert. Home Assistant hat keine offizielle Integration dafür — die, die funktioniert, ist ein Community-Projekt, [`angoyd/freshintelliventHacs`](https://github.com/angoyd/freshintelliventHacs), installiert über HACS als benutzerdefiniertes Repository.
+
+Mit dem Proxy an Ort und Stelle ist die Einrichtung im Grunde nur Erkennung: Sobald die BLE-Ankündigungen des Lüfters einen Proxy in Reichweite erreichen, bietet Home Assistant ihn unter **Einstellungen → Geräte & Dienste → Erkannt** an, mit `fresh_intellivent_sky` als Quelle. Bestätigen, und es wird ein Gerät mit fünf Sensoren erstellt:
+
+- `sensor.<name>_humidity`
+- `sensor.<name>_temperature`
+- `sensor.<name>_current_speed`
+- `sensor.<name>_mode` (lesbar — Off, Trickle, Boost usw.)
+- `sensor.<name>_mode_raw` (der numerische Code dahinter)
+
+**Das ist nur lesbar.** Es gibt keine `fan.*`-, `switch.*`- oder `select.*`-Entität — nichts in Home Assistant kann die Lüftergeschwindigkeit ändern oder einen Boost auslösen. Auf dieser Integration aufgebaute Automatisierungen können benachrichtigen, den Lüfter manuell zu boosten — sie können es nicht selbst tun. Das ist eine reale Einschränkung, die man kennen sollte, bevor man Automatisierungen darauf aufbaut.
+
+## Feuchtigkeits-Automatisierungen, die auch mit reinen Lesedaten funktionieren
+
+Zwei Lüfter, je fünf Sensoren, keine Steuerung — aber Luftfeuchtigkeit und ihre Änderungsrate reichen trotzdem, um etwas Nützliches zu bauen. Das Muster, bei dem ich gelandet bin:
+
+- Ein **Derivative**-Helfer (Einstellungen → Geräte & Dienste → Helfer, kein YAML) auf jedem Feuchtigkeitssensor, der einen %/min-Wert liefert — ein anhaltender Anstieg über etwa 3,3 %/min signalisiert "jemand duscht" schneller, als es ein fester Feuchtigkeitsschwellenwert je könnte.
+- Eine Automatisierung mit dauerhaftem Schwellenwert für echtes Schimmelrisiko: Feuchtigkeit über 70 % für 45+ Minuten, unabhängig von der Rate.
+
+Beide senden nur eine Benachrichtigung — siehe die Nur-Lese-Einschränkung oben —, aber der Änderungsraten-Trigger erkennt eine beginnende Dusche innerhalb weniger Minuten, deutlich bevor ein fester "Feuchtigkeit über 65 %"-Schwellenwert auslösen würde.
+
+## Der Fehler, der wie ein Reichweitenproblem aussah
+
+Ein paar Tage nach der Einrichtung gingen alle fünf Sensoren eines Lüfters auf "unavailable", während der andere weiterhin normal meldete. Die naheliegende Annahme ist Signal — Proxy-Platzierung, BLE-Reichweite, vielleicht muss der Lüfter neu gekoppelt werden. Ich habe zuerst die Abdeckung des Proxys geprüft und nichts Falsches daran gefunden.
+
+Die tatsächliche Ursache lag im Config Entry der Integration, nicht im Funkmodul. Home Assistant verfolgt den Einrichtungsstatus jeder Integrationsinstanz — einer der möglichen Werte ist `failed_unload`, der auftritt, wenn der eigene Reload/Unload-Handler einer Integration mitten im Abbau einen Fehler wirft. In der Praxis erholt er sich nicht selbst: nur ein vollständiger Neustart behebt ihn. Das Fehlerprotokoll zeigte genau das: Ein Options-Update-Listener löste einen Reload aus, die Unload-Hälfte scheiterte, und der Eintrag blieb tot zurück. Der Config Entry des identischen, nicht betroffenen Lüfters war währenddessen durchgehend im normalen Status `loaded`.
+
+Nichts davon lässt sich allein am Entity-Status diagnostizieren — "unavailable" sieht identisch aus, egal ob die Ursache "Integration abgestürzt" oder "Gerät außer Reichweite" ist. Der Hinweis findet sich unter **Einstellungen → Geräte & Dienste**, beim Integrations-Eintrag selbst, oder im Home-Assistant-Protokoll um den Zeitpunkt, an dem die Entität veraltete. Ein vollständiger Neustart hat den festgefahrenen Eintrag sofort bereinigt; jeder Sensor meldete innerhalb von zwei Minuten wieder Daten.
+
+```yaml
+alias: "Bathroom: Fan Sensor Stale Alert"
+description: >
+  Notifies if a bathroom fan's sensors go and stay unavailable for over an
+  hour — includes a one-tap Restart HA action button rather than
+  restarting automatically, since staleness can also mean the fan is
+  genuinely out of range or powered off, where a restart wouldn't help.
+mode: parallel
+trigger:
+  - platform: state
+    entity_id: sensor.example_fan_mode
+    to: "unavailable"
+    for:
+      hours: 1
+action:
+  - action: notify.mobile_app_pixel_10
+    data:
+      title: "📡 Fan sensor offline"
+      message: "Unavailable for over an hour — likely a crashed integration entry, not range."
+      data:
+        actions:
+          - action: restart_ha_bathroom_fan
+            title: "Restart HA"
+```
+
+Der Aktionsbutton löst eine zweite, winzige Automatisierung aus, die auf genau dieses `mobile_app_notification_action`-Event lauscht und `homeassistant.restart` aufruft — bewusst nicht automatisch, denn ein tatsächlich außer Reichweite befindlicher Lüfter würde nur einen nutzlosen Neustart in einer Schleife bekommen statt der eigentlichen Lösung.
+
+## Einbindung ins Dashboard
+
+Die Karten beider Lüfter verwenden dieselben Frosted-Glass-card_mod-Konstanten wie der Rest des Dashboards — ein Feuchtigkeitstrend-Diagramm, Temperatur-/Modus-/Geschwindigkeits-Kacheln und eine kompakte Status-Kachel, die nur erscheint, wenn der Lüfter aktiv ist oder die Feuchtigkeit steigt, damit ein untätiges Bad keinen dauerhaften Dashboard-Platz beansprucht. Die Karte des ehemals defekten Lüfters trägt zusätzlich eine kleine "Connectivity: Unavailable"-Fallback-Kachel, gesteuert vom selben `mode`-Sensor, der auf "unavailable" springt — sie verschwindet in dem Moment, in dem die Sensoren wieder melden, ohne manuelle Dashboard-Bearbeitung in beiden Fällen.
+
+## Eine Sache, die man wissen sollte
+
+Wer die Bluetooth-Reichweite von Home Assistant für mehr als ein einzelnes Gerät erweitert — Govee-Sensoren, andere BLE-Tracker, weitere solcher Lüfter —, dem Proxy selbst ist es egal, was er weiterleitet. Ein XIAO ESP32-C3 pro Funkloch deckt alles in Reichweite ab, nicht nur das Gerät, für das er eingerichtet wurde. Es ist dieselbe Logik wie beim Betrieb eines LoRa-Gateways für einen 200 Meter entfernten Briefkastensensor — günstige, zweckgebaute Funkhardware löst Reichweitenprobleme, die keine Menge an Home-Assistant-Konfiguration lösen kann.
