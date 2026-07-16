@@ -146,4 +146,4 @@ public/
 
 ## Deployment
 
-Cloudflare Pages via Wrangler. Build output: `dist/`. Static output mode.
+Deploy by `git push` to GitHub (`RolfSzimnau/szimnau-dk`) — Cloudflare Pages builds and deploys automatically. **Never use Wrangler CLI to deploy.** Build output: `dist/`. Static output mode.
