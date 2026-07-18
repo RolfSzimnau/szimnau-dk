@@ -6,6 +6,11 @@ tags: ["camera", "reolink", "alpr", "ai-vision", "home-assistant", "tv"]
 lang: "en"
 translationKey: "sentinel-reolink-alpr-tv"
 heroImage: "/blog-images/overvagning-sentinel.jpg"
+faqs:
+  - question: "Can a Reolink CX810 do license plate recognition in Home Assistant?"
+    answer: "It was built with LLM Vision reading plates from snapshots — but the ALPR layer was later removed: night accuracy on angled or wet plates was unreliable, and the extra AI calls made notifications feel slow. The snapshot-to-TV pipeline stayed."
+  - question: "What does the Reolink CX810 expose to Home Assistant?"
+    answer: "Binary sensors for person and vehicle from the onboard AI chip, plus two streams: camera.sentinel_clear (full 4K) and camera.sentinel_fluent (lower resolution, faster for notifications)."
 ---
 
 We never installed a doorbell camera. The Reolink CX810 pointed at the driveway ended up doing more than any doorbell would have — without the subscription, without the app, and with the TV as the notification screen instead of a phone I might not be looking at.

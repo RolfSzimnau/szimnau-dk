@@ -43,7 +43,7 @@ export const ui = {
     'nav.hardware': 'Hardware Lab',
     'hero.greeting': 'Hej, jeg er Rolf.',
     'hero.headline': 'Home Assistant: Automatisering af det smarte hjem',
-    'hero.subheadline': 'Dybdegående guides til Home Assistant, hardware-anmeldelser og automatiseringsblueprintsblueprints.',
+    'hero.subheadline': 'Dybdegående guides til Home Assistant, hardware-anmeldelser og automatiserings-blueprints.',
     'hero.cta.blog': 'Læs bloggen',
     'hero.cta.hardware': 'Se Hardware Lab',
     'blog.title': 'Fra laboratoriet',

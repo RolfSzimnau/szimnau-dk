@@ -1,11 +1,16 @@
 ---
 title: "KI-Kamera in Home Assistant — Benachrichtigungen, die keinen verrückt machen"
-description: "Wie ich die Sentinel-Kamera dazu gebracht habe, nützliche Meldungen zu schicken statt 40 Bewegungsalarme am Tag — eine Automatisierung, ein Stummschalten-Schalter und Aktionsschaltflächen."
+description: "Die Sentinel-Kamera schickt nützliche Meldungen statt 40 Bewegungsalarme am Tag — eine Automatisierung, Stumm-Schalter und Aktionsknöpfe."
 pubDate: 2025-02-07
 tags: ["kamera", "sicherheit", "home-assistant"]
 lang: "de"
 translationKey: "sentinel-ai-camera-ha"
 heroImage: "/blog-images/overvagning-sentinel.jpg"
+faqs:
+  - question: "How do you stop a security camera from spamming motion notifications?"
+    answer: "Trigger on the camera's person and vehicle AI sensors instead of raw motion, add an input_boolean mute toggle, and give the notification action buttons — open camera, mute, dismiss — so alerts are useful instead of noise."
+  - question: "Can the camera notification show on a TV as well?"
+    answer: "Yes — the same automation pushes a snapshot to a Fire TV via notify, with a cache-busting timestamp parameter on the image URL and interrupt: 1 so it appears even during playback."
 ---
 
 Die ersten zwei Wochen nach der Installation der Sentinel-Kamera hatte ich Bewegungsbenachrichtigungen aktiviert. Jede einzelne sagte "Bewegung erkannt." Vögel, Schatten, eine Plastiktüte, die nachts um drei an der Linse vorbeiwehte. Ich schaltete alle aus und ließ die Kamera für einen weiteren Monat nutzlos herumstehen.

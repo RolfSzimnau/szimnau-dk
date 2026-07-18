@@ -6,6 +6,11 @@ tags: ["home-assistant", "shopping", "automation", "hacs", "todo", "zones"]
 lang: "en"
 translationKey: "etilbudsavis-shopping-list"
 heroImage: "/blog-images/etilbudsavis-notification.webp"
+faqs:
+  - question: "What does the eTilbudsavis integration add to a Home Assistant shopping list?"
+    answer: "The CagosDk HACS integration creates a todo list where items carry the store name and current offer price in the description, sorted by store, so the list groups itself by where each offer is valid."
+  - question: "How do the store proximity notifications work?"
+    answer: "HA zones are defined around each store, and an automation matches the zone name against item descriptions on arrival — walking into Bilka pushes a notification listing only the items on offer there. It requires maintaining a zone per store you shop in."
 ---
 
 Eight items. Four stores. I was standing in Bilka with no idea which of them belonged there. I opened the eTilbudsavis app, scrolled through the full list, picked out the two that said Bilka, and put the phone away. The whole thing took longer than finding the actual items.

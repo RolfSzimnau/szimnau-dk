@@ -1,11 +1,16 @@
 ---
 title: "Vindue Åbner, Varmen Stopper — Et Blueprint til Hvert Rum"
-description: "Hvordan jeg automatiserede radiatoren i Louises værelse til at slukke når vinduet åbnes og tænde igen når det lukkes — bygget som et Blueprint så næste rum tager 30 sekunder at tilføje."
+description: "Radiatoren i Louises værelse slukker når vinduet åbnes og tænder igen når det lukkes — som Blueprint, så næste rum tager 30 sekunder."
 pubDate: 2026-05-17
 tags: ["home-assistant", "blueprint", "varme", "ikea", "mill", "automation"]
 lang: "da"
 translationKey: "window-heating-automation"
 heroImage: "/blog-images/Hjem_MYGGBETT_Hero.jpg.png"
+faqs:
+  - question: "How does the window-open heating automation work?"
+    answer: "An IKEA window sensor triggers a Blueprint automation: when the window opens, the Mill radiator's state is snapshotted and heating turns off after a 1-minute delay; closing the window restores the exact previous state."
+  - question: "Why build it as a Blueprint instead of a normal automation?"
+    answer: "Reuse — adding the next room is Blueprint, pick sensor, pick radiator: about 30 seconds with no new code. It works for the Mill radiators; the Tado-managed living room needs separate logic."
 ---
 
 Radiatoren i Louises værelse kørte for fuld varme med vinduet åbent. Hun er snart tyve — at huske at lukke vinduet er ikke noget der sker konsekvent. Jeg lagde mærke til at vinduet havde stået åbent i en time, varmen på, udetemperatur på cirka 4°C. Det er penge ud af vinduet — bogstaveligt talt — og det ville blive ved med at ske.

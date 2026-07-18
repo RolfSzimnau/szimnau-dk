@@ -6,6 +6,11 @@ tags: ["tado", "heizung", "dashboard", "card-mod", "home-assistant"]
 lang: "de"
 translationKey: "tado-home-assistant-dashboard"
 heroImage: "/blog-images/klima-tado.jpg"
+faqs:
+  - question: "What does the Tado integration give you in Home Assistant?"
+    answer: "It is built into HA (Tado Internet Bridge and account required): every zone appears as a climate entity with sub-5-second state updates, plus binary sensors for Tado's hardware open-window detection."
+  - question: "How does the breathing animation for active heating work?"
+    answer: "A card-mod CSS keyframe animation on the mushroom climate card that only runs while hvac_action is heating — five zones in a grid read at a glance because only the active ones pulse."
 ---
 
 Tados HA-Integration gehört zum Besten, was es out-of-the-box gibt — in HA integriert, kein HACS nötig. Du brauchst die **Tado Internet Bridge** Hardware und ein Tado-Konto. Integration hinzufügen, einloggen, und alle Zonen erscheinen als `climate.*`-Entitäten mit voller Unterstützung. Statusupdates kommen in unter fünf Sekunden zurück. Es funktioniert einfach.

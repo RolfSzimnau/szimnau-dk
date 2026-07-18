@@ -1,11 +1,16 @@
 ---
 title: "Charging a Car on Danish Spot Prices — What I Actually Built"
-description: "Using Energi Data Service in Home Assistant to track hourly spot prices, find the cheapest charging window, and automate Škoda Elroq charging without touching the app."
+description: "Energi Data Service in Home Assistant: track hourly spot prices, find the cheapest charging window, and automate Škoda Elroq charging hands-free."
 pubDate: 2025-05-02
 tags: ["electricity", "ev", "energi-data-service", "automation", "skoda-elroq"]
 lang: "en"
 translationKey: "danish-electricity-prices-ev-charging"
 heroImage: "/blog-images/energi-elpriser.jpg"
+faqs:
+  - question: "How do you get hourly electricity spot prices into Home Assistant?"
+    answer: "Through the Energi Data Service integration (HACS) — a free Danish public API with no key required. It exposes sensor.energi_data_service with raw_today and raw_tomorrow attributes; tomorrow's prices appear around 13:00 when the Nord Pool auction settles."
+  - question: "Does automated spot-price EV charging actually save money?"
+    answer: "Only on nights with a large price spread — some Danish weeks the spread is tiny and the automation makes no difference. The bigger saving came from behavioural change: timing the dishwasher and washing machine to the cheapest window."
 ---
 
 Last February there was a day where electricity cost 0.18 DKK/kWh at 3am and 3.40 DKK/kWh at 8am. That's a 19x difference in one night. If your car charges on a fixed overnight schedule, you're basically rolling dice on which end of that spread you land on.

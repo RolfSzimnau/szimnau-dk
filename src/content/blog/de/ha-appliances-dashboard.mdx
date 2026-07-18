@@ -1,11 +1,16 @@
 ---
 title: "Bosch Geschirrspüler in Home Assistant — Nach Strompreis einplanen"
-description: "Wie ich den Bosch Geschirrspüler über Home Connect eingebunden, ein Dashboard mit Programmwahl und Endzeitkontrolle gebaut und einen Knopf hinzugefügt habe, der die günstigste Stunde findet."
+description: "Bosch-Geschirrspüler über Home Connect: Dashboard mit Programmwahl und Endzeitkontrolle — plus ein Knopf, der die günstigste Stunde findet."
 pubDate: 2025-08-22
 tags: ["bosch", "home-connect", "geschirrspueler", "strom", "home-assistant"]
 lang: "de"
 translationKey: "ha-appliances-dashboard"
 heroImage: "/blog-images/hvidevarer-appliances.jpg"
+faqs:
+  - question: "Can Home Assistant start a Bosch dishwasher at a specific time?"
+    answer: "Yes — the built-in Home Connect integration exposes programme selects and remote start, so an automation can delay the start to the cheapest electricity hour. The door must be closed and remote start enabled on the machine first."
+  - question: "What are the limitations of controlling a dishwasher via Home Connect?"
+    answer: "Programme changes only work before the machine starts — once running, the select entities become read-only. That is a Bosch firmware restriction, not a Home Assistant one."
 ---
 
 Der Geschirrspüler war das Gerät, von dem ich am wenigsten erwartet hatte. Es ist ein Bosch. Er verbindet sich mit der Bosch Home Connect-App, was in Ordnung ist — aber nur eine weitere App. Ich habe die **Home Connect**-Integration (in HA integriert, kein HACS — erfordert ein Home Connect-Konto) zu HA hauptsächlich aus Vollständigkeitsgründen hinzugefügt.

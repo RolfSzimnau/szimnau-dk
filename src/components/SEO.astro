@@ -78,6 +78,7 @@ const websiteJsonLd = {
   <link rel="alternate" hreflang={localeMap[l]} href={buildAlternate(l)} />
 ))}
 <link rel="alternate" hreflang="x-default" href={buildAlternate('en')} />
+<link rel="alternate" type="application/rss+xml" title="szimnau.dk — From the Lab" href={`${new URL(canonicalURL).origin}/rss.xml`} />
 
 <meta property="og:title" content={siteTitle} />
 <meta property="og:description" content={description} />

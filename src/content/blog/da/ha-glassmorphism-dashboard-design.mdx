@@ -6,6 +6,11 @@ tags: ["dashboard", "design", "card-mod", "lovelace", "home-assistant"]
 lang: "da"
 translationKey: "ha-glassmorphism-dashboard-design"
 heroImage: "/blog-images/lys-glass-cards.jpg"
+faqs:
+  - question: "What CSS makes the glassmorphism look work on Home Assistant cards?"
+    answer: "Six card-mod constants on every outer card: 28px border-radius, rgba(255,255,255,0.05) background, blur(15px) backdrop-filter, a 1px rgba(255,255,255,0.10) border and a soft shadow — plus suppressing the Frosted Glass Dark theme's ::before overlay."
+  - question: "Can the glass style be defined once instead of repeated per card?"
+    answer: "Not cleanly without maintaining a custom theme — card-mod styles don't cascade into nested cards reliably, so a snippets.yaml template is pasted per card. CSS custom properties in a theme YAML would be the proper fix."
 ---
 
 Jeg genopbyggede mine Home Assistant-dashboards tre gange inden de så ud til at høre sammen. Den første version var flade kort. Fin. Den anden var for mange farver. Den tredje landede på glassmorphism — halvgennemsigtige frosne kort på en dyb marineblå baggrund — og den har jeg ikke rørt siden.

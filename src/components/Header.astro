@@ -50,11 +50,66 @@ const langs: Lang[] = ['en', 'da', 'de'];
           {l.toUpperCase()}
         </a>
       ))}
+
+      <button
+        id="mobile-menu-btn"
+        type="button"
+        class="md:hidden ml-2 p-2 text-text-muted hover:text-blue transition-colors"
+        aria-label="Menu"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+      >
+        <svg id="menu-icon-open" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="4" y1="7" x2="20" y2="7" />
+          <line x1="4" y1="12" x2="20" y2="12" />
+          <line x1="4" y1="17" x2="20" y2="17" />
+        </svg>
+        <svg id="menu-icon-close" class="hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="6" y1="6" x2="18" y2="18" />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </button>
     </div>
   </nav>
+
+  <div id="mobile-menu" class="hidden md:hidden bg-navy/95 backdrop-blur-md border-b border-glass-border">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex flex-col gap-4">
+      <a href={`/${lang}/`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
+        {t('nav.home')}
+      </a>
+      <a href={`/${lang}/blog/`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
+        {t('nav.blog')}
+      </a>
+      <a href={`/${lang}/about/`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
+        {t('nav.about')}
+      </a>
+      <a href={`/${lang}/#hardware-lab`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
+        {t('nav.hardware')}
+      </a>
+    </div>
+  </div>
 </header>
 
 <script>
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const iconOpen = document.getElementById('menu-icon-open');
+  const iconClose = document.getElementById('menu-icon-close');
+  menuBtn?.addEventListener('click', () => {
+    const open = mobileMenu?.classList.toggle('hidden') === false;
+    menuBtn.setAttribute('aria-expanded', String(open));
+    iconOpen?.classList.toggle('hidden', open);
+    iconClose?.classList.toggle('hidden', !open);
+  });
+  mobileMenu?.querySelectorAll('a').forEach(a =>
+    a.addEventListener('click', () => {
+      mobileMenu.classList.add('hidden');
+      menuBtn?.setAttribute('aria-expanded', 'false');
+      iconOpen?.classList.remove('hidden');
+      iconClose?.classList.add('hidden');
+    })
+  );
+
   const header = document.getElementById('site-header');
   window.addEventListener('scroll', () => {
     if (window.scrollY > 20) {

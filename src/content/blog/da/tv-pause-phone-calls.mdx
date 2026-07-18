@@ -1,11 +1,16 @@
 ---
 title: "TV sættes automatisk på pause når telefonen ringer — Opkald og Messenger"
-description: "Én automation der pauser TV'et i det øjeblik en af telefonerne ringer — almindelige opkald genoptages automatisk, Messenger-videoopkald får en knap i notifikationen."
+description: "Én automation pauser TV'et når en telefon ringer — almindelige opkald genoptages automatisk, Messenger-videoopkald får en knap i notifikationen."
 pubDate: 2025-10-17
 tags: ["tv", "automation", "telefon", "messenger", "home-assistant"]
 lang: "da"
 translationKey: "tv-pause-phone-calls"
 heroImage: "/blog-images/tv-pause-on-phone-call-home-assistant.jpg"
+faqs:
+  - question: "How does Home Assistant know a phone is ringing?"
+    answer: "The HA Companion App exposes a phone state sensor (ringing, in_call, offhook, idle). One automation pauses the TV when either phone leaves idle and resumes playback when the call ends."
+  - question: "Why do Messenger calls need special handling?"
+    answer: "Messenger video calls don't change the Android phone state sensor, so they are detected via the notification sensor instead — and since call end can't be detected reliably, the notification carries a manual resume button."
 ---
 
 Problemet er indlysende når man har oplevet det nok gange. Nogen ringer. Man roder efter fjernbetjeningen. Den er under en pude. Man finder den. Man sætter på pause. Man har allerede misset den første sætning af samtalen.

@@ -1,11 +1,16 @@
 ---
 title: "WiZ Lys der Reagerer på TV'et — Biograftilstand uden Knappen"
-description: "Hvordan jeg automatiserede stuelysene til at dæmpe sig når en film starter, lyse op igen ved pause og gendanne sig fuldt ud når TV'et slukker — ingen sceneknap, ingen stemmekommando."
+description: "Stuelysene dæmper sig når filmen starter, lyser op ved pause og gendannes når TV'et slukker — ingen sceneknap, ingen stemmekommando."
 pubDate: 2025-11-14
 tags: ["wiz", "lys", "automation", "tv", "home-assistant"]
 lang: "da"
 translationKey: "wiz-movie-lights"
 heroImage: "/blog-images/wiz-home-assistant-cinema-mode.jpg"
+faqs:
+  - question: "What triggers the movie lighting automation?"
+    answer: "The TV media player state: playing dims the living-room WiZ lights, paused brightens them, off restores them fully — no scene button or voice command involved."
+  - question: "Why is there no sunset trigger?"
+    answer: "An earlier version dimmed at sunset regardless of the TV and left the room dark when nobody was watching. TV state reflects what is happening in the room; an 18:00 time condition handles dark winter afternoons."
 ---
 
 Enhver TV-fjernbetjening har en knap man aldrig bruger. På min var det "scene"-knappen der angiveligt skulle dæmpe lysene til biograftilstand. Problemet var ikke knappen — det var at huske at trykke på den, og derefter huske at trykke igen da man satte på pause for at hente en drink, og igen da filmen var slut.

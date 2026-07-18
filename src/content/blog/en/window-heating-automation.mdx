@@ -1,11 +1,16 @@
 ---
 title: "Window Opens, Heating Stops — A Blueprint for Every Room"
-description: "How I automated the radiator in Louise's room to turn off when the window opens and back on when it closes — built as a reusable Blueprint so the next room takes 30 seconds to add."
+description: "The radiator turns off when the window opens and back on when it closes — built as a reusable Blueprint so the next room takes 30 seconds."
 pubDate: 2026-05-17
 tags: ["home-assistant", "blueprint", "heating", "ikea", "mill", "automation"]
 lang: "en"
 translationKey: "window-heating-automation"
 heroImage: "/blog-images/Hjem_MYGGBETT_Hero.jpg.png"
+faqs:
+  - question: "How does the window-open heating automation work?"
+    answer: "An IKEA window sensor triggers a Blueprint automation: when the window opens, the Mill radiator's state is snapshotted and heating turns off after a 1-minute delay; closing the window restores the exact previous state."
+  - question: "Why build it as a Blueprint instead of a normal automation?"
+    answer: "Reuse — adding the next room is Blueprint, pick sensor, pick radiator: about 30 seconds with no new code. It works for the Mill radiators; the Tado-managed living room needs separate logic."
 ---
 
 The radiator in Louise's room was running at full heat with the window wide open. She's almost twenty — keeping her window shut isn't something that happens reliably. I noticed the window had been open for an hour, heat on, outside temperature around 4°C. Not a disaster, but a predictable waste that would keep repeating.

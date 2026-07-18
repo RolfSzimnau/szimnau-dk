@@ -1,11 +1,16 @@
 ---
 title: "Et hjem-skærmbillede der viser mindre — betingede kort i Home Assistant"
-description: "Sådan byggede jeg en HA-forside hvor hvert kort skal gøre sig fortjent til at være der: kort der kun dukker op når noget er aktivt, en prioriteret alert-ticker og en Škoda-sektion der ændrer sig alt efter om laderen er tilsluttet."
+description: "En HA-forside hvor hvert kort gør sig fortjent: conditional cards, en prioriteret alert-ticker og en Škoda-sektion der følger laderens status."
 pubDate: 2025-06-27
 tags: ["dashboard", "lovelace", "betingede-kort", "home-assistant", "design"]
 lang: "da"
 translationKey: "ha-context-aware-home-screen"
 heroImage: "/blog-images/hjem-conditional.jpg"
+faqs:
+  - question: "What is a context-aware Home Assistant dashboard?"
+    answer: "A home screen where cards only render when they carry information — conditional cards for running appliances, a priority alert ticker, and sections that change with context, like a Skoda panel that swaps controls depending on whether the charger is connected."
+  - question: "Why hide dashboard cards when everything is fine?"
+    answer: "A docked vacuum or a locked car is confirmation, not information. Hiding the 'still fine' cards makes screen length itself the signal: a short page means a quiet house."
 ---
 
 Min datter spurgte mig engang hvad jeg kigger på når jeg åbner Home Assistant om morgenen. Jeg svarede at jeg tjekker hvad der sker. Det var ikke helt rigtigt. Jeg scannede forbi en masse ting der bare bekræftede at intet usædvanligt var sket — parkeret støvsuger, slukkede lys, låst bil. Det er ikke information. Det er støj.

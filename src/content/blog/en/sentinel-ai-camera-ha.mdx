@@ -6,6 +6,11 @@ tags: ["camera", "security", "home-assistant"]
 lang: "en"
 translationKey: "sentinel-ai-camera-ha"
 heroImage: "/blog-images/overvagning-sentinel.jpg"
+faqs:
+  - question: "How do you stop a security camera from spamming motion notifications?"
+    answer: "Trigger on the camera's person and vehicle AI sensors instead of raw motion, add an input_boolean mute toggle, and give the notification action buttons — open camera, mute, dismiss — so alerts are useful instead of noise."
+  - question: "Can the camera notification show on a TV as well?"
+    answer: "Yes — the same automation pushes a snapshot to a Fire TV via notify, with a cache-busting timestamp parameter on the image URL and interrupt: 1 so it appears even during playback."
 ---
 
 For about two weeks after installing the Sentinel camera, I had motion notifications turned on. Every notification said "Motion detected." Birds, shadows, a plastic bag blowing past the lens at 3am. I turned them all off and left the camera sitting there doing nothing useful for another month.

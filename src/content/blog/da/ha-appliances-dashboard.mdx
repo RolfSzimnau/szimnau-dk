@@ -1,11 +1,16 @@
 ---
 title: "Bosch Opvaskemaskine i Home Assistant — Planlæg efter Elprisen"
-description: "Hvordan jeg forbandt opvaskemaskinen via Home Connect, byggede et dashboard med programvalg og sluttidskontrol, og tilføjede en knap der finder den billigste time."
+description: "Opvaskemaskinen via Home Connect: dashboard med programvalg og sluttidskontrol — plus en knap der finder den billigste time at køre den i."
 pubDate: 2025-08-22
 tags: ["bosch", "home-connect", "opvaskemaskine", "elektricitet", "home-assistant"]
 lang: "da"
 translationKey: "ha-appliances-dashboard"
 heroImage: "/blog-images/hvidevarer-appliances.jpg"
+faqs:
+  - question: "Can Home Assistant start a Bosch dishwasher at a specific time?"
+    answer: "Yes — the built-in Home Connect integration exposes programme selects and remote start, so an automation can delay the start to the cheapest electricity hour. The door must be closed and remote start enabled on the machine first."
+  - question: "What are the limitations of controlling a dishwasher via Home Connect?"
+    answer: "Programme changes only work before the machine starts — once running, the select entities become read-only. That is a Bosch firmware restriction, not a Home Assistant one."
 ---
 
 Opvaskemaskinen var det apparat jeg forventede mindst fra. Det er en Bosch. Den forbinder til Bosch Home Connect-appen, hvilket er fint men bare endnu en app. Jeg tilføjede **Home Connect**-integrationen (indbygget i HA, ingen HACS — kræver en Home Connect-konto) til HA mest for fuldstændighedens skyld.

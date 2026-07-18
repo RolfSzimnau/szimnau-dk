@@ -1,11 +1,16 @@
 ---
 title: "Außenbeleuchtung nach Sonnenuntergang — Govee und LEDVANCE ohne Saisonanpassungen"
-description: "Wie ich Govee-Lichter und LEDVANCE Lichterketten automatisiert habe — bei Sonnenuntergang ein, Mitternacht aus — eine Automatisierung die sich jeder Jahreszeit anpasst."
+description: "Govee-Lichter und LEDVANCE-Lichterketten: bei Sonnenuntergang ein, Mitternacht aus — eine Automatisierung, die jeder Jahreszeit folgt."
 pubDate: 2025-11-28
 tags: ["govee", "ledvance", "licht", "außen", "automatisierung", "home-assistant"]
 lang: "de"
 translationKey: "outdoor-lights-sunset-schedule"
 heroImage: "/blog-images/Hjem_Lys.jpg"
+faqs:
+  - question: "How do you make outdoor lights follow sunset year-round in Home Assistant?"
+    answer: "One automation with a sun trigger (sunset +15 min offset) turns on the Govee and LEDVANCE lights, and a time trigger at midnight turns them off — no seasonal timer adjustment needed."
+  - question: "Why not just use a clock-based schedule?"
+    answer: "In Denmark sunset shifts about six hours between June and December, so fixed times are visibly wrong for weeks every spring and autumn. The sun entity tracks the shift automatically."
 ---
 
 Zweimal im Jahr änderte ich den Timer für die Außenlichter. Einmal im Frühling, wenn 21:00 Uhr noch helles Abendlicht war. Einmal im Herbst, wenn es um 17:00 Uhr dunkel war und die Lichter nicht vor 20:00 Uhr angingen. Ich traf es nie ganz richtig — in den Übergangswochen war der Timer immer falsch, Lichter die im Tageslicht aufflackerten oder den Garten eine Stunde nach Sonnenuntergang noch dunkel ließen.

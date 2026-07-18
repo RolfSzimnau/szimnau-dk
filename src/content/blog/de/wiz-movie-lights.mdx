@@ -1,11 +1,16 @@
 ---
 title: "WiZ Lampen die auf den TV reagieren — Kinomodus ohne die Taste"
-description: "Wie ich die Wohnzimmerlampen automatisiert habe, sich beim Filmstart zu dimmen, bei Pause wieder aufzuhellen und sich beim TV-Ausschalten vollständig zurückzusetzen — keine Szenentaste, kein Sprachbefehl."
+description: "Die Wohnzimmerlampen dimmen beim Filmstart, hellen bei Pause auf und setzen sich beim TV-Aus zurück — keine Szenentaste, kein Sprachbefehl."
 pubDate: 2025-11-14
 tags: ["wiz", "licht", "automatisierung", "tv", "home-assistant"]
 lang: "de"
 translationKey: "wiz-movie-lights"
 heroImage: "/blog-images/wiz-home-assistant-cinema-mode.jpg"
+faqs:
+  - question: "What triggers the movie lighting automation?"
+    answer: "The TV media player state: playing dims the living-room WiZ lights, paused brightens them, off restores them fully — no scene button or voice command involved."
+  - question: "Why is there no sunset trigger?"
+    answer: "An earlier version dimmed at sunset regardless of the TV and left the room dark when nobody was watching. TV state reflects what is happening in the room; an 18:00 time condition handles dark winter afternoons."
 ---
 
 Jede TV-Fernbedienung hat eine Taste die man nie benutzt. Bei mir war es die "Szenen"-Taste die angeblich die Lichter für den Kinomodus dimmen sollte. Das Problem war nicht die Taste — es war daran zu denken sie zu drücken, und dann wieder daran zu denken als man pausierte um ein Getränk zu holen, und wieder als der Film zu Ende war.

@@ -6,6 +6,11 @@ tags: ["govee", "ledvance", "lys", "udendørs", "automation", "home-assistant"]
 lang: "da"
 translationKey: "outdoor-lights-sunset-schedule"
 heroImage: "/blog-images/Hjem_Lys.jpg"
+faqs:
+  - question: "How do you make outdoor lights follow sunset year-round in Home Assistant?"
+    answer: "One automation with a sun trigger (sunset +15 min offset) turns on the Govee and LEDVANCE lights, and a time trigger at midnight turns them off — no seasonal timer adjustment needed."
+  - question: "Why not just use a clock-based schedule?"
+    answer: "In Denmark sunset shifts about six hours between June and December, so fixed times are visibly wrong for weeks every spring and autumn. The sun entity tracks the shift automatically."
 ---
 
 I Danmark er solnedgangen i december kl. 15:37. I juni er den 21:58. Det er mere end seks timers forskel. Jeg indstillede altid udelysene til et fast klokkeslæt, justerede det to gange om året og ramte det aldrig helt rigtigt. I starten af november var det mørkt kl. 17:00 og lysene kom ikke tændt før 20:00. I april tændte de op i fuldt dagslys.

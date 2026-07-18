@@ -1,11 +1,16 @@
 ---
 title: "Bosch Dishwasher in Home Assistant — Schedule by Electricity Price"
-description: "How I connected the Bosch dishwasher via Home Connect, built a dashboard with programme selection and finish-time control, and added a button that finds the cheapest hour to run it."
+description: "Bosch dishwasher via Home Connect: a dashboard with programme selection and finish-time control, plus a button that finds the cheapest hour to run."
 pubDate: 2025-08-22
 tags: ["bosch", "home-connect", "dishwasher", "electricity", "home-assistant"]
 lang: "en"
 translationKey: "ha-appliances-dashboard"
 heroImage: "/blog-images/hvidevarer-appliances.jpg"
+faqs:
+  - question: "Can Home Assistant start a Bosch dishwasher at a specific time?"
+    answer: "Yes — the built-in Home Connect integration exposes programme selects and remote start, so an automation can delay the start to the cheapest electricity hour. The door must be closed and remote start enabled on the machine first."
+  - question: "What are the limitations of controlling a dishwasher via Home Connect?"
+    answer: "Programme changes only work before the machine starts — once running, the select entities become read-only. That is a Bosch firmware restriction, not a Home Assistant one."
 ---
 
 The dishwasher was the appliance I expected least from. It's a Bosch. It connects to the Bosch Home Connect app, which is fine but just another app. I added the **Home Connect** integration (built into HA, no HACS needed — requires a Home Connect account) mostly out of completeness.

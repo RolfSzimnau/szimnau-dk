@@ -1,11 +1,16 @@
 ---
 title: "Reolink CX810 in Home Assistant — Kennzeichenerkennung und TV-Snapshots"
-description: "Wie ich eine Reolink CX810 4K PoE Kamera dazu gebracht habe, Kennzeichen per KI zu lesen und bei Einfahrt in die Auffahrt direkt ein Snapshot-Bild auf den TV zu schicken."
+description: "Eine Reolink CX810 4K PoE liest Kennzeichen per KI und schickt bei Einfahrt sofort ein Snapshot-Bild auf den TV."
 pubDate: 2025-09-19
 tags: ["kamera", "reolink", "alpr", "ki-vision", "home-assistant", "tv"]
 lang: "de"
 translationKey: "sentinel-reolink-alpr-tv"
 heroImage: "/blog-images/overvagning-sentinel.jpg"
+faqs:
+  - question: "Can a Reolink CX810 do license plate recognition in Home Assistant?"
+    answer: "It was built with LLM Vision reading plates from snapshots — but the ALPR layer was later removed: night accuracy on angled or wet plates was unreliable, and the extra AI calls made notifications feel slow. The snapshot-to-TV pipeline stayed."
+  - question: "What does the Reolink CX810 expose to Home Assistant?"
+    answer: "Binary sensors for person and vehicle from the onboard AI chip, plus two streams: camera.sentinel_clear (full 4K) and camera.sentinel_fluent (lower resolution, faster for notifications)."
 ---
 
 Eine Türklingel mit Kamera haben wir nie installiert. Die Reolink CX810, die auf die Auffahrt zeigt, leistet am Ende mehr als jede Türklingel es getan hätte — ohne Abo, ohne App, und mit dem TV als Benachrichtigungsbildschirm statt einem Handy, auf das man vielleicht gerade nicht schaut.

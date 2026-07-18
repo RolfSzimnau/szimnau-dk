@@ -1,11 +1,16 @@
 ---
 title: "Circadian Lighting With WiZ — Color Temperature That Follows the Sun"
-description: "How I built a circadian lighting system using WiZ bulbs and the HA sun entity — no third-party integration, just a single automation that maps solar elevation to colour temperature every 30 minutes."
+description: "Circadian lighting with WiZ bulbs and the HA sun entity — no third-party integration, one automation maps solar elevation to colour temperature."
 pubDate: 2025-12-12
 tags: ["wiz", "lights", "circadian", "automation", "home-assistant"]
 lang: "en"
 translationKey: "wiz-circadian-lighting"
 heroImage: "/blog-images/hjem_circadian-lighting.jpg"
+faqs:
+  - question: "How do you build circadian lighting with WiZ bulbs in Home Assistant?"
+    answer: "The built-in WiZ integration auto-discovers the bulbs, and one automation running every 30 minutes maps the sun entity's solar elevation to a colour temperature — cool at noon, warm at dusk — only touching lights that are already on."
+  - question: "Why not use WiZ's native Dynamic modes?"
+    answer: "They run locally on the bulb and can't respond to anything in HA — no conditions, no per-room logic. Building it in HA uses real solar data for your location and stays fully modifiable."
 ---
 
 Natural daylight isn't white. At noon it's a cool neutral — around 5500K. In the morning and evening it's warm orange. After sunset it's firelight. Your body uses those shifts to regulate alertness and sleep. Most smart lighting ignores this entirely and sits at the same colour temperature all day, usually something generic around 3000K, regardless of what the sun is doing outside.

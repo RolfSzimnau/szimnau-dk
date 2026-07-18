@@ -1,11 +1,16 @@
 ---
 title: "Mammotion Flora in Home Assistant — Was wirklich funktioniert"
-description: "GPS-Mähen ohne Begrenzungsdraht, wetterbasierte Zeitplanung über HA und der Satellitanzahl-Sensor, vor dem niemand warnt. Ein ehrlicher Blick nach mehreren Monaten Betrieb."
+description: "GPS-Mähen ohne Begrenzungsdraht, wetterbasierte Zeitplanung über HA und der Satelliten-Sensor, vor dem niemand warnt. Ehrliches Fazit."
 pubDate: 2025-01-10
 tags: ["mammotion", "maehroboter", "home-assistant", "testbericht"]
 lang: "de"
 translationKey: "mammotion-flora-ha-integration"
 heroImage: "/blog-images/luba-flora-garden.jpg"
+faqs:
+  - question: "Does the Mammotion Luba have a Home Assistant integration?"
+    answer: "Yes — the Mammotion-HA HACS integration exposes a lawn_mower entity plus sensors for battery, progress, mowed area, blade height and RTK satellite counts, enabling weather-aware scheduling from HA."
+  - question: "What are the catches of running a Mammotion mower with Home Assistant?"
+    answer: "It is heavily cloud/4G-dependent, and the GPS boundary map can only be drawn in the vendor app — HA can control mowing but never define the lawn. Watch the satellite count sensor: low counts explain most seemingly random stops."
 ---
 
 Mein Husqvarna 213C lief jahrelang und hatte nie irgendetwas mit Home Assistant zu tun. Ein Aufsitzmäher macht das nicht — man setzt sich drauf, fährt, und das war's. Wenn es regnete, sagte ich ab. Wenn ich weg war, wartete der Rasen.

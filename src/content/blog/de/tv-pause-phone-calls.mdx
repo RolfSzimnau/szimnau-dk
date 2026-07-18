@@ -1,11 +1,16 @@
 ---
 title: "TV pausiert automatisch wenn das Telefon klingelt — Anrufe und Messenger"
-description: "Eine Automatisierung die den TV pausiert sobald eines der Telefone klingelt — normale Anrufe nehmen automatisch wieder auf, Messenger-Videoanrufe bekommen einen Knopf in der Benachrichtigung."
+description: "Eine Automatisierung pausiert den TV, sobald ein Telefon klingelt — normale Anrufe setzen automatisch fort, Messenger-Videoanrufe per Knopf."
 pubDate: 2025-10-17
 tags: ["tv", "automatisierung", "telefon", "messenger", "home-assistant"]
 lang: "de"
 translationKey: "tv-pause-phone-calls"
 heroImage: "/blog-images/tv-pause-on-phone-call-home-assistant.jpg"
+faqs:
+  - question: "How does Home Assistant know a phone is ringing?"
+    answer: "The HA Companion App exposes a phone state sensor (ringing, in_call, offhook, idle). One automation pauses the TV when either phone leaves idle and resumes playback when the call ends."
+  - question: "Why do Messenger calls need special handling?"
+    answer: "Messenger video calls don't change the Android phone state sensor, so they are detected via the notification sensor instead — and since call end can't be detected reliably, the notification carries a manual resume button."
 ---
 
 Das Problem ist offensichtlich sobald man es oft genug erlebt hat. Jemand ruft an. Man sucht die Fernbedienung. Sie steckt unter einem Kissen. Man findet sie. Man pausiert den Film. Den ersten Satz des Gesprächs hat man bereits verpasst.

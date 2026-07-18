@@ -1,11 +1,16 @@
 ---
 title: "A Home Screen That Shows Less — Context-Aware Cards in Home Assistant"
-description: "How I built an HA home screen where every card earns its place: conditional cards that appear only when something is active, a priority alert ticker, and a Škoda section that changes based on whether the charger is connected."
+description: "An HA home screen where every card earns its place: conditional cards, a priority alert ticker, and a Škoda section that follows the charger state."
 pubDate: 2025-06-27
 tags: ["dashboard", "lovelace", "conditional", "home-assistant", "design"]
 lang: "en"
 translationKey: "ha-context-aware-home-screen"
 heroImage: "/blog-images/hjem-conditional.jpg"
+faqs:
+  - question: "What is a context-aware Home Assistant dashboard?"
+    answer: "A home screen where cards only render when they carry information — conditional cards for running appliances, a priority alert ticker, and sections that change with context, like a Skoda panel that swaps controls depending on whether the charger is connected."
+  - question: "Why hide dashboard cards when everything is fine?"
+    answer: "A docked vacuum or a locked car is confirmation, not information. Hiding the 'still fine' cards makes screen length itself the signal: a short page means a quiet house."
 ---
 
 My first HA home screen had 40-something cards. Every time I opened it I'd scan past the docked vacuum, the off lights, the locked car, the zero-activity motion sensor. None of that is information. It's just confirmation that nothing unusual happened. Noise dressed up as data.

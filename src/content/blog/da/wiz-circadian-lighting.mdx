@@ -1,11 +1,16 @@
 ---
 title: "Circadian Belysning med WiZ — Farvetemperatur der Følger Solen"
-description: "Hvordan jeg byggede et circadian belysningssystem med WiZ-pærer og HA's sol-entitet — ingen tredjepartsintegration, bare én automation der mapper solhøjde til farvetemperatur hvert 30. minut."
+description: "Circadian belysning med WiZ-pærer og HA's sol-entitet — ingen tredjepartsintegration, én automation der mapper solhøjde til farvetemperatur."
 pubDate: 2025-12-12
 tags: ["wiz", "lys", "circadian", "automation", "home-assistant"]
 lang: "da"
 translationKey: "wiz-circadian-lighting"
 heroImage: "/blog-images/hjem_circadian-lighting.jpg"
+faqs:
+  - question: "How do you build circadian lighting with WiZ bulbs in Home Assistant?"
+    answer: "The built-in WiZ integration auto-discovers the bulbs, and one automation running every 30 minutes maps the sun entity's solar elevation to a colour temperature — cool at noon, warm at dusk — only touching lights that are already on."
+  - question: "Why not use WiZ's native Dynamic modes?"
+    answer: "They run locally on the bulb and can't respond to anything in HA — no conditions, no per-room logic. Building it in HA uses real solar data for your location and stays fully modifiable."
 ---
 
 Naturligt dagslys er ikke hvidt. Ved middagstid er det et køligt neutralt — omkring 5500K. Om morgenen og aftenen er det varmt orange. Efter solnedgang er det som stearinlys. Din krop bruger disse skift til at regulere årvågenhed og søvn. De fleste smart-belysningssystemer ignorerer dette fuldstændigt og sidder ved den samme farvetemperatur hele dagen — typisk noget generisk omkring 3000K — uanset hvad solen laver udenfor.

@@ -6,6 +6,11 @@ tags: ["roborock", "støvsuger", "dashboard", "home-assistant"]
 lang: "da"
 translationKey: "roborock-interactive-map-ha"
 heroImage: "/blog-images/Hjem_Roborok.jpg"
+faqs:
+  - question: "How do you get a live interactive Roborock map in Home Assistant?"
+    answer: "The built-in Roborock integration (cloud account required) provides the vacuum entity, and the Xiaomi Vacuum Map Card from HACS renders the live map with tap-to-clean room segments."
+  - question: "Does the Roborock integration work locally?"
+    answer: "Officially it is cloud polling at roughly 5-second refresh. Local communication requires extracting keys from device firmware — for starting cleans, battery and room segments, cloud polling is entirely adequate."
 ---
 
 Roborock-integrationen er bygget direkte ind i HA — ingen HACS nødvendig. Tilføj den, log ind med din Roborock-konto, og støvsugeren dukker op. Hvad den ikke fortæller dig er at det interessante kommer fra et separat HACS-kort der gengiver det live kort.
