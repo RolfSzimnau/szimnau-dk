@@ -22,12 +22,15 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
 >
   <div class="max-w-6xl mx-auto px-6 py-24">
     <header class="mb-12">
-      <p class="font-mono text-blue text-sm mb-3 tracking-wider uppercase">// Blog</p>
+      <p class="flex items-center gap-3 font-mono text-blue text-sm mb-3 tracking-wider uppercase"><span class="h-px w-8 bg-blue/60"></span>Blog</p>
       <h1 class="font-heading text-4xl sm:text-5xl font-bold text-text-primary mb-4">{t('blog.page.title')}</h1>
       <p class="text-text-muted max-w-2xl">
         Virkelighedsbaserede Home Assistant-guides, hardware-anmeldelser og automatiseringsblueprints. Ingen fluff — kun det der virker.
       </p>
     </header>
+    <section class="mb-12" aria-label="Søg i artikler">
+      <div id="search"></div>
+    </section>
     {posts.length === 0 ? (
       <div class="glass-card p-12 text-center">
         <p class="text-text-muted font-mono">// Indlæg kommer snart...</p>
@@ -43,9 +46,40 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
     {allTags.length > 0 && (
       <div class="flex flex-wrap gap-2 mt-12">
         {allTags.map(tag => (
-          <span class="font-mono text-xs text-blue border border-blue/20 bg-blue-glow px-3 py-1 rounded-full">#{tag}</span>
+          <a href={`/da/blog/tag/${tag}/`} class="font-mono text-xs text-blue border border-blue/20 bg-blue-glow px-3 py-1 rounded-full hover:border-blue/60 transition-colors">#{tag}</a>
         ))}
       </div>
     )}
   </div>
+
+  <link href="/pagefind/pagefind-ui.css" rel="stylesheet" />
+  <script is:inline src="/pagefind/pagefind-ui.js"></script>
+  <script is:inline>
+    window.addEventListener('DOMContentLoaded', () => {
+      new PagefindUI({
+        element: '#search',
+        showSubResults: true,
+        translations: { placeholder: 'Søg i artikler…' }
+      });
+    });
+  </script>
+  <style is:global>
+    #search {
+      --pagefind-ui-scale: 0.9;
+      --pagefind-ui-primary: #00d4ff;
+      --pagefind-ui-text: #e2e8f0;
+      --pagefind-ui-background: #0d1526;
+      --pagefind-ui-border: rgba(255, 255, 255, 0.08);
+      --pagefind-ui-tag: #111827;
+      --pagefind-ui-border-width: 1px;
+      --pagefind-ui-border-radius: 14px;
+      --pagefind-ui-image-border-radius: 10px;
+      --pagefind-ui-font: 'Inter', system-ui, sans-serif;
+    }
+    #search .pagefind-ui__search-input::placeholder { color: #94a3b8; opacity: 1; }
+    #search .pagefind-ui__result-link { color: #00d4ff; }
+    #search .pagefind-ui__message,
+    #search .pagefind-ui__result-excerpt { color: #94a3b8; }
+    #search mark { background: rgba(0, 212, 255, 0.25); color: #e2e8f0; border-radius: 3px; }
+  </style>
 </Base>

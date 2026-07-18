@@ -1,6 +1,7 @@
 ---
 import Base from './Base.astro';
 import type { Lang } from '../i18n/ui';
+import { getCollection } from 'astro:content';
 
 interface Props {
   title: string;
@@ -8,13 +9,31 @@ interface Props {
   lang: Lang;
   pubDate: Date;
   updatedDate?: Date;
+  verifiedOn?: string;
   heroImage?: string;
   tags: string[];
   translationKey: string;
   faqs?: Array<{ question: string; answer: string }>;
+  headings?: Array<{ depth: number; slug: string; text: string }>;
 }
 
-const { title, description, lang, pubDate, updatedDate, heroImage, tags, faqs } = Astro.props;
+const { title, description, lang, pubDate, updatedDate, verifiedOn, heroImage, tags, faqs, translationKey, headings } = Astro.props;
+
+const labels = {
+  en: { verified: 'Verified on', toc: 'On this page', related: 'Related articles' },
+  da: { verified: 'Verificeret på', toc: 'På denne side', related: 'Relaterede artikler' },
+  de: { verified: 'Verifiziert mit', toc: 'Auf dieser Seite', related: 'Ähnliche Artikel' },
+}[lang];
+
+const tocHeadings = (headings ?? []).filter(h => h.depth === 2);
+const showToc = tocHeadings.length >= 4;
+
+const sameLangPosts = await getCollection('blog', p => p.data.lang === lang && p.data.translationKey !== translationKey);
+const related = sameLangPosts
+  .map(p => ({ post: p, shared: p.data.tags.filter(t => tags.includes(t)).length }))
+  .filter(r => r.shared > 0)
+  .sort((a, b) => b.shared - a.shared || b.post.data.pubDate.getTime() - a.post.data.pubDate.getTime())
+  .slice(0, 3);
 
 const formattedDate = pubDate.toLocaleDateString(
   lang === 'da' ? 'da-DK' : lang === 'de' ? 'de-DE' : 'en-US',
@@ -89,14 +108,15 @@ const breadcrumbJsonLd = {
       <p class="text-text-muted text-lg mb-6">{description}</p>
       <div class="flex flex-wrap gap-2 mb-6">
         {tags.map(tag => (
-          <span class="font-mono text-xs text-blue border border-blue/30 px-3 py-1 rounded-full bg-blue-glow">
+          <a href={`/${lang}/blog/tag/${tag}/`} class="font-mono text-xs text-blue border border-blue/30 px-3 py-1 rounded-full bg-blue-glow hover:border-blue transition-colors">
             #{tag}
-          </span>
+          </a>
         ))}
       </div>
-      <div class="flex items-center gap-4 text-sm text-text-muted font-mono border-t border-glass-border pt-6">
+      <div class="flex flex-wrap items-center gap-4 text-sm text-text-muted font-mono border-t border-glass-border pt-6">
         <span>{formattedDate}</span>
         {updatedDate && <span class="text-blue">Updated {updatedDate.toLocaleDateString()}</span>}
+        {verifiedOn && <span class="inline-flex items-center gap-1.5 text-emerald-400/90"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{labels.verified} {verifiedOn}</span>}
       </div>
     </header>
 
@@ -113,8 +133,35 @@ const breadcrumbJsonLd = {
       />
     )}
 
+    {showToc && (
+      <nav class="mb-12 rounded-2xl border border-glass-border bg-white/[0.03] px-6 py-5">
+        <p class="font-mono text-xs uppercase tracking-widest text-text-muted mb-3">{labels.toc}</p>
+        <ul class="space-y-1.5">
+          {tocHeadings.map(h => (
+            <li>
+              <a href={`#${h.slug}`} class="text-sm text-text-muted hover:text-blue transition-colors">{h.text}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )}
+
     <div class="prose">
       <slot />
     </div>
+
+    {related.length > 0 && (
+      <aside class="mt-16 border-t border-glass-border pt-10">
+        <h2 class="font-heading text-xl font-bold text-text-primary mb-6">{labels.related}</h2>
+        <div class="grid gap-4 sm:grid-cols-3">
+          {related.map(({ post }) => (
+            <a href={`/${lang}/blog/${post.data.translationKey}/`} class="block rounded-2xl border border-glass-border bg-white/[0.03] p-5 hover:border-blue/40 transition-colors">
+              <p class="font-heading font-semibold text-text-primary text-sm leading-snug mb-2">{post.data.title}</p>
+              <p class="text-xs text-text-muted line-clamp-3">{post.data.description}</p>
+            </a>
+          ))}
+        </div>
+      </aside>
+    )}
   </article>
 </Base>

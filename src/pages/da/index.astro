@@ -1,4 +1,6 @@
 ---
+import fs from 'node:fs';
+const hasPhoto = fs.existsSync('public/rolf.jpg');
 import Base from '../../layouts/Base.astro';
 import HardwareLab from '../../components/HardwareLab.astro';
 import BlogCard from '../../components/BlogCard.astro';
@@ -20,13 +22,13 @@ const posts = allPosts
   description="Dybdegående guides til Home Assistant, hardware-anmeldelser og automatiseringsblueprints af Rolf Szimnau."
   lang={lang}
 >
-  <section class="min-h-screen flex items-center px-6 pt-16 relative overflow-hidden">
+  <section class="min-h-[72vh] flex items-center px-6 pt-28 pb-16 relative overflow-hidden">
     <div class="absolute inset-0 pointer-events-none">
       <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue/5 rounded-full blur-[120px]"></div>
     </div>
     <div class="max-w-6xl mx-auto w-full relative z-10">
       <div class="max-w-3xl">
-        <p class="font-mono text-blue text-sm mb-4 tracking-widest uppercase">// Hjemmeautomatisering</p>
+        <p class="flex items-center gap-3 font-mono text-blue text-sm mb-4 tracking-widest uppercase"><span class="h-px w-8 bg-blue/60"></span>Hjemmeautomatisering</p>
         <h1 class="font-heading text-4xl sm:text-6xl md:text-7xl font-bold text-text-primary leading-[1.1] break-words mb-6">
           {t('hero.headline')}
         </h1>
@@ -42,6 +44,10 @@ const posts = allPosts
             {t('hero.cta.hardware')}
           </a>
         </div>
+        <div class="flex items-center gap-4 mt-10 max-w-2xl">
+          {hasPhoto && <img src="/rolf.jpg" alt="Rolf Szimnau" width="56" height="56" loading="eager" class="w-14 h-14 rounded-full object-cover border-2 border-blue/40 shrink-0" />}
+          <p class="text-text-muted text-sm leading-relaxed">Jeg er Rolf — jeg driver et smart home i Jordrup og skriver ned, hvad der faktisk virker. <span class="text-text-primary">Bygger lige nu: DMI-vejrvarsler og detektions-logs til kameraet.</span></p>
+        </div>
       </div>
     </div>
   </section>
@@ -51,7 +57,7 @@ const posts = allPosts
       <div class="max-w-6xl mx-auto">
         <div class="flex items-end justify-between mb-10">
           <div>
-            <p class="font-mono text-blue text-sm mb-2 tracking-wider uppercase">// Blog</p>
+            <p class="flex items-center gap-3 font-mono text-blue text-sm mb-2 tracking-wider uppercase"><span class="h-px w-8 bg-blue/60"></span>Blog</p>
             <h2 class="font-heading text-3xl font-bold text-text-primary">{t('blog.title')}</h2>
           </div>
           <a href={`/${lang}/blog/`} class="text-blue text-sm hover:underline font-mono hidden sm:block">{t('blog.alltags')} →</a>

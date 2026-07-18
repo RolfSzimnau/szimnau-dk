@@ -1,0 +1,57 @@
+---
+import Base from '../../../../layouts/Base.astro';
+import BlogCard from '../../../../components/BlogCard.astro';
+import { useTranslations } from '../../../../i18n/utils';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const lang = 'en';
+  const allPosts = await getCollection('blog');
+  const posts = allPosts.filter(p => p.data.lang === lang);
+  const tags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
+  return tags.map(tag => ({
+    params: { tag },
+    props: {
+      posts: posts
+        .filter(p => p.data.tags.includes(tag))
+        .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()),
+    },
+  }));
+}
+
+const lang = 'en';
+const t = useTranslations(lang);
+const { tag } = Astro.params;
+const { posts } = Astro.props;
+---
+
+<Base
+  title={`${t('blog.tag.title')} ${tag} — Home Assistant Blog`}
+  description={`All Home Assistant articles tagged "${tag}" — guides, hardware reviews, and automation blueprints.`}
+  lang={lang}
+>
+  <div class="max-w-6xl mx-auto px-6 py-24">
+    <header class="mb-12">
+      <p class="font-mono text-blue text-sm mb-3 tracking-wider uppercase">// Blog</p>
+      <h1 class="font-heading text-4xl sm:text-5xl font-bold text-text-primary mb-4">{t('blog.tag.title')} {tag}</h1>
+      <a href={`/${lang}/blog/`} class="font-mono text-sm text-blue hover:underline">← {t('blog.alltags')}</a>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {posts.map(post => {
+        const slug = post.id.replace(`${lang}/`, '');
+        return (
+          <BlogCard
+            lang={lang}
+            title={post.data.title}
+            description={post.data.description}
+            pubDate={post.data.pubDate}
+            tags={post.data.tags}
+            slug={slug}
+            heroImage={post.data.heroImage}
+          />
+        );
+      })}
+    </div>
+  </div>
+</Base>
