@@ -1,0 +1,104 @@
+---
+title: "DMI-Unwetterwarnungen in Home Assistant — vier unabhängige Warnungen ohne das MeteoAlarm-Limit"
+description: "Die integrierte MeteoAlarm-Integration zeigt nur eine Warnung. cap_alerts erzeugt eine Entität pro DMI-Warnung — Sturm, Starkregen, Schnee und Hitze getrennt."
+pubDate: 2026-07-18
+tags: ["dmi", "unwetterwarnung", "meteoalarm", "cap-alerts", "dashboard", "home-assistant"]
+lang: "de"
+translationKey: "dmi-weather-alerts-home-assistant"
+heroImage: "/blog-images/dmi-weather-alerts-home-assistant.jpg"
+faqs:
+  - question: "Why does the built-in Home Assistant MeteoAlarm integration only show one weather alert?"
+    answer: "The core meteoalarm integration exposes one binary sensor per region and only surfaces a single active alert at a time (Home Assistant core issue #131045). Concurrent alerts — say a storm warning and a cloudburst warning — overwrite each other. The cap_alerts custom integration solves this by creating one sensor entity per active CAP alert."
+  - question: "Which MeteoAlarm region covers my Danish municipality?"
+    answer: "Denmark has only 8 land regions (DK001–DK008) plus around 20 marine zones. Kolding Municipality falls under DK005 'Syd- og Sønderjylland'. Verify against the live feed at feeds.meteoalarm.org instead of guessing — local area names like 'Trekantområdet' are not MeteoAlarm regions."
+---
+
+An dem Abend, an dem ich das hier gebaut habe, liefen beim dänischen Wetterdienst DMI zwei gelbe Warnungen gleichzeitig für meine Region: Gewitter bis 20 Uhr und Hitze bis 18 Uhr. Home Assistant bringt eine eingebaute MeteoAlarm-Integration mit, die eigentlich beide zeigen sollte — sie kann aber nur eine Warnung gleichzeitig darstellen. Die andere verschwindet einfach.
+
+Das ist kein Konfigurationsfehler, sondern [Core-Issue #131045](https://github.com/home-assistant/core/issues/131045): Die Integration stellt einen Binärsensor pro Region bereit, und bei mehreren aktiven Warnungen gewinnt eine. Für ein Dashboard, das Sturm, Starkregen, Schnee und Hitze unterscheiden soll, ist das unbrauchbar.
+
+## cap_alerts: eine Entität pro aktiver Warnung
+
+Die Lösung ist [cap_alerts](https://github.com/seevee/cap_alerts) — eine kleine HACS-Custom-Integration, die Warnungen nach dem CAP-Standard (Common Alerting Protocol) modelliert und **eine Sensor-Entität pro aktiver Warnung** erzeugt.
+
+Installation: HACS → Custom repositories → `seevee/cap_alerts`, Kategorie *Integration*, Neustart. Im Config-Flow: **MeteoAlarm** als Provider, Land **DK**, danach ein Regionsfilter.
+
+## Die Regions-Falle: „Trekantområdet" existiert nicht
+
+Ich wohne in der Kommune Kolding und war überzeugt, meine Warnregion hieße „Trekantområdet". Tut sie nicht — sie existiert in MeteoAlarm gar nicht. Dänemark hat genau **8 Landregionen** (plus ca. 20 Seegebiete):
+
+| EMMA_ID | Region |
+|---------|--------|
+| DK001 | Nordjylland |
+| DK002 | Midt- og Vestjylland |
+| DK003 | Bornholm |
+| DK004 | Østjylland |
+| DK005 | Syd- og Sønderjylland |
+| DK006 | Fyn |
+| DK007 | Vest- og Sydsjælland samt Lolland-Falster |
+| DK008 | København og Nordsjælland |
+
+Prüft es selbst im Live-Feed auf `feeds.meteoalarm.org` — sucht eure Gegend in den `areaDesc`-Feldern, statt zu raten. Kolding ist **DK005**.
+
+## Stolperfalle: DMIs grüne „keine Warnungen" tragen alle Regionscodes
+
+Der erste Poll lieferte mir 69 Entitäten — fast alle „green Rain", „green Fog", „green High temperature". DMI veröffentlicht permanente *„There are currently no active warnings"*-Meldungen für jeden Warnungstyp, und sie sind mit **sämtlichen** Regionscodes geokodiert. Sie rutschen durch jeden Regionsfilter.
+
+Konsequenz: Regionsfilterung allein reicht nicht. Man muss auf `awareness_level` filtern — Stufe 1 ist grün (keine Warnung), 2 gelb, 3 orange, 4 rot.
+
+## Vier Gefahrentypen als stabile Binärsensoren
+
+Die cap_alerts-Entitäten sind dynamisch mit Hash-Suffixen (`sensor.cap_alerts_meteoalarm_cap_alert_yellow_thunderstorm_8907cd01`) und verschwinden, wenn die Warnung abläuft. Die kann man nicht in eine Dashboard-Karte hartkodieren. Stattdessen: vier Template-Binärsensoren — einer pro Gefahrentyp —, die alle cap_alerts-Entitäten scannen und `awareness_type`/`awareness_level` aus den Parametern parsen:
+
+```yaml
+{% set ns = namespace(hit=false) %}
+{% for s in states.sensor if 'cap_alerts_meteoalarm_cap_alert' in s.entity_id %}
+  {% set p = s.attributes.get('parameters', {}) %}
+  {% set lvl = (p.get('awareness_level','0').split(';')[0] | trim | int(0)) %}
+  {% set typ = (p.get('awareness_type','0').split(';')[0] | trim | int(0)) %}
+  {% if lvl >= 2 and typ in [1, 3] and 'DK005' in (s.attributes.get('geocode_same') or []) %}
+    {% set ns.hit = true %}
+  {% endif %}
+{% endfor %}
+{{ ns.hit }}
+```
+
+Das ist das State-Template für `binary_sensor.jordrup_wind_warning` (als Template-Helfer im UI angelegt — keine YAML-Dateien). Die Awareness-Type-Codes: **1** Wind, **2** Schnee/Eis, **3** Gewitter, **5** Hitze, **10/12/13** Regen/Überflutung. Gewitter (3) zählt bei mir bewusst als Sturm — DMI gibt Böenwarnungen als „Thunderstorm" heraus, und ein striktes Wind-Filter hätte die aktive Warnung an jenem Abend versteckt.
+
+Die vier Sensoren: `jordrup_wind_warning` (1+3), `jordrup_rain_flood_warning` (10/12/13), `jordrup_snow_ice_warning` (2) und `jordrup_heat_warning` (5).
+
+## Die Ticker-Karte
+
+Mit stabilen Binärsensoren ist der Dashboard-Teil trivial — ich nutze [AlertTicker-Card](https://github.com/djdevil/AlertTicker-Card), die zwischen aktiven Warnungen rotiert:
+
+```yaml
+type: custom:alert-ticker-card
+cycle_interval: 6
+alerts:
+  - entity: binary_sensor.jordrup_wind_warning
+    state: "on"
+    message: "⚠️ Storm / High Wind Warning"
+    priority: 1
+    theme: emergency
+  - entity: binary_sensor.jordrup_rain_flood_warning
+    state: "on"
+    message: "🌧️ Heavy Rain / Flash Flood Alert"
+    priority: 2
+    theme: warning
+  - entity: binary_sensor.jordrup_snow_ice_warning
+    state: "on"
+    message: "❄️ Severe Snow / Ice Warning"
+    priority: 2
+    theme: warning
+  - entity: binary_sensor.jordrup_heat_warning
+    state: "on"
+    message: "🌡️ Extreme Heat Warning"
+    priority: 3
+    theme: warning
+```
+
+Als ich den Hero-Screenshot gemacht habe, rotierte die Karte zwischen Sturm- und Hitzewarnung — zwei unabhängige Gefahren, gleichzeitig, jede mit eigener Priorität. Genau darum ging es.
+
+## Die Grenzen, ehrlich
+
+cap_alerts pollt alle 5 Minuten (konfigurierbar), eine brandneue Warnung kann also ein paar Minuten verzögert sein. Die Regionsauflösung ist grob — DK005 deckt ganz Südjütland ab, nicht eure Straße (cap_alerts bietet auch einen GPS-Polygon-Filter für genaueres Matching). Und meine Sensoren triggern ab Gelb — wer nur Orange/Rot sehen will, hebt `lvl >= 2` auf `3` an.

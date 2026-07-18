@@ -1,0 +1,104 @@
+---
+title: "DMI Weather Alerts in Home Assistant — Four Independent Hazards Without the MeteoAlarm Limit"
+description: "The built-in MeteoAlarm integration shows one alert at a time. cap_alerts creates one entity per DMI alert — storm, cloudburst, snow and heat, independently."
+pubDate: 2026-07-18
+tags: ["dmi", "weather-alerts", "meteoalarm", "cap-alerts", "dashboard", "home-assistant"]
+lang: "en"
+translationKey: "dmi-weather-alerts-home-assistant"
+heroImage: "/blog-images/dmi-weather-alerts-home-assistant.jpg"
+faqs:
+  - question: "Why does the built-in Home Assistant MeteoAlarm integration only show one weather alert?"
+    answer: "The core meteoalarm integration exposes one binary sensor per region and only surfaces a single active alert at a time (Home Assistant core issue #131045). Concurrent alerts — say a storm warning and a cloudburst warning — overwrite each other. The cap_alerts custom integration solves this by creating one sensor entity per active CAP alert."
+  - question: "Which MeteoAlarm region covers my Danish municipality?"
+    answer: "Denmark has only 8 land regions (DK001–DK008) plus around 20 marine zones. Kolding Municipality falls under DK005 'Syd- og Sønderjylland'. Verify against the live feed at feeds.meteoalarm.org instead of guessing — local area names like 'Trekantområdet' are not MeteoAlarm regions."
+---
+
+The evening I built this, the Danish Meteorological Institute (DMI) had two yellow warnings running simultaneously for my area: thunderstorms until 20:00 and high temperature until 18:00. Home Assistant ships a built-in MeteoAlarm integration that should show both — but it can only surface one alert at a time. The other one simply vanishes.
+
+That's not a configuration mistake. It's [core issue #131045](https://github.com/home-assistant/core/issues/131045): the integration exposes one binary sensor per region, and when multiple alerts are active, one wins. For a dashboard that needs to distinguish storm, cloudburst, snow and heat, that's useless.
+
+## cap_alerts: one entity per active alert
+
+The fix is [cap_alerts](https://github.com/seevee/cap_alerts) — a small HACS custom integration that models alerts on the CAP standard (Common Alerting Protocol) and creates **one sensor entity per active alert** instead of cramming everything into one.
+
+Install: HACS → Custom repositories → `seevee/cap_alerts`, category *Integration*, restart. In the config flow, pick **MeteoAlarm** as the provider, country **DK**, then a region filter.
+
+## The region trap: "Trekantområdet" doesn't exist
+
+I live in Kolding Municipality and was convinced my warning region was called "Trekantområdet" (the local "Triangle Region"). It isn't — it doesn't exist in MeteoAlarm at all. Denmark has exactly **8 land regions** (plus ~20 marine zones):
+
+| EMMA_ID | Region |
+|---------|--------|
+| DK001 | Nordjylland |
+| DK002 | Midt- og Vestjylland |
+| DK003 | Bornholm |
+| DK004 | Østjylland |
+| DK005 | Syd- og Sønderjylland |
+| DK006 | Fyn |
+| DK007 | Vest- og Sydsjælland samt Lolland-Falster |
+| DK008 | København og Nordsjælland |
+
+Check the live feed at `feeds.meteoalarm.org` and search the `areaDesc` fields for your area instead of guessing. Kolding is **DK005**.
+
+## Gotcha: DMI's green "no warnings" messages are tagged with every region
+
+The first poll gave me 69 entities — almost all of them "green Rain", "green Fog", "green High temperature". DMI publishes permanent *"There are currently no active warnings"* statements for every alert type, and they are geocoded with **all** region codes. They pass through any region filter.
+
+Consequence: filtering by region is not enough. You must filter on `awareness_level` — level 1 is green (no warning), 2 yellow, 3 orange, 4 red.
+
+## Four hazard types as stable binary sensors
+
+The cap_alerts entities are dynamic with hash suffixes (`sensor.cap_alerts_meteoalarm_cap_alert_yellow_thunderstorm_8907cd01`) and disappear when the alert expires. You can't hardcode those into a dashboard card. Instead: four template binary sensors — one per hazard — that scan all cap_alerts entities and parse `awareness_type`/`awareness_level` from the parameters:
+
+```yaml
+{% set ns = namespace(hit=false) %}
+{% for s in states.sensor if 'cap_alerts_meteoalarm_cap_alert' in s.entity_id %}
+  {% set p = s.attributes.get('parameters', {}) %}
+  {% set lvl = (p.get('awareness_level','0').split(';')[0] | trim | int(0)) %}
+  {% set typ = (p.get('awareness_type','0').split(';')[0] | trim | int(0)) %}
+  {% if lvl >= 2 and typ in [1, 3] and 'DK005' in (s.attributes.get('geocode_same') or []) %}
+    {% set ns.hit = true %}
+  {% endif %}
+{% endfor %}
+{{ ns.hit }}
+```
+
+That's the state template for `binary_sensor.jordrup_wind_warning` (created as a Template Helper in the UI — no YAML files). The awareness-type codes: **1** wind, **2** snow/ice, **3** thunderstorm, **5** high temperature, **10/12/13** rain/flooding. I deliberately let thunderstorm (3) count as storm — DMI issues squall-wind warnings as "Thunderstorm", and a strict wind-only filter would have hidden the active warning that evening.
+
+The four sensors: `jordrup_wind_warning` (1+3), `jordrup_rain_flood_warning` (10/12/13), `jordrup_snow_ice_warning` (2) and `jordrup_heat_warning` (5).
+
+## The ticker card
+
+With stable binary sensors, the dashboard part is trivial. I use [AlertTicker-Card](https://github.com/djdevil/AlertTicker-Card), the same rotating ticker that anchors my [context-aware home screen](/en/blog/ha-context-aware-home-screen/):
+
+```yaml
+type: custom:alert-ticker-card
+cycle_interval: 6
+alerts:
+  - entity: binary_sensor.jordrup_wind_warning
+    state: "on"
+    message: "⚠️ Storm / High Wind Warning"
+    priority: 1
+    theme: emergency
+  - entity: binary_sensor.jordrup_rain_flood_warning
+    state: "on"
+    message: "🌧️ Heavy Rain / Flash Flood Alert"
+    priority: 2
+    theme: warning
+  - entity: binary_sensor.jordrup_snow_ice_warning
+    state: "on"
+    message: "❄️ Severe Snow / Ice Warning"
+    priority: 2
+    theme: warning
+  - entity: binary_sensor.jordrup_heat_warning
+    state: "on"
+    message: "🌡️ Extreme Heat Warning"
+    priority: 3
+    theme: warning
+```
+
+When I took the hero screenshot, it was rotating between the storm and heat warnings — two independent hazards, simultaneously, each with its own priority. That was the whole point. The card styling follows the same recipe as the rest of my [glassmorphism dashboard](/en/blog/ha-glassmorphism-dashboard-design/).
+
+## The limitations, honestly
+
+cap_alerts polls every 5 minutes (configurable), so a brand-new warning can lag a few minutes. Region resolution is coarse — DK005 covers all of southern Jutland, not your street (cap_alerts also offers a GPS polygon filter if you want tighter matching). And my sensors trigger from yellow upwards — if you only care about orange/red, raise `lvl >= 2` to `3`. If you like pairing Danish public APIs with Home Assistant, the same pattern powers my [spot-price EV charging setup](/en/blog/danish-electricity-prices-ev-charging/).

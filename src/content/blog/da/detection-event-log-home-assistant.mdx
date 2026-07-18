@@ -1,0 +1,85 @@
+---
+title: "Home Assistant-eventliste uden 'Cleared'-støj — når logbook-kortet ikke kan filtrere"
+description: "Logbook-kortet viser både Detected og Cleared for kamera-sensorer. Løsningen: input_text som rullende log, en automation med trigger-id'er og markdown."
+pubDate: 2026-07-18
+tags: ["logbook", "kamera", "automatisering", "dashboard", "home-assistant"]
+lang: "da"
+translationKey: "detection-event-log-home-assistant"
+heroImage: "/blog-images/detection-event-log-home-assistant.jpg"
+faqs:
+  - question: "Can the Home Assistant logbook card filter out state changes like 'Cleared'?"
+    answer: "No. The built-in logbook card only accepts an entity list and a time window — there is no state filter, so every on/off transition is shown. To get a detections-only list you have to build your own log, for example an input_text helper fed by an automation."
+  - question: "How many events fit in an input_text helper?"
+    answer: "input_text is hard-capped at 255 characters. With a compact 'HH:MM label' format and a separator, that is roughly the 10 most recent events. For longer history with dates you need a trigger-based template sensor storing a list attribute, which requires YAML configuration."
+---
+
+Mit overvågnings-view i Home Assistant har en "Recent events"-liste under kameraet — drevet af de fire binary sensors, mit AI-kamera eksponerer: person, bevægelse, dyr og køretøj. Problemet: logbook-kortet viser **hver eneste tilstandsændring**. Hver "Person Detected" efterfølges af en "Person Cleared" tredive sekunder senere, så halvdelen af listen er støj, og historikken dækker kun det halve tidsrum.
+
+Og nej — logbook-kortet kan ikke filtrere på tilstand. Det tager en entitetsliste og et tidsvindue. Det er det hele.
+
+## Mulighederne, og hvorfor jeg fravalgte dem
+
+**Trigger-baseret template-sensor** med en liste-attribut er den "rigtige" løsning — men den kan ikke oprettes via UI'et og kræver YAML i `configuration.yaml`. **En todo-liste** som event-log virker, men renderer klodset og skal beskæres af endnu en automation. Jeg ville have noget, der kunne bygges færdigt via UI/API på fem minutter og overlever genstart.
+
+## Løsningen: input_text som rullende log
+
+En `input_text`-helper er persistent, UI-venlig og kan opdateres fra en automation. Begrænsningen på 255 tegn er reel — men med formatet `HH:MM label` og en separator er det ca. de 10 seneste hændelser. Til en "Recent events"-liste er det præcis nok.
+
+Automationen trigger kun på `on` — "Cleared" rører den aldrig:
+
+```yaml
+alias: Sentinel event log
+mode: queued
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.sentinel_person
+    to: "on"
+    id: person
+  - trigger: state
+    entity_id: binary_sensor.sentinel_motion
+    to: "on"
+    id: motion
+  - trigger: state
+    entity_id: binary_sensor.sentinel_animal
+    to: "on"
+    id: animal
+  - trigger: state
+    entity_id: binary_sensor.sentinel_vehicle
+    to: "on"
+    id: vehicle
+actions:
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.sentinel_event_log
+    data:
+      value: >-
+        {% set m = {'person':'👤 Person','motion':'🏃 Motion',
+                    'animal':'🐾 Animal','vehicle':'🚗 Vehicle'} %}
+        {% set new = now().strftime('%H:%M') ~ ' ' ~ m[trigger.id] %}
+        {% set old = states('input_text.sentinel_event_log') %}
+        {% set items = ([new] + (old.split(' · ')
+           if old not in ['unknown','unavailable',''] else []))[:10] %}
+        {{ (items | join(' · '))[:255] }}
+```
+
+Tre detaljer, der bærer det hele: **trigger-id'er** fungerer som labels via opslagstabellen, så én action håndterer alle fire sensorer. **`mode: queued`** sikrer, at to detektioner lige efter hinanden ikke overskriver hinanden. Og **`[:10]`-beskæringen** sker på hændelses-niveau før sammenføjningen, så en post aldrig kappes midt over.
+
+## Markdown-kortet
+
+Kortet splitter loggen og renderer én linje pr. hændelse — tidspunktet i fed:
+
+```yaml
+type: markdown
+content: >-
+  {% set raw = states('input_text.sentinel_event_log') %}
+  {% if raw in ['unknown','unavailable',''] %}*No detections logged yet*
+  {% else %}{% for e in raw.split(' · ') if e %}**{{ e[:5] }}**  {{ e[6:] }}
+
+  {% endfor %}{% endif %}
+```
+
+Resultatet er listen i billedet øverst: kun detektioner, dobbelt så lang historik på samme plads, ingen "Cleared"-linjer.
+
+## Begrænsningerne, ærligt
+
+255 tegn er ca. 10 hændelser, og der er kun klokkeslæt — ingen dato. Ruller en hændelse ud af loggen, er den væk (den fulde historik ligger stadig i logbogen/recorder). Skal du bruge længere historik med datoer, er en trigger-baseret template-sensor med en liste-attribut det rigtige værktøj — prisen er YAML-konfiguration og en genstart.
