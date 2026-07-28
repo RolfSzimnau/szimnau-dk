@@ -125,10 +125,18 @@ const hardware = [
   {
     name: 'Bosch Home Connect',
     category: 'Appliances',
-    description: 'Washer and dishwasher visible in HA via Home Connect. Push notification when cycles finish.',
+    description: 'Dishwasher visible in HA via Home Connect. Push notification, plus a button that schedules the cycle for the cheapest electricity hour.',
     status: 'active' as const,
     icon: '🫧',
     link: 'https://www.home-connect.com',
+  },
+  {
+    name: 'Miele',
+    category: 'Appliances',
+    description: 'Washing machine on the core `miele` integration — no HACS. Voice and push alerts when a cycle finishes, plus a homemade scheduling workaround for the delayed-start register Miele doesn\'t expose.',
+    status: 'active' as const,
+    icon: '🧺',
+    link: 'https://www.miele.com',
   },
   {
     name: 'Mill Norway',
