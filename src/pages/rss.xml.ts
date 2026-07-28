@@ -10,7 +10,7 @@ function esc(s: string): string {
 }
 
 export const GET: APIRoute = async ({ site }) => {
-  const origin = (site ?? new URL('https://www.szimnau.dk')).origin;
+  const origin = (site ?? new URL('https://szimnau.dk')).origin;
   const posts = (await getCollection('blog', (p) => p.data.lang === 'en')).sort(
     (a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime()
   );
