@@ -108,6 +108,8 @@ faqs:               # optional, but write in the post's language
 ```
 Create matching versions in `da/` and `de/` with translated content.
 
+**Also update the homepage hero bio** in all 3 `pages/{en,da,de}/index.astro` files — the `<span class="text-text-primary">` line ("Just shipped: ...") should reference the newest post. It goes stale fast: it referenced two posts that had already shipped 10 days earlier before this was caught (2026-07-28). There's no automated freshness check, so this is a manual step every time a post goes live.
+
 ---
 
 ## Architecture
