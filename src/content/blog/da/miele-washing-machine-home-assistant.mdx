@@ -1,0 +1,96 @@
+---
+title: "Vaskemaskinen venter nu på den billigste strøm"
+description: "Vaskemaskinen gik i stykker, så jeg valgte en Miele for den indbyggede Home Assistant-integration — men den mangler opvaskemaskinens forsinkede start."
+pubDate: 2026-07-28
+verifiedOn: "HA 2026.7"
+tags: ["dashboard", "energi", "automatisering", "stemme"]
+lang: "da"
+translationKey: "miele-washing-machine-home-assistant"
+heroImage: "/blog-images/miele-washing-machine-home-assistant.jpg"
+faqs:
+  - question: "What does the core Miele integration expose in Home Assistant?"
+    answer: "The built-in `miele` integration (HA 2025.5+, no HACS required) exposes program state, program phase, elapsed and remaining time, energy and water consumption forecasts, TwinDos detergent levels, and three buttons: start, stop, and pause."
+  - question: "Can Home Assistant schedule a Miele washing machine to start at the cheapest electricity hour?"
+    answer: "Not natively — unlike Bosch's Home Connect, Miele exposes no delayed-start register. The workaround is an input_datetime helper holding the computed start time plus a time-trigger automation that presses the start button when it arrives."
+---
+
+Den gamle vaskemaskine gav op en søndag. Jeg havde hverken tid eller lyst til at researche i to uger, så det blev en Miele — dels fordi den skulle skiftes akut, dels fordi Miele har haft en officiel core-integration i Home Assistant siden 2025.5. Ingen HACS, ingen tredjeparts-vedligeholder der en dag stopper med at svare på GitHub issues. Efter opvaskemaskinen tænkte jeg at jeg vidste hvad jeg gik ind til.
+
+Det gjorde jeg ikke helt.
+
+## Hvad integrationen faktisk giver dig
+
+Tilføj `miele`-integrationen, og vaskemaskinen dukker op med en lang liste entiteter:
+
+```
+sensor.washing_machine                    — enum: idle, in_use, program_ended, ...
+sensor.washing_machine_program             — cottons, woollens, quick_intense, ...
+sensor.washing_machine_program_phase       — main_wash, rinse, spin, ...
+sensor.washing_machine_remaining_time
+sensor.washing_machine_elapsed_time
+sensor.washing_machine_energy_consumption / _forecast
+sensor.washing_machine_water_consumption / _forecast
+sensor.washing_machine_twindos_1_level / _2_level
+binary_sensor.washing_machine_door
+binary_sensor.washing_machine_remote_control
+binary_sensor.washing_machine_problem
+button.washing_machine_start / _stop / _pause
+```
+
+Hovedsensoren har nitten mulige værdier, hvilket undrede mig indtil jeg fandt ud af at den deles på tværs af hele Mieles apparatflåde. `supercooling` og `superfreezing` er der for køl/frys-produkter. En vaskemaskine kommer aldrig til at ramme dem, men integrationen ved ikke det på forhånd, så man får hele enummet uanset.
+
+## Knappen der ikke var der
+
+Jeg ville have samme trick som på opvaskemaskinen: læg tøj i, vælg program, tryk én knap, og lad den selv finde ud af hvornår strømmen er billigst. På Bosch-siden er det én enkelt `select.dishwasher_finish_at`-entitet — sæt et tidspunkt, og maskinen tæller baglæns selv.
+
+Miele har intet tilsvarende. Ingen forsinkelses-select, intet relativt starttidspunkt. Kun tre knapper: start, stop, pause. Vil man have en forsinket start, må man selv levere forsinkelsen.
+
+Så i stedet for at sætte et register på selve maskinen, gemmer automationen et fast tidspunkt og venter på det:
+
+```yaml
+# script: find den billigste time, skriv den til en helper
+best_hour: >
+  {% set ns = namespace(best_price=999, best_hour='') %}
+  {% for p in prices %}
+    {% if as_timestamp(p.hour) > as_timestamp(now()) + 1800
+       and p.price < ns.best_price %}
+      {% set ns.best_price = p.price %}
+      {% set ns.best_hour = p.hour %}
+    {% endif %}
+  {% endfor %}
+  {{ ns.best_hour }}
+# derefter: input_datetime.set_datetime med den værdi
+
+# automation: fyrer én gang, når helperen siger til
+triggers:
+  - trigger: time
+    at: input_datetime.vaskemaskine_planlagt_start
+conditions:
+  - condition: state
+    entity_id: sensor.washing_machine
+    state: ["programmed", "waiting_to_start", "reserved"]
+actions:
+  - action: button.press
+    target:
+      entity_id: button.washing_machine_start
+```
+
+En `time`-trigger der peger på en `input_datetime` genindlæser helperens værdi ved hver reload — så en genstart mellem nu og det planlagte tidspunkt ødelægger ikke planen. Det ville et almindeligt `delay:`-trin i et script derimod gøre.
+
+![Miele vaskemaskine kort i Home Assistant der viser centrifugeringsfase, resterende tid og en stop-knap](/blog-images/miele-washing-machine-home-assistant.jpg)
+
+## Knapper der ikke findes, før man beder pænt
+
+Her er det der faktisk stoppede mig i tyve minutter: `button.washing_machine_start` fandtes slet ikke i state machine. Ikke "unavailable" — reelt fraværende, 404 ved opslag. Det viste sig at Miele leverer alle tre kontrolknapper **deaktiveret som standard** i entity-registret. Nogen hos Miele har besluttet at fjernstart af en ubemandet vaskemaskine fortjener et aktivt tilvalg, og det giver egentlig god mening for en maskine der fylder sig selv med vand. Jeg aktiverede alle tre og genindlæste config-entry'en, hvorefter de dukkede op — og viste "unavailable" indtil der reelt lå et program klar, præcis som opvaskemaskinens knapper gør når den er ledig.
+
+## To maskiner, én højttaler
+
+Begge apparater melder sig på køkkenhøjttaleren når de er færdige. Jeg kopierede opvaskemaskinens automation næsten ord for ord til vaskemaskinen og opdagede først problemet efter den allerede havde talt én gang: den sagde "vasken er færdig", hvilket er fint indtil opvaskemaskinen bliver færdig tyve minutter senere og siger præcis den samme sætning. Nu siger den ene "vaskemaskinen er færdig" og den anden "opvaskemaskinen er færdig". Lille rettelse, men det er den slags man først opdager når man rent faktisk har to maskiner der råber ting på samme højttaler.
+
+## Der hvor det stadig halter
+
+Der er ingen procent-færdig-sensor. Opvaskemaskinen (Bosch/Home Connect) eksponerer et pænt 0–100-tal; Miele giver kun forløbne og resterende minutter. Jeg kunne selv udregne en procentsats, men et udledt tal som maskinen faktisk ikke rapporterer selv føltes forkert at sætte på et dashboard, så kortet viser bare fasen og minutterne tilbage.
+
+`binary_sensor.washing_machine_problem` er også frustrerende vag — den går bare til `on`, og det er det. Ingen fejlkode, ingen beskrivelse. Jeg har en ticker-post til den, og den siger "tjek den", hvilket er ærligt men ikke ligefrem handlingsanvisende.
+
+Jeg kopierede prisopslaget til billigste time næsten ordret fra opvaskemaskinens script, inklusive en fejl jeg først opdagede i denne uge: sensorens `hour`-felt er reelt et Python-datetime-objekt, men når det passerer gennem et scripts `variables:`-felt bliver det til en almindelig streng — så et senere `selectattr(..., 'eq', best_hour)` mod frisk sensor-data rammer aldrig noget, og notifikationen fejler bare i det stille. Begge scripts gemmer nu prisen separat i stedet for at genfinde den.

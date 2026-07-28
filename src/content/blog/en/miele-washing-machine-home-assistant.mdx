@@ -1,0 +1,96 @@
+---
+title: "Teaching a Miele Washing Machine to Wait for Cheap Electricity"
+description: "Our washing machine died, so I bought a Miele for its native Home Assistant integration — then found it has no delayed-start register like the dishwasher."
+pubDate: 2026-07-28
+verifiedOn: "HA 2026.7"
+tags: ["dashboard", "energy", "automation", "voice"]
+lang: "en"
+translationKey: "miele-washing-machine-home-assistant"
+heroImage: "/blog-images/miele-washing-machine-home-assistant.jpg"
+faqs:
+  - question: "What does the core Miele integration expose in Home Assistant?"
+    answer: "The built-in `miele` integration (HA 2025.5+, no HACS required) exposes program state, program phase, elapsed and remaining time, energy and water consumption forecasts, TwinDos detergent levels, and three buttons: start, stop, and pause."
+  - question: "Can Home Assistant schedule a Miele washing machine to start at the cheapest electricity hour?"
+    answer: "Not natively — unlike Bosch's Home Connect, Miele exposes no delayed-start register. The workaround is an input_datetime helper holding the computed start time plus a time-trigger automation that presses the start button when it arrives."
+---
+
+Our washing machine died on a Sunday, which is exactly when appliances die. I didn't shop around much. I picked a Miele partly because ours was actually broken and partly because Miele has had a core Home Assistant integration since HA 2025.5 — no HACS, no third-party maintainer who might disappear. After the [dishwasher](/en/blog/ha-appliances-dashboard/), I assumed I knew what I was getting into.
+
+I didn't, quite.
+
+## What the integration actually gives you
+
+Add the `miele` integration and the washer shows up with a wide set of entities:
+
+```
+sensor.washing_machine                    — enum: idle, in_use, program_ended, ...
+sensor.washing_machine_program             — cottons, woollens, quick_intense, ...
+sensor.washing_machine_program_phase       — main_wash, rinse, spin, ...
+sensor.washing_machine_remaining_time
+sensor.washing_machine_elapsed_time
+sensor.washing_machine_energy_consumption / _forecast
+sensor.washing_machine_water_consumption / _forecast
+sensor.washing_machine_twindos_1_level / _2_level
+binary_sensor.washing_machine_door
+binary_sensor.washing_machine_remote_control
+binary_sensor.washing_machine_problem
+button.washing_machine_start / _stop / _pause
+```
+
+That main status sensor has nineteen possible values, which surprised me until I realised it's shared across Miele's whole appliance line. `supercooling` and `superfreezing` are in there for fridges and freezers. A washing machine will never see them, but the integration doesn't know that in advance, so you get the full enum either way.
+
+## The button that wasn't there
+
+I wanted the same trick as the dishwasher: load a program, tap one button, and let it start whenever [electricity is cheapest](/en/blog/danish-electricity-prices-ev-charging/). On the Bosch side that's a single `select.dishwasher_finish_at` entity — set a time, the machine counts backwards itself.
+
+Miele has no equivalent. No delay select, no relative-start number. Just three buttons: start, stop, pause. If you want a delayed start, you provide the delay.
+
+So instead of setting a device register, the automation stores an absolute timestamp and waits for it:
+
+```yaml
+# script: pick the cheapest hour, write it to a helper
+best_hour: >
+  {% set ns = namespace(best_price=999, best_hour='') %}
+  {% for p in prices %}
+    {% if as_timestamp(p.hour) > as_timestamp(now()) + 1800
+       and p.price < ns.best_price %}
+      {% set ns.best_price = p.price %}
+      {% set ns.best_hour = p.hour %}
+    {% endif %}
+  {% endfor %}
+  {{ ns.best_hour }}
+# then: input_datetime.set_datetime with that value
+
+# automation: fires once, at whatever the helper says
+triggers:
+  - trigger: time
+    at: input_datetime.vaskemaskine_planlagt_start
+conditions:
+  - condition: state
+    entity_id: sensor.washing_machine
+    state: ["programmed", "waiting_to_start", "reserved"]
+actions:
+  - action: button.press
+    target:
+      entity_id: button.washing_machine_start
+```
+
+A `time` trigger pointed at an `input_datetime` re-reads the helper on every reload, so a restart between now and the scheduled hour doesn't lose the plan — a plain `delay:` step inside a script would.
+
+![Miele washing machine running card in Home Assistant showing spin phase, remaining time and a stop button](/blog-images/miele-washing-machine-home-assistant.jpg)
+
+## Buttons that don't exist until you ask nicely
+
+Here's the part that actually stopped me for twenty minutes: `button.washing_machine_start` wasn't in the state machine at all. Not unavailable — genuinely absent, 404 on lookup. It turned out Miele ships all three control buttons **disabled by default** in the entity registry. Someone at Miele decided that letting an automation remotely start a washing machine, unattended, deserves an opt-in, and I think that's a reasonable position for a machine that fills itself with water. I enabled all three and reloaded the config entry, and they appeared — showing `unavailable` until a program is actually loaded, same as the dishwasher's buttons do when idle.
+
+## Two machines, one speaker
+
+Both appliances announce themselves on the [kitchen speaker](/en/blog/ha-morning-briefing-tts/) when they finish. I copied the dishwasher's automation almost verbatim for the washer and only noticed the problem after it had already spoken once: it said "the wash is done," which is fine until the dishwasher finishes twenty minutes later and says exactly the same sentence. Now one says "the washing machine is done" and the other "the dishwasher is done." Small fix, but it's the kind of thing that only shows up once you actually have two machines announcing things on the same speaker.
+
+## Where this still falls short
+
+There's no percentage-complete sensor. The dishwasher (Bosch/Home Connect) exposes a clean 0–100 progress value; Miele only gives elapsed and remaining minutes. I could compute a percentage myself, but a derived number that isn't actually reported by the machine felt like the wrong thing to put on a dashboard, so the card just shows the phase and the minutes left.
+
+The `binary_sensor.washing_machine_problem` sensor is also frustratingly vague — it flips to `on`, and that's it. No error code, no description. I have a ticker entry for it, and it says "check it," which is honest but not exactly actionable.
+
+I copied the cheapest-hour price lookup from the dishwasher's script almost exactly, including a bug I hadn't noticed until this week: the sensor's `hour` field is a real Python datetime, but once it passes through a script's `variables:` field it becomes a plain string, so a later `selectattr(..., 'eq', best_hour)` against fresh sensor data never matches anything and the notification silently fails. Both scripts store the price separately now instead of re-searching for it.

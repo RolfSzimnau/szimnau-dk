@@ -6,6 +6,7 @@ Rolf Szimnau writes in-depth technical guides covering Home Assistant integratio
 
 ## Blog
 
+- [Teaching a Miele Washing Machine to Wait for Cheap Electricity](https://www.szimnau.dk/en/blog/miele-washing-machine-home-assistant/): Our washing machine died, so I bought a Miele for its native Home Assistant integration — then found it has no delayed-start register like the dishwasher, and built one with an input_datetime helper and a time-trigger automation instead.
 - [DMI Weather Alerts in Home Assistant — Four Independent Hazards Without the MeteoAlarm Limit](https://www.szimnau.dk/en/blog/dmi-weather-alerts-home-assistant/): Why the built-in MeteoAlarm integration only shows one alert at a time (core issue #131045), and how the cap_alerts HACS integration plus four template binary sensors deliver independent storm, rain/flood, snow/ice and heat warnings for a Danish region — including the DK005 region lookup and the green 'no warnings' geocode gotcha.
 - [A Home Assistant Event List Without 'Cleared' Noise — When the Logbook Card Can't Filter](https://www.szimnau.dk/en/blog/detection-event-log-home-assistant/): The logbook card can't filter state transitions, so camera event lists drown in 'Cleared' entries — this build replaces it with an input_text rolling log fed by a trigger-ID automation and rendered by a markdown card, detections only.
 

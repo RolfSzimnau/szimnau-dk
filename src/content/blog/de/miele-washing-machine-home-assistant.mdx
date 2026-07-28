@@ -1,0 +1,96 @@
+---
+title: "Die Waschmaschine wartet jetzt auf den günstigsten Strompreis"
+description: "Unsere Waschmaschine ging kaputt, ich kaufte eine Miele wegen der Home-Assistant-Integration — doch ihr fehlt der verzögerte Start wie beim Geschirrspüler."
+pubDate: 2026-07-28
+verifiedOn: "HA 2026.7"
+tags: ["dashboard", "energie", "automatisierung", "sprache"]
+lang: "de"
+translationKey: "miele-washing-machine-home-assistant"
+heroImage: "/blog-images/miele-washing-machine-home-assistant.jpg"
+faqs:
+  - question: "What does the core Miele integration expose in Home Assistant?"
+    answer: "The built-in `miele` integration (HA 2025.5+, no HACS required) exposes program state, program phase, elapsed and remaining time, energy and water consumption forecasts, TwinDos detergent levels, and three buttons: start, stop, and pause."
+  - question: "Can Home Assistant schedule a Miele washing machine to start at the cheapest electricity hour?"
+    answer: "Not natively — unlike Bosch's Home Connect, Miele exposes no delayed-start register. The workaround is an input_datetime helper holding the computed start time plus a time-trigger automation that presses the start button when it arrives."
+---
+
+Die alte Waschmaschine hat an einem Sonntag aufgegeben. Genau dann, wenn man keine Lust auf tagelange Recherche hat. Es wurde eine Miele — teils weil es schnell gehen musste, teils weil Miele seit HA 2025.5 eine offizielle Core-Integration hat. Kein HACS, kein Drittanbieter-Maintainer, der irgendwann nicht mehr auf GitHub-Issues antwortet. Nach dem Geschirrspüler dachte ich, ich wüsste ungefähr, worauf ich mich einlasse.
+
+Nicht ganz.
+
+## Was die Integration wirklich liefert
+
+Fügt man die `miele`-Integration hinzu, taucht die Waschmaschine mit einer langen Liste von Entitäten auf:
+
+```
+sensor.washing_machine                    — enum: idle, in_use, program_ended, ...
+sensor.washing_machine_program             — cottons, woollens, quick_intense, ...
+sensor.washing_machine_program_phase       — main_wash, rinse, spin, ...
+sensor.washing_machine_remaining_time
+sensor.washing_machine_elapsed_time
+sensor.washing_machine_energy_consumption / _forecast
+sensor.washing_machine_water_consumption / _forecast
+sensor.washing_machine_twindos_1_level / _2_level
+binary_sensor.washing_machine_door
+binary_sensor.washing_machine_remote_control
+binary_sensor.washing_machine_problem
+button.washing_machine_start / _stop / _pause
+```
+
+Der Hauptsensor hat neunzehn mögliche Werte, was mich verwirrt hat, bis mir klar wurde, dass er sich die gesamte Miele-Geräteflotte teilt. `supercooling` und `superfreezing` sind für Kühl- und Gefriergeräte gedacht. Eine Waschmaschine wird die nie erreichen, aber die Integration weiß das vorher nicht, also bekommt man das komplette Enum trotzdem.
+
+## Der Knopf, den es nicht gab
+
+Ich wollte denselben Trick wie beim Geschirrspüler: Programm einlegen, einen Knopf drücken, und die Maschine selbst entscheiden lassen, wann der Strom am günstigsten ist. Bei Bosch reicht dafür eine einzige Entität, `select.dishwasher_finish_at` — Zeit setzen, die Maschine rechnet selbst rückwärts.
+
+Bei Miele gibt es nichts Vergleichbares. Kein Verzögerungs-Select, keine relative Startzeit. Nur drei Knöpfe: Start, Stopp, Pause. Wer einen verzögerten Start will, muss die Verzögerung selbst mitbringen.
+
+Statt also ein Register am Gerät zu setzen, speichert die Automatisierung einen festen Zeitpunkt und wartet darauf:
+
+```yaml
+# Script: günstigste Stunde finden, in einen Helper schreiben
+best_hour: >
+  {% set ns = namespace(best_price=999, best_hour='') %}
+  {% for p in prices %}
+    {% if as_timestamp(p.hour) > as_timestamp(now()) + 1800
+       and p.price < ns.best_price %}
+      {% set ns.best_price = p.price %}
+      {% set ns.best_hour = p.hour %}
+    {% endif %}
+  {% endfor %}
+  {{ ns.best_hour }}
+# danach: input_datetime.set_datetime mit diesem Wert
+
+# Automatisierung: feuert genau einmal, wenn der Helper es sagt
+triggers:
+  - trigger: time
+    at: input_datetime.vaskemaskine_planlagt_start
+conditions:
+  - condition: state
+    entity_id: sensor.washing_machine
+    state: ["programmed", "waiting_to_start", "reserved"]
+actions:
+  - action: button.press
+    target:
+      entity_id: button.washing_machine_start
+```
+
+Ein `time`-Trigger, der auf ein `input_datetime` zeigt, liest den Helper bei jedem Neuladen neu ein — ein Neustart zwischen jetzt und dem geplanten Zeitpunkt wirft den Plan also nicht um. Ein simples `delay:` innerhalb eines Scripts würde genau das tun.
+
+![Miele Waschmaschinen-Karte in Home Assistant mit Schleuderphase, Restzeit und einem Stopp-Knopf](/blog-images/miele-washing-machine-home-assistant.jpg)
+
+## Knöpfe, die erst existieren, wenn man freundlich fragt
+
+Das hat mich tatsächlich zwanzig Minuten aufgehalten: `button.washing_machine_start` war schlicht nicht in der State Machine vorhanden. Nicht "unavailable" — wirklich abwesend, 404 bei der Abfrage. Es stellte sich heraus, dass Miele alle drei Steuerknöpfe **standardmäßig deaktiviert** im Entity-Register ausliefert. Jemand bei Miele hat entschieden, dass der Fernstart einer unbeaufsichtigten Waschmaschine ein bewusstes Opt-in verdient — und das ergibt für eine Maschine, die sich selbst mit Wasser füllt, durchaus Sinn. Ich habe alle drei aktiviert und den Config-Entry neu geladen, danach erschienen sie — und zeigten "unavailable", bis tatsächlich ein Programm geladen war, genau wie bei den Knöpfen des Geschirrspülers im Leerlauf.
+
+## Zwei Maschinen, ein Lautsprecher
+
+Beide Geräte melden sich über den Küchenlautsprecher, wenn sie fertig sind. Ich habe die Automatisierung des Geschirrspülers fast wörtlich für die Waschmaschine übernommen und das Problem erst bemerkt, nachdem sie schon einmal gesprochen hatte: Sie sagte "die Wäsche ist fertig" — was so lange gut geht, bis der Geschirrspüler zwanzig Minuten später fertig wird und exakt denselben Satz sagt. Jetzt sagt die eine "die Waschmaschine ist fertig" und die andere "der Geschirrspüler ist fertig". Kleine Korrektur, aber genau die Art Detail, die erst auffällt, wenn zwei Geräte tatsächlich über denselben Lautsprecher reden.
+
+## Wo es noch hakt
+
+Es gibt keinen Prozent-fertig-Sensor. Der Geschirrspüler (Bosch/Home Connect) liefert einen sauberen 0–100-Wert; Miele gibt nur verstrichene und verbleibende Minuten. Ich könnte selbst einen Prozentwert berechnen, aber eine abgeleitete Zahl, die die Maschine gar nicht selbst meldet, fühlte sich falsch an für ein Dashboard — die Karte zeigt also nur die Phase und die verbleibenden Minuten.
+
+`binary_sensor.washing_machine_problem` ist ebenfalls frustrierend vage — er springt auf `on`, das war's. Kein Fehlercode, keine Beschreibung. Ich habe dafür einen Ticker-Eintrag, der "prüfen" sagt, was ehrlich ist, aber nicht besonders handlungsanweisend.
+
+Ich habe die Preisabfrage für die günstigste Stunde fast wörtlich aus dem Geschirrspüler-Script übernommen, samt eines Fehlers, den ich erst diese Woche bemerkt habe: Das `hour`-Feld des Sensors ist eigentlich ein echtes Python-Datetime-Objekt, aber sobald es durch das `variables:`-Feld eines Scripts läuft, wird daraus ein reiner String — ein späteres `selectattr(..., 'eq', best_hour)` gegen frische Sensordaten trifft dann nie, und die Benachrichtigung scheitert einfach stillschweigend. Beide Scripts speichern den Preis jetzt separat, statt ihn erneut zu suchen.
