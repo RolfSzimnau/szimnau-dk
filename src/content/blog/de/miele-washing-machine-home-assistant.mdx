@@ -2,6 +2,7 @@
 title: "Die Waschmaschine wartet jetzt auf den günstigsten Strompreis"
 description: "Unsere Waschmaschine ging kaputt, ich kaufte eine Miele wegen der Home-Assistant-Integration — doch ihr fehlt der verzögerte Start wie beim Geschirrspüler."
 pubDate: 2026-07-28
+updatedDate: 2026-07-31
 verifiedOn: "HA 2026.7"
 tags: ["dashboard", "energie", "automatisierung", "sprache"]
 lang: "de"
@@ -94,3 +95,5 @@ Es gibt keinen Prozent-fertig-Sensor. Der Geschirrspüler (Bosch/Home Connect) l
 `binary_sensor.washing_machine_problem` ist ebenfalls frustrierend vage — er springt auf `on`, das war's. Kein Fehlercode, keine Beschreibung. Ich habe dafür einen Ticker-Eintrag, der "prüfen" sagt, was ehrlich ist, aber nicht besonders handlungsanweisend.
 
 Ich habe die Preisabfrage für die günstigste Stunde fast wörtlich aus dem Geschirrspüler-Script übernommen, samt eines Fehlers, den ich erst diese Woche bemerkt habe: Das `hour`-Feld des Sensors ist eigentlich ein echtes Python-Datetime-Objekt, aber sobald es durch das `variables:`-Feld eines Scripts läuft, wird daraus ein reiner String — ein späteres `selectattr(..., 'eq', best_hour)` gegen frische Sensordaten trifft dann nie, und die Benachrichtigung scheitert einfach stillschweigend. Beide Scripts speichern den Preis jetzt separat, statt ihn erneut zu suchen.
+
+Der neueste ist schlimmer als die anderen. Die Waschmaschine schaltet sich nach etwa einer Viertelstunde selbst ab, wenn sie nur mit geladenem Programm dasteht, ohne gestartet zu werden — ich habe es gemerkt, als ein für den nächsten Tag geplanter Start zur günstigsten Stunde einfach vom Dashboard verschwunden war, ohne jede Fehlermeldung. Ich habe in der Miele-App nach einer Einstellung dafür gesucht. Gibt es nicht, soweit ich sehen kann — vermutlich eine EU-Vorgabe zum Standby-Verbrauch, nichts, was Miele konfigurierbar gemacht hat. Das bedeutet: Der ganze "günstigste Stunde einen Tag im Voraus planen"-Trick stirbt still, wenn diese Stunde mehr als eine Viertelstunde entfernt liegt. Ich habe es mit einer Automatisierung geflickt, die mich fünfzehn Minuten vorher erinnert, damit ich das Programm rechtzeitig neu einlege, bevor die Maschine aufgibt. Ein Krückstock, keine Lösung. Wer einen Weg drumherum kennt, darf sich gerne melden.

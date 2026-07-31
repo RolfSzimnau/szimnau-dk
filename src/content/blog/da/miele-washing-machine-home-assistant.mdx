@@ -2,6 +2,7 @@
 title: "Vaskemaskinen venter nu på den billigste strøm"
 description: "Vaskemaskinen gik i stykker, så jeg valgte en Miele for den indbyggede Home Assistant-integration — men den mangler opvaskemaskinens forsinkede start."
 pubDate: 2026-07-28
+updatedDate: 2026-07-31
 verifiedOn: "HA 2026.7"
 tags: ["dashboard", "energi", "automatisering", "stemme"]
 lang: "da"
@@ -94,3 +95,5 @@ Der er ingen procent-færdig-sensor. Opvaskemaskinen (Bosch/Home Connect) ekspon
 `binary_sensor.washing_machine_problem` er også frustrerende vag — den går bare til `on`, og det er det. Ingen fejlkode, ingen beskrivelse. Jeg har en ticker-post til den, og den siger "tjek den", hvilket er ærligt men ikke ligefrem handlingsanvisende.
 
 Jeg kopierede prisopslaget til billigste time næsten ordret fra opvaskemaskinens script, inklusive en fejl jeg først opdagede i denne uge: sensorens `hour`-felt er reelt et Python-datetime-objekt, men når det passerer gennem et scripts `variables:`-felt bliver det til en almindelig streng — så et senere `selectattr(..., 'eq', best_hour)` mod frisk sensor-data rammer aldrig noget, og notifikationen fejler bare i det stille. Begge scripts gemmer nu prisen separat i stedet for at genfinde den.
+
+Den nyeste er værre end de andre. Vaskemaskinen slukker sig selv efter et kvarters tid, hvis den bare står og venter med et valgt program uden at blive startet — jeg opdagede det først da et "start på billigste tidspunkt i morgen" bare var væk fra dashboardet næste dag, uden en eneste fejlmeddelelse undervejs. Jeg har ledt efter en indstilling for det i Miele-appen. Findes ikke, så vidt jeg kan se — formentlig et EU-krav om standby-forbrug, ikke noget Miele har gjort konfigurerbart. Det betyder at hele "planlæg billigste time et døgn frem"-tricket dør stille, hvis det billigste tidspunkt ligger mere end et kvarter væk. Jeg har lappet det med en automation der minder mig femten minutter før, så jeg selv når at vælge programmet igen inden maskinen giver op. En krykke, ikke en løsning. Kender du en vej uden om det, må du meget gerne sige til.

@@ -2,6 +2,7 @@
 title: "Teaching a Miele Washing Machine to Wait for Cheap Electricity"
 description: "Our washing machine died, so I bought a Miele for its native Home Assistant integration — then found it has no delayed-start register like the dishwasher."
 pubDate: 2026-07-28
+updatedDate: 2026-07-31
 verifiedOn: "HA 2026.7"
 tags: ["dashboard", "energy", "automation", "voice"]
 lang: "en"
@@ -94,3 +95,5 @@ There's no percentage-complete sensor. The dishwasher (Bosch/Home Connect) expos
 The `binary_sensor.washing_machine_problem` sensor is also frustratingly vague — it flips to `on`, and that's it. No error code, no description. I have a ticker entry for it, and it says "check it," which is honest but not exactly actionable.
 
 I copied the cheapest-hour price lookup from the dishwasher's script almost exactly, including a bug I hadn't noticed until this week: the sensor's `hour` field is a real Python datetime, but once it passes through a script's `variables:` field it becomes a plain string, so a later `selectattr(..., 'eq', best_hour)` against fresh sensor data never matches anything and the notification silently fails. Both scripts store the price separately now instead of re-searching for it.
+
+The newest one is worse than the others. The washing machine powers itself off after about fifteen minutes if it's just sitting there with a program loaded but not started — I found out when a "start at tomorrow's cheapest hour" plan simply vanished from the dashboard the next day, no error, nothing. I went looking for a setting for it in the Miele app. Doesn't exist, as far as I can tell — probably an EU standby-power requirement, not something Miele made configurable. Which means the whole "schedule the cheapest hour a day out" trick dies quietly if that hour is more than about fifteen minutes away. I patched it with an automation that reminds me fifteen minutes beforehand, so I can reload the program before the machine gives up. A workaround, not a fix. If you know a way around this one, I'd genuinely like to hear it.
