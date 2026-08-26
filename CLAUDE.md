@@ -110,6 +110,28 @@ Create matching versions in `da/` and `de/` with translated content.
 
 **Also update the homepage hero bio** in all 3 `pages/{en,da,de}/index.astro` files — the `<span class="text-text-primary">` line ("Just shipped: ...") should reference the newest post. It goes stale fast: it referenced two posts that had already shipped 10 days earlier before this was caught (2026-07-28). There's no automated freshness check, so this is a manual step every time a post goes live.
 
+**Image commit check:** after dropping a new image into `public/blog-images/`, run `git status` before committing and confirm the image shows as staged alongside the MDX edit. Git happily commits the MDX reference without the binary if it wasn't `git add`ed — Cloudflare then deploys a page with a 404'd `<img>`. New images: use `.webp` (25–35% smaller than JPEG, full browser support) — existing `.jpg` files stay as-is, don't convert them.
+
+---
+
+## Blog Voice — Non-Negotiable
+
+Every post must read like a person wrote it, not a content system. The first batch of 21 posts was rewritten after failing this.
+
+- **No uniform structure.** Don't open every post with the same H2 sequence (e.g. "The Integration" → "The Dashboard" → "The Automations"). Fit the structure to the content.
+- **No polished-AI phrasing.** Avoid "this approach yields", "a powerful pattern", "seamlessly integrates". Write it like you're explaining it to someone in the next room.
+- **No "What's Next" / "Conclusion" / "Wrapping Up" ending.** End when the story ends — last line is a specific observation, not a summary bow.
+- **Vary sentence length.** Mix short punches with longer explanations, not uniform medium-length sentences.
+- **Open with the problem**, not the solution — the frustration or gap that started it.
+- **One specific, real anecdote per post** — a date, a number, a concrete moment. Not a generic example.
+- **Admit what doesn't work.** Self-deprecating honesty about what broke or isn't done yet reads as authentic; a flawless narrative doesn't.
+
+**DA and DE versions are written from scratch, never translated from EN.** Different anecdotes, different phrasing, native idioms — the three languages should read like three different people describing the same setup. This applies to all site copy (hero, about, `ui.ts`), not just posts.
+
+Two calque traps to check for in DA/DE before finalizing a sentence:
+1. **Compound/orthography errors** — Danish compounds are one word, no English plural-s (`detektionslog` not `detektions-logs`); numbers as one word (`niogtyve` not `ni-og-tyve`); time as `kl. 16.30` not `16:30`.
+2. **Borrowed metaphors** — translating an English image word-for-word (e.g. "a crutch, not a fix" → DA "krykke") reads as translated even when every word is technically correct, because the image itself isn't native. Use the language's own word for the underlying *concept* instead (DA: `nødløsning`, DE: `Notlösung`). Ask: would a native speaker's mind actually reach for this image, or only because it's the English phrase?
+
 ---
 
 ## Architecture
