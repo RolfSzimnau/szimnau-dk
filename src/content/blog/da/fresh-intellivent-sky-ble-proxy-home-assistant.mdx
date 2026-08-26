@@ -2,14 +2,15 @@
 title: "Badeværelsesventilator-overvågning i Home Assistant: XIAO ESP32-C3 Bluetooth-proxy + Fresh Intellivent Sky"
 description: "XIAO ESP32-C3 som Bluetooth-proxy til Home Assistant, Fresh Intellivent Sky over BLE, og et nedbrud der lignede dårlig rækkevidde, men ikke var det."
 pubDate: 2026-07-08
-verifiedOn: "HA 2026.7"
+updatedDate: 2026-08-26
+verifiedOn: "HA 2026.8"
 tags: ["esp32", "sensorer", "automatisering"]
 lang: "da"
 translationKey: "fresh-intellivent-sky-ble-proxy-home-assistant"
 heroImage: "/blog-images/fresh-intellivent-sky-ble-proxy.jpg"
 faqs:
   - question: "Does the Fresh Intellivent Sky Home Assistant integration let you control fan speed?"
-    answer: "No. The angoyd/freshintelliventHacs integration only exposes read-only sensors — humidity, temperature, current speed, and mode. There's no fan, switch, or select entity, so boosting the fan or changing speed still has to happen from the Fresh SmartLink app."
+    answer: "It depends which community integration you use. The original angoyd/freshintelliventHacs is read-only — humidity, temperature, current speed, and mode sensors only. Switching to Spit68/Fresh-Intellivent-Sky (also via HACS) adds real control: boost and pause with duration and RPM, a constant-speed override, per-mode RPM, night mode, silent hours, and detection sensitivity. The trade-off: it drops the calibrated humidity percentage entirely, exposing only an unscaled humidity_sensor_raw register value with no documented conversion formula."
   - question: "Why did one of two identical Bluetooth devices show unavailable in Home Assistant?"
     answer: "A crashed config entry, not a range problem. The integration's own reload handler failed mid-unload and left it in Home Assistant's non-recoverable failed_unload state. Check Settings → Devices & Services → the integration's entry status before assuming a Bluetooth/range issue — only a full Home Assistant restart clears it."
 ---
@@ -47,6 +48,8 @@ Med proxyen på plads er opsætningen reelt bare discovery: så snart ventilator
 - `sensor.<navn>_mode_raw` (den numeriske kode bag)
 
 **Det er skrivebeskyttet.** Der er ingen `fan.*`, `switch.*` eller `select.*`-entitet — intet i Home Assistant kan ændre ventilatorens hastighed eller udløse en boost. Automationer bygget på denne integration kan give besked om, at du selv skal boost'e ventilatoren manuelt — de kan ikke gøre det for dig. Det er en reel begrænsning, værd at kende, før du planlægger automationer omkring den.
+
+*Opdatering 26/08/2026: ikke længere hele historien — se opdateringsafsnittet nederst i indlægget.*
 
 ## Fugtautomationer der rent faktisk virker med skrivebeskyttet data
 
@@ -95,6 +98,23 @@ Handlingsknappen udløser en anden, lille automation, der lytter efter netop den
 ## At style det ind i dashboardet
 
 Begge ventilatorers kort bruger de samme frostede glas-card_mod-konstanter som resten af dashboardet — et fugtighedstrend-diagram, temperatur/mode/hastighed-fliser, og en kompakt statusflise, der kun vises, når ventilatoren er aktiv, eller fugtigheden stiger, så et inaktivt badeværelse ikke optager permanent plads på dashboardet. Den tidligere fejlramte ventilators kort bærer også en lille "Connectivity: Unavailable"-fallback-flise, drevet af den samme `mode`-sensor, der går "unavailable" — den forsvinder, i det øjeblik sensorerne begynder at rapportere igen, ingen manuel dashboard-redigering nødvendig i nogen af tilfældene.
+
+## Opdatering: skiftet til et repo, der faktisk kan noget
+
+Syv uger senere er jeg holdt op med at gide åbne Fresh-appen, hver gang nogen har taget et langt bad og ventilatoren skal boost'es. `angoyd/freshintelliventHacs` — integrationen omtalt ovenfor — kan ikke det, uanset hvor mange gange man genindlæser den. Løsningen blev at rive integrationen op med rode og sætte et andet community-repo i stedet: [`Spit68/Fresh-Intellivent-Sky`](https://github.com/Spit68/Fresh-Intellivent-Sky) — samme fremgangsmåde via HACS som første gang, men et helt andet sæt entiteter i den anden ende.
+
+Og det er markant flere entiteter: boost- og pauseknapper med varighed og RPM, en switch til konstant hastighed, RPM pr. driftstilstand, night mode og silent hours med hver deres start- og sluttidspunkt, og følsomhedsvalg for fugt-, VOC- og lysdetektion. Automationer kan nu rent faktisk trykke på boost-knappen selv — ikke bare sende en påmindelse om, at nogen andre skal gøre det.
+
+Det, der forsvandt til gengæld, er en brugbar fugtighedsprocent. Det nye repo har ganske vist en `humidity_sensor_raw`-entitet, men den er slået fra som standard, og før jeg byggede noget videre på den, gik jeg ind i kildekoden for at lede efter en skjult formel. Der er ingen. `sky_sensors.py` pakker BLE-statusbeskeden ud direkte:
+
+```python
+values = unpack("<2B5H3B", data)
+self.humidity_raw = values[2]
+```
+
+Et råt 16-bit tal, lige fra enhedens eget register, uden division eller reference at holde det op imod. De to automationer fra afsnittet ovenfor kunne derfor ikke bare kopieres over med et nyt entity-navn. Skimmelrisiko-automationen lytter nu i stedet efter, at ventilatorens egen mode-sensor selv vurderer situationen fugtig nok til at hedde "Humidity" i mere end 45 minutter — mindre præcist end en fast grænse, men det er trods alt enhedens egen beslutning og ikke et tal uden kendt betydning. Automationen for hurtig fugtstigning måtte jeg simpelthen slukke: en grænseværdi sat til den gamle skala (%/min) betyder ingenting på rå tal i tusindtal, og jeg har endnu ikke observeret nok badeture til at gætte en ny.
+
+Selve skiftet var ikke kun et spørgsmål om at pege på et nyt GitHub-repo i HACS. Geninstallationen af Bluetooth-proxyen — samme kort som tidligere i indlægget — udløste en kortvarig afbrydelse af dens ESPHome-forbindelse på omkring 20 minutter, der ved første øjekast lignede endnu et nedbrud, men rettede sig selv. Og fordi automationer og dashboardkort begge havde hardcodede entity_id'er fra den gamle integration, skulle hver reference findes og rettes manuelt — hvilket samtidig afslørede, at de to badeværelseskort på dashboardet i lang tid havde vist hinandens data, fordi titel og entity-mapping på et tidspunkt var blevet byttet om uden at nogen opdagede det.
 
 ## Én ting værd at vide
 

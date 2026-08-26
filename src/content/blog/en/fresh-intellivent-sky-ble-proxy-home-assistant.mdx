@@ -2,14 +2,15 @@
 title: "Bathroom Fan Monitoring in Home Assistant: XIAO ESP32-C3 Bluetooth Proxy + Fresh Intellivent Sky"
 description: "Setting up a XIAO ESP32-C3 as a Home Assistant Bluetooth proxy, adding Fresh Intellivent Sky fans over BLE, and a crash that looked like bad range but wasn't."
 pubDate: 2026-07-08
-verifiedOn: "HA 2026.7"
+updatedDate: 2026-08-26
+verifiedOn: "HA 2026.8"
 tags: ["esp32", "sensors", "automation"]
 lang: "en"
 translationKey: "fresh-intellivent-sky-ble-proxy-home-assistant"
 heroImage: "/blog-images/fresh-intellivent-sky-ble-proxy.jpg"
 faqs:
   - question: "Does the Fresh Intellivent Sky Home Assistant integration let you control fan speed?"
-    answer: "No. The angoyd/freshintelliventHacs integration only exposes read-only sensors — humidity, temperature, current speed, and mode. There's no fan, switch, or select entity, so boosting the fan or changing speed still has to happen from the Fresh SmartLink app."
+    answer: "It depends which community integration you use. The original angoyd/freshintelliventHacs is read-only — humidity, temperature, current speed, and mode sensors only. Switching to Spit68/Fresh-Intellivent-Sky (also via HACS) adds real control: boost and pause with duration and RPM, a constant-speed override, per-mode RPM, night mode, silent hours, and detection sensitivity. The trade-off: it drops the calibrated humidity percentage entirely, exposing only an unscaled humidity_sensor_raw register value with no documented conversion formula."
   - question: "Why did one of two identical Bluetooth devices show unavailable in Home Assistant?"
     answer: "A crashed config entry, not a range problem. The integration's own reload handler failed mid-unload and left it in Home Assistant's non-recoverable failed_unload state. Check Settings → Devices & Services → the integration's entry status before assuming a Bluetooth/range issue — only a full Home Assistant restart clears it."
 ---
@@ -47,6 +48,8 @@ With the proxy in place, setup is genuinely just discovery: once the fan's BLE a
 - `sensor.<name>_mode_raw` (the numeric code behind it)
 
 **That's read-only.** There's no `fan.*`, `switch.*`, or `select.*` entity — nothing in Home Assistant can change the fan's speed or trigger a boost. Automations built on this integration can notify you to go boost the fan manually; they can't do it for you. That's a real limitation worth knowing before you plan automations around it.
+
+*Update 2026-08-26: not the whole story anymore — see the update section at the bottom of this post.*
 
 ## Humidity automations that actually work with read-only data
 
@@ -95,6 +98,23 @@ The action button fires a second, tiny automation that listens for that specific
 ## Styling it into the dashboard
 
 Both fans' cards use the same [frosted-glass card_mod constants](/en/blog/ha-glassmorphism-dashboard-design/) as the rest of the dashboard — a humidity trend chart, temperature/mode/speed tiles, and a compact status tile that only renders when the fan is active or humidity is climbing, so an idle bathroom doesn't take up permanent dashboard space. The formerly-broken fan's card also carries a small "Connectivity: Unavailable" fallback tile, driven by the same `mode` sensor going `unavailable` — it's gone the moment the sensors start reporting again, no manual dashboard edit needed either way.
+
+## Update: switching to a repo with write access
+
+Seven weeks later I wanted to boost the fans from Home Assistant instead of opening the Fresh app every time. `angoyd/freshintelliventHacs` doesn't offer that — it's still strictly read-only, as described above. The fix was swapping the entire integration for a different community repo, [`Spit68/Fresh-Intellivent-Sky`](https://github.com/Spit68/Fresh-Intellivent-Sky), installed the same way through HACS.
+
+That changes the entity picture substantially. Instead of the five read-only sensors, each fan now gets boost and pause buttons (with duration and RPM), a constant-speed switch, per-mode RPM settings, night mode and silent hours with start/end times, plus sensitivity selects for humidity, VOC, and light detection. That's a real gain — automations can now actually boost the fan instead of just reminding you to.
+
+The cost: no calibrated humidity percentage. The new repo exposes a `humidity_sensor_raw` sensor, but it's disabled by default, and I checked the source for a hidden conversion formula — there isn't one. `sky_sensors.py` unpacks the BLE status characteristic directly:
+
+```python
+values = unpack("<2B5H3B", data)
+self.humidity_raw = values[2]
+```
+
+That's a raw, unscaled 16-bit number straight from the device's own register — no division, no reference calibration, nothing translating it to a percentage. The two humidity automations described above couldn't just carry over 1:1. The mold-risk automation now runs on the fan's own `mode` sensor instead: when the fan's built-in humidity algorithm switches itself to "Humidity" mode for more than 45 minutes, the notification fires — less precise than a fixed percentage threshold, but it's real data from the device's own decision rather than a number of unknown meaning. The rapid-rise automation (based on %/min) couldn't be made to mean anything on the raw scale and stays disabled for now, until I've watched enough raw-value swings to pick a sane new threshold.
+
+Two more things worth knowing if you swap the repo behind an integration that's already wired into your dashboard and automations: reinstalling the Bluetooth proxy itself triggered a brief, self-healing drop in the ESPHome API connection (around 20 minutes) that looked like yet another permanent outage but wasn't — and both automations and dashboard cards had hardcoded entity IDs from the old integration that needed fixing one at a time. The dashboard cards, in particular, turned up a bug that had been sitting there unnoticed for a while: the two bathroom cards were actually showing each other's data, because the card title and the entity mapping had gotten swapped somewhere along the way.
 
 ## One thing to know
 
