@@ -10,7 +10,7 @@ translationKey: "fresh-intellivent-sky-ble-proxy-home-assistant"
 heroImage: "/blog-images/fresh-intellivent-sky-ble-proxy.jpg"
 faqs:
   - question: "Does the Fresh Intellivent Sky Home Assistant integration let you control fan speed?"
-    answer: "It depends which community integration you use. The original angoyd/freshintelliventHacs is read-only — humidity, temperature, current speed, and mode sensors only. Switching to Spit68/Fresh-Intellivent-Sky (also via HACS) adds real control: boost and pause with duration and RPM, a constant-speed override, per-mode RPM, night mode, silent hours, and detection sensitivity. The trade-off: it drops the calibrated humidity percentage entirely, exposing only an unscaled humidity_sensor_raw register value with no documented conversion formula."
+    answer: "It depends which community integration you use. The original angoyd/freshintelliventHacs is read-only — humidity, temperature, current speed, and mode sensors only. Switching to Spit68/Fresh-Intellivent-Sky (also via HACS) adds real control: boost and pause with duration and RPM, a constant-speed override, per-mode RPM, night mode, silent hours, and detection sensitivity. The trade-off: it drops the calibrated humidity percentage its predecessor exposed, leaving only an unscaled humidity_sensor_raw register value with no documented conversion formula in this repo - though the old integration's underlying library (LaStrada/pyfreshintellivent) turns out to read the same register and convert it via humidity = log(raw/10)*10, which can be rebuilt as a template sensor."
   - question: "Why did one of two identical Bluetooth devices show unavailable in Home Assistant?"
     answer: "A crashed config entry, not a range problem. The integration's own reload handler failed mid-unload and left it in Home Assistant's non-recoverable failed_unload state. Check Settings → Devices & Services → the integration's entry status before assuming a Bluetooth/range issue — only a full Home Assistant restart clears it."
 ---
@@ -110,7 +110,14 @@ values = unpack("<2B5H3B", data)
 self.humidity_raw = values[2]
 ```
 
-Keine Skalierung, kein Referenzwert, keine Umrechnung — nur eine rohe 16-Bit-Zahl aus dem Gerät, und der Sensor ist obendrein standardmäßig deaktiviert. Damit ließen sich die beiden Feuchtigkeits-Automatisierungen von oben nicht einfach mit neuen Entity-Namen weiterbetreiben. Die Schimmelrisiko-Automatisierung prüft jetzt stattdessen den `mode`-Sensor des Lüfters selbst: Bleibt der Lüfter länger als 45 Minuten von sich aus im Modus "Humidity", kommt die Benachrichtigung — eine Stufe ungenauer als ein fester Prozentwert, aber wenigstens eine echte Einschätzung des Geräts und keine Zahl ohne Kontext. Für den Trigger bei schnellem Feuchtigkeitsanstieg, dem alten %/min-Schwellenwert, gibt es auf der rohen Skala schlicht keine sinnvolle Entsprechung — die Automatisierung bleibt aus, bis genug Rohdaten aus echten Duschgängen vorliegen, um einen neuen Wert festzulegen.
+Keine Skalierung, kein Referenzwert, keine Umrechnung — nur eine rohe 16-Bit-Zahl aus dem Gerät, und der Sensor ist obendrein standardmäßig deaktiviert. Damit ließen sich die beiden Feuchtigkeits-Automatisierungen von oben nicht einfach mit neuen Entity-Namen weiterbetreiben — dachte ich zumindest, bis ich eine Ebene tiefer geschaut habe. Die alte `angoyd`-Integration parst BLE-Daten gar nicht selbst; sie stützt sich auf eine separate Bibliothek, [`pyfreshintellivent`](https://github.com/LaStrada/pyfreshintellivent). Deren `sensors.py` liest genau dieselbe Charakteristik (`528b80e8-…`, in der Protokoll-Doku wörtlich "Sensor data" genannt) am exakt gleichen Byte-Offset wie `humidity_raw` oben — und rechnet sie um:
+
+```python
+if values[2] != 0:
+    self.humidity = round((log(values[2] / 10) * 10), 1)
+```
+
+Ein natürlicher Logarithmus, keine lineare Skala. Nichts, was Fresh selbst je veröffentlicht hat — nur etwas, das ein anderer Entwickler herausgefunden hat und seit Jahren produktiv einsetzt. Ich habe die Formel an den rohen Zahlen getestet, die ich schon hatte: 858 → 41,3 %, ~2800-3150 → 39,5-58 %. Beide landen mitten im normalen Bereich für Bad-Luftfeuchtigkeit — kein Zufallstreffer, den man auch mit einer beliebigen Formel bekäme. Als zwei `template`-Sensoren in Home Assistant gebaut, und beide Automatisierungen wieder auf ihre ursprünglichen Schwellenwerte gesetzt — 70 % für 45 Minuten beim Schimmelrisiko, 3,33 %/min beim schnellen Anstieg — nur mit einer anderen Quell-Entität als vorher.
 
 Zum Ausgleich: mehr Kontrolle, als die alte Integration je hatte. Boost und Pause mit Dauer und Drehzahl, ein Schalter für konstante Geschwindigkeit, Drehzahlvorgaben je Betriebsmodus, Night Mode und Silent Hours mit eigenen Start- und Endzeiten, dazu Empfindlichkeitsstufen für Feuchte-, VOC- und Lichterkennung. Automatisierungen können den Lüfter jetzt wirklich boosten, statt nur eine Erinnerung dafür zu verschicken.
 

@@ -10,7 +10,7 @@ translationKey: "fresh-intellivent-sky-ble-proxy-home-assistant"
 heroImage: "/blog-images/fresh-intellivent-sky-ble-proxy.jpg"
 faqs:
   - question: "Does the Fresh Intellivent Sky Home Assistant integration let you control fan speed?"
-    answer: "It depends which community integration you use. The original angoyd/freshintelliventHacs is read-only — humidity, temperature, current speed, and mode sensors only. Switching to Spit68/Fresh-Intellivent-Sky (also via HACS) adds real control: boost and pause with duration and RPM, a constant-speed override, per-mode RPM, night mode, silent hours, and detection sensitivity. The trade-off: it drops the calibrated humidity percentage entirely, exposing only an unscaled humidity_sensor_raw register value with no documented conversion formula."
+    answer: "It depends which community integration you use. The original angoyd/freshintelliventHacs is read-only — humidity, temperature, current speed, and mode sensors only. Switching to Spit68/Fresh-Intellivent-Sky (also via HACS) adds real control: boost and pause with duration and RPM, a constant-speed override, per-mode RPM, night mode, silent hours, and detection sensitivity. The trade-off: it drops the calibrated humidity percentage its predecessor exposed, leaving only an unscaled humidity_sensor_raw register value with no documented conversion formula in this repo - though the old integration's underlying library (LaStrada/pyfreshintellivent) turns out to read the same register and convert it via humidity = log(raw/10)*10, which can be rebuilt as a template sensor."
   - question: "Why did one of two identical Bluetooth devices show unavailable in Home Assistant?"
     answer: "A crashed config entry, not a range problem. The integration's own reload handler failed mid-unload and left it in Home Assistant's non-recoverable failed_unload state. Check Settings → Devices & Services → the integration's entry status before assuming a Bluetooth/range issue — only a full Home Assistant restart clears it."
 ---
@@ -112,7 +112,14 @@ values = unpack("<2B5H3B", data)
 self.humidity_raw = values[2]
 ```
 
-That's a raw, unscaled 16-bit number straight from the device's own register — no division, no reference calibration, nothing translating it to a percentage. The two humidity automations described above couldn't just carry over 1:1. The mold-risk automation now runs on the fan's own `mode` sensor instead: when the fan's built-in humidity algorithm switches itself to "Humidity" mode for more than 45 minutes, the notification fires — less precise than a fixed percentage threshold, but it's real data from the device's own decision rather than a number of unknown meaning. The rapid-rise automation (based on %/min) couldn't be made to mean anything on the raw scale and stays disabled for now, until I've watched enough raw-value swings to pick a sane new threshold.
+That's a raw, unscaled 16-bit number straight from the device's own register — no division, no reference calibration, nothing translating it to a percentage. The two humidity automations described above couldn't just carry over 1:1 — or so I thought, until I looked one level down. The old `angoyd` integration doesn't parse BLE data itself; it leans on a separate library, [`pyfreshintellivent`](https://github.com/LaStrada/pyfreshintellivent). That library's `sensors.py` reads the exact same characteristic (`528b80e8-…`, literally named "Sensor data" in the protocol docs) at the exact same byte offset as `humidity_raw` above — and converts it:
+
+```python
+if values[2] != 0:
+    self.humidity = round((log(values[2] / 10) * 10), 1)
+```
+
+A natural log, not a linear scale. Nothing Fresh ever published themselves — just something another developer worked out and has run in production for years. I tested it against the raw numbers I already had: 858 → 41.3%, ~2800-3150 → 39.5-58%. Both land squarely in normal bathroom humidity territory, not the kind of result you get from feeding numbers into an arbitrary formula. Built it as two `template` sensors in Home Assistant, and put both automations back on their original thresholds — 70% for 45 minutes on mold risk, 3.33%/min on the rapid-rise one — just pointed at a different source entity than before.
 
 Two more things worth knowing if you swap the repo behind an integration that's already wired into your dashboard and automations: reinstalling the Bluetooth proxy itself triggered a brief, self-healing drop in the ESPHome API connection (around 20 minutes) that looked like yet another permanent outage but wasn't — and both automations and dashboard cards had hardcoded entity IDs from the old integration that needed fixing one at a time. The dashboard cards, in particular, turned up a bug that had been sitting there unnoticed for a while: the two bathroom cards were actually showing each other's data, because the card title and the entity mapping had gotten swapped somewhere along the way.
 
