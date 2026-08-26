@@ -114,6 +114,16 @@ self.humidity_raw = values[2]
 
 That's a raw, unscaled 16-bit number straight from the device's own register — no division, no reference calibration, nothing translating it to a percentage. The two humidity automations described above couldn't just carry over 1:1. The mold-risk automation now runs on the fan's own `mode` sensor instead: when the fan's built-in humidity algorithm switches itself to "Humidity" mode for more than 45 minutes, the notification fires — less precise than a fixed percentage threshold, but it's real data from the device's own decision rather than a number of unknown meaning. The rapid-rise automation (based on %/min) couldn't be made to mean anything on the raw scale and stays disabled for now, until I've watched enough raw-value swings to pick a sane new threshold.
 
+### Getting a real percentage back
+
+The missing formula isn't a dead end, just a different kind of work. Two things that don't need Spit68 to ever ship one.
+
+The trigger side needs no percentage at all — just a new threshold. Next time someone showers, pulling up Home Assistant's history graph for `humidity_sensor_raw` and reading off how many raw units per minute it climbs during the shower gives that number directly. No formula, just a reading.
+
+For an actual percentage, Home Assistant's built-in `compensation` helper (Settings → Devices & Services → Helpers) fits a curve — linear by default — between the raw value and a couple of real readings from an ordinary hygrometer left in the bathroom. Two or three (raw, %RH) pairs is enough. No knowledge of the device's internal scale required, just patience to leave a hygrometer in there for a few days.
+
+Neither is done yet — both need real measurements from the actual bathrooms, not guesses from a source-code read. Next on the list.
+
 Two more things worth knowing if you swap the repo behind an integration that's already wired into your dashboard and automations: reinstalling the Bluetooth proxy itself triggered a brief, self-healing drop in the ESPHome API connection (around 20 minutes) that looked like yet another permanent outage but wasn't — and both automations and dashboard cards had hardcoded entity IDs from the old integration that needed fixing one at a time. The dashboard cards, in particular, turned up a bug that had been sitting there unnoticed for a while: the two bathroom cards were actually showing each other's data, because the card title and the entity mapping had gotten swapped somewhere along the way.
 
 ## One thing to know
