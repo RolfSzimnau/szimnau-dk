@@ -101,7 +101,7 @@ Die Karten beider Lüfter verwenden dieselben Frosted-Glass-card_mod-Konstanten 
 
 ## Update: ein Repo mit echter Kontrolle
 
-Sieben Wochen später meldete sich jemand von Spittie.dk — einer dänischen Community-Seite für Home-Assistant-Fans — und wies mich auf ein Repo hin, das ich selbst nicht gefunden hatte: [`Spit68/Fresh-Intellivent-Sky`](https://github.com/Spit68/Fresh-Intellivent-Sky). Die Namensähnlichkeit dürfte kein Zufall sein. Die oben beschriebene `angoyd/freshintelliventHacs`-Integration ändert daran nichts — sie bleibt, was sie ist: reine Anzeige, ganz gleich wie oft man sie neu lädt. Das neue Repo dagegen ist ein völlig anderes Kaliber, ebenfalls über HACS installiert.
+Sieben Wochen später meldete sich jemand von Spittie.dk — einer dänischen Community-Seite für Home-Assistant-Fans — und wies mich auf ein Repo hin, das ich selbst nicht gefunden hatte: [`Spit68/Fresh-Intellivent-Sky`](https://github.com/Spit68/Fresh-Intellivent-Sky). Die oben beschriebene `angoyd/freshintelliventHacs`-Integration ändert daran nichts — sie bleibt, was sie ist: reine Anzeige, ganz gleich wie oft man sie neu lädt. Das neue Repo dagegen ist ein völlig anderes Kaliber, ebenfalls über HACS installiert.
 
 Bevor ich mich auf die neuen Entities verlassen habe, habe ich im Quellcode nachgesehen, was eigentlich hinter dem `humidity_sensor_raw`-Sensor steckt — dem Nachfolger der alten, kalibrierten Feuchtigkeitsangabe. Ergebnis: nichts. `sky_sensors.py` liest den BLE-Statuswert und reicht ihn unverändert durch:
 
