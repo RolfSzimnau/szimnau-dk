@@ -114,16 +114,6 @@ self.humidity_raw = values[2]
 
 Et råt 16-bit tal, lige fra enhedens eget register, uden division eller reference at holde det op imod. De to automationer fra afsnittet ovenfor kunne derfor ikke bare kopieres over med et nyt entity-navn. Skimmelrisiko-automationen lytter nu i stedet efter, at ventilatorens egen mode-sensor selv vurderer situationen fugtig nok til at hedde "Humidity" i mere end 45 minutter — mindre præcist end en fast grænse, men det er trods alt enhedens egen beslutning og ikke et tal uden kendt betydning. Automationen for hurtig fugtstigning måtte jeg simpelthen slukke: en grænseværdi sat til den gamle skala (%/min) betyder ingenting på rå tal i tusindtal, og jeg har endnu ikke observeret nok badeture til at gætte en ny.
 
-### Sådan får man en rigtig procent igen
-
-Den manglende formel er ikke en blindgyde, bare en anden slags arbejde. To ting, der kan gøres uden at vente på, at Spit68 selv tilføjer en.
-
-Til triggeren kræves der slet ikke procent — kun en ny grænseværdi. Næste gang nogen tager et bad, kan man åbne Home Assistants historikgraf for `humidity_sensor_raw`, aflæse hvor mange rå enheder pr. minut den stiger med under bruseren, og sætte Derivative-automationens grænseværdi derefter. Ren aflæsning, ingen formel nødvendig.
-
-Til selve procenten findes Home Assistants indbyggede `compensation`-hjælper (Indstillinger → Enheder & Tjenester → Hjælpere): den fitter en — som regel lineær — kurve mellem den rå værdi og et par rigtige aflæsninger fra et almindeligt hygrometer stillet i badeværelset. To eller tre (rå, %RH)-par er nok. Det kræver ingen viden om enhedens interne skala, kun tålmodighed til at lade et hygrometer stå derinde et par dage.
-
-Ingen af delene er gjort endnu — begge kræver rigtige målinger fra de faktiske badeværelser, ikke gæt fra en kildekodegennemgang. Det er det næste på listen.
-
 Selve skiftet var ikke kun et spørgsmål om at pege på et nyt GitHub-repo i HACS. Geninstallationen af Bluetooth-proxyen — samme kort som tidligere i indlægget — udløste en kortvarig afbrydelse af dens ESPHome-forbindelse på omkring 20 minutter, der ved første øjekast lignede endnu et nedbrud, men rettede sig selv. Og fordi automationer og dashboardkort begge havde hardcodede entity_id'er fra den gamle integration, skulle hver reference findes og rettes manuelt — hvilket samtidig afslørede, at de to badeværelseskort på dashboardet i lang tid havde vist hinandens data, fordi titel og entity-mapping på et tidspunkt var blevet byttet om uden at jeg havde opdaget det.
 
 ## Én ting værd at vide

@@ -112,16 +112,6 @@ self.humidity_raw = values[2]
 
 Keine Skalierung, kein Referenzwert, keine Umrechnung — nur eine rohe 16-Bit-Zahl aus dem Gerät, und der Sensor ist obendrein standardmäßig deaktiviert. Damit ließen sich die beiden Feuchtigkeits-Automatisierungen von oben nicht einfach mit neuen Entity-Namen weiterbetreiben. Die Schimmelrisiko-Automatisierung prüft jetzt stattdessen den `mode`-Sensor des Lüfters selbst: Bleibt der Lüfter länger als 45 Minuten von sich aus im Modus "Humidity", kommt die Benachrichtigung — eine Stufe ungenauer als ein fester Prozentwert, aber wenigstens eine echte Einschätzung des Geräts und keine Zahl ohne Kontext. Für den Trigger bei schnellem Feuchtigkeitsanstieg, dem alten %/min-Schwellenwert, gibt es auf der rohen Skala schlicht keine sinnvolle Entsprechung — die Automatisierung bleibt aus, bis genug Rohdaten aus echten Duschgängen vorliegen, um einen neuen Wert festzulegen.
 
-### Wie man wieder an einen echten Prozentwert kommt
-
-Die fehlende Formel ist keine Sackgasse, nur eine andere Art Arbeit. Zwei Dinge, für die man nicht darauf warten muss, dass Spit68 irgendwann eine liefert.
-
-Für den Trigger braucht es gar keinen Prozentwert — nur einen neuen Schwellenwert. Beim nächsten Duschgang genügt ein Blick in Home Assistants Verlaufsgrafik für `humidity_sensor_raw`: Wie viele rohe Einheiten pro Minute steigt der Wert während der Dusche? Das ist der neue Schwellenwert, direkt abgelesen, keine Formel nötig.
-
-Für einen echten Prozentwert gibt es Home Assistants eingebauten `compensation`-Helfer (Einstellungen → Geräte & Dienste → Helfer): Er legt eine — standardmäßig lineare — Kurve zwischen dem Rohwert und ein paar echten Messwerten eines gewöhnlichen Hygrometers im Bad. Zwei oder drei (Rohwert, %RH)-Paare reichen. Man muss die interne Skala des Geräts nicht kennen, nur ein paar Tage Geduld mit einem Hygrometer im Bad haben.
-
-Beides ist noch nicht gemacht — beides braucht echte Messungen aus den tatsächlichen Bädern, keine Vermutungen aus einer Quellcode-Lektüre. Das Nächste auf der Liste.
-
 Zum Ausgleich: mehr Kontrolle, als die alte Integration je hatte. Boost und Pause mit Dauer und Drehzahl, ein Schalter für konstante Geschwindigkeit, Drehzahlvorgaben je Betriebsmodus, Night Mode und Silent Hours mit eigenen Start- und Endzeiten, dazu Empfindlichkeitsstufen für Feuchte-, VOC- und Lichterkennung. Automatisierungen können den Lüfter jetzt wirklich boosten, statt nur eine Erinnerung dafür zu verschicken.
 
 Der Wechsel selbst war kein reines Konfigurationsproblem. Die Neuinstallation des Bluetooth-Proxys — dasselbe Board wie oben im Beitrag — kappte für rund 20 Minuten die ESPHome-Verbindung, was zunächst wie ein erneuter Totalausfall aussah, sich aber von selbst löste. Automatisierungen und Dashboard-Karten hatten außerdem beide noch hartcodierte Entity-IDs der alten Integration, die einzeln aufgespürt und ersetzt werden mussten — dabei kam heraus, dass die beiden Bad-Karten im Dashboard schon länger die Werte des jeweils anderen Bads anzeigten, weil Kartentitel und Entity-Zuordnung irgendwann vertauscht worden waren, ohne dass ich es bemerkt hatte.
