@@ -101,7 +101,7 @@ Both fans' cards use the same [frosted-glass card_mod constants](/en/blog/ha-gla
 
 ## Update: switching to a repo with write access
 
-Seven weeks later I wanted to boost the fans from Home Assistant instead of opening the Fresh app every time. `angoyd/freshintelliventHacs` doesn't offer that — it's still strictly read-only, as described above. The fix was swapping the entire integration for a different community repo, [`Spit68/Fresh-Intellivent-Sky`](https://github.com/Spit68/Fresh-Intellivent-Sky), installed the same way through HACS.
+Seven weeks later, someone from Spittie.dk — a Danish Home Assistant enthusiast site — reached out and pointed me at a repo I hadn't found myself: [`Spit68/Fresh-Intellivent-Sky`](https://github.com/Spit68/Fresh-Intellivent-Sky). The name overlap is probably not a coincidence. `angoyd/freshintelliventHacs` is still strictly read-only, as described above, no matter how many times you reload it; this one is a different animal entirely, installed the same way through HACS.
 
 That changes the entity picture substantially. Instead of the five read-only sensors, each fan now gets boost and pause buttons (with duration and RPM), a constant-speed switch, per-mode RPM settings, night mode and silent hours with start/end times, plus sensitivity selects for humidity, VOC, and light detection. That's a real gain — automations can now actually boost the fan instead of just reminding you to.
 
