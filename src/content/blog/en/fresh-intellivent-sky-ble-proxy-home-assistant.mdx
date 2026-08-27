@@ -2,7 +2,7 @@
 title: "Bathroom Fan Monitoring in Home Assistant: XIAO ESP32-C3 Bluetooth Proxy + Fresh Intellivent Sky"
 description: "Setting up a XIAO ESP32-C3 as a Home Assistant Bluetooth proxy, adding Fresh Intellivent Sky fans over BLE, and a crash that looked like bad range but wasn't."
 pubDate: 2026-07-08
-updatedDate: 2026-08-26
+updatedDate: 2026-08-27
 verifiedOn: "HA 2026.8"
 tags: ["esp32", "sensors", "automation"]
 lang: "en"
@@ -122,6 +122,14 @@ if values[2] != 0:
 A natural log, not a linear scale. Nothing Fresh ever published themselves — just something another developer worked out and has run in production for years. I tested it against the raw numbers I already had: 858 → 41.3%, ~2800-3150 → 39.5-58%. Both land squarely in normal bathroom humidity territory, not the kind of result you get from feeding numbers into an arbitrary formula. Built it as two `template` sensors in Home Assistant, and put both automations back on their original thresholds — 70% for 45 minutes on mold risk, 3.33%/min on the rapid-rise one — just pointed at a different source entity than before.
 
 Two more things worth knowing if you swap the repo behind an integration that's already wired into your dashboard and automations: reinstalling the Bluetooth proxy itself triggered a brief, self-healing drop in the ESPHome API connection (around 20 minutes) that looked like yet another permanent outage but wasn't — and both automations and dashboard cards had hardcoded entity IDs from the old integration that needed fixing one at a time. The dashboard cards, in particular, turned up a bug that had been sitting there unnoticed for a while: the two bathroom cards were actually showing each other's data, because the card title and the entity mapping had gotten swapped somewhere along the way.
+
+## Update: the formula's reliability is still unresolved
+
+After publishing this, I heard from the developer maintaining `Spit68/Fresh-Intellivent-Sky`. Turns out he'd already put serious work into exactly this problem — tried the LaStrada log formula above, several others, opened up a SKY unit to inspect the actual humidity sensor chip, worked from its datasheet, and even fed an AI a pile of raw-value/reference-humidity pairs. None of it produced a formula solid enough to ship as a real percentage sensor, which is exactly why `humidity_sensor_raw` stays disabled by default in his repo instead of a guess dressed up as data — credit for holding that line rather than shipping something that looks right and isn't.
+
+The data point that matters most: two SKY units side by side, in presumably similar humidity, can report raw values as different as 100 vs. 300. That's not a linear offset you calibrate away — it points to the raw register not being on a consistent scale across units at all.
+
+That reframes what I actually validated above. The log formula produced plausible numbers for my specific fan, and my two automations still work because they threshold consistently against that one fan's own baseline over time — not because the formula is a proven, general raw-to-percentage conversion. If you're replicating this for your own SKY units, treat the resulting number as a relative trend indicator, not a calibrated percentage, until you've checked it against a real hygrometer in your own bathroom. He's not done chasing this either — new comparison sensors are on the way on his end — so if a real formula ever surfaces, I'll update this post.
 
 ## One thing to know
 

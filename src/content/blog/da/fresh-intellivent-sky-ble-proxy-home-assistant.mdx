@@ -2,7 +2,7 @@
 title: "Badeværelsesventilator-overvågning i Home Assistant: XIAO ESP32-C3 Bluetooth-proxy + Fresh Intellivent Sky"
 description: "XIAO ESP32-C3 som Bluetooth-proxy til Home Assistant, Fresh Intellivent Sky over BLE, og et nedbrud der lignede dårlig rækkevidde, men ikke var det."
 pubDate: 2026-07-08
-updatedDate: 2026-08-26
+updatedDate: 2026-08-27
 verifiedOn: "HA 2026.8"
 tags: ["esp32", "sensorer", "automatisering"]
 lang: "da"
@@ -122,6 +122,14 @@ if values[2] != 0:
 En naturlig logaritme, ikke en lineær skalering. Ikke noget Fresh selv har publiceret — bare noget en anden udvikler fandt frem til og har kørt i produktion i årevis. Jeg testede den på de rå tal, jeg allerede havde: 858 → 41,3%, ~2800-3150 → 39,5-58%. Begge lander lige midt i almindelige badeværelses-fugtighedsniveauer, ikke et tilfældigt resultat af at proppe tal ind i en tilfældig formel. Byggede den som to `template`-sensorer i Home Assistant, og satte begge automationer tilbage til deres oprindelige thresholds — 70% i 45 minutter for skimmelrisiko, 3,33%/min for hurtig stigning — nu bare mod en anden kildeentitet end før.
 
 Selve skiftet var ikke kun et spørgsmål om at pege på et nyt GitHub-repo i HACS. Geninstallationen af Bluetooth-proxyen — samme kort som tidligere i indlægget — udløste en kortvarig afbrydelse af dens ESPHome-forbindelse på omkring 20 minutter, der ved første øjekast lignede endnu et nedbrud, men rettede sig selv. Og fordi automationer og dashboardkort begge havde hardcodede entity_id'er fra den gamle integration, skulle hver reference findes og rettes manuelt — hvilket samtidig afslørede, at de to badeværelseskort på dashboardet i lang tid havde vist hinandens data, fordi titel og entity-mapping på et tidspunkt var blevet byttet om uden at jeg havde opdaget det.
+
+## Opdatering: formlens pålidelighed er stadig uafklaret
+
+Efter dette indlæg blev publiceret, hørte jeg fra udvikleren bag `Spit68/Fresh-Intellivent-Sky`. Det viser sig, at han allerede havde lagt et solidt stykke arbejde i præcis dette problem — prøvet LaStrada's log-formel ovenfor, en række andre formler, skilt en SKY-enhed ad for at se selve fugtsensor-chippen, arbejdet ud fra dens datablad, og endda fodret en AI med en bunke rå-tal/reference-fugtighed-par. Intet af det gav en formel solid nok til at sende som en rigtig procent-sensor — hvilket er præcis derfor `humidity_sensor_raw` er slået fra som standard i hans repo, i stedet for et gæt udklædt som data. Respekt for at holde den linje i stedet for at sende noget der ser rigtigt ud, men ikke er det.
+
+Det vigtigste datapunkt: to SKY-enheder side om side, i formodentlig ens fugtighed, kan vise rå-tal så forskellige som 100 vs. 300. Det er ikke en lineær forskydning man kan kalibrere væk — det peger på at det rå register slet ikke er på samme skala på tværs af enheder.
+
+Det ændrer, hvad jeg egentlig har valideret ovenfor. Log-formlen gav plausible tal for min specifikke ventilator, og mine to automationer virker stadig, fordi de sætter thresholds konsekvent mod netop den ventilators egen baseline over tid — ikke fordi formlen er en bevist, generel rå-til-procent-konvertering. Genskaber du dette for dine egne SKY-enheder, så behandl tallet som en relativ trend-indikator, ikke en kalibreret procent, indtil du har tjekket det mod et rigtigt hygrometer i dit eget badeværelse. Han er heller ikke færdig med at jagte det endnu — nye sammenligningssensorer er på vej hans side — så dukker der en rigtig formel op, opdaterer jeg dette indlæg.
 
 ## Én ting værd at vide
 

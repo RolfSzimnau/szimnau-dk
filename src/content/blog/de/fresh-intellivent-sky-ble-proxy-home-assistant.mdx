@@ -2,7 +2,7 @@
 title: "Badlüfter-Überwachung in Home Assistant: XIAO ESP32-C3 Bluetooth-Proxy + Fresh Intellivent Sky"
 description: "XIAO ESP32-C3 als Bluetooth-Proxy für Home Assistant, Fresh Intellivent Sky Lüfter über BLE, und ein Absturz, der wie ein Reichweitenproblem aussah."
 pubDate: 2026-07-08
-updatedDate: 2026-08-26
+updatedDate: 2026-08-27
 verifiedOn: "HA 2026.8"
 tags: ["esp32", "sensoren", "automatisierung"]
 lang: "de"
@@ -122,6 +122,14 @@ Ein natürlicher Logarithmus, keine lineare Skala. Nichts, was Fresh selbst je v
 Zum Ausgleich: mehr Kontrolle, als die alte Integration je hatte. Boost und Pause mit Dauer und Drehzahl, ein Schalter für konstante Geschwindigkeit, Drehzahlvorgaben je Betriebsmodus, Night Mode und Silent Hours mit eigenen Start- und Endzeiten, dazu Empfindlichkeitsstufen für Feuchte-, VOC- und Lichterkennung. Automatisierungen können den Lüfter jetzt wirklich boosten, statt nur eine Erinnerung dafür zu verschicken.
 
 Der Wechsel selbst war kein reines Konfigurationsproblem. Die Neuinstallation des Bluetooth-Proxys — dasselbe Board wie oben im Beitrag — kappte für rund 20 Minuten die ESPHome-Verbindung, was zunächst wie ein erneuter Totalausfall aussah, sich aber von selbst löste. Automatisierungen und Dashboard-Karten hatten außerdem beide noch hartcodierte Entity-IDs der alten Integration, die einzeln aufgespürt und ersetzt werden mussten — dabei kam heraus, dass die beiden Bad-Karten im Dashboard schon länger die Werte des jeweils anderen Bads anzeigten, weil Kartentitel und Entity-Zuordnung irgendwann vertauscht worden waren, ohne dass ich es bemerkt hatte.
+
+## Update: die Zuverlässigkeit der Formel ist weiterhin ungeklärt
+
+Nach der Veröffentlichung dieses Beitrags habe ich vom Entwickler hinter `Spit68/Fresh-Intellivent-Sky` gehört. Er hatte bereits ernsthafte Arbeit in genau dieses Problem gesteckt — die LaStrada-Log-Formel oben ausprobiert, mehrere andere Formeln, eine SKY-Einheit auseinandergenommen, um den eigentlichen Feuchtigkeitssensor-Chip zu sehen, mit dessen Datenblatt gearbeitet, und sogar eine KI mit einem Haufen Rohwert/Referenz-Feuchtigkeit-Paaren gefüttert. Nichts davon ergab eine Formel, die solide genug wäre, um als echten Prozent-Sensor auszuliefern — genau deshalb bleibt `humidity_sensor_raw` in seinem Repo standardmäßig deaktiviert, statt eine Vermutung als Daten zu verkaufen. Respekt dafür, diese Linie zu halten, statt etwas auszuliefern, das richtig aussieht, es aber nicht ist.
+
+Der wichtigste Datenpunkt: zwei SKY-Einheiten nebeneinander, bei vermutlich ähnlicher Luftfeuchtigkeit, können Rohwerte melden, die sich so stark unterscheiden wie 100 gegenüber 300. Das ist kein linearer Versatz, den man wegkalibrieren kann — es deutet darauf hin, dass das Rohregister geräteübergreifend gar nicht auf derselben Skala liegt.
+
+Das relativiert, was ich oben tatsächlich validiert habe. Die Log-Formel lieferte plausible Zahlen für meinen konkreten Lüfter, und meine beiden Automatisierungen funktionieren weiterhin, weil sie konsequent gegen die eigene Baseline genau dieses einen Lüfters über die Zeit schwellenwerten — nicht weil die Formel eine bewiesene, allgemeingültige Roh-zu-Prozent-Umrechnung ist. Wer das für die eigenen SKY-Einheiten nachbaut, sollte die resultierende Zahl als relativen Trendindikator behandeln, nicht als kalibrierten Prozentwert — bis man sie gegen ein echtes Hygrometer im eigenen Bad geprüft hat. Auch er ist mit der Suche noch nicht fertig — neue Vergleichssensoren sind bei ihm unterwegs — taucht also irgendwann eine echte Formel auf, aktualisiere ich diesen Beitrag.
 
 ## Eine Sache, die man wissen sollte
 
