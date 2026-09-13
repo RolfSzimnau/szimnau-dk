@@ -2,6 +2,7 @@
 title: "Škoda Elroq und Home Assistant, sechs Monate später"
 description: "Was die MyŠkoda-Integration in Home Assistant wirklich bietet, was fehlt — und ein nützliches EV-Dashboard mit Batterie-Fortschritt und Vorwärmung."
 pubDate: 2026-04-13
+updatedDate: 2026-09-13
 verifiedOn: "HA 2026.7"
 tags: ["ev", "dashboard"]
 lang: "de"
@@ -27,6 +28,16 @@ VW Group hat App-Attestierungsanforderungen eingeführt, die den Drittanbieterzu
 Automationen, die auf Befehlen basieren — z. B. kalenderbasierte Vorkonditionierung — sind unzuverlässig. VW hat angekündigt, dass Apps ohne formelle Vereinbarung mit VW Group Info Services künftig keinen Zugang mehr erhalten. Der EU Data Act (12. Sept. 2026) könnte dies rechtlich ändern.
 
 Aktueller Stand: [GitHub-Issues](https://github.com/skodaconnect/homeassistant-myskoda/issues).
+
+</div>
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, September 2026 — Abschaltung angekündigt**
+
+Škoda hat angekündigt, dass MySkoda im Oktober 2026 komplett aufhört zu funktionieren, sobald das zugrundeliegende Backend abgeschaltet wird. Eine offizielle Home-Assistant-Integration ist mit dem 2026.10-Release "erwartet", aber das Datum ist nicht bestätigt.
+
+Ich migriere meine eigenen Elroq-Automationen bereits zu [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), einer gepflegten Alternative, die Škoda bereits über mehrere Kanäle unterstützt. Wer noch MySkoda nutzt, sollte VW Group Connect schon jetzt anmelden, statt auf die Abschaltung zu warten — beide laufen problemlos parallel. Eine 1:1-Umbenennung ist es aber nicht: Die Entity-Namen unterscheiden sich (`garage_<autoname>_*`, nicht `skoda_elroq_*`), und mindestens ein Enum-Sensor ändert komplett die Groß-/Kleinschreibung — MySkodas `charging_state` ist kleingeschrieben (`ready_for_charging`), das VW-Group-Connect-Pendant ist großgeschrieben (`READY_FOR_CHARGING`). Prüfe die State-Vergleiche jeder Automation von Hand; verlass dich nicht auf Gleichheit.
 
 </div>
 

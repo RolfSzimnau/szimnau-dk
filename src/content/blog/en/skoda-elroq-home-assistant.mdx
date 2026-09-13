@@ -2,6 +2,7 @@
 title: "Škoda Elroq and Home Assistant, Six Months Later"
 description: "What the MyŠkoda integration actually gives you in HA, what's missing, and a useful EV dashboard with battery progress and pre-conditioning."
 pubDate: 2026-04-13
+updatedDate: 2026-09-13
 verifiedOn: "HA 2026.7"
 tags: ["ev", "dashboard"]
 lang: "en"
@@ -27,6 +28,16 @@ VW Group has introduced app attestation requirements, gradually restricting thir
 Automations that rely on commands — such as calendar-triggered pre-conditioning — are unreliable. VW has stated that apps without a formal agreement with VW Group Info Services will lose access going forward. The EU Data Act (12 Sept. 2026) may change this legally.
 
 See [GitHub issues](https://github.com/skodaconnect/homeassistant-myskoda/issues) for the latest status.
+
+</div>
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, September 2026 — end of life announced**
+
+Škoda has announced that MySkoda will stop working entirely in October 2026, once the backend it depends on is retired. An official Home Assistant integration is "expected" with the 2026.10 release, but that date isn't confirmed.
+
+I've started migrating my own Elroq automations to [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), a maintained alternative that already supports Škoda over several channels. If you're still on MySkoda, get VW Group Connect authenticated now rather than waiting for the cutover — the two run side by side fine. Don't expect a drop-in rename, though: entity names differ (`garage_<car_name>_*`, not `skoda_elroq_*`), and at least one enum sensor changes case entirely — MySkoda's `charging_state` is lowercase (`ready_for_charging`), VW Group Connect's equivalent is uppercase (`READY_FOR_CHARGING`). Check every automation's state comparisons by hand; don't assume parity.
 
 </div>
 
