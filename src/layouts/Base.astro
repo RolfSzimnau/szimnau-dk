@@ -15,6 +15,7 @@ interface Props {
   pubDate?: Date;
   heroImage?: string;
   translationKey?: string;
+  noindex?: boolean;
 }
 
 const {
@@ -25,6 +26,7 @@ const {
   type = 'website',
   pubDate,
   heroImage,
+  noindex = false,
 } = Astro.props;
 const t = useTranslations(lang);
 ---
@@ -50,10 +52,11 @@ const t = useTranslations(lang);
       type={type}
       pubDate={pubDate}
       heroImage={heroImage}
+      noindex={noindex}
     />
   </head>
   <body class="min-h-dvh bg-navy">
-    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:rounded-lg focus:bg-blue focus:text-navy focus:px-4 focus:py-2 focus:font-bold">{t('nav.skip')}</a>
+    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:rounded-xl focus:bg-blue focus:text-navy focus:px-4 focus:py-2 focus:font-bold">{t('nav.skip')}</a>
     <Header lang={lang} />
     <main id="main">
       <slot />

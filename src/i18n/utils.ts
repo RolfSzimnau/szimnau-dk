@@ -18,6 +18,10 @@ export function getLocalePath(lang: Lang, path: string = ''): string {
 
 export function switchLocale(currentPath: string, targetLang: Lang): string {
   const parts = currentPath.split('/').filter(Boolean);
+  // The 404 page has no per-language counterpart either.
+  if (parts[0]?.startsWith('404')) {
+    return `/${targetLang}/`;
+  }
   // Tag slugs are translated per language (energy / energi / energie), so a tag
   // page has no counterpart URL. Send the switcher to the blog index instead.
   if (parts[1] === 'blog' && parts[2] === 'tag') {

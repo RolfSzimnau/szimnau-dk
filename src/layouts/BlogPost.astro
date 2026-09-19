@@ -128,12 +128,12 @@ const breadcrumbJsonLd = {
         loading="eager"
         fetchpriority="high"
         decoding="async"
-        class="w-full aspect-video object-cover rounded-2xl mb-12 border border-glass-border"
+        class="w-full aspect-video object-cover rounded-[28px] mb-12 border border-glass-border"
       />
     )}
 
     {showToc && (
-      <nav class="mb-12 rounded-2xl border border-glass-border bg-white/[0.03] px-6 py-5">
+      <nav class="mb-12 rounded-xl border border-glass-border bg-white/[0.03] px-6 py-5">
         <p class="font-mono text-xs uppercase tracking-widest text-text-muted mb-3">{labels.toc}</p>
         <ul class="space-y-1.5">
           {tocHeadings.map(h => (
@@ -154,7 +154,7 @@ const breadcrumbJsonLd = {
         <h2 class="font-heading text-xl font-bold text-text-primary mb-6">{labels.related}</h2>
         <div class="grid gap-4 sm:grid-cols-3">
           {related.map(({ post }) => (
-            <a href={`/${lang}/blog/${post.data.translationKey}/`} class="block rounded-2xl border border-glass-border bg-white/[0.03] p-5 hover:border-blue/40 transition-colors">
+            <a href={`/${lang}/blog/${post.data.translationKey}/`} class="block rounded-xl border border-glass-border bg-white/[0.03] p-5 hover:border-blue/40 transition-colors">
               <p class="font-heading font-semibold text-text-primary text-sm leading-snug mb-2">{post.data.title}</p>
               <p class="text-xs text-text-muted line-clamp-3">{post.data.description}</p>
             </a>

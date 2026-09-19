@@ -1,0 +1,37 @@
+---
+import Base from '../layouts/Base.astro';
+
+const links = [
+  { lang: 'en', heading: 'Page not found', body: 'That address does not exist or has moved.', home: 'Home', blog: 'Blog' },
+  { lang: 'da', heading: 'Siden findes ikke', body: 'Adressen findes ikke eller er flyttet.', home: 'Hjem', blog: 'Blog' },
+  { lang: 'de', heading: 'Seite nicht gefunden', body: 'Diese Adresse existiert nicht oder wurde verschoben.', home: 'Start', blog: 'Blog' },
+];
+---
+
+<Base
+  title="Page not found"
+  description="The page you are looking for does not exist or has moved. Head back to the home page, browse the blog, or pick a language."
+  lang="en"
+  noindex
+>
+  <section class="min-h-[70dvh] flex items-center px-6 pt-24 pb-16">
+    <div class="max-w-6xl mx-auto w-full">
+      <p class="font-mono text-blue text-sm tracking-widest mb-4">404</p>
+      <h1 class="font-heading text-4xl sm:text-5xl lg:text-[3.75rem] font-bold text-text-primary leading-[1.1] tracking-tight mb-10">
+        That page is not here.
+      </h1>
+      <div class="grid gap-4 md:grid-cols-3">
+        {links.map(l => (
+          <div class="glass-card p-6" lang={l.lang}>
+            <p class="font-heading font-bold text-text-primary mb-1">{l.heading}</p>
+            <p class="text-text-muted text-sm leading-relaxed mb-5">{l.body}</p>
+            <div class="flex gap-5 text-sm font-medium">
+              <a href={`/${l.lang}/`} class="text-blue hover:underline">{l.home}</a>
+              <a href={`/${l.lang}/blog/`} class="text-blue hover:underline">{l.blog}</a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>

@@ -32,7 +32,7 @@ export const GET: APIRoute = async ({ site }) => {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>szimnau.dk — From the Lab</title>
+    <title>szimnau.dk: From the Lab</title>
     <link>${origin}/en/blog/</link>
     <atom:link href="${origin}/rss.xml" rel="self" type="application/rss+xml" />
     <description>Real-world Home Assistant guides, hardware reviews, and automation blueprints.</description>

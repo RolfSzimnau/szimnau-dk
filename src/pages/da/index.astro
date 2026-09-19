@@ -22,36 +22,50 @@ const posts = allPosts
   description="Dybdegående guides til Home Assistant, hardware-anmeldelser og automatiseringsblueprints af Rolf Szimnau."
   lang={lang}
 >
-  <section class="min-h-[72dvh] flex items-center px-6 pt-28 pb-16 relative overflow-hidden">
+  <section class="min-h-[72dvh] flex items-center px-6 pt-24 pb-16 relative overflow-hidden">
     <div class="absolute inset-0 pointer-events-none">
       <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue/5 rounded-full blur-[120px]"></div>
     </div>
     <div class="max-w-6xl mx-auto w-full relative z-10">
-      <div class="max-w-3xl">
-        <p class="flex items-center gap-3 font-mono text-blue text-sm mb-4 tracking-widest uppercase animate-fade-in"><span class="h-px w-8 bg-blue/60"></span>Hjemmeautomatisering</p>
-        <h1 class="font-heading text-4xl sm:text-6xl md:text-7xl font-bold text-text-primary leading-[1.1] break-words mb-6">
-          {t('hero.headline').split(t('hero.highlight')).map((part, i) => (
+      <p class="flex items-center gap-3 font-mono text-blue text-sm mb-4 tracking-widest uppercase animate-fade-in"><span class="h-px w-8 bg-blue/60"></span>Hjemmeautomatisering</p>
+      <h1 class="font-heading text-4xl sm:text-5xl lg:text-[3.75rem] font-bold text-text-primary leading-[1.1] tracking-tight break-words max-w-5xl mb-8">
+        {t('hero.headline').split(t('hero.highlight')).map((part, i) => (
             i === 0
               ? <span>{part}<span class="text-blue">{t('hero.highlight')}</span></span>
               : <span>{part}</span>
           ))}
-        </h1>
-        <p class="text-text-muted text-xl leading-relaxed mb-10 max-w-2xl">
-          {t('hero.subheadline')}
-        </p>
-        <div class="flex flex-wrap gap-4">
-          <a href={`/${lang}/blog/`} class="inline-flex items-center gap-2 bg-blue text-navy font-bold px-7 py-4 rounded-xl hover:bg-blue-dim transition-colors text-base">
-            {t('hero.cta.blog')}
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-          <a href={`/${lang}/#hardware-lab`} class="inline-flex items-center gap-2 border border-blue/40 text-blue font-bold px-7 py-4 rounded-xl hover:bg-blue/5 transition-colors text-base">
-            {t('hero.cta.hardware')}
-          </a>
+      </h1>
+      <div class="grid lg:grid-cols-12 gap-10 items-end">
+        <div class="lg:col-span-7">
+          <p class="text-text-muted text-xl leading-relaxed mb-8 max-w-2xl">
+            {t('hero.subheadline')}
+          </p>
+          <div class="flex flex-wrap gap-4">
+            <a
+              href={`/${lang}/blog/`}
+              class="inline-flex items-center gap-2 bg-blue text-navy font-bold px-7 py-4 rounded-xl hover:bg-blue-dim transition-colors text-base"
+            >
+              {t('hero.cta.blog')}
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </a>
+            <a
+              href={`/${lang}/#hardware-lab`}
+              class="inline-flex items-center gap-2 border border-blue/40 text-blue font-bold px-7 py-4 rounded-xl hover:bg-blue/5 transition-colors text-base"
+            >
+              {t('hero.cta.hardware')}
+            </a>
+          </div>
         </div>
-        <div class="flex items-center gap-4 mt-10 max-w-2xl">
-          {hasPhoto && <img src="/rolf.jpg" alt="Rolf Szimnau" width="56" height="56" loading="eager" class="w-14 h-14 rounded-full object-cover border-2 border-blue/40 shrink-0" />}
-          <p class="text-text-muted text-sm leading-relaxed">Jeg hedder Rolf og bor i det sydjyske, hvor jeg har automatiseret det meste af huset — her skriver jeg om det, der rent faktisk virker. <span class="text-text-primary">Lige skudt i luften: en vaskemaskine der selv venter på den billigste strøm, før den starter.</span></p>
-        </div>
+        <a href={`/${lang}/about/`} class="lg:col-span-5 glass-card p-6 flex items-start gap-5 group hover:border-blue/20 transition-colors">
+          {hasPhoto && <img src="/rolf.jpg" alt="" width="72" height="72" loading="eager" class="w-[72px] h-[72px] rounded-xl object-cover border border-glass-border shrink-0" />}
+          <div>
+            <p class="font-heading font-bold text-text-primary group-hover:text-blue transition-colors">Rolf Szimnau</p>
+            <p class="font-mono text-xs text-blue mb-2">{t('about.role')}</p>
+            <p class="text-text-muted text-sm leading-relaxed">Jeg bor i det sydjyske, hvor jeg har automatiseret det meste af huset, og her skriver jeg om det, der rent faktisk virker.</p>
+          </div>
+        </a>
       </div>
     </div>
   </section>
@@ -59,12 +73,8 @@ const posts = allPosts
   {posts.length > 0 && (
     <section class="py-24 px-6">
       <div class="max-w-6xl mx-auto">
-        <div class="flex items-end justify-between mb-10">
-          <div>
-            <p class="flex items-center gap-3 font-mono text-blue text-sm mb-2 tracking-wider uppercase"><span class="h-px w-8 bg-blue/60"></span>Blog</p>
-            <h2 class="font-heading text-3xl font-bold text-text-primary">{t('blog.title')}</h2>
-          </div>
-          <a href={`/${lang}/blog/`} class="text-blue text-sm hover:underline font-mono hidden sm:block">{t('blog.alltags')} →</a>
+        <div class="mb-10">
+          <h2 class="font-heading text-3xl font-bold text-text-primary">{t('blog.title')}</h2>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           {posts.map((post, i) => {
