@@ -12,9 +12,7 @@ const { class: className, subject } = Astro.props;
   data-subject={subject ?? ''}
   href="#"
   class={className}
->
-  <slot><span data-email-text>rolf [at] szimnau.dk</span></slot>
-</a>
+><slot><span data-email-text>rolf [at] szimnau.dk</span></slot></a>
 <script>
   document.querySelectorAll('[data-email-obf]').forEach(el => {
     const u = el.getAttribute('data-u') ?? '';

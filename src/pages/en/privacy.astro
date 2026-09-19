@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import PrivacyContent from '../../components/PrivacyContent.astro';
+
+const lang = 'en';
+---
+
+<Base
+  title="Privacy"
+  description="What this site stores and measures: no cookies of its own, cookieless visit counting with Cloudflare, and one Cloudflare security cookie."
+  lang={lang}
+>
+  <PrivacyContent lang={lang} />
+</Base>

@@ -39,6 +39,7 @@ export const ui = {
     'about.role': 'Home Automation Specialist & IT Advisor',
     'footer.tagline': 'Home Automation · Home Assistant · Smart Hardware',
     'footer.rights': 'All rights reserved.',
+    'footer.privacy': 'Privacy',
     'blog.tag.title': 'Articles tagged:',
   },
   da: {
@@ -72,6 +73,7 @@ export const ui = {
     'about.role': 'Home Automation Specialist & IT-rådgiver',
     'footer.tagline': 'Hjemmeautomatisering · Home Assistant · Smart Hardware',
     'footer.rights': 'Alle rettigheder forbeholdes.',
+    'footer.privacy': 'Privatliv',
     'blog.tag.title': 'Artikler med tag:',
   },
   de: {
@@ -105,6 +107,7 @@ export const ui = {
     'about.role': 'Home Automation Spezialist & IT-Berater',
     'footer.tagline': 'Heimautomatisierung · Home Assistant · Smart Hardware',
     'footer.rights': 'Alle Rechte vorbehalten.',
+    'footer.privacy': 'Datenschutz',
     'blog.tag.title': 'Artikel mit Tag:',
   },
 } satisfies Record<Lang, Record<string, string>>;

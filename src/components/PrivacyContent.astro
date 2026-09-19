@@ -1,0 +1,98 @@
+---
+import type { Lang } from '../i18n/ui';
+import EmailLink from './EmailLink.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+const links = {
+  cfPrivacy: 'https://www.cloudflare.com/privacypolicy/',
+  cfCookies: 'https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/',
+  datatilsynet: 'https://www.datatilsynet.dk/',
+};
+
+const text = {
+  en: {
+    eyebrow: 'Privacy',
+    title: 'Privacy',
+    intro: 'This is a personal site. It has no accounts, forms, comments or ads, and I do not collect personal data myself. Here is what still happens when you visit.',
+    sections: [
+      { h: 'What the site itself stores', p: 'Nothing of its own. The code of the site sets no cookies and uses no local storage. The Cloudflare security cookie is described below. Fonts and images are served from the site itself, and there are no embeds from third parties.' },
+      { h: 'Visit counting', p: 'I count visits with Cloudflare Web Analytics. According to Cloudflare, it uses no cookies or local storage, does not fingerprint visitors, and does not use personal data to show me the statistics. I see totals such as page views, countries and page speed, not individuals.' },
+      { h: 'Security cookie', p: 'The site runs behind Cloudflare, which delivers it and protects it against bots. Cloudflare bot protection runs a small script in your browser to tell people from automated traffic, and it can set one cookie called cf_clearance on your device. The cookie expires after up to a year. Cloudflare classes it as strictly necessary for security, and I do not use it for tracking. What the script checks is decided by Cloudflare. As with any hosting, Cloudflare also processes your IP address to deliver the pages.', more: true },
+    ],
+    cfPrivacy: 'Cloudflare privacy policy',
+    cfCookies: 'Cloudflare cookie list',
+    contactH: 'Contact and complaints',
+    contactPre: 'Questions about this page can go to',
+    contactPost: 'If you disagree with how your data is handled, you can complain to the Danish Data Protection Agency, ',
+    dt: 'Datatilsynet',
+    updated: 'Last updated 19 September 2026.',
+  },
+  da: {
+    eyebrow: 'Privatliv',
+    title: 'Privatliv',
+    intro: 'Det her er et personligt site. Det har ingen konti, formularer, kommentarer eller reklamer, og jeg indsamler ikke selv personoplysninger. Her er, hvad der alligevel sker, når du besøger det.',
+    sections: [
+      { h: 'Hvad sitet selv gemmer', p: 'Ingenting fra sitet selv. Sitets egen kode sætter ingen cookies og bruger ikke local storage. Cloudflares sikkerhedscookie beskrives nedenfor. Skrifter og billeder leveres fra sitet selv, og der er ingen indlejret indhold fra tredjeparter.' },
+      { h: 'Besøgstælling', p: 'Jeg tæller besøg med Cloudflare Web Analytics. Ifølge Cloudflare bruger den hverken cookies eller local storage, den fingeraftrykker ikke besøgende, og den bruger ikke personoplysninger til at vise mig statistikken. Jeg ser totaler som sidevisninger, lande og sidehastighed, ikke enkeltpersoner.' },
+      { h: 'Sikkerhedscookie', p: 'Sitet kører bag Cloudflare, som leverer det og beskytter det mod bots. Cloudflares botbeskyttelse kører et lille script i din browser for at kende forskel på mennesker og automatisk trafik, og den kan sætte én cookie, cf_clearance, på din enhed. Cookien udløber efter op til et år. Cloudflare betegner den som strengt nødvendig for sikkerheden, og jeg bruger den ikke til sporing. Hvad scriptet tjekker, bestemmer Cloudflare selv. Som ved al hosting behandler Cloudflare også din IP-adresse for at levere siderne.', more: true },
+    ],
+    cfPrivacy: 'Cloudflares privatlivspolitik',
+    cfCookies: 'Cloudflares cookieliste',
+    contactH: 'Kontakt og klager',
+    contactPre: 'Spørgsmål til denne side kan sendes til',
+    contactPost: 'Er du uenig i, hvordan dine oplysninger håndteres, kan du klage til ',
+    dt: 'Datatilsynet',
+    updated: 'Sidst opdateret 19. september 2026.',
+  },
+  de: {
+    eyebrow: 'Datenschutz',
+    title: 'Datenschutz',
+    intro: 'Dies ist eine persönliche Website. Sie hat keine Konten, Formulare, Kommentare oder Werbung, und ich erhebe selbst keine personenbezogenen Daten. Hier steht, was beim Besuch trotzdem passiert.',
+    sections: [
+      { h: 'Was die Seite selbst speichert', p: 'Nichts von der Seite selbst. Der eigene Code der Seite setzt keine Cookies und nutzt keinen Local Storage. Das Sicherheits-Cookie von Cloudflare wird unten beschrieben. Schriften und Bilder kommen von der Seite selbst, und es gibt keine eingebetteten Inhalte von Dritten.' },
+      { h: 'Besuchszählung', p: 'Ich zähle Besuche mit Cloudflare Web Analytics. Laut Cloudflare verwendet der Dienst weder Cookies noch Local Storage, erstellt keine Fingerabdrücke der Besucher und nutzt keine personenbezogenen Daten für die Statistik. Ich sehe Summen wie Seitenaufrufe, Länder und Ladezeiten, keine einzelnen Personen.' },
+      { h: 'Sicherheits-Cookie', p: 'Die Seite läuft hinter Cloudflare, das sie ausliefert und vor Bots schützt. Der Bot-Schutz von Cloudflare führt in Ihrem Browser ein kleines Skript aus, um Menschen von automatisiertem Verkehr zu unterscheiden, und kann ein Cookie namens cf_clearance auf Ihrem Gerät setzen. Es läuft nach bis zu einem Jahr ab. Cloudflare stuft es als unbedingt erforderlich für die Sicherheit ein, und ich nutze es nicht zum Tracking. Was das Skript prüft, entscheidet Cloudflare selbst. Wie bei jedem Hosting verarbeitet Cloudflare außerdem Ihre IP-Adresse, um die Seiten auszuliefern.', more: true },
+    ],
+    cfPrivacy: 'Datenschutzerklärung von Cloudflare',
+    cfCookies: 'Cookie-Liste von Cloudflare',
+    contactH: 'Kontakt und Beschwerden',
+    contactPre: 'Fragen zu dieser Seite gerne an',
+    contactPost: 'Wenn Sie mit dem Umgang mit Ihren Daten nicht einverstanden sind, können Sie sich bei der dänischen Datenschutzbehörde beschweren: ',
+    dt: 'Datatilsynet',
+    updated: 'Zuletzt aktualisiert: 19. September 2026.',
+  },
+}[lang];
+---
+
+<div class="max-w-3xl mx-auto px-6 py-24">
+  <header class="mb-12">
+    <p class="flex items-center gap-3 font-mono text-blue text-sm mb-3 tracking-wider uppercase"><span class="h-px w-8 bg-blue/60"></span>{text.eyebrow}</p>
+    <h1 class="font-heading text-4xl sm:text-5xl font-bold text-text-primary mb-6">{text.title}</h1>
+    <p class="text-text-muted text-lg leading-relaxed">{text.intro}</p>
+  </header>
+
+  <div class="prose">
+    {text.sections.map(s => (
+      <>
+        <h2>{s.h}</h2>
+        <p>{s.p}</p>
+        {s.more && (
+          <p>
+            <a href={links.cfCookies} target="_blank" rel="noopener noreferrer">{text.cfCookies}</a>
+            {' · '}
+            <a href={links.cfPrivacy} target="_blank" rel="noopener noreferrer">{text.cfPrivacy}</a>
+          </p>
+        )}
+      </>
+    ))}
+
+    <h2>{text.contactH}</h2>
+    <p>{text.contactPre} <EmailLink />. {text.contactPost}<a href={links.datatilsynet} target="_blank" rel="noopener noreferrer">{text.dt}</a>.</p>
+    <p class="text-sm">{text.updated}</p>
+  </div>
+</div>

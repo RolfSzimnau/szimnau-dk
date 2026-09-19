@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import PrivacyContent from '../../components/PrivacyContent.astro';
+
+const lang = 'da';
+---
+
+<Base
+  title="Privatliv"
+  description="Hvad sitet gemmer og måler: ingen egne cookies, cookiefri besøgstælling med Cloudflare og én sikkerhedscookie fra Cloudflares botbeskyttelse."
+  lang={lang}
+>
+  <PrivacyContent lang={lang} />
+</Base>

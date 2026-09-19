@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import PrivacyContent from '../../components/PrivacyContent.astro';
+
+const lang = 'de';
+---
+
+<Base
+  title="Datenschutz"
+  description="Was diese Seite speichert und misst: keine eigenen Cookies, Besuchszählung ohne Cookies über Cloudflare und ein Sicherheits-Cookie von Cloudflare."
+  lang={lang}
+>
+  <PrivacyContent lang={lang} />
+</Base>
