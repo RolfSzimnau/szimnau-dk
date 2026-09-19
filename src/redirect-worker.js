@@ -21,7 +21,8 @@ export default {
       changed = true;
     }
 
-    const looksLikeFile = /\.[a-zA-Z0-9]+$/.test(pathname);
+    // Any dot in the last path segment means a file (pagefind uses .pf_meta, .pf_index, .pf_fragment).
+    const looksLikeFile = /\.[^/.]+$/.test(pathname);
     if (pathname !== '/' && !pathname.endsWith('/') && !looksLikeFile) {
       url.pathname = pathname + '/';
       changed = true;
