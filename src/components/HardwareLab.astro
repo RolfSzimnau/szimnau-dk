@@ -6,7 +6,11 @@ interface Props {
   lang: Lang;
 }
 
+import fs from 'node:fs';
 const { lang } = Astro.props;
+const iconSvg = (name: string) =>
+  fs.readFileSync(`node_modules/@phosphor-icons/core/assets/regular/${name}.svg`, 'utf-8')
+    .replace('<svg ', '<svg width="24" height="24" aria-hidden="true" focusable="false" ');
 const t = useTranslations(lang);
 
 const hardware = [
@@ -15,7 +19,7 @@ const hardware = [
     category: 'Proxmox Host',
     description: 'Intel i5-8500, 32GB RAM, 500GB NVMe SSD. Runs Proxmox VE as the home server backbone.',
     status: 'running' as const,
-    icon: '🖥️',
+    icon: 'hard-drives',
     link: null,
   },
   {
@@ -23,7 +27,7 @@ const hardware = [
     category: 'Smart Home Hub',
     description: 'Running as a Proxmox VM with 4 vCPU and 4GB RAM. The brain of the entire smart home.',
     status: 'running' as const,
-    icon: '🏠',
+    icon: 'house-line',
     link: 'https://www.home-assistant.io',
   },
   {
@@ -31,7 +35,7 @@ const hardware = [
     category: 'Thread & Zigbee Radio',
     description: 'Dual-radio USB stick running as an OpenThread Border Router. Alongside the Google TV Streamer it forms a redundant Thread mesh — IKEA and other Thread sensors pair directly with HA without a third-party hub.',
     status: 'running' as const,
-    icon: '📶',
+    icon: 'broadcast',
     link: 'https://www.home-assistant.io/connectzbt2',
   },
   {
@@ -39,7 +43,7 @@ const hardware = [
     category: 'Networking',
     description: 'UniFi Ultra gateway, 8-port PoE switch, and two APs covering the house — rock-solid IoT VLAN isolation.',
     status: 'running' as const,
-    icon: '🌐',
+    icon: 'network',
     link: 'https://ui.com',
   },
   {
@@ -47,7 +51,7 @@ const hardware = [
     category: 'Security Camera',
     description: '4K PoE camera with AI detection for person, vehicle, and animal. Binary sensors feed HA automations for smart alerts.',
     status: 'active' as const,
-    icon: '📷',
+    icon: 'security-camera',
     link: 'https://reolink.com',
   },
   {
@@ -55,7 +59,7 @@ const hardware = [
     category: 'Robot Vacuum',
     description: 'Interactive floor map with room-by-room cleaning control. Custom xiaomi-vacuum-map-card in Lovelace.',
     status: 'active' as const,
-    icon: '🤖',
+    icon: 'robot',
     link: 'https://www.roborock.com',
   },
   {
@@ -63,15 +67,15 @@ const hardware = [
     category: 'Robotic Lawn Mower',
     description: 'GPS + RTK boundary mowing without perimeter wire. RTK corrections via iNav NetRTK. Native HA integration with weather-aware scheduling and satellite count monitoring.',
     status: 'active' as const,
-    icon: '🌿',
+    icon: 'plant',
     link: 'https://mammotion.com',
   },
   {
     name: 'Škoda Elroq',
     category: 'Electric Vehicle',
-    description: 'Integrated via MyŠkoda: battery state, charge control, HVAC pre-conditioning, and price-aware smart charging automations.',
+    description: 'Integrated via VW Group Connect after moving off MyŠkoda ahead of its October 2026 shutdown: battery state, charging status and range in Home Assistant.',
     status: 'active' as const,
-    icon: '🚗',
+    icon: 'car-profile',
     link: null,
   },
   {
@@ -79,7 +83,7 @@ const hardware = [
     category: 'Climate',
     description: '5 zones with auto-discovery in HA. Presence-based setback and animated breathing cards on the dashboard.',
     status: 'running' as const,
-    icon: '🌡️',
+    icon: 'thermometer-simple',
     link: 'https://www.tado.com',
   },
   {
@@ -87,7 +91,7 @@ const hardware = [
     category: 'Bathroom Ventilation',
     description: 'Humidity-sensing extractor fan with its own Bluetooth interface. No official HA integration — bridged via a community BLE proxy project, with a staleness-alert automation to catch when the BLE link drops.',
     status: 'active' as const,
-    icon: '🌬️',
+    icon: 'fan',
     link: 'https://www.fresh.dk',
   },
   {
@@ -95,7 +99,7 @@ const hardware = [
     category: 'Audio',
     description: 'Living room speaker unified with Google Nest Audio via HA scripts — controlled as one multi-room system.',
     status: 'active' as const,
-    icon: '🔊',
+    icon: 'speaker-high',
     link: 'https://www.sonos.com',
   },
   {
@@ -103,7 +107,7 @@ const hardware = [
     category: 'Lighting',
     description: 'Wi-Fi bulbs integrated natively. Used for circadian lighting schedules and TV movie-mode scene automation.',
     status: 'active' as const,
-    icon: '💡',
+    icon: 'lightbulb',
     link: 'https://www.wizconnected.com',
   },
   {
@@ -111,7 +115,7 @@ const hardware = [
     category: 'Lighting',
     description: 'Matter-compatible bulbs bridged to HA without a separate hub. Solid local control with no cloud dependency.',
     status: 'active' as const,
-    icon: '🪔',
+    icon: 'lightbulb-filament',
     link: 'https://www.ledvance.com',
   },
   {
@@ -119,7 +123,7 @@ const hardware = [
     category: 'LED Lighting',
     description: 'Bias lighting and LED strips via the Govee Home integration. Scene-synced with media playback.',
     status: 'active' as const,
-    icon: '✨',
+    icon: 'sparkle',
     link: 'https://www.govee.com',
   },
   {
@@ -127,7 +131,7 @@ const hardware = [
     category: 'Smart Devices',
     description: 'IKEA Thread sensors running on the shared Thread mesh. Two border routers (HA ZBT-2 and Google TV Streamer) provide redundant routing — devices pair directly into HA without a separate hub.',
     status: 'active' as const,
-    icon: '🏗️',
+    icon: 'armchair',
     link: 'https://www.ikea.com',
   },
   {
@@ -135,7 +139,7 @@ const hardware = [
     category: 'Appliances',
     description: 'Dishwasher visible in HA via Home Connect. Push notification, plus a button that schedules the cycle for the cheapest electricity hour.',
     status: 'active' as const,
-    icon: '🫧',
+    icon: 'drop',
     link: 'https://www.home-connect.com',
   },
   {
@@ -143,7 +147,7 @@ const hardware = [
     category: 'Appliances',
     description: 'Washing machine on the core `miele` integration — no HACS. Voice and push alerts when a cycle finishes, plus a homemade scheduling workaround for the delayed-start register Miele doesn\'t expose.',
     status: 'active' as const,
-    icon: '🧺',
+    icon: 'washing-machine',
     link: 'https://www.miele.com',
   },
   {
@@ -151,7 +155,7 @@ const hardware = [
     category: 'Smart Heating',
     description: 'Wi-Fi panel radiators with native HA integration. Per-room temperature control without a gateway.',
     status: 'active' as const,
-    icon: '♨️',
+    icon: 'fire-simple',
     link: 'https://www.millnorway.com',
   },
   {
@@ -159,7 +163,7 @@ const hardware = [
     category: 'DIY Sensors',
     description: 'Custom ESP32/ESP8266 sensors for temperature, humidity, and more. Full local control, no cloud.',
     status: 'active' as const,
-    icon: '📡',
+    icon: 'cpu',
     link: 'https://esphome.io',
   },
   {
@@ -167,7 +171,7 @@ const hardware = [
     category: 'LoRa IoT',
     description: 'PricelessToolkit sensor 200m away via LoRa. Instant push when mail arrives. Running 1+ year on a single battery.',
     status: 'active' as const,
-    icon: '📬',
+    icon: 'envelope-simple',
     link: 'https://github.com/PricelessToolkit/MailBoxGuard',
   },
 ];
@@ -188,7 +192,7 @@ const statusLabels = {
 <section id="hardware-lab" class="py-24 px-6">
   <div class="max-w-6xl mx-auto">
     <div class="mb-12">
-      <p class="flex items-center justify-center gap-3 font-mono text-blue text-sm mb-2 tracking-wider uppercase"><span class="h-px w-8 bg-blue/60"></span>Hardware</p>
+      <p class="flex items-center gap-3 font-mono text-blue text-sm mb-2 tracking-wider uppercase"><span class="h-px w-8 bg-blue/60"></span>Hardware</p>
       <h2 class="font-heading text-3xl sm:text-4xl font-bold text-text-primary mb-4">{t('hardware.title')}</h2>
       <p class="text-text-muted max-w-2xl">{t('hardware.subtitle')}</p>
     </div>
@@ -197,7 +201,7 @@ const statusLabels = {
       {hardware.map(device => (
         <div class="glass-card p-6 group hover:border-blue/20 transition-all duration-300 hover:blue-glow">
           <div class="flex items-start justify-between mb-4">
-            <span class="text-3xl">{device.icon}</span>
+            <span class="flex h-11 w-11 items-center justify-center rounded-xl border border-blue/20 bg-blue-glow text-blue" set:html={iconSvg(device.icon)} />
             <span class={`font-mono text-xs px-2.5 py-1 rounded-full border ${statusColors[device.status]}`}>
               {statusLabels[device.status]}
             </span>

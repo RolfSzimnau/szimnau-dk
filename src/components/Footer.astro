@@ -21,11 +21,12 @@ const year = new Date().getFullYear();
         <p class="text-text-muted text-sm mt-1">{t('footer.tagline')}</p>
       </div>
 
-      <div class="flex items-center gap-6">
+      <nav aria-label="Footer" class="flex flex-wrap justify-center items-center gap-x-6 gap-y-2">
         <a href={`/${lang}/`} class="text-text-muted hover:text-blue text-sm transition-colors">{t('nav.home')}</a>
         <a href={`/${lang}/blog/`} class="text-text-muted hover:text-blue text-sm transition-colors">{t('nav.blog')}</a>
         <a href={`/${lang}/about/`} class="text-text-muted hover:text-blue text-sm transition-colors">{t('nav.about')}</a>
-      </div>
+        <a href={`/${lang}/#hardware-lab`} class="text-text-muted hover:text-blue text-sm transition-colors">{t('nav.hardware')}</a>
+      </nav>
 
       <div class="flex items-center gap-4">
         <a href="https://www.linkedin.com/in/szimnau/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" class="text-text-muted hover:text-blue transition-colors">
@@ -39,7 +40,6 @@ const year = new Date().getFullYear();
     <div class="border-t border-glass-border mt-8 pt-6 text-center">
       <p class="text-text-muted text-xs font-mono">
         © {year} Rolf Szimnau · {t('footer.rights')}
-        <span class="ml-3 opacity-50">EN / DA / DE</span>
       </p>
     </div>
   </div>

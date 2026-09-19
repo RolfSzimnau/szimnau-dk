@@ -2,7 +2,7 @@
 title: "Škoda Elroq und Home Assistant, sechs Monate später"
 description: "Was die MyŠkoda-Integration in Home Assistant wirklich bietet, was fehlt — und ein nützliches EV-Dashboard mit Batterie-Fortschritt und Vorwärmung."
 pubDate: 2026-04-13
-updatedDate: 2026-09-13
+updatedDate: 2026-09-19
 verifiedOn: "HA 2026.7"
 tags: ["ev", "dashboard"]
 lang: "de"
@@ -13,6 +13,8 @@ faqs:
     answer: "The MySkoda integration (HACS) provides battery level, charging state, range, mileage, GPS location, and climate pre-conditioning status. It polls the Škoda Connect cloud API with a 15–60 second latency."
   - question: "What is missing from the MySkoda Home Assistant integration?"
     answer: "The integration cannot control charging limits, does not support real-time streaming, and has no push notifications — it relies entirely on polling. Charge scheduling must be done via Home Assistant automations, not the integration itself."
+  - question: "Funktioniert die MySkoda-Integration in Home Assistant noch?"
+    answer: "MySkoda soll im Oktober 2026 nicht mehr funktionieren, sobald das zugrundeliegende Backend abgeschaltet wird. Ich habe meine eigenen Elroq-Automationen auf VW Group Connect umgestellt, eine gepflegte Alternative mit Škoda-Unterstützung. Die Entity-Namen werden zu garage_<autoname>_* und manche Statuswerte ändern die Schreibweise, also prüfe nach dem Wechsel jede Automation."
 ---
 
 <div style="background:rgba(185,28,28,0.15);border:1px solid rgba(239,68,68,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
@@ -37,7 +39,7 @@ Aktueller Stand: [GitHub-Issues](https://github.com/skodaconnect/homeassistant-m
 
 Škoda hat angekündigt, dass MySkoda im Oktober 2026 komplett aufhört zu funktionieren, sobald das zugrundeliegende Backend abgeschaltet wird. Eine offizielle Home-Assistant-Integration ist mit dem 2026.10-Release "erwartet", aber das Datum ist nicht bestätigt.
 
-Ich migriere meine eigenen Elroq-Automationen bereits zu [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), einer gepflegten Alternative, die Škoda bereits über mehrere Kanäle unterstützt. Wer noch MySkoda nutzt, sollte VW Group Connect schon jetzt anmelden, statt auf die Abschaltung zu warten — beide laufen problemlos parallel. Eine 1:1-Umbenennung ist es aber nicht: Die Entity-Namen unterscheiden sich (`garage_<autoname>_*`, nicht `skoda_elroq_*`), und mindestens ein Enum-Sensor ändert komplett die Groß-/Kleinschreibung — MySkodas `charging_state` ist kleingeschrieben (`ready_for_charging`), das VW-Group-Connect-Pendant ist großgeschrieben (`READY_FOR_CHARGING`). Prüfe die State-Vergleiche jeder Automation von Hand; verlass dich nicht auf Gleichheit.
+Ich habe meine eigenen Elroq-Automationen bereits auf [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha) umgestellt, eine gepflegte Alternative, die Škoda über mehrere Kanäle unterstützt. Wer noch MySkoda nutzt, sollte VW Group Connect schon jetzt anmelden, statt auf die Abschaltung zu warten — beide laufen problemlos parallel. Eine 1:1-Umbenennung ist es aber nicht: Die Entity-Namen unterscheiden sich (`garage_<autoname>_*`, nicht `skoda_elroq_*`), und mindestens ein Enum-Sensor ändert komplett die Groß-/Kleinschreibung — MySkodas `charging_state` ist kleingeschrieben (`ready_for_charging`), das VW-Group-Connect-Pendant ist großgeschrieben (`READY_FOR_CHARGING`). Prüfe die State-Vergleiche jeder Automation von Hand; verlass dich nicht auf Gleichheit.
 
 </div>
 

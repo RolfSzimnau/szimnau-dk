@@ -10,37 +10,45 @@ const { lang } = Astro.props;
 const t = useTranslations(lang);
 const currentPath = Astro.url.pathname;
 const langs: Lang[] = ['en', 'da', 'de'];
+const langNames = { en: 'English', da: 'Dansk', de: 'Deutsch' } as const;
+const navItems = [
+  { href: `/${lang}/`, label: t('nav.home'), active: currentPath === `/${lang}/` },
+  { href: `/${lang}/blog/`, label: t('nav.blog'), active: currentPath.startsWith(`/${lang}/blog`) },
+  { href: `/${lang}/about/`, label: t('nav.about'), active: currentPath.startsWith(`/${lang}/about`) },
+  { href: `/${lang}/#hardware-lab`, label: t('nav.hardware'), active: false },
+];
 ---
 
 <header
   id="site-header"
   class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
 >
-  <nav class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+  <nav aria-label="Main" class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
     <a href={`/${lang}/`} class="flex items-center gap-2 font-mono font-bold text-lg tracking-tight hover:opacity-80 transition-opacity">
-      <span class="text-white bg-blue px-2 py-1 rounded-full text-sm">R</span>
+      <span class="text-navy bg-blue px-2 py-1 rounded-full text-sm">R</span>
       <span class="text-blue">szimnau<span class="text-text-muted">.dk</span></span>
     </a>
 
     <div class="hidden md:flex items-center gap-8">
-      <a href={`/${lang}/`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
-        {t('nav.home')}
-      </a>
-      <a href={`/${lang}/blog/`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
-        {t('nav.blog')}
-      </a>
-      <a href={`/${lang}/about/`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
-        {t('nav.about')}
-      </a>
-      <a href={`/${lang}/#hardware-lab`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
-        {t('nav.hardware')}
-      </a>
+      {navItems.map(item => (
+        <a
+          href={item.href}
+          aria-current={item.active ? 'page' : undefined}
+          class={`transition-colors text-sm font-medium ${item.active ? 'text-text-primary' : 'text-text-muted hover:text-blue'}`}
+        >
+          {item.label}
+        </a>
+      ))}
     </div>
 
-    <div class="flex items-center gap-1">
+    <div class="flex items-center gap-1" role="group" aria-label={t('nav.language')}>
       {langs.map(l => (
         <a
           href={switchLocale(currentPath, l)}
+          hreflang={l}
+          lang={l}
+          aria-label={langNames[l]}
+          aria-current={l === lang ? 'true' : undefined}
           class={`font-mono text-xs px-2.5 py-1 rounded-full transition-all ${
             l === lang
               ? 'bg-blue text-navy font-bold'
@@ -55,7 +63,7 @@ const langs: Lang[] = ['en', 'da', 'de'];
         id="mobile-menu-btn"
         type="button"
         class="md:hidden ml-2 p-2 text-text-muted hover:text-blue transition-colors"
-        aria-label="Menu"
+        aria-label={t('nav.menu')}
         aria-expanded="false"
         aria-controls="mobile-menu"
       >
@@ -74,18 +82,15 @@ const langs: Lang[] = ['en', 'da', 'de'];
 
   <div id="mobile-menu" class="hidden md:hidden bg-navy/95 backdrop-blur-md border-b border-glass-border">
     <div class="max-w-6xl mx-auto px-6 py-4 flex flex-col gap-4">
-      <a href={`/${lang}/`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
-        {t('nav.home')}
-      </a>
-      <a href={`/${lang}/blog/`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
-        {t('nav.blog')}
-      </a>
-      <a href={`/${lang}/about/`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
-        {t('nav.about')}
-      </a>
-      <a href={`/${lang}/#hardware-lab`} class="text-text-muted hover:text-blue transition-colors text-sm font-medium">
-        {t('nav.hardware')}
-      </a>
+      {navItems.map(item => (
+        <a
+          href={item.href}
+          aria-current={item.active ? 'page' : undefined}
+          class={`transition-colors text-sm font-medium ${item.active ? 'text-text-primary' : 'text-text-muted hover:text-blue'}`}
+        >
+          {item.label}
+        </a>
+      ))}
     </div>
   </div>
 </header>

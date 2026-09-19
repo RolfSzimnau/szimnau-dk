@@ -20,9 +20,9 @@ interface Props {
 const { title, description, lang, pubDate, updatedDate, verifiedOn, heroImage, tags, faqs, translationKey, headings } = Astro.props;
 
 const labels = {
-  en: { verified: 'Verified on', toc: 'On this page', related: 'Related articles' },
-  da: { verified: 'Verificeret på', toc: 'På denne side', related: 'Relaterede artikler' },
-  de: { verified: 'Verifiziert mit', toc: 'Auf dieser Seite', related: 'Ähnliche Artikel' },
+  en: { updated: 'Updated', verified: 'Verified on', toc: 'On this page', related: 'Related articles' },
+  da: { updated: 'Opdateret', verified: 'Verificeret på', toc: 'På denne side', related: 'Relaterede artikler' },
+  de: { updated: 'Aktualisiert', verified: 'Verifiziert mit', toc: 'Auf dieser Seite', related: 'Ähnliche Artikel' },
 }[lang];
 
 const tocHeadings = (headings ?? []).filter(h => h.depth === 2);
@@ -35,8 +35,9 @@ const related = sameLangPosts
   .sort((a, b) => b.shared - a.shared || b.post.data.pubDate.getTime() - a.post.data.pubDate.getTime())
   .slice(0, 3);
 
+const dateLocale = lang === 'da' ? 'da-DK' : lang === 'de' ? 'de-DE' : 'en-US';
 const formattedDate = pubDate.toLocaleDateString(
-  lang === 'da' ? 'da-DK' : lang === 'de' ? 'de-DE' : 'en-US',
+  dateLocale,
   { year: 'numeric', month: 'long', day: 'numeric' }
 );
 
@@ -113,7 +114,7 @@ const breadcrumbJsonLd = {
       </div>
       <div class="flex flex-wrap items-center gap-4 text-sm text-text-muted font-mono border-t border-glass-border pt-6">
         <span>{formattedDate}</span>
-        {updatedDate && <span class="text-blue">Updated {updatedDate.toLocaleDateString()}</span>}
+        {updatedDate && <span class="text-blue">{labels.updated} {updatedDate.toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric' })}</span>}
         {verifiedOn && <span class="inline-flex items-center gap-1.5 text-emerald-400/90"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{labels.verified} {verifiedOn}</span>}
       </div>
     </header>
