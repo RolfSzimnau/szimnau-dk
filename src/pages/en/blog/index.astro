@@ -44,7 +44,7 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
           return (
             <BlogCard
               lang={lang}
-              headingLevel="h2"
+              headingLevel="h2" priority={i === 0 ? 'high' : i < 3 ? 'eager' : false}
               title={post.data.title}
               description={post.data.description}
               pubDate={post.data.pubDate}
@@ -78,6 +78,8 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
         showSubResults: true,
         translations: { placeholder: 'Search articles…' }
       });
+      const input = document.querySelector('#search input');
+      if (input) input.setAttribute('aria-label', input.placeholder);
     });
   </script>
   <style is:global>
@@ -91,7 +93,7 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
       --pagefind-ui-border-width: 1px;
       --pagefind-ui-border-radius: 14px;
       --pagefind-ui-image-border-radius: 10px;
-      --pagefind-ui-font: 'Inter', system-ui, sans-serif;
+      --pagefind-ui-font: 'Inter Variable', system-ui, sans-serif;
     }
     #search .pagefind-ui__search-input::placeholder { color: #94a3b8; opacity: 1; }
     #search .pagefind-ui__result-link { color: #00d4ff; }

@@ -25,7 +25,7 @@ const navItems = [
   class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
 >
   <nav aria-label="Main" class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-    <a href={`/${lang}/`} class="flex items-center gap-2 font-mono font-bold text-lg tracking-tight hover:opacity-80 transition-opacity">
+    <a href={`/${lang}/`} class="flex items-center gap-2 py-2.5 font-mono font-bold text-lg tracking-tight hover:opacity-80 transition-opacity">
       <span class="text-navy bg-blue px-2 py-1 rounded-full text-sm">R</span>
       <span class="text-blue">szimnau<span class="text-text-muted">.dk</span></span>
     </a>
@@ -35,7 +35,7 @@ const navItems = [
         <a
           href={item.href}
           aria-current={item.active ? 'page' : undefined}
-          class={`transition-colors text-sm font-medium ${item.active ? 'text-text-primary' : 'text-text-muted hover:text-blue'}`}
+          class={`py-3 transition-colors text-sm font-medium ${item.active ? 'text-text-primary' : 'text-text-muted hover:text-blue'}`}
         >
           {item.label}
         </a>
@@ -50,7 +50,7 @@ const navItems = [
           lang={l}
           aria-label={langNames[l]}
           aria-current={l === lang ? 'true' : undefined}
-          class={`font-mono text-xs px-2.5 py-1 rounded-full transition-all ${
+          class={`relative after:absolute after:-inset-x-0.5 after:-inset-y-2.5 font-mono text-[13px] px-2.5 py-1 rounded-full transition-all ${
             l === lang
               ? 'bg-blue text-navy font-bold'
               : 'text-text-muted hover:text-blue border border-glass-border hover:border-blue/40'
@@ -63,7 +63,7 @@ const navItems = [
       <button
         id="mobile-menu-btn"
         type="button"
-        class="md:hidden ml-2 p-2 text-text-muted hover:text-blue transition-colors"
+        class="md:hidden ml-1 p-3 text-text-muted hover:text-blue transition-colors"
         aria-label={t('nav.menu')}
         aria-expanded="false"
         aria-controls="mobile-menu"
@@ -82,12 +82,12 @@ const navItems = [
   </nav>
 
   <div id="mobile-menu" class="hidden md:hidden bg-navy/95 backdrop-blur-md border-b border-glass-border">
-    <div class="max-w-6xl mx-auto px-6 py-4 flex flex-col gap-4">
+    <div class="max-w-6xl mx-auto px-6 py-2 flex flex-col gap-0">
       {navItems.map(item => (
         <a
           href={item.href}
           aria-current={item.active ? 'page' : undefined}
-          class={`transition-colors text-sm font-medium ${item.active ? 'text-text-primary' : 'text-text-muted hover:text-blue'}`}
+          class={`py-3 transition-colors text-sm font-medium ${item.active ? 'text-text-primary' : 'text-text-muted hover:text-blue'}`}
         >
           {item.label}
         </a>
@@ -115,6 +115,16 @@ const navItems = [
       iconClose?.classList.add('hidden');
     })
   );
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && mobileMenu && !mobileMenu.classList.contains('hidden')) {
+      mobileMenu.classList.add('hidden');
+      menuBtn?.setAttribute('aria-expanded', 'false');
+      iconOpen?.classList.remove('hidden');
+      iconClose?.classList.add('hidden');
+      menuBtn?.focus();
+    }
+  });
 
   const header = document.getElementById('site-header');
   const sentinel = document.getElementById('header-sentinel');

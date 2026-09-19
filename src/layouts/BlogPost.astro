@@ -21,9 +21,9 @@ interface Props {
 const { title, description, lang, pubDate, updatedDate, verifiedOn, heroImage, tags, faqs, translationKey, headings, seoTitle } = Astro.props;
 
 const labels = {
-  en: { updated: 'Updated', verified: 'Verified on', toc: 'On this page', related: 'Related articles' },
-  da: { updated: 'Opdateret', verified: 'Verificeret på', toc: 'På denne side', related: 'Relaterede artikler' },
-  de: { updated: 'Aktualisiert', verified: 'Verifiziert mit', toc: 'Auf dieser Seite', related: 'Ähnliche Artikel' },
+  en: { back: 'All posts', updated: 'Updated', verified: 'Verified on', toc: 'On this page', related: 'Related articles' },
+  da: { back: 'Alle indlæg', updated: 'Opdateret', verified: 'Verificeret på', toc: 'På denne side', related: 'Relaterede artikler' },
+  de: { back: 'Alle Beiträge', updated: 'Aktualisiert', verified: 'Verifiziert mit', toc: 'Auf dieser Seite', related: 'Ähnliche Artikel' },
 }[lang];
 
 const tocHeadings = (headings ?? []).filter(h => h.depth === 2);
@@ -102,13 +102,14 @@ const breadcrumbJsonLd = {
   )}
   <article class="max-w-3xl mx-auto px-6 py-24">
     <header class="mb-12">
+      <a href={`/${lang}/blog/`} class="inline-flex items-center gap-1 py-2 mb-4 font-mono text-sm text-blue hover:underline">← {labels.back}</a>
       <h1 class="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary leading-tight mb-6">
         {title}
       </h1>
       <p class="text-text-muted text-lg mb-6">{description}</p>
       <div class="flex flex-wrap gap-2 mb-6">
         {tags.map(tag => (
-          <a href={`/${lang}/blog/tag/${tag}/`} class="font-mono text-xs text-blue border border-blue/30 px-3 py-1 rounded-full bg-blue-glow hover:border-blue transition-colors">
+          <a href={`/${lang}/blog/tag/${tag}/`} class="font-mono text-[13px] text-blue border border-blue/30 px-3 py-2 rounded-full bg-blue-glow hover:border-blue transition-colors">
             #{tag}
           </a>
         ))}

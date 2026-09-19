@@ -34,16 +34,16 @@ const { posts } = Astro.props;
     <header class="mb-12">
       <p class="font-mono text-blue text-sm mb-3 tracking-wider uppercase">// Blog</p>
       <h1 class="font-heading text-4xl sm:text-5xl font-bold text-text-primary mb-4">{t('blog.tag.title')} {tag}</h1>
-      <a href={`/${lang}/blog/`} class="font-mono text-sm text-blue hover:underline">← {t('blog.alltags')}</a>
+      <a href={`/${lang}/blog/`} class="inline-block py-2.5 font-mono text-sm text-blue hover:underline">← {t('blog.alltags')}</a>
     </header>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {posts.map(post => {
+      {posts.map((post, i) => {
         const slug = post.id.replace(`${lang}/`, '');
         return (
           <BlogCard
             lang={lang}
-            headingLevel="h2"
+            headingLevel="h2" priority={i === 0 ? 'high' : i < 3 ? 'eager' : false}
             title={post.data.title}
             description={post.data.description}
             pubDate={post.data.pubDate}

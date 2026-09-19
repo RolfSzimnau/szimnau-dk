@@ -13,9 +13,10 @@ interface Props {
   heroImage?: string;
   featured?: boolean;
   headingLevel?: 'h2' | 'h3';
+  priority?: 'high' | 'eager' | false;
 }
 
-const { lang, title, description, pubDate, tags, slug, heroImage, featured = false, headingLevel = 'h3' } = Astro.props;
+const { lang, title, description, pubDate, tags, slug, heroImage, featured = false, headingLevel = 'h3', priority = false } = Astro.props;
 const Heading = headingLevel;
 const t = useTranslations(lang);
 
@@ -37,14 +38,15 @@ const readTime = words > 0 ? Math.max(1, Math.round(words / 200)) : null;
         alt=""
         width={featured ? 800 : 400}
         height={featured ? 450 : 225}
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchpriority={priority === 'high' ? 'high' : undefined}
         decoding="async"
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
       />
     </div>
   )}
   <div class={`flex flex-col flex-1 ${featured ? 'p-6 md:p-10 md:col-span-2 justify-center' : 'p-6'}`}>
-    <p class="font-mono text-xs text-text-muted mb-3 truncate">
+    <p class="font-mono text-[13px] text-text-muted mb-3 truncate">
       {tags.slice(0, 2).map((tag, i) => (
         <span class={i === 0 ? 'text-blue' : 'ml-3'}>#{tag}</span>
       ))}
@@ -52,9 +54,9 @@ const readTime = words > 0 ? Math.max(1, Math.round(words / 200)) : null;
     <Heading class={`font-heading font-bold text-text-primary leading-snug mb-2 group-hover:text-blue transition-colors ${featured ? 'text-2xl md:text-3xl mb-4' : 'text-lg'}`}>
       {title}
     </Heading>
-    <p class={`text-text-muted text-sm leading-relaxed mb-4 ${featured ? 'md:text-base line-clamp-4' : 'line-clamp-3'}`}>{description}</p>
+    <p class={`text-text-muted text-[15px] leading-relaxed mb-4 ${featured ? 'md:text-base line-clamp-4' : 'line-clamp-3'}`}>{description}</p>
     <div class="mt-auto flex items-center justify-between">
-      <span class="font-mono text-xs text-text-muted">{formattedDate}{readTime && ` · ${readTime} ${t('blog.readtime')}`}</span>
+      <span class="font-mono text-[13px] text-text-muted">{formattedDate}{readTime && ` · ${readTime} ${t('blog.readtime')}`}</span>
       <a
         href={`/${lang}/blog/${slug}/`}
         class="text-blue text-sm font-medium hover:underline after:absolute after:inset-0"

@@ -201,21 +201,21 @@ const statusLabels = {
         <div class="glass-card p-6 group hover:border-blue/20 transition-all duration-300 hover:blue-glow">
           <div class="flex items-start justify-between mb-4">
             <span class="flex h-11 w-11 items-center justify-center rounded-xl border border-blue/20 bg-blue-glow text-blue" set:html={iconSvg(device.icon)} />
-            <span class={`font-mono text-xs px-2.5 py-1 rounded-full border ${statusColors[device.status]}`}>
+            <span class={`font-mono text-[13px] px-2.5 py-1 rounded-full border ${statusColors[device.status]}`}>
               {statusLabels[device.status]}
             </span>
           </div>
           <h3 class="font-heading font-bold text-text-primary mb-0.5 group-hover:text-blue transition-colors">
             {device.name}
           </h3>
-          <p class="font-mono text-xs text-blue mb-3">{device.category}</p>
-          <p class="text-text-muted text-sm leading-relaxed">{device.description}</p>
+          <p class="font-mono text-[13px] text-blue mb-3">{device.category}</p>
+          <p class="text-text-muted text-[15px] leading-relaxed">{device.description}</p>
           {device.link && (
             <a
               href={device.link}
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center gap-1 mt-4 text-xs text-text-muted hover:text-blue transition-colors font-mono"
+              class="inline-flex items-center gap-1 mt-2 py-2 text-[13px] text-text-muted hover:text-blue transition-colors font-mono"
             >
               vendor site →
             </a>

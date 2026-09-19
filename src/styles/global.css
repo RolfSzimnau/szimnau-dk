@@ -133,3 +133,13 @@ body {
   outline-offset: 3px;
   border-radius: 4px;
 }
+
+/* Fixed header is 65px tall: keep in-page anchors and focus below it. */
+html { scroll-padding-top: 5rem; }
+
+/* Dark-only site: dark scrollbars, form controls and canvas. */
+:root { color-scheme: dark; }
+
+/* Avoid single orphan words in headings and prose. */
+h1, h2, h3, h4 { text-wrap: balance; }
+.prose p, .prose li { text-wrap: pretty; }
