@@ -34,10 +34,13 @@ const personJsonLd = {
   <script type="application/ld+json" set:html={JSON.stringify(personJsonLd)} />
 
   <div class="max-w-4xl mx-auto px-6 py-24">
-    <header class="mb-16">
+    <header class="mb-16 flex flex-col-reverse sm:flex-row sm:items-end sm:justify-between gap-8">
+      <div>
       <p class="flex items-center gap-3 font-mono text-blue text-sm mb-3 tracking-wider uppercase"><span class="h-px w-8 bg-blue/60"></span>About</p>
       <h1 class="font-heading text-4xl sm:text-5xl font-bold text-text-primary mb-4">{t('about.title')}</h1>
       <p class="text-blue font-mono">{t('about.role')}</p>
+      </div>
+      <img src="/rolf.jpg" alt="Rolf Szimnau" width="144" height="144" loading="eager" class="w-32 h-32 sm:w-36 sm:h-36 rounded-[28px] object-cover border border-glass-border shrink-0" />
     </header>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
@@ -84,16 +87,7 @@ const personJsonLd = {
         </div>
         <div class="glass-card p-5">
           <h3 class="font-heading text-text-primary text-sm font-bold mb-3">Enterprise background</h3>
-          <ul class="space-y-2 text-sm text-text-muted">
-            <li class="flex gap-2"><span class="text-blue">▹</span> Maersk</li>
-            <li class="flex gap-2"><span class="text-blue">▹</span> Lego</li>
-            <li class="flex gap-2"><span class="text-blue">▹</span> Coloplast</li>
-            <li class="flex gap-2"><span class="text-blue">▹</span> Ørsted</li>
-            <li class="flex gap-2"><span class="text-blue">▹</span> Bank of England</li>
-            <li class="flex gap-2"><span class="text-blue">▹</span> Shell</li>
-            <li class="flex gap-2"><span class="text-blue">▹</span> Airbus</li>
-            <li class="flex gap-2"><span class="text-blue">▹</span> Barclays</li>
-          </ul>
+          <p class="text-sm text-text-muted leading-relaxed">Maersk, Lego, Coloplast, Ørsted, Bank of England, Shell, Airbus and Barclays.</p>
         </div>
         <div class="glass-card p-5">
           <h3 class="font-heading text-text-primary text-sm font-bold mb-3">Contact</h3>

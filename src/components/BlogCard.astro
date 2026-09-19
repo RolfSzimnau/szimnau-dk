@@ -27,33 +27,31 @@ const words = (entry?.body ?? '').split(/\s+/).filter(Boolean).length;
 const readTime = words > 0 ? Math.max(1, Math.round(words / 200)) : null;
 ---
 
-<article class={`relative glass-card overflow-hidden group hover:border-blue/20 transition-all duration-300 hover:-translate-y-1 ${featured ? 'md:col-span-2 md:grid md:grid-cols-5' : ''}`}>
+<article class={`relative glass-card overflow-hidden group flex flex-col h-full hover:border-blue/20 transition-all duration-300 hover:-translate-y-1 ${featured ? 'md:col-span-full md:grid md:grid-cols-5' : ''}`}>
   {heroImage && (
-    <div class={`w-full overflow-hidden ${featured ? 'h-56 md:h-full md:min-h-72 md:col-span-3' : 'h-48'}`}>
+    <div class={`w-full overflow-hidden bg-navy-card ${featured ? 'aspect-video md:aspect-auto md:h-full md:min-h-72 md:col-span-3' : 'aspect-video'}`}>
       <img
         src={heroImage}
         alt=""
         width={featured ? 800 : 400}
-        height={featured ? 450 : 192}
+        height={featured ? 450 : 225}
         loading="lazy"
         decoding="async"
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
       />
     </div>
   )}
-  <div class={featured ? 'p-6 md:p-10 md:col-span-2 flex flex-col justify-center' : 'p-6'}>
-    <div class="flex flex-wrap gap-2 mb-3">
-      {tags.slice(0, 3).map(tag => (
-        <span class="font-mono text-xs text-blue bg-blue-glow border border-blue/20 px-2.5 py-0.5 rounded-full">
-          #{tag}
-        </span>
+  <div class={`flex flex-col flex-1 ${featured ? 'p-6 md:p-10 md:col-span-2 justify-center' : 'p-6'}`}>
+    <p class="font-mono text-xs text-text-muted mb-3 truncate">
+      {tags.slice(0, 2).map((tag, i) => (
+        <span class={i === 0 ? 'text-blue' : 'ml-3'}>#{tag}</span>
       ))}
-    </div>
+    </p>
     <h3 class={`font-heading font-bold text-text-primary leading-snug mb-2 group-hover:text-blue transition-colors ${featured ? 'text-2xl md:text-3xl mb-4' : 'text-lg'}`}>
       {title}
     </h3>
     <p class={`text-text-muted text-sm leading-relaxed mb-4 ${featured ? 'md:text-base line-clamp-4' : 'line-clamp-3'}`}>{description}</p>
-    <div class="flex items-center justify-between">
+    <div class="mt-auto flex items-center justify-between">
       <span class="font-mono text-xs text-text-muted">{formattedDate}{readTime && ` · ${readTime} ${t('blog.readtime')}`}</span>
       <a
         href={`/${lang}/blog/${slug}/`}
