@@ -43,7 +43,7 @@ const { posts } = Astro.props;
         return (
           <BlogCard
             lang={lang}
-            headingLevel="h2" priority={i === 0 ? 'high' : i < 3 ? 'eager' : false}
+            headingLevel="h2" priority={i === 0 ? 'high' : false}
             title={post.data.title}
             description={post.data.description}
             pubDate={post.data.pubDate}

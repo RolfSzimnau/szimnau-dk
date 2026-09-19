@@ -44,7 +44,7 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
           return (
             <BlogCard
               lang={lang}
-              headingLevel="h2" priority={i === 0 ? 'high' : i < 3 ? 'eager' : false}
+              headingLevel="h2" priority={i === 0 ? 'high' : false}
               title={post.data.title}
               description={post.data.description}
               pubDate={post.data.pubDate}
@@ -95,6 +95,7 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
       --pagefind-ui-image-border-radius: 10px;
       --pagefind-ui-font: 'Inter Variable', system-ui, sans-serif;
     }
+    #search { min-height: 58px; }
     #search .pagefind-ui__search-input::placeholder { color: #94a3b8; opacity: 1; }
     #search .pagefind-ui__result-link { color: #00d4ff; }
     #search .pagefind-ui__message,
