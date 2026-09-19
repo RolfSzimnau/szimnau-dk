@@ -13,11 +13,12 @@ interface Props {
   heroImage?: string;
   tags: string[];
   translationKey: string;
+  seoTitle?: string;
   faqs?: Array<{ question: string; answer: string }>;
   headings?: Array<{ depth: number; slug: string; text: string }>;
 }
 
-const { title, description, lang, pubDate, updatedDate, verifiedOn, heroImage, tags, faqs, translationKey, headings } = Astro.props;
+const { title, description, lang, pubDate, updatedDate, verifiedOn, heroImage, tags, faqs, translationKey, headings, seoTitle } = Astro.props;
 
 const labels = {
   en: { updated: 'Updated', verified: 'Verified on', toc: 'On this page', related: 'Related articles' },
@@ -84,7 +85,7 @@ const breadcrumbJsonLd = {
 };
 ---
 
-<Base title={title} description={description} lang={lang} type="article" pubDate={pubDate} heroImage={heroImage}>
+<Base title={seoTitle ?? title} description={description} lang={lang} type="article" pubDate={pubDate} heroImage={heroImage}>
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
   {faqs && faqs.length > 0 && (

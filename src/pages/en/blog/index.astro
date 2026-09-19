@@ -17,7 +17,7 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
 
 <Base
   title="Blog: Home Automation & Home Assistant"
-  description="In-depth guides, hardware reviews, and automation blueprints for Home Assistant enthusiasts."
+  description="Real-world Home Assistant guides, hardware reviews and automation blueprints, tested on a live setup with the limits stated honestly."
   lang={lang}
 >
   <div class="max-w-6xl mx-auto px-6 py-24">
@@ -44,6 +44,7 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
           return (
             <BlogCard
               lang={lang}
+              headingLevel="h2"
               title={post.data.title}
               description={post.data.description}
               pubDate={post.data.pubDate}

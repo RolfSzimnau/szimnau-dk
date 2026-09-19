@@ -30,6 +30,8 @@ const ogImage = heroImage
   : `${siteOrigin}/og-default.png`;
 
 const locales: Lang[] = ['en', 'da', 'de'];
+// Tag slugs are translated per language, so a tag page has no counterpart URL.
+const hasAlternates = !/\/blog\/tag\//.test(new URL(canonicalURL).pathname);
 
 const localeMap: Record<Lang, string> = {
   en: 'en-US',
@@ -74,10 +76,10 @@ const websiteJsonLd = {
 <meta name="author" content="Rolf Szimnau" />
 <meta name="robots" content={noindex ? 'noindex, follow' : 'index, follow'} />
 {!noindex && <link rel="canonical" href={canonicalURL} />}
-{!noindex && locales.map(l => (
+{!noindex && hasAlternates && locales.map(l => (
   <link rel="alternate" hreflang={localeMap[l]} href={buildAlternate(l)} />
 ))}
-{!noindex && <link rel="alternate" hreflang="x-default" href={buildAlternate('en')} />}
+{!noindex && hasAlternates && <link rel="alternate" hreflang="x-default" href={buildAlternate('en')} />}
 <link rel="alternate" type="application/rss+xml" title="szimnau.dk: From the Lab" href={`${new URL(canonicalURL).origin}/rss.xml`} />
 
 <meta property="og:title" content={siteTitle} />

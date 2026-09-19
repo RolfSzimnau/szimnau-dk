@@ -17,7 +17,7 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
 
 <Base
   title="Blog: Heimautomatisierung & Home Assistant"
-  description="Tiefe Einblicke, Hardware-Reviews und Automatisierungs-Blueprints für Home Assistant-Enthusiasten."
+  description="Home-Assistant-Guides, Hardware-Reviews und Automatisierungs-Blueprints, getestet im echten Betrieb und mit ehrlich benannten Grenzen."
   lang={lang}
 >
   <div class="max-w-6xl mx-auto px-6 py-24">
@@ -39,7 +39,7 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {posts.map((post, i) => {
           const slug = post.id.replace(`${lang}/`, '');
-          return <BlogCard lang={lang} title={post.data.title} description={post.data.description} pubDate={post.data.pubDate} tags={post.data.tags} slug={slug} heroImage={post.data.heroImage} featured={i === 0} />;
+          return <BlogCard lang={lang} headingLevel="h2" title={post.data.title} description={post.data.description} pubDate={post.data.pubDate} tags={post.data.tags} slug={slug} heroImage={post.data.heroImage} featured={i === 0} />;
         })}
       </div>
     )}
