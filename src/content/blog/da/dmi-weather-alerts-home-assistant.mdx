@@ -6,7 +6,7 @@ verifiedOn: "HA 2026.7"
 tags: ["vejr", "notifikationer", "dashboard", "automatisering"]
 lang: "da"
 translationKey: "dmi-weather-alerts-home-assistant"
-heroImage: "/blog-images/dmi-weather-alerts-home-assistant.jpg"
+heroImage: "/blog-images/dmi-weather-alert-ticker-2026.jpg"
 faqs:
   - question: "Why does the built-in Home Assistant MeteoAlarm integration only show one weather alert?"
     answer: "The core meteoalarm integration exposes one binary sensor per region and only surfaces a single active alert at a time (Home Assistant core issue #131045). Concurrent alerts — say a storm warning and a cloudburst warning — overwrite each other. The cap_alerts custom integration solves this by creating one sensor entity per active CAP alert."
