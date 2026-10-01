@@ -1,6 +1,6 @@
 ---
 title: "Škoda Elroq og Home Assistant, seks måneder efter"
-description: "Fra MyŠkoda til VW Group Connect i Home Assistant: hvad integrationen giver, hvad der mangler, og et EV-dashboard med batteristatus og forvarming."
+description: "Fra MyŠkoda til VW Group Connect i Home Assistant: hvad integrationen kan, hvad der mangler, og et elbil-dashboard med batteristatus og forvarmning."
 pubDate: 2026-04-13
 updatedDate: 2026-10-01
 verifiedOn: "HA 2026.9"
@@ -14,67 +14,67 @@ faqs:
   - question: "What is missing from the MySkoda Home Assistant integration?"
     answer: "The integration cannot control charging limits, does not support real-time streaming, and has no push notifications — it relies entirely on polling. Charge scheduling must be done via Home Assistant automations, not the integration itself."
   - question: "Virker MySkoda-integrationen i Home Assistant stadig?"
-    answer: "MySkoda forventes at holde op med at virke i oktober 2026, når den bagvedliggende API lukkes. Jeg har flyttet mine egne Elroq-automationer til VW Group Connect, et vedligeholdt alternativ der understøtter Škoda. Entitetsnavne bliver til garage_<bilnavn>_*, og nogle tilstandsværdier skifter case, så tjek alle automationer efter skiftet."
+    answer: "MySkoda holder op med at virke i oktober 2026, når den bagvedliggende API lukker. Jeg har flyttet mine Elroq-automationer til VW Group Connect, som bliver vedligeholdt og understøtter Škoda. Entiteterne får nye navne (garage_<bilnavn>_*), og nogle tilstande skrives med store bogstaver i stedet for små, så gå alle automationer igennem efter skiftet."
 ---
 
 <div style="background:rgba(185,28,28,0.15);border:1px solid rgba(239,68,68,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-**API-begrænsninger — maj 2026**
+**Begrænsninger i API'et, maj 2026**
 
-VW Group har indført app-attestering, som gradvist begrænser tredjepartsadgang. Integrationen virker delvist, men ikke fuldt ud:
+VW Group har indført app-attestering, som gradvist lukker for tredjepartsadgang. Integrationen virker stadig, men kun delvist:
 
-- **Aflæsning (batteri, rækkevidde, ladestatus)** — virker stadig via polling
-- **Realtidskommandoer (forvarming, start/stop ladning)** — brudt siden ~7. maj via MQTT
-- **Push-opdateringer fra bilen** — brudt
+- **Aflæsning (batteri, rækkevidde, ladestatus):** virker stadig via polling
+- **Kommandoer i realtid (forvarmning, start og stop af opladning):** virker ikke via MQTT siden omkring 7. maj
+- **Push-opdateringer fra bilen:** virker ikke
 
-Automationer der afhænger af kommandoer — som forvarming fra Google Kalender — er upålidelige. VW har meddelt at apps uden formel aftale med VW Group Info Services fremadrettet ikke vil have adgang. EU Data Act (12. sept. 2026) kan ændre dette lovmæssigt.
+Automationer, der sender kommandoer til bilen, fx forvarmning ud fra Google Kalender, er derfor upålidelige. VW har meddelt, at apps uden en formel aftale med VW Group Info Services mister adgangen fremover. EU's Data Act (12. september 2026) kan ændre det ved lov.
 
-Se [GitHub-issues](https://github.com/skodaconnect/homeassistant-myskoda/issues) for seneste status.
+Se [GitHub-issues](https://github.com/skodaconnect/homeassistant-myskoda/issues) for den seneste status.
 
 </div>
 
 <div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-**Opdatering, september 2026 — MySkoda lukker**
+**Opdatering, september 2026: MySkoda lukker**
 
-Škoda har meddelt at MySkoda helt holder op med at virke i oktober 2026, når den bagvedliggende API lukkes. En officiel Home Assistant-integration er "forventet" med 2026.10-udgivelsen, men datoen er ikke bekræftet.
+Škoda har meddelt, at MySkoda holder helt op med at virke i oktober 2026, når den bagvedliggende API lukker. En officiel Home Assistant-integration er «forventet» med version 2026.10, men datoen er ikke bekræftet.
 
-Jeg har flyttet mine egne Elroq-automationer til [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), et vedligeholdt alternativ der allerede understøtter Škoda via flere kanaler. Kører du stadig MySkoda, så få VW Group Connect logget ind allerede nu i stedet for at vente til det går galt — de to kan sagtens køre side om side. Forvent dog ikke en 1:1-omdøbning: entitetsnavnene er anderledes (`garage_<bilnavn>_*`, ikke `skoda_elroq_*`), og mindst én enum-sensor skifter helt case — MySkodas `charging_state` er lowercase (`ready_for_charging`), VW Group Connects tilsvarende er uppercase (`READY_FOR_CHARGING`). Tjek hver automations state-sammenligninger manuelt; antag ikke at de matcher.
+Jeg har flyttet mine Elroq-automationer til [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), som bliver vedligeholdt og allerede understøtter Škoda via flere kanaler. Kører du stadig MySkoda, så log ind i VW Group Connect nu, i stedet for at vente til noget går i stykker. De to kan sagtens køre side om side. Regn bare ikke med, at det er en simpel omdøbning. Entiteterne hedder noget andet (`garage_<bilnavn>_*` i stedet for `skoda_elroq_*`), og mindst én sensor skriver sine tilstande på en ny måde: MySkodas `charging_state` bruger små bogstaver (`ready_for_charging`), mens VW Group Connects tilsvarende sensor bruger store (`READY_FOR_CHARGING`). Gå alle sammenligninger i dine automationer igennem i hånden, og gå ikke ud fra, at de passer.
 
 </div>
 
-## Oktober 2026: skiftet er gennemført
+## Oktober 2026: nu kører det hele på VW Group Connect
 
-MySkoda er nu helt ude af mine dashboards og automationer. Tre ting overraskede mig undervejs.
+MySkoda er helt ude af mine dashboards og automationer. Tre ting overraskede mig undervejs.
 
-**Kabelfrigivelsen var allerede væk.** Da jeg tjekkede, tilbød MySkoda kun én service, `set_preferred_charging_time`. `unlock_charger_cable`, som mit script brugte, fandtes ikke længere, så scriptet fejlede i stilhed. VW Group Connect har ingen direkte kommando til det, men har indstillingen `auto_unlock_charging_plug`, som frigiver stikket, når bilen låses op. Mit script slår den til og låser op. Jeg har ikke testet det ved bilen endnu.
+**Kabelfrigivelsen virkede allerede ikke.** Da jeg kiggede efter, havde MySkoda kun én service tilbage, `set_preferred_charging_time`. Servicen `unlock_charger_cable`, som mit script kaldte, var væk, så scriptet havde i al stilhed holdt op med at virke. VW Group Connect har ingen kommando, der frigiver kablet direkte, men har indstillingen `auto_unlock_charging_plug`, som frigiver stikket, når bilen låses op. Mit script slår nu indstillingen til og låser bilen op. Jeg har endnu ikke prøvet det af ved bilen.
 
-**Batteriplejen er den rigtige grænse.** Lademålet stod på 100 %, men grafen toppede ved 80 %. Det er bilens batteripleje, som VW Group Connect viser som en switch, der bestemmer. Vil du lade til 100 % før en tur, er det batteriplejen, du skal slå fra, ikke lademålet.
+**Det er batteriplejen, der sætter grænsen.** Lademålet stod på 100 %, men grafen stoppede hver gang ved 80 %. Det er bilens batteripleje, der bestemmer, og den kan VW Group Connect slå til og fra. Vil du lade til 100 % før en lang tur, skal du altså slå batteriplejen fra. Det hjælper ikke at hæve lademålet.
 
-**En parkeret bil sover.** Min advarsel om forældede data slog til efter 45 minutter uden rapport, så den lyste næsten altid, når bilen holdt stille. Nu advarer den kun, når integrationen selv melder forældede data, bilen ikke kan nås, der er gået 45 minutter under kørsel, eller der er gået et døgn helt uden rapport.
+**En parkeret bil sover.** Min advarsel om forældede data gik i gang, når bilen ikke havde meldt sig i 45 minutter. Derfor lyste den næsten altid, når bilen holdt stille. Nu advarer den kun, hvis integrationen selv melder om forældede data, hvis bilen ikke kan nås, hvis der går 45 minutter uden melding under kørsel, eller hvis der går et helt døgn uden en eneste melding.
 
-### Hvad VW Group Connect giver, som MySkoda ikke gav
+### Det kan VW Group Connect, som MySkoda ikke kunne
 
-- Turdata: sidste turs afstand, varighed og gennemsnitsforbrug, plus kilometertæller.
-- Advarsler for dæktryk, motor og bremser som binære sensorer.
-- Parkeringsadressen som tekst.
-- Switches til batteripleje, opladning og automatisk frigivelse af ladestikket.
-- Services til sædevarme, rudevarme og lademål.
+- Turdata: længde, varighed og gennemsnitligt forbrug for sidste tur samt kilometertælleren.
+- Advarsler om dæktryk, motor og bremser.
+- Adressen, hvor bilen holder parkeret.
+- Kontakter til batteripleje, opladning og automatisk frigivelse af ladestikket.
+- Handlinger til sædevarme, rudevarme og lademål.
 
-### Det har jeg bygget oven på (testes i oktober)
+### Det har jeg bygget ovenpå (afprøves i oktober)
 
-- **Lad til 100 % før lange ture.** Kl. 19 læser Home Assistant morgendagens kalender. Har en aftale en adresse uden for nærområdet, slås batteriplejen fra, og den slås til igen, når bilen har været hjemme i 30 minutter. Min elleverandørs smarte opladning bestemmer stadig, *hvornår* der lades.
-- **Pris pr. tur.** Når kilometertælleren har stået stille i 10 minutter, logges km, kWh og et prisoverslag med den aktuelle elpris. Dashboardet viser månedens km og kroner.
-- **Forvarmning før morgenaftaler** under 5 °C, med rudevarme under 1 °C og sædevarme under −2 °C.
-- **Besked, hvis bilen står ulåst** i 10 minutter væk hjemmefra, med adressen og en «Lås nu»-knap.
+- **Opladning til 100 % før lange ture.** Kl. 19 kigger Home Assistant i kalenderen for næste dag. Har en aftale en adresse uden for nærområdet, slås batteriplejen fra. Den slås til igen, når bilen har været hjemme i en halv time. Det er stadig min elleverandørs smarte opladning, der bestemmer, *hvornår* bilen lader.
+- **Pris pr. tur.** Når kilometertælleren har stået stille i 10 minutter, gemmer Home Assistant turens længde, forbruget i kWh og et prisoverslag ud fra den aktuelle elpris. Dashboardet viser, hvor mange kilometer og kroner det er blevet til i måneden.
+- **Forvarmning før morgenaftaler**, når det er under 5 °C. Under 1 °C tændes rudevarmen også, og under −2 °C sædevarmen.
+- **Besked, hvis bilen står ulåst** i 10 minutter et andet sted end hjemme, med adressen og en «Lås nu»-knap.
 
-Jeg opdaterer indlægget, når de har kørt en måned.
+Jeg opdaterer indlægget, når det hele har kørt en måned.
 
-Min Škoda er det eneste i huset der ikke taler med Home Assistant automatisk. Alle andre enheder er enten integreret native eller via HACS. Bilen levede i sin egen app, og det nag jeg. Ikke dramatisk — bare en konstant lille irritation.
+Min Škoda var det eneste i huset, der ikke talte med Home Assistant. Alt andet er integreret, enten direkte eller via HACS. Bilen levede sit eget liv i Škodas app, og det irriterede mig. Ikke voldsomt, men nok til at nage.
 
-[MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-integrationen løser det. HACS, godkend med din Škoda Connect-konto, og bilen dukker op som en enhed. API-polling med 15-60 sekunders latens på kommandoer — det er cloud-begrænsning, ikke HA.
+[MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-integrationen løste det. Installer den via HACS, log ind med din Škoda Connect-konto, og bilen dukker op som en enhed. Kommandoer tager 15 til 60 sekunder, fordi alt går via Škodas cloud. Det er ikke Home Assistants skyld.
 
-## Hvad MySkoda-integrationen giver dig i Home Assistant
+## Det giver MySkoda-integrationen dig i Home Assistant
 
 ```
 sensor.skoda_elroq_battery_percentage  — ladestilstand (%)
@@ -88,11 +88,11 @@ climate.skoda_elroq_air_conditioning   — fjernbetjent HVAC
 switch.skoda_elroq_charging            — start/stop
 ```
 
-`climate`-entiteten er den jeg bruger mest. Sæt en temperatur, kald `climate.turn_on`, og bilen begynder at varme eller køle fra den strømkilde den er tilsluttet. Er den i stikkontakt, trækker den fra nettet. Er den ikke — fra batteriet. Derfor springer jeg forvarming over hvis batteriet er under 30%.
+Det er `climate`-entiteten, jeg bruger mest. Sæt en temperatur, kald `climate.turn_on`, og bilen begynder at varme eller køle. Er den tilsluttet laderen, tager den strømmen fra nettet. Er den ikke, tager den strømmen fra batteriet. Derfor springer jeg forvarmningen over, når batteriet er under 30 %.
 
-## Sådan bygger du EV-dashboardkortet
+## Sådan bygger du elbil-kortet til dashboardet
 
-Jeg ville have batteriniveauet synligt med det samme uden at det fylder for meget. Løsningen er en grøn gradient bag kortindholdet via `ha-card::after` — den fylder kortet proportionalt med ladestanden. Kortet bruger `custom:stack-in-card` og `custom:mushroom-template-card` (begge HACS, Mushroom-suiten), med `card_mod` (HACS) til CSS'en:
+Jeg ville kunne se batteriniveauet med det samme, uden at det fylder for meget. Løsningen er en grøn gradient bag kortets indhold via `ha-card::after`, som fylder kortet i takt med batteriniveauet. Kortet bruger `custom:stack-in-card` og `custom:mushroom-template-card` (begge fra HACS, Mushroom-pakken) og `card_mod` (HACS) til CSS'en:
 
 ```yaml
 type: custom:stack-in-card
@@ -127,9 +127,9 @@ cards:
       {% if soc > 60 %}green{% elif soc > 30 %}orange{% else %}red{% endif %}
 ```
 
-Gradienten er subtil — du lægger ikke mærke til den som en statusbjælke, det gør bare kortet føles anderledes ved 20% versus 80%. Det tog et par iterationer at få opaciteten rigtig.
+Gradienten er diskret. Man opfatter den ikke som en statusbjælke, men kortet føles anderledes ved 20 % end ved 80 %. Det tog et par forsøg at ramme en gennemsigtighed, hvor den giver information uden at tage over.
 
-Bilikonen får et ekstra lag når `sensor.skoda_elroq_charging_state` er `charging`: en lysende ring der pulserer i cyan og grønt — de samme farver som LED-ringen på Elroq'ens forreste kofanger mens den lader. Tilføj en `card_mod`-blok direkte på mushroom-kortet inde i stacken:
+Når `sensor.skoda_elroq_charging_state` er `charging`, får bilikonet en lysende ring, der pulserer i cyan og grønt, ligesom LED-lysbåndet foran på Elroq'en, når den lader. Det klarer en `card_mod`-blok direkte på Mushroom-kortet inde i stakken:
 
 ```yaml
     card_mod:
@@ -147,11 +147,11 @@ Bilikonen får et ekstra lag når `sensor.skoda_elroq_charging_state` er `chargi
         }
 ```
 
-Jinja'en i CSS'en evalueres server-side, så animationen eksisterer kun i DOM'en når bilen faktisk oplader. Når den ikke gør, har selectoren slet ingen properties.
+Jinja-koden i CSS'en bliver beregnet på serveren, så animationen findes kun på siden, mens bilen faktisk lader. Resten af tiden er reglen tom.
 
-## Forvarming fra Google Kalender
+## Forvarmning ud fra Google Kalender
 
-Jeg har en tilbagevendende kalenderbegivenhed med et fast starttidspunkt. Automatiseringen aktiverer 30 minutter før:
+Jeg har en tilbagevendende aftale i kalenderen med et fast starttidspunkt. Automationen går i gang 30 minutter før:
 
 ```yaml
 alias: Elroq — Forvarm fra kalender
@@ -177,15 +177,15 @@ action:
       temperature: 21
 ```
 
-Det virker godt om vinteren. En varm bil om morgenen er en underapprecieret luksus.
+Det fungerer godt om vinteren. Bilen er varm, når jeg kører, og det er rart på kolde morgener. Batteriet mærker det knap nok.
 
-Ét problem: begivenhedsnavnet skal matche præcist. Jeg har omdøbt begivenheden to gange og gemt det i tide til at undre mig over hvorfor bilen ikke var varm. Det er en skrøbelig strengmatch og jeg har ikke fundet en bedre tilgang endnu.
+Der er ét problem: aftalens titel skal passe præcist. Omdøber jeg aftalen eller tilføjer noget til titlen, fejler betingelsen uden at sige noget, og bilen bliver ikke varmet op. Det er sket for mig to gange. Det er en skrøbelig tekstsammenligning, og jeg har ikke fundet en bedre løsning endnu.
 
-## Kabeladvarsels-automatisering
+## Advarsel, når kablet ikke er sat i
 
-At glemme at sætte bilen til opladning er den eneste fejl der rent faktisk koster noget. Bilen står natten over, trækker intet fra nettet, og du kører om morgenen med den ladning du havde dagen før.
+At glemme at sætte bilen til opladning er den eneste fejl, der rent faktisk koster noget. Bilen står natten over uden at lade, og om morgenen kører du med den strøm, du havde dagen før.
 
-AlertTicker-kortet håndterer det. Mellem kl. 21 og 06, hvis `binary_sensor.skoda_elroq_charger_connected` er off, vises en advarselsbanner på tværs af alle dashboard-views:
+Det klarer AlertTicker-kortet. Er `binary_sensor.skoda_elroq_charger_connected` slukket mellem kl. 21 og 6, vises et advarselsbanner på alle dashboardets visninger:
 
 ```yaml
 type: custom:alert-ticker-card
@@ -199,19 +199,19 @@ alerts:
     time_to: "06:00"
 ```
 
-Tidsvinduet er vigtigt — om dagen er bilen konstant fra laderen. Advarslen er kun relevant om natten når den burde lade. Uden for det vindue er den stille uanset kabeltilstand.
+Tidsrummet er vigtigt. Om dagen er bilen næsten aldrig tilsluttet, så advarslen giver kun mening om natten, når den burde lade. Uden for tidsrummet er den stille, uanset om kablet sidder i eller ej.
 
-## Hvad MySkoda-integrationen stadig mangler
+## Det mangler MySkoda-integrationen stadig
 
-Integrationen eksponerer ikke opladningssessionsdata — ingen kWh tilføjet i den aktuelle session, ingen opladningshistorik. Du kan se den aktuelle effektafsætning, men ikke hvor længe den har kørt eller hvad det har kostet. Til smart-opladningsautomatisering er det fint; til at overvåge dine faktiske opladningsomkostninger er det et hul.
+Integrationen viser ingen data om ladesessioner: hverken hvor mange kWh den aktuelle session har givet, eller nogen historik. Du kan se den aktuelle ladeeffekt, men ikke hvor længe bilen har ladet, eller hvad det har kostet. Til at styre opladningen er det fint, men vil du følge, hvad opladningen faktisk koster, mangler der noget.
 
-For latens-problemet specifikt: hvis du står ved siden af bilen og trykker "start opladning" i HA-dashboardet, så forvent at vente et minut inden kontaktens tilstand opdateres. Brug appen til alt der kræver øjeblikkelig reaktion.
+Og så forsinkelsen: Står du ved bilen og trykker «start opladning» på dashboardet, går der et minut, før kontakten skifter tilstand. Brug appen, når noget skal ske med det samme.
 
-## Spor batteri og rækkevidde over tid
+## Følg batteri og rækkevidde over tid
 
-Efter et stykke tid er det ikke den aktuelle tilstand jeg vil se — det er tendensen. Dræner batteriet om natten? Hvordan ændrer rækkevidden sig når temperaturen falder?
+Efter et stykke tid er det ikke tilstanden lige nu, der er interessant, men udviklingen. Taber batteriet strøm om natten? Hvordan ændrer rækkevidden sig, når det bliver koldt?
 
-`custom:apexcharts-card` (HACS) besvarer begge spørgsmål. Batteri-procent over 5 dage — opladningssessioner viser sig som skarpe opadgående spidser, nattedræn som blide hældninger:
+`custom:apexcharts-card` (HACS) giver svar på begge dele. Batteriprocenten over 5 dage viser opladninger som skarpe stigninger og nattens tab som svage fald:
 
 ```yaml
 type: custom:apexcharts-card
@@ -241,7 +241,7 @@ series:
     unit: "%"
 ```
 
-Rækkevidde og udetemperatur på et dual-akse-diagram. De to linjer bevæger sig næsten uafhængigt om sommeren. Det er en vinterhistorie: på MEB-platformen kan du forvente 20–30% rækkevidde-tab under frysepunktet:
+Rækkevidde og udetemperatur kan vises i samme graf med to y-akser. Om sommeren følges de to kurver næsten ikke ad. Det ændrer sig om vinteren: på MEB-platformen kan du regne med, at rækkevidden falder 20 til 30 %, når det fryser:
 
 ```yaml
 type: custom:apexcharts-card
@@ -289,7 +289,7 @@ series:
     unit: °C
 ```
 
-En ting at holde øje med: MySkoda-integrationen opretter 56 entiteter. At optage dem alle hober sig hurtigt op — vinduestilstande, dørtilstande, softwareversion, serviceintervaller. De fleste ændrer sig sjældent og har ingen grafværdi. Ekskluder størstedelen og behold kun det du vil følge historisk:
+En ting, du skal holde øje med: MySkoda-integrationen opretter 56 entiteter. Gemmer du historik for dem alle, fylder det hurtigt i databasen: ruder, døre, softwareversion, serviceintervaller. De fleste ændrer sig sjældent og er ikke værd at lave grafer over. Udelad de fleste, og behold kun dem, du vil følge over tid:
 
 ```yaml
 recorder:
