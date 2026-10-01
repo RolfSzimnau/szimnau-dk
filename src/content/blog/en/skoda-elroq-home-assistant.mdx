@@ -1,9 +1,9 @@
 ---
 title: "Škoda Elroq and Home Assistant, Six Months Later"
-description: "What the MyŠkoda integration actually gives you in HA, what's missing, and a useful EV dashboard with battery progress and pre-conditioning."
+description: "From MyŠkoda to VW Group Connect in Home Assistant: what the integration gives you, what is missing, and an EV dashboard with battery status and pre-heating."
 pubDate: 2026-04-13
-updatedDate: 2026-09-19
-verifiedOn: "HA 2026.7"
+updatedDate: 2026-10-01
+verifiedOn: "HA 2026.9"
 tags: ["ev", "dashboard"]
 lang: "en"
 translationKey: "skoda-elroq-home-assistant"
@@ -42,6 +42,33 @@ See [GitHub issues](https://github.com/skodaconnect/homeassistant-myskoda/issues
 I've now moved my own Elroq automations to [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), a maintained alternative that already supports Škoda over several channels. If you're still on MySkoda, get VW Group Connect authenticated now rather than waiting for the cutover — the two run side by side fine. Don't expect a drop-in rename, though: entity names differ (`garage_<car_name>_*`, not `skoda_elroq_*`), and at least one enum sensor changes case entirely — MySkoda's `charging_state` is lowercase (`ready_for_charging`), VW Group Connect's equivalent is uppercase (`READY_FOR_CHARGING`). Check every automation's state comparisons by hand; don't assume parity.
 
 </div>
+
+## October 2026: the switch is done
+
+MySkoda is now completely gone from my dashboards and automations. Three things surprised me along the way.
+
+**Cable unlock was already gone.** When I checked, MySkoda offered a single service, `set_preferred_charging_time`. The `unlock_charger_cable` service my script called no longer existed, so the script had been failing silently. VW Group Connect has no direct command for it, but it exposes the setting `auto_unlock_charging_plug`, which releases the plug when the car unlocks. My script now turns that on and unlocks the car. I have not tested it at the car yet.
+
+**Battery care is the real limit.** The charge target said 100 %, but the graph topped out at 80 %. The car's battery care mode, which VW Group Connect exposes as a switch, is what decides. If you want 100 % before a trip, turn off battery care, not the charge target.
+
+**A parked car sleeps.** My stale-data warning fired after 45 minutes without a report, so it was on almost every time the car was parked. Now it only warns when the integration itself reports stale data, the car is unreachable, 45 minutes pass while driving, or a full day passes without any report.
+
+### What VW Group Connect gives you that MySkoda did not
+
+- Trip data: last trip distance, duration and average consumption, plus the odometer.
+- Tyre pressure, engine and brake warnings as binary sensors.
+- The parking address as text.
+- Switches for battery care, charging and automatic charging plug release.
+- Services for seat heating, window heating and charge target.
+
+### What I built on top (testing in October)
+
+- **Charge to 100 % before long trips.** At 19:00 Home Assistant reads tomorrow's calendar. If an event has an address outside my local area, battery care is turned off, and it comes back on once the car has been home for 30 minutes. My electricity provider's smart charging still decides *when* the car charges.
+- **Cost per trip.** When the odometer has been still for 10 minutes, the distance, kWh and a cost estimate at the current electricity price are logged. The dashboard shows this month's kilometres and kroner.
+- **Pre-heating before morning appointments** below 5 °C, with window heating below 1 °C and seat heating below −2 °C.
+- **A notification if the car is left unlocked** for 10 minutes away from home, with the address and a Lock now button.
+
+I will update this post once they have run for a month.
 
 The My Škoda app is fine. It does everything it's supposed to do. But it's one more app that knows something my Home Assistant doesn't, and that bothered me more than it probably should.
 

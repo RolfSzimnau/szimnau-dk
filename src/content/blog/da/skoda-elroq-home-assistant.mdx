@@ -1,9 +1,9 @@
 ---
 title: "Škoda Elroq og Home Assistant, seks måneder efter"
-description: "Hvad MyŠkoda-integrationen faktisk giver i Home Assistant, hvad der mangler, og et nyttigt EV-dashboard med batteristatus og forvarming."
+description: "Fra MyŠkoda til VW Group Connect i Home Assistant: hvad integrationen giver, hvad der mangler, og et EV-dashboard med batteristatus og forvarming."
 pubDate: 2026-04-13
-updatedDate: 2026-09-19
-verifiedOn: "HA 2026.7"
+updatedDate: 2026-10-01
+verifiedOn: "HA 2026.9"
 tags: ["ev", "dashboard"]
 lang: "da"
 translationKey: "skoda-elroq-home-assistant"
@@ -42,6 +42,33 @@ Se [GitHub-issues](https://github.com/skodaconnect/homeassistant-myskoda/issues)
 Jeg har flyttet mine egne Elroq-automationer til [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), et vedligeholdt alternativ der allerede understøtter Škoda via flere kanaler. Kører du stadig MySkoda, så få VW Group Connect logget ind allerede nu i stedet for at vente til det går galt — de to kan sagtens køre side om side. Forvent dog ikke en 1:1-omdøbning: entitetsnavnene er anderledes (`garage_<bilnavn>_*`, ikke `skoda_elroq_*`), og mindst én enum-sensor skifter helt case — MySkodas `charging_state` er lowercase (`ready_for_charging`), VW Group Connects tilsvarende er uppercase (`READY_FOR_CHARGING`). Tjek hver automations state-sammenligninger manuelt; antag ikke at de matcher.
 
 </div>
+
+## Oktober 2026: skiftet er gennemført
+
+MySkoda er nu helt ude af mine dashboards og automationer. Tre ting overraskede mig undervejs.
+
+**Kabelfrigivelsen var allerede væk.** Da jeg tjekkede, tilbød MySkoda kun én service, `set_preferred_charging_time`. `unlock_charger_cable`, som mit script brugte, fandtes ikke længere, så scriptet fejlede i stilhed. VW Group Connect har ingen direkte kommando til det, men har indstillingen `auto_unlock_charging_plug`, som frigiver stikket, når bilen låses op. Mit script slår den til og låser op. Jeg har ikke testet det ved bilen endnu.
+
+**Batteriplejen er den rigtige grænse.** Lademålet stod på 100 %, men grafen toppede ved 80 %. Det er bilens batteripleje, som VW Group Connect viser som en switch, der bestemmer. Vil du lade til 100 % før en tur, er det batteriplejen, du skal slå fra, ikke lademålet.
+
+**En parkeret bil sover.** Min advarsel om forældede data slog til efter 45 minutter uden rapport, så den lyste næsten altid, når bilen holdt stille. Nu advarer den kun, når integrationen selv melder forældede data, bilen ikke kan nås, der er gået 45 minutter under kørsel, eller der er gået et døgn helt uden rapport.
+
+### Hvad VW Group Connect giver, som MySkoda ikke gav
+
+- Turdata: sidste turs afstand, varighed og gennemsnitsforbrug, plus kilometertæller.
+- Advarsler for dæktryk, motor og bremser som binære sensorer.
+- Parkeringsadressen som tekst.
+- Switches til batteripleje, opladning og automatisk frigivelse af ladestikket.
+- Services til sædevarme, rudevarme og lademål.
+
+### Det har jeg bygget oven på (testes i oktober)
+
+- **Lad til 100 % før lange ture.** Kl. 19 læser Home Assistant morgendagens kalender. Har en aftale en adresse uden for nærområdet, slås batteriplejen fra, og den slås til igen, når bilen har været hjemme i 30 minutter. Min elleverandørs smarte opladning bestemmer stadig, *hvornår* der lades.
+- **Pris pr. tur.** Når kilometertælleren har stået stille i 10 minutter, logges km, kWh og et prisoverslag med den aktuelle elpris. Dashboardet viser månedens km og kroner.
+- **Forvarmning før morgenaftaler** under 5 °C, med rudevarme under 1 °C og sædevarme under −2 °C.
+- **Besked, hvis bilen står ulåst** i 10 minutter væk hjemmefra, med adressen og en «Lås nu»-knap.
+
+Jeg opdaterer indlægget, når de har kørt en måned.
 
 Min Škoda er det eneste i huset der ikke taler med Home Assistant automatisk. Alle andre enheder er enten integreret native eller via HACS. Bilen levede i sin egen app, og det nag jeg. Ikke dramatisk — bare en konstant lille irritation.
 

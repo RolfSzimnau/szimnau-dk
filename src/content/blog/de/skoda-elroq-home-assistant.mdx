@@ -1,9 +1,9 @@
 ---
 title: "Škoda Elroq und Home Assistant, sechs Monate später"
-description: "Was die MyŠkoda-Integration in Home Assistant wirklich bietet, was fehlt, und ein nützliches EV-Dashboard mit Batterie-Fortschritt und Vorwärmung."
+description: "Von MyŠkoda zu VW Group Connect in Home Assistant: was die Integration liefert, was fehlt, und ein EV-Dashboard mit Akkustatus und Vorheizen."
 pubDate: 2026-04-13
-updatedDate: 2026-09-19
-verifiedOn: "HA 2026.7"
+updatedDate: 2026-10-01
+verifiedOn: "HA 2026.9"
 tags: ["ev", "dashboard"]
 lang: "de"
 translationKey: "skoda-elroq-home-assistant"
@@ -42,6 +42,33 @@ Aktueller Stand: [GitHub-Issues](https://github.com/skodaconnect/homeassistant-m
 Ich habe meine eigenen Elroq-Automationen bereits auf [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha) umgestellt, eine gepflegte Alternative, die Škoda über mehrere Kanäle unterstützt. Wer noch MySkoda nutzt, sollte VW Group Connect schon jetzt anmelden, statt auf die Abschaltung zu warten — beide laufen problemlos parallel. Eine 1:1-Umbenennung ist es aber nicht: Die Entity-Namen unterscheiden sich (`garage_<autoname>_*`, nicht `skoda_elroq_*`), und mindestens ein Enum-Sensor ändert komplett die Groß-/Kleinschreibung — MySkodas `charging_state` ist kleingeschrieben (`ready_for_charging`), das VW-Group-Connect-Pendant ist großgeschrieben (`READY_FOR_CHARGING`). Prüfe die State-Vergleiche jeder Automation von Hand; verlass dich nicht auf Gleichheit.
 
 </div>
+
+## Oktober 2026: der Wechsel ist abgeschlossen
+
+MySkoda ist jetzt vollständig aus meinen Dashboards und Automationen verschwunden. Drei Dinge haben mich dabei überrascht.
+
+**Die Kabelentriegelung war schon weg.** Als ich nachsah, bot MySkoda nur noch einen Dienst an, `set_preferred_charging_time`. Den Dienst `unlock_charger_cable`, den mein Skript aufrief, gab es nicht mehr, also schlug das Skript still fehl. VW Group Connect hat keinen direkten Befehl dafür, aber die Einstellung `auto_unlock_charging_plug`, die den Stecker beim Entriegeln des Autos freigibt. Mein Skript schaltet sie ein und entriegelt das Auto. Am Auto getestet habe ich das noch nicht.
+
+**Die Batteriepflege ist die eigentliche Grenze.** Das Ladeziel stand auf 100 %, aber die Kurve endete bei 80 %. Entscheidend ist der Batteriepflegemodus des Autos, den VW Group Connect als Schalter bereitstellt. Wer vor einer Fahrt auf 100 % laden will, schaltet die Batteriepflege aus, nicht das Ladeziel.
+
+**Ein geparktes Auto schläft.** Meine Warnung vor veralteten Daten schlug nach 45 Minuten ohne Meldung an und war deshalb fast immer aktiv, wenn das Auto stand. Jetzt warnt sie nur, wenn die Integration selbst veraltete Daten meldet, das Auto nicht erreichbar ist, während der Fahrt 45 Minuten vergehen oder ein ganzer Tag ohne Meldung vergeht.
+
+### Was VW Group Connect liefert, MySkoda aber nicht
+
+- Fahrtdaten: Strecke, Dauer und Durchschnittsverbrauch der letzten Fahrt, dazu der Kilometerstand.
+- Warnungen für Reifendruck, Motor und Bremsen als binäre Sensoren.
+- Die Parkadresse als Text.
+- Schalter für Batteriepflege, Laden und automatische Freigabe des Ladesteckers.
+- Dienste für Sitzheizung, Scheibenheizung und Ladeziel.
+
+### Was ich darauf aufgebaut habe (Test im Oktober)
+
+- **Vor langen Fahrten auf 100 % laden.** Um 19 Uhr liest Home Assistant den Kalender für morgen. Hat ein Termin eine Adresse außerhalb der näheren Umgebung, wird die Batteriepflege ausgeschaltet und wieder eingeschaltet, sobald das Auto 30 Minuten zu Hause war. Das Smart Charging meines Stromanbieters entscheidet weiterhin, *wann* geladen wird.
+- **Kosten pro Fahrt.** Steht der Kilometerstand 10 Minuten still, werden Strecke, kWh und eine Kostenschätzung zum aktuellen Strompreis protokolliert. Das Dashboard zeigt Kilometer und Kronen des Monats.
+- **Vorheizen vor Morgenterminen** unter 5 °C, mit Scheibenheizung unter 1 °C und Sitzheizung unter −2 °C.
+- **Eine Benachrichtigung, wenn das Auto** 10 Minuten unverriegelt außerhalb von zu Hause steht, mit Adresse und einer Taste zum Verriegeln.
+
+Ich aktualisiere den Beitrag, wenn alles einen Monat gelaufen ist.
 
 Das Škoda ist das einzige im Haus, das nicht automatisch mit Home Assistant spricht. Alle anderen Geräte sind entweder nativ oder über HACS eingebunden. Das Auto lebte in seiner eigenen App — und das nagte an mir. Nicht dramatisch. Nur ein konstantes kleines Unbehagen.
 
