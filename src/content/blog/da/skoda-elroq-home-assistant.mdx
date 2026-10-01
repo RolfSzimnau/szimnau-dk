@@ -47,7 +47,7 @@ Jeg har flyttet mine Elroq-automationer til [VW Group Connect](https://github.co
 
 MySkoda er helt ude af mine dashboards og automationer. Tre ting overraskede mig undervejs.
 
-**Kabelfrigivelsen virkede allerede ikke.** Da jeg kiggede efter, havde MySkoda kun én service tilbage, `set_preferred_charging_time`. Servicen `unlock_charger_cable`, som mit script kaldte, var væk, så scriptet havde i al stilhed holdt op med at virke. VW Group Connect har ingen kommando, der frigiver kablet direkte, men har indstillingen `auto_unlock_charging_plug`, som frigiver stikket, når bilen låses op. Mit script slår nu indstillingen til og låser bilen op. Jeg har endnu ikke prøvet det af ved bilen.
+**Kabelfrigivelsen virkede allerede ikke.** Da jeg kiggede efter, havde MySkoda kun én handling tilbage, `set_preferred_charging_time`. Handlingen `unlock_charger_cable`, som mit script kaldte, var væk, så scriptet havde i al stilhed holdt op med at virke. VW Group Connect har ingen kommando, der frigiver kablet direkte, men har indstillingen `auto_unlock_charging_plug`, som frigiver stikket, når bilen låses op. Mit script slår nu indstillingen til og låser bilen op. Jeg har endnu ikke prøvet det af ved bilen.
 
 **Det er batteriplejen, der sætter grænsen.** Lademålet stod på 100 %, men grafen stoppede hver gang ved 80 %. Det er bilens batteripleje, der bestemmer, og den kan VW Group Connect slå til og fra. Vil du lade til 100 % før en lang tur, skal du altså slå batteriplejen fra. Det hjælper ikke at hæve lademålet.
 
