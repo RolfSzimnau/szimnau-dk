@@ -1,7 +1,7 @@
 ---
 title: "Elspotpriser i Home Assistant: sådan lader bilen i de billige timer"
 seoTitle: "Elspotpriser i Home Assistant: lad bilen i de billige timer"
-description: "Energi Data Service til live spotpriser, ApexCharts stepline-diagram, og automatiseret Škoda Elroq-opladning uden at røre appen."
+description: "Energi Data Service til spotpriser i realtid, et trappediagram i ApexCharts og automatisk opladning af Škoda Elroq uden at røre appen."
 pubDate: 2025-05-02
 tags: ["energi", "ev", "automatisering"]
 lang: "da"
@@ -14,25 +14,25 @@ faqs:
     answer: "Only on nights with a large price spread — some Danish weeks the spread is tiny and the automation makes no difference. The bigger saving came from behavioural change: timing the dishwasher and washing machine to the cheapest window."
 ---
 
-Der var en nat i februar hvor el kostede 0,18 kr/kWh kl. 3 og 3,40 kr/kWh kl. 8. Næsten 20 gange så dyrt på fem timer. Hvis bilen lader på en fast natplan ruller du terning om hvilken ende af det spænd du lander på.
+En nat i februar kostede strømmen 0,18 kr./kWh kl. 3 og 3,40 kr./kWh kl. 8. Næsten 20 gange så dyrt på fem timer. Lader bilen efter en fast natplan, er det rent held, hvilken ende af det spænd du rammer.
 
 Home Assistant kan se timepriserne. Resten følger af sig selv.
 
 ## Energi Data Service
 
-[Energi Data Service](https://www.energidataservice.dk/) er en gratis dansk offentlig API — ingen nøgle krævet. HA-integrationen henter dagens og morgendagens timepriser for dit prisområde (DK1 eller DK2).
+[Energi Data Service](https://www.energidataservice.dk/) er et gratis offentligt dansk API, og der skal ingen nøgle til. Integrationen i HA henter dagens og morgendagens timepriser for dit prisområde (DK1 eller DK2).
 
-Installer fra HACS, tilføj via Integrationer, vælg dit område. Du får:
+Installer den fra HACS, tilføj den under Integrationer, og vælg dit område. Så får du:
 
 ```
 sensor.energi_data_service    — aktuel timepris (kr/kWh inkl. moms)
 ```
 
-`raw_today`- og `raw_tomorrow`-attributterne indeholder de fulde 24-timers prisarrays som `{hour, price}`-objekter, hvor `hour` er en ISO datetime-streng. Morgendagens priser dukker op omkring kl. 13 når Nord Pool-auktionen afregnes.
+Attributterne `raw_today` og `raw_tomorrow` indeholder døgnets priser som `{hour, price}`-objekter, hvor `hour` er et tidspunkt i ISO-format. Morgendagens priser kommer omkring kl. 13, når Nord Pool-auktionen er afgjort.
 
 ## Diagrammet
 
-`custom:apexcharts-card` (HACS) med `column`-type er det rigtige her — hver søjle holder i en hel time, derefter hopper den. Farvetærskler gør de dyre timer tydelige:
+`custom:apexcharts-card` (HACS) med typen `column` passer godt her: hver søjle gælder en hel time, og så skifter prisen. Farvegrænser gør de dyre timer tydelige:
 
 ```yaml
 type: custom:apexcharts-card
@@ -56,13 +56,13 @@ series:
         color: '#f44336'
 ```
 
-Grøn under 1 kr, orange op til 1,50, rød derover. `concat`-delen håndterer at morgendagens priser ikke er tilgængelige endnu — uden den fejler diagrammet stille om formiddagen.
+Grøn under 1 kr., orange op til 1,50 kr. og rød derover. `concat`-delen tager højde for, at morgendagens priser ikke findes endnu. Uden den fejler diagrammet om formiddagen uden at sige noget.
 
 ## Det billigste vindue
 
 ### Som template-sensor
 
-En template-sensor der finder det billigste sammenhængende 2-timers blok der er tilbage i dag:
+En template-sensor, der finder de billigste to sammenhængende timer, der er tilbage i dag:
 
 ```yaml
 template:
@@ -85,11 +85,11 @@ template:
           {% endif %}
 ```
 
-Vises som `02:00` eller `14:00` på dashboardet. Ikke brugt direkte i opladningsautomatiseringen — den kører hvert time og beslutter ud fra den aktuelle pris — men nyttig til at verificere at bilen lader på et fornuftigt tidspunkt.
+Den vises som `02:00` eller `14:00` på dashboardet. Opladningsautomationen bruger den ikke direkte, for den kører hver time og beslutter ud fra prisen lige nu. Men den er nyttig til at tjekke, at bilen lader på et fornuftigt tidspunkt.
 
 ### Som et dashboard-kort
 
-Vil du undgå template-sensoren helt, kan dette markdown-kort beregne og vise det billigste vindue direkte — inklusiv i morgen når morgendagens priser er tilgængelige:
+Vil du helt undgå template-sensoren, kan dette markdown-kort beregne og vise det billigste tidsrum direkte, også for i morgen, når morgendagens priser er kommet:
 
 ```yaml
 type: markdown
@@ -124,9 +124,9 @@ content: >
   💡 Start opvaskemaskinen eller vaskemaskinen midt på dagen for at spare mest
 ```
 
-Logikken: find minimumsprisen for dagen, udvid derefter vinduet til at inkludere alle tilstødende timer inden for 25% af det minimum. Kortet opdaterer sig automatisk når sensoren ændrer sig — ingen separat automatisering nødvendig.
+Logikken: find dagens laveste pris, og udvid tidsrummet med alle tilstødende timer, der ligger højst 25 % over den. Kortet opdaterer sig selv, når sensoren ændrer sig, så der skal ingen separat automation til.
 
-## Opladningsautomatiseringen
+## Automationen, der styrer opladningen
 
 Automationen bruger `switch.skoda_elroq_charging` fra [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-integrationen (HACS) til at starte og stoppe opladningen.
 
@@ -162,12 +162,12 @@ action:
               entity_id: switch.skoda_elroq_charging
 ```
 
-Under 1,00 kr — oplad. Over 1,50 kr — stop. Imellem de to tal — rør den ikke. Dødszonen er bevidst: uden den ville kontakten toggle frem og tilbage hver time når priserne svæver omkring tærsklen.
+Under 1,00 kr.: lad. Over 1,50 kr.: stop. Midt imellem: rør den ikke. Det tomme interval er med vilje. Uden det ville kontakten skifte frem og tilbage hver time, når prisen ligger lige omkring grænsen.
 
-Der er en `input_boolean.elroq_force_charge`-override til de morgener hvor jeg har brug for fuld opladning uanset pris.
+Med `input_boolean.elroq_force_charge` kan jeg tvinge opladningen igennem de morgener, hvor jeg har brug for fuldt batteri, uanset prisen.
 
 ## Virker det?
 
-Første hele måned: ca. 28% lavere opladningsomkostning sammenlignet med altid-tændt natopladning. Besparelsen kommer næsten udelukkende fra nætterne med store prisspænd — der er uger i Danmark hvor spændet er lille og automatiseringen ikke gør nogen forskel.
+Første hele måned: cirka 28 % lavere udgift til opladning end ved opladning hele natten. Besparelsen kommer næsten kun fra de nætter, hvor priserne svinger meget. Der er uger i Danmark, hvor forskellen er lille, og automationen ikke gør nogen forskel.
 
-Det jeg ikke forventede: det ændrede hvordan jeg tænker på at køre andre apparater. Elprisdiagrammet er nu et af de mest tjekkede kort på mit dashboard — og jeg har siden tilføjet vindue-kortet ovenfor, som automatisk viser det bedste tidspunkt til at køre opvaskemaskinen eller vaskemaskinen. Den adfærdsændring sparer sandsynligvis mere end den automatiserede EV-opladning gør.
+Det, jeg ikke havde forventet, var, at det ændrede, hvordan jeg tænker på de andre apparater. Elprisdiagrammet er nu et af de kort, jeg kigger mest på, og siden har jeg tilføjet kortet ovenfor, der selv viser det bedste tidspunkt at starte opvaskemaskinen eller vaskemaskinen. Den ændrede vane sparer sandsynligvis mere end den automatiske opladning af bilen.

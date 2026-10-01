@@ -14,19 +14,19 @@ faqs:
     answer: "Denmark has only 8 land regions (DK001–DK008) plus around 20 marine zones. Kolding Municipality falls under DK005 'Syd- og Sønderjylland'. Verify against the live feed at feeds.meteoalarm.org instead of guessing — local area names like 'Trekantområdet' are not MeteoAlarm regions."
 ---
 
-Den aften jeg byggede det her, havde DMI to gule varsler kørende samtidig for mit område: torden indtil kl. 20 og høj varme indtil kl. 18. Home Assistant har en indbygget MeteoAlarm-integration, som burde vise begge — men den kan kun vise ét varsel ad gangen. Det andet forsvinder bare.
+Den aften, jeg byggede det her, havde DMI to gule varsler for mit område på samme tid: torden indtil kl. 20 og høj varme indtil kl. 18. Home Assistant har en indbygget MeteoAlarm-integration, som burde vise begge, men den kan kun vise ét varsel ad gangen. Det andet forsvinder bare.
 
 Det er ikke en konfigurationsfejl. Det er [core issue #131045](https://github.com/home-assistant/core/issues/131045): integrationen giver én binær sensor pr. region, og når der er flere aktive varsler, vinder ét af dem. Til et dashboard, der skal skelne mellem storm, skybrud, snestorm og hedebølge, er det ubrugeligt.
 
 ## cap_alerts: én entitet pr. aktivt varsel
 
-Løsningen er [cap_alerts](https://github.com/seevee/cap_alerts) — en lille HACS custom-integration, der modellerer varsler efter CAP-standarden (Common Alerting Protocol) og opretter **én sensor-entitet pr. aktivt varsel** i stedet for at mase alt ind i én.
+Løsningen er [cap_alerts](https://github.com/seevee/cap_alerts), en lille brugerdefineret integration fra HACS. Den bygger varslerne op efter CAP-standarden (Common Alerting Protocol) og opretter **én sensor pr. aktivt varsel** i stedet for at presse alt ind i én.
 
-Installation: HACS → Custom repositories → `seevee/cap_alerts`, kategori *Integration*, genstart. Config flow: vælg **MeteoAlarm** som provider, land **DK**, og derefter regions-filter.
+Installation: HACS → Custom repositories → `seevee/cap_alerts`, kategori *Integration*, og genstart. I opsætningen vælger du **MeteoAlarm** som kilde, land **DK** og derefter et filter for regionen.
 
-## Regions-fælden: "Trekantområdet" findes ikke
+## Fælden med regionen: «Trekantområdet» findes ikke
 
-Jeg bor i Kolding Kommune og var overbevist om, at min varslingsregion hed "Trekantområdet". Det gør den ikke — den findes slet ikke i MeteoAlarm. Danmark har præcis **8 landregioner** (plus ca. 20 farvandszoner):
+Jeg bor i Kolding Kommune og var overbevist om, at min varslingsregion hed «Trekantområdet». Det gør den ikke, den findes slet ikke i MeteoAlarm. Danmark har præcis **8 regioner på land** (plus cirka 20 farvandszoner):
 
 | EMMA_ID | Region |
 |---------|--------|
@@ -39,17 +39,17 @@ Jeg bor i Kolding Kommune og var overbevist om, at min varslingsregion hed "Trek
 | DK007 | Vest- og Sydsjælland samt Lolland-Falster |
 | DK008 | København og Nordsjælland |
 
-Tjek selv i det levende feed på `feeds.meteoalarm.org` — søg efter din kommune-egn i `areaDesc`-felterne i stedet for at gætte. Kolding er **DK005**.
+Tjek selv i det aktuelle feed på `feeds.meteoalarm.org`, og søg efter din egn i felterne `areaDesc` i stedet for at gætte. Kolding hører til **DK005**.
 
-## Gotcha: DMI's grønne "ingen varsler" er tagget med alle regioner
+## Pas på: DMI's grønne «ingen varsler» gælder alle regioner
 
-Første polling gav mig 69 entiteter — og næsten alle var "green Rain", "green Fog", "green High temperature". DMI udsender permanente *"There are currently no active warnings"*-beskeder for hver varselstype, og de er geokodet med **samtlige** regionskoder. De slipper altså gennem ethvert regionsfilter.
+Den første hentning gav mig 69 entiteter, og næsten alle var «green Rain», «green Fog» og «green High temperature». DMI sender faste beskeder om, at *«There are currently no active warnings»*, for hver type varsel, og de er mærket med **alle** regionskoder. De slipper altså igennem ethvert filter for region.
 
-Konsekvens: du kan ikke nøjes med at filtrere på region. Du skal filtrere på `awareness_level` — niveau 1 er grøn (ingen varsel), 2 er gul, 3 orange, 4 rød.
+Det betyder, at du ikke kan nøjes med at filtrere på region. Du skal filtrere på `awareness_level`: 1 er grøn (intet varsel), 2 er gul, 3 er orange og 4 er rød.
 
-## Fire faretyper som stabile binary sensors
+## Fire typer fare som faste binære sensorer
 
-cap_alerts-entiteterne er dynamiske med hash-endelser (`sensor.cap_alerts_meteoalarm_cap_alert_yellow_thunderstorm_8907cd01`) og forsvinder, når varslet udløber. Dem kan man ikke hardcode i et dashboard-kort. I stedet: fire template binary sensors — én pr. faretype — der scanner alle cap_alerts-entiteter og parser `awareness_type`/`awareness_level` fra parametrene:
+Entiteterne fra cap_alerts kommer og går med tilfældige endelser (`sensor.cap_alerts_meteoalarm_cap_alert_yellow_thunderstorm_8907cd01`) og forsvinder, når varslet udløber. Dem kan man ikke skrive direkte ind i et kort. I stedet bruger jeg fire binære template-sensorer, én pr. type fare, som gennemgår alle cap_alerts-entiteter og læser `awareness_type` og `awareness_level` ud af parametrene:
 
 ```yaml
 {% set ns = namespace(hit=false) %}
@@ -64,13 +64,13 @@ cap_alerts-entiteterne er dynamiske med hash-endelser (`sensor.cap_alerts_meteoa
 {{ ns.hit }}
 ```
 
-Det er state-templaten for `binary_sensor.jordrup_wind_warning` (oprettet som Template Helper i UI'et — ingen YAML-filer). Awareness-type-koderne: **1** vind, **2** sne/is, **3** torden, **5** varme, **10/12/13** regn/oversvømmelse. Jeg lod bevidst torden (3) tælle med under storm — DMI udsender kastevinds-varsler som "Thunderstorm", og et rent vind-filter ville have skjult det aktive varsel den aften.
+Det er templaten for `binary_sensor.jordrup_wind_warning` (oprettet som template-hjælper i brugerfladen, ingen YAML-filer). Koderne for `awareness_type`: **1** vind, **2** sne og is, **3** torden, **5** varme og **10/12/13** regn og oversvømmelse. Jeg lod med vilje torden (3) tælle med under storm. DMI sender varsler om kraftige vindstød som «Thunderstorm», og et rent vindfilter ville have skjult det aktive varsel den aften.
 
-De fire sensorer: `jordrup_wind_warning` (1+3), `jordrup_rain_flood_warning` (10/12/13), `jordrup_snow_ice_warning` (2) og `jordrup_heat_warning` (5).
+De fire sensorer er `jordrup_wind_warning` (1 og 3), `jordrup_rain_flood_warning` (10, 12 og 13), `jordrup_snow_ice_warning` (2) og `jordrup_heat_warning` (5).
 
-## Ticker-kortet
+## Kortet med de skiftende varsler
 
-Med stabile binary sensors er dashboard-delen triviel — jeg bruger [AlertTicker-Card](https://github.com/djdevil/AlertTicker-Card), som roterer mellem aktive varsler:
+Med faste binære sensorer er dashboardet nemt. Jeg bruger [AlertTicker-Card](https://github.com/djdevil/AlertTicker-Card), som skifter mellem de aktive varsler:
 
 ```yaml
 type: custom:alert-ticker-card
@@ -98,8 +98,8 @@ alerts:
     theme: warning
 ```
 
-Da jeg tog screenshottet øverst, roterede den mellem storm- og varmevarslet — to uafhængige farer, samtidig, hver med sin prioritet. Det var hele pointen.
+Da jeg tog skærmbilledet øverst, skiftede den mellem varslerne om storm og varme: to uafhængige farer på samme tid, hver med sin prioritet. Det var hele pointen.
 
-## Begrænsningerne, ærligt
+## Begrænsningerne, ærligt talt
 
-cap_alerts poller hvert 5. minut (konfigurerbart), så et splinternyt varsel kan være få minutter forsinket. Regionsopløsningen er grov — DK005 dækker hele Syd- og Sønderjylland, ikke din matrikel (cap_alerts har også et GPS-polygon-filter, hvis du vil være mere præcis). Og mine sensorer trigger fra gult niveau og op — vil du kun have orange/rød, hæver du `lvl >= 2` til `3`.
+cap_alerts henter data hvert 5. minut (det kan ændres), så et helt nyt varsel kan komme et par minutter for sent. Regionerne er grove: DK005 dækker hele Syd- og Sønderjylland, ikke din grund (cap_alerts har også et filter med et GPS-område, hvis du vil være mere præcis). Og mine sensorer slår til fra gult niveau og op. Vil du kun have orange og rød, ændrer du `lvl >= 2` til `3`.

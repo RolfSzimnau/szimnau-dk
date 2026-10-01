@@ -1,6 +1,6 @@
 ---
 title: "Sonos og Google Nest som ét anlæg i Home Assistant"
-description: "Hvordan jeg samler et Sonos-stueanlæg med fire Google Nest Audio-højttalere via Home Assistant scripts. Uden tredjeparts broer og uden abonnement."
+description: "Sådan samler jeg en Sonos i stuen og fire Google Nest Audio-højttalere med scripts i Home Assistant. Uden broer fra tredjepart og uden abonnement."
 pubDate: 2026-01-23
 tags: ["medier", "automatisering"]
 lang: "da"
@@ -13,13 +13,13 @@ faqs:
     answer: "TTS announcements interrupt playback without resuming on Google speakers (Sonos has an announce workaround), so TTS is best routed only to rooms where music isn't usually playing."
 ---
 
-Sonos og Google er konkurrenter. Deres apps taler ikke med hinanden. Har du en Sonos-højttaler i stuen og Google Nest Audio-højttalere i soveværelser og køkken, har du to separate musiksystemer uden fælles styring.
+Sonos og Google er konkurrenter, og deres apps taler ikke sammen. Har du en Sonos i stuen og Google Nest Audio i soveværelset og køkkenet, har du to separate musiksystemer, der ikke kan styres samlet.
 
-Jeg levede med det i to år, inden det blev irriterende nok til at gøre noget ved.
+Jeg levede med det i to år, før det blev irriterende nok til, at jeg gjorde noget ved det.
 
-Løsningen var ikke en bridge-app eller en abonnementstjeneste. Det var Home Assistant.
+Løsningen var ikke en app, der bygger bro, eller et abonnement. Det var Home Assistant.
 
-## Udstyret jeg arbejder med
+## Udstyret
 
 Stuen: en Sonos-højttaler (`media_player.stue`).
 
@@ -29,15 +29,15 @@ Resten er Google Nest Audio eller Google Home:
 - Køkken (`media_player.hojtaler_kokken`)
 - Værksted (`media_player.vaerksted`)
 
-Fem højttalere, to mærker, nul native kompatibilitet.
+Fem højttalere, to mærker og ingen indbygget kompatibilitet.
 
-## Hvordan HA integrerer begge
+## Sådan får HA fat i begge
 
-**Sonos**-integrationen i HA er indbygget og solid. Den finder højttaleren automatisk over lokalt netværk — ingen afhængighed af Sonos-skyen til basal afspilningsstyring.
+**Sonos**-integrationen er indbygget i HA og solid. Den finder selv højttaleren på det lokale netværk og er ikke afhængig af Sonos' cloud til almindelig afspilning.
 
-Google-højttalere integreres via **Google Home**-integrationen (indbygget, eller den ældre **Cast**-integration — begge ligger i HA's integrationsliste). Begge giver `media_player`-entiteter med de almindelige handlinger til afspilning, pause og lydstyrke.
+Google-højttalerne kommer ind via integrationen **Google Home** (indbygget) eller den ældre **Cast**, som begge findes på HA's liste over integrationer. Begge giver `media_player`-entiteter med de almindelige handlinger til afspilning, pause og lydstyrke.
 
-Fordi HA mapper alt til samme `media_player`-domæne, kan du styre en Sonos og en Google-højttaler med de samme handlinger:
+Fordi HA lægger det hele i det samme `media_player`-domæne, kan du styre en Sonos og en Google-højttaler med de samme handlinger:
 
 ```yaml
 service: media_player.volume_set
@@ -53,7 +53,7 @@ HA er ligeglad med, at de er to forskellige mærker.
 
 ## De tre scripts
 
-Jeg har bygget tre scripts, der behandler alle fem højttalere som ét system:
+Jeg har bygget tre scripts, der behandler alle fem højttalere som ét anlæg:
 
 **Pause alle:**
 ```yaml
@@ -83,7 +83,7 @@ sequence:
         - media_player.vaerksted
 ```
 
-**Sæt volumen på alle (tager et niveau som field-input):**
+**Sæt lydstyrken på alle (tager et niveau som input):**
 ```yaml
 alias: alle_hojtalere_volumen
 fields:
@@ -103,11 +103,11 @@ sequence:
         - media_player.vaerksted
 ```
 
-Jeg kalder disse fra automationer, dashboard-knapper og stemmekommandoer. Volumen-scriptet er især nyttigt om aftenen — én stemmekommando sætter alt til 15% uden at jagte individuelle højttalerkontroller i tre forskellige apps.
+Jeg kalder dem fra automationer, knapper på dashboardet og stemmekommandoer. Lydstyrke-scriptet er især nyttigt om aftenen: én stemmekommando sætter alt til 15 % uden at skulle finde de enkelte højttalere i tre forskellige apps.
 
 ## Praktiske automationer
 
-**Forlader hjemmet** — når den sidste person forlader, pause alt der spiller:
+**Når alle tager af sted**: når den sidste person går, sættes alt, der spiller, på pause:
 
 ```yaml
 alias: Forlader — pause alle højttalere
@@ -123,7 +123,7 @@ action:
   - service: script.alle_hojtalere_pause
 ```
 
-**TV tændes** — sænk automatisk køkkenhøjttaleren, når TV'et starter:
+**Når TV'et tændes**: skru automatisk ned for højttaleren i køkkenet, når TV'et starter:
 
 ```yaml
 alias: TV tændt — sænk køkkenhøjttaleren
@@ -139,9 +139,9 @@ action:
       entity_id: media_player.hojtaler_kokken
 ```
 
-## Dashboard-styring
+## Styring fra dashboardet
 
-Jeg har en `custom:mushroom-chips-card` (HACS, Mushroom-suite) i hoved-Hjem-visningen til hurtig ét-tryk-styring:
+Jeg har et `custom:mushroom-chips-card` (HACS, Mushroom-pakken) på forsiden, så alt kan styres med ét tryk:
 
 ```yaml
 type: custom:mushroom-chips-card
@@ -165,14 +165,14 @@ chips:
         volume: 0.2
 ```
 
-Tre chips, alle højttalere håndteret. Den ligger ved siden af WiZ-lysstyringen og er blevet en af de mest brugte dele af dashboardet.
+Tre chips, der styrer alle højttalere. De sidder ved siden af styringen af WiZ-lyset og er blevet en af de mest brugte dele af dashboardet.
 
-## Hvad HA ikke løser
+## Det, HA ikke løser
 
-Native gruppering mellem Sonos og Google er stadig umulig via HA. Du kan ikke sende lyd fra Sonos til en Google-højttaler — de bruger forskellige streaming-protokoller (RAAT vs Cast). HA kan styre dem samtidigt, men kan ikke synkronisere afspilning.
+Sonos og Google kan stadig ikke grupperes sammen, heller ikke via HA. Du kan ikke sende lyd fra en Sonos til en Google-højttaler, fordi de bruger forskellige protokoller til streaming (RAAT og Cast). HA kan styre dem på samme tid, men kan ikke synkronisere afspilningen.
 
-Til synkroniseret musik bruger jeg enten Sonos alene (via Sonos-gruppering) eller Google alene (via Cast). HA-scripts er til styring, ikke streaming.
+Til synkroniseret musik bruger jeg enten Sonos alene (med Sonos' egne grupper) eller Google alene (via Cast). Scripts i HA er til styring, ikke til streaming.
 
-Den anden mangel er TTS. HAs TTS-motor kan sende til enhver `media_player`, men i praksis afbryder TTS afspilningen og genoptager den ikke. For Sonos er der en workaround med `tts.speak` og `announce`-optionen. For Google-højttalere er der ikke et rent ækvivalent endnu. Jeg kører TTS-notifikationer kun til rum, hvor der normalt ikke spilles musik.
+Den anden mangel er TTS. HA's TTS kan sende til enhver `media_player`, men i praksis afbryder den afspilningen og starter den ikke igen. På Sonos kan man komme uden om det med `tts.speak` og indstillingen `announce`. For Google-højttalere findes der ikke noget tilsvarende endnu. Jeg sender derfor kun talte beskeder til rum, hvor der normalt ikke spiller musik.
 
-På trods af begrænsningerne er det genuint nyttigt at have fem højttalere fra to fabrikanter under ét kontrollag. Den daglige to-apps-jonglering var stille og roligt irriterende — og nu er den bare væk.
+Trods begrænsningerne er det virkelig nyttigt at have fem højttalere fra to producenter samlet ét sted. Det daglige skift mellem to apps var irriterende i det stille, og nu er det bare væk.

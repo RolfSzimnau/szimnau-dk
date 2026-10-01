@@ -1,6 +1,6 @@
 ---
 title: "CSS'en bag mine glassmorphism-dashboards i Home Assistant"
-description: "De seks CSS-konstanter for alle kort i mine HA-dashboards, plus mønstre for statusbjælker, map-kort og undertrykkelse af Frosted Glass Dark ::before."
+description: "De seks CSS-konstanter for alle kort i mine HA-dashboards, plus mønstre til statusbjælker, kortvisninger og til at fjerne Frosted Glass Darks ::before."
 pubDate: 2024-12-13
 verifiedOn: "HA 2026.7"
 tags: ["dashboard"]
@@ -14,15 +14,15 @@ faqs:
     answer: "Not cleanly without maintaining a custom theme — card-mod styles don't cascade into nested cards reliably, so a snippets.yaml template is pasted per card. CSS custom properties in a theme YAML would be the proper fix."
 ---
 
-Jeg genopbyggede mine Home Assistant-dashboards tre gange inden de så ud til at høre sammen. Den første version var flade kort. Fin. Den anden var for mange farver. Den tredje landede på glassmorphism — halvgennemsigtige frosne kort på en dyb marineblå baggrund — og den har jeg ikke rørt siden.
+Jeg byggede mine Home Assistant-dashboards om tre gange, før de så ud til at høre sammen. Den første version var flade kort. Fin nok. Den anden havde for mange farver. Den tredje endte med glassmorphism, halvgennemsigtige frostede kort på en dyb marineblå baggrund, og den har jeg ikke rørt siden.
 
-Det der følger er den præcise CSS, med forklaringer på de ting der snublede mig.
+Herunder følger den præcise CSS med forklaringer på de ting, jeg snublede over.
 
 ![Home Assistant dashboard med glassmorphism-kort på en mørk marineblå baggrund](/blog-images/robot-roborock.jpg)
 
 ## De seks CSS-konstanter for hvert glassmorphism-kort
 
-Hvert ydre kort bruger nøjagtigt disse værdier. Ingen variation.
+Hvert ydre kort bruger præcis disse værdier. Ingen variationer.
 
 ```css
 border-radius: 28px;
@@ -33,15 +33,15 @@ border: 1px solid rgba(255, 255, 255, 0.10);
 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 ```
 
-Og den du vil gå glip af hvis ingen fortæller dig det:
+Og den, du går glip af, hvis ingen fortæller dig om den:
 
 ```css
 ha-card::before { display: none !important; }
 ```
 
-**Frosted Glass Dark**-temaet (tilgængeligt i HACS under Themes, og adskillige lignende temaer) injicerer et `::before`-overlay på hvert `ha-card`. Hvis du ikke undertrykker det, får din brugerdefinerede baggrund et halvgennemsigtigt lag ovenpå. Symptomet er at dine kort ser lidt forkerte ud — lidt for uigennemsigtige, lidt forkert farvet — og du kan ikke finde ud af hvorfor. Jeg brugte et godt stykke tid på at lede det sted forkert sted inden jeg fandt det.
+Temaet **Frosted Glass Dark** (findes i HACS under Themes, og det samme gælder flere lignende temaer) lægger et `::before`-lag på hvert `ha-card`. Fjerner du det ikke, får din egen baggrund et halvgennemsigtigt lag ovenpå. Symptomet er, at kortene ser lidt forkerte ud, lidt for uigennemsigtige, lidt forkert farvede, og du kan ikke finde ud af hvorfor. Jeg ledte et godt stykke tid de forkerte steder, før jeg fandt det.
 
-## Ydre kort-skabelonen
+## Skabelonen til det ydre kort
 
 ```yaml
 type: custom:stack-in-card
@@ -60,11 +60,11 @@ cards:
   # indhold herunder
 ```
 
-`custom:stack-in-card` (HACS) er indpakningen. Al visuel styling bor her. Indre kort får ingen af det. `card_mod` (også HACS) er det der gør CSS-injektionen mulig.
+`custom:stack-in-card` (HACS) er rammen. Al visuel styling ligger her, og de indre kort får intet af det. `card_mod` (også HACS) er det, der gør det muligt at lægge CSS ind.
 
-## Indre kort — kun gennemsigtighed
+## Indre kort: kun gennemsigtighed
 
-Kort pakket ind i glasindpakningen skal forsvinde visuelt:
+Kort inde i glasrammen skal forsvinde visuelt:
 
 ```yaml
 card_mod:
@@ -77,19 +77,19 @@ card_mod:
     ha-card::before { display: none !important; }
 ```
 
-`::before`-undertrykkelsen er nødvendig på indre kort også. Temaet anvender det overalt.
+`::before` skal også fjernes på de indre kort. Temaet lægger det på overalt.
 
-Mellem indre kort bruger jeg en svag skillelinje:
+Mellem de indre kort bruger jeg en svag skillelinje:
 
 ```css
 border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
 ```
 
-Lysere end du ville forvente. Er den for synlig skærer den glasoverfladen over. Med en alfaværdi på 0,06 læses den som et sektionsskift uden at tiltrække opmærksomhed.
+Den er svagere, end du måske tror. Er den for tydelig, skærer den glasfladen over. Med en alfaværdi på 0,06 fungerer den som et skift mellem sektioner uden at trække opmærksomheden til sig.
 
 ## Statusbjælker via `::after`
 
-`::before` er optaget af tema-undertrykkelse. `::after` er fri til indhold.
+`::before` bruges allerede til at fjerne temaets lag. `::after` er fri til indhold.
 
 ```yaml
 card_mod:
@@ -112,13 +112,13 @@ card_mod:
     }
 ```
 
-Gradienten toner ud mod højre, så et kort ved 30% ser anderledes ud end et ved 80% på en måde der læses intuitivt. Jeg bruger det til EV-batteri, støvsugerbatteri og klipperbatteri. For vedligeholdelsessensorer inverterer jeg farvelogikken — tæt på 0% er advarsel, så rød gradient.
+Gradienten toner ud mod højre, så et kort ved 30 % ser anderledes ud end et ved 80 %, og det aflæses intuitivt. Jeg bruger den til elbilens, støvsugerens og plæneklipperens batteri. For sensorer til vedligeholdelse vender jeg farverne om: tæt på 0 % er en advarsel, så gradienten er rød.
 
-## Kortkort
+## Kort med landkort
 
-Kortkort har deres egne renderingsregler. Sæt et direkte ind i en glas `stack-in-card` uden at justere det, og du får kantede hjørner der stikker ud over den afrundede indpakning.
+Landkortet har sine egne regler for, hvordan det tegnes. Sætter du det direkte ind i et glas-`stack-in-card` uden at justere noget, får du skarpe hjørner, der stikker ud over den afrundede ramme.
 
-Løsningen: `overflow: hidden` på det ydre kort, `border-radius: 0` på det indre kortkort. Det ydres overflow klarer klipningen.
+Løsningen: `overflow: hidden` på det ydre kort og `border-radius: 0` på landkortet indeni. Det ydre korts `overflow` klarer beskæringen.
 
 ```yaml
 type: custom:stack-in-card
@@ -141,9 +141,9 @@ cards:
         }
 ```
 
-## Badge-undertrykkelse
+## Skjul badges
 
-Mushroom-kort viser farvede badges ved visse tilstande — det orange "utilgængeligt" badge på en enhed der er offline er den hyppigste synder.
+Mushroom-kort viser farvede badges ved visse tilstande. Det orange «utilgængelig»-badge på en enhed, der er offline, er den hyppigste synder.
 
 ```yaml
 card_mod:
@@ -154,12 +154,12 @@ card_mod:
       }
 ```
 
-`"."`-nøglen er den rigtige for mushroom-kort i HA 2024+. Ikke `ha-card`, ikke komponentnavnet — `"."`. Jeg testede for mange andre selektorer inden denne virkede.
+Nøglen `"."` er den rigtige for Mushroom-kort fra HA 2024. Ikke `ha-card` og ikke komponentens navn, men `"."`. Jeg prøvede alt for mange andre selektorer, før den virkede.
 
 ## Samme udtryk i alle HA-dashboards
 
-YAML har ikke variabler. Hvert kort der bruger glasbehandlingen får sin egen kopi af de seks CSS-linjer. Vil jeg justere baggrundens gennemsigtighed i hele dashboardet, ændrer jeg det 25 steder.
+YAML har ikke variabler. Hvert kort med glas får sin egen kopi af de seks CSS-linjer. Vil jeg ændre baggrundens gennemsigtighed i hele dashboardet, skal det ændres 25 steder.
 
-Min løsning: en lokal `snippets.yaml`-fil med den fulde ydre kortskabelon som en kommentarblok. Indsæt derfra ved oprettelse af nye kort. Det er ikke elegant, men det er til at vedligeholde.
+Min løsning er en lokal `snippets.yaml` med hele skabelonen til det ydre kort som en kommentarblok. Den kopierer jeg fra, når jeg laver nye kort. Det er ikke elegant, men det er til at vedligeholde.
 
-Den rigtige løsning er CSS-custom properties i temaet — `var(--glass-bg)` defineret én gang, refereret overalt. Det virker i dag hvis dit tema definerer dem. Det spring har jeg ikke taget endnu.
+Den rigtige løsning er CSS-variabler i temaet: `var(--glass-bg)` defineres én gang og bruges overalt. Det virker allerede i dag, hvis dit tema definerer dem. Det skridt har jeg bare ikke taget endnu.

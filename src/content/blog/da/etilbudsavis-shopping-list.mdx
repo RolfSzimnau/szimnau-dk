@@ -1,7 +1,7 @@
 ---
-title: "eTilbudsavis i Home Assistant: Sorteret efter Butik med Notifikation ved Ankomst"
+title: "eTilbudsavis i Home Assistant: sorteret efter butik og med besked, når du ankommer"
 seoTitle: "eTilbudsavis i Home Assistant: sorteret efter butik"
-description: "Hvordan jeg fik eTilbudsavis i Home Assistant: varer sorteret efter butik, pris synlig i beskrivelsen og push-notifikation ved ankomst til en butik."
+description: "Sådan fik jeg eTilbudsavis ind i Home Assistant: varer sorteret efter butik, prisen i beskrivelsen og en push-besked, når man ankommer til en butik."
 pubDate: 2026-06-09
 verifiedOn: "HA 2026.7"
 tags: ["indkøb", "automatisering"]
@@ -15,23 +15,23 @@ faqs:
     answer: "HA zones are defined around each store, and an automation matches the zone name against item descriptions on arrival — walking into Bilka pushes a notification listing only the items on offer there. It requires maintaining a zone per store you shop in."
 ---
 
-Jeg stod i Netto og vidste ikke om der var noget på listen herfra. Det var der — men det var begravet midt i femten varer fra tre andre butikker. Jeg scrollede. Fandt dem til sidst. Det sker hver gang.
+Jeg stod i Netto og vidste ikke, om der var noget på listen herfra. Det var der, men det lå gemt midt i femten varer fra tre andre butikker. Jeg scrollede og fandt dem til sidst. Sådan gik det hver gang.
 
-Ugen forinden havde nogen i en dansk Facebook-gruppe nævnt at Home Assistant kunne sende en notifikation når man trådte ind i en butik med varer på listen. Jeg tænkte over det hele vejen hjem fra Netto.
+Ugen før havde nogen i en dansk Facebook-gruppe nævnt, at Home Assistant kunne sende en besked, når man gik ind i en butik med varer på listen. Jeg tænkte over det hele vejen hjem fra Netto.
 
-## Integrationen — CagosDk på GitHub
+## Integrationen fra CagosDk på GitHub
 
-Udgangspunktet er en HACS-integration lavet af [CagosDk](https://github.com/CagosDk/hacs-etilbudsavis). Tilføj den via HACS → Integrationer → Brugerdefinerede repositories, indsæt GitHub-URL'en og tilføj integrationen. Den opretter en `todo`-entity for hvert af dine eTilbudsavis-lister — min hedder `todo.min_indkobsliste`. Derfra optræder den som et normalt HA-todo-kort og i companion-appen på telefonen.
+Udgangspunktet er en HACS-integration lavet af [CagosDk](https://github.com/CagosDk/hacs-etilbudsavis). Tilføj den via HACS → Integrationer → Brugerdefinerede repositories, indsæt adressen fra GitHub, og tilføj integrationen. Den opretter en `todo`-entitet for hver af dine eTilbudsavis-lister, og min hedder `todo.min_indkobsliste`. Derfra dukker den op som et almindeligt todo-kort i HA og i Companion-appen på telefonen.
 
 <img src="/blog-images/etilbudsavis-shopping-Chip.jpg" alt="Home Assistant dashboard med et indkøbskurv-chip der viser antal varer på listen" style="max-width: 480px; display: block; margin: 2rem auto; border-radius: 12px;" />
 
-Et-app-problemet var løst. Men standardvisningen viser kun varenavne — ingen butik, ingen pris, ingen dato. Med femten varer fra fire butikker er det ikke nyttigt når man har travlt.
+Så var problemet med en app mere løst. Men standardvisningen viser kun varenavne: ingen butik, ingen pris, ingen dato. Med femten varer fra fire butikker hjælper det ikke meget, når man har travlt.
 
-## Ændringer i todo.py: description og sortering
+## Ændringer i todo.py: beskrivelse og sortering
 
-Integrationen gemmer alle data fra eTilbudsavis API'en i coordinatoren — herunder `business.name` (butik), `offer.price` og `offer.validUntil`. Som standard sætter `todo.py` kun butiksnavnet i `description`-feltet. For at få pris og dato med tilføjede jeg to hjælpefunktioner og ændrede sorteringsnøglen.
+Integrationen gemmer alle data fra eTilbudsavis' API i sin coordinator, blandt andet `business.name` (butikken), `offer.price` og `offer.validUntil`. Som standard lægger `todo.py` kun butikkens navn i feltet `description`. For at få pris og dato med tilføjede jeg to hjælpefunktioner og ændrede sorteringen.
 
-Description-builderen:
+Funktionen, der bygger beskrivelsen:
 
 ```python
 def _build_description(store: str, offer: dict | None, now: datetime) -> str | None:
@@ -54,9 +54,9 @@ def _build_description(store: str, offer: dict | None, now: datetime) -> str | N
     return desc
 ```
 
-Både `price` og `validUntil` hentes med `.get()` — hvis API'en ikke returnerer dem for shopping list-items, springes de bare over. Resultatet er altid gyldigt: som minimum kun butiksnavnet.
+Både `price` og `validUntil` hentes med `.get()`. Returnerer API'et dem ikke for varer på indkøbslisten, bliver de bare sprunget over. Resultatet er altid gyldigt, i værste fald kun med butikkens navn.
 
-Den anden hjælpefunktion håndterer udløbne tilbud. Hvis `validUntil` er i fortiden, får varens summary et præfix så det er tydeligt:
+Den anden hjælpefunktion tager sig af udløbne tilbud. Ligger `validUntil` i fortiden, får varens titel et præfiks, så det er tydeligt:
 
 ```python
 def _expiry_prefix(offer: dict | None, now: datetime) -> str:
@@ -74,7 +74,7 @@ def _expiry_prefix(offer: dict | None, now: datetime) -> str:
     return ""
 ```
 
-I `todo_items`-propertyen kaldes begge funktioner per vare, og sorteringsnøglen får butiksdimensionen:
+I `todo_items` kaldes begge funktioner for hver vare, og sorteringen får butikken med:
 
 ```python
 store = (item.get("business") or {}).get("name") or ""
@@ -91,17 +91,17 @@ result.sort(key=lambda x: (
 ))
 ```
 
-Resultatet: ufuldførte varer før afkrydsede, derefter alfabetisk efter butik, derefter alfabetisk inden for butikken.
+Resultatet: varer, der ikke er krydset af, kommer først, derefter sorteret alfabetisk efter butik og så alfabetisk inden for hver butik.
 
 <img src="/blog-images/etilbudsavis-shopping-list.webp" alt="eTilbudsavis indkøbsliste i Home Assistant companion-appen, sorteret efter butik med pris og dato synlig" style="max-width: 360px; display: block; margin: 2rem auto; border-radius: 16px;" />
 
-To ting er værd at vide inden du redigerer filen. For det første ligger `todo.py` på `/config/custom_components/etilbudsavis/todo.py` på HA-maskinen — HACS-opdateringer overskriver den. Ændringerne er små nok til at det tager et par minutter at genoprette dem. For det andet kræver ændringer i Python-filer i custom components en **fuld HA-genstart** — `reload_config_entry` tømmer ikke Pythons module cache.
+To ting er værd at vide, før du retter i filen. For det første ligger `todo.py` i `/config/custom_components/etilbudsavis/todo.py` på HA-maskinen, og HACS-opdateringer overskriver den. Ændringerne er så små, at det tager et par minutter at lægge dem ind igen. For det andet kræver ændringer i Python-filer i brugerdefinerede integrationer en **fuld genstart af HA**. `reload_config_entry` tømmer ikke Pythons cache af moduler.
 
-## Zoner og proximity-notifikationer
+## Zoner og besked, når man er tæt på
 
-Det er den del Facebook-kommentaren handlede om. Home Assistant har en `zone`-entity-type — man tegner en cirkel rundt om en adresse og companion-appen tracker hvornår telefonen befinder sig inden for den radius. Jeg oprettede zoner for de butikker vi faktisk handler i: Min Kobmand, ABC Lavpris, Bilka, Lidl, Føtex og to Netto-adresser.
+Det er den del, Facebook-kommentaren handlede om. Home Assistant har zoner: man tegner en cirkel rundt om en adresse, og Companion-appen holder øje med, hvornår telefonen er inden for cirklen. Jeg oprettede zoner for de butikker, vi faktisk handler i: Min Købmand, ABC Lavpris, Bilka, Lidl, Føtex og to Netto-butikker.
 
-En automation triggerer når enten min Pixel 10 eller min kones Pixel 9a ankommer til en af zonerne:
+En automation går i gang, når enten min Pixel 10 eller min kones Pixel 9a ankommer til en af zonerne:
 
 ```yaml
 trigger:
@@ -114,7 +114,7 @@ trigger:
   # ... gentages for hvert butiks-zone
 ```
 
-Automationen kobler hvert zone-entity til et butiksnavn i et `variables`-blok. To Netto-adresser peger på det samme navn — de giver den samme notifikation uanset hvilken butik man ankommer til:
+Automationen kobler hver zone til et butiksnavn i en `variables`-blok. To Netto-adresser peger på det samme navn, så de giver den samme besked, uanset hvilken af butikkerne man ankommer til:
 
 ```yaml
 variables:
@@ -130,7 +130,7 @@ variables:
   butik_navn: "{{ butik_lookup[trigger.zone] | default('') }}"
 ```
 
-Handlingen henter den aktuelle liste via `todo.get_items`, filtrerer varer hvis `description` starter med butiksnavnet, og sender en push hvis der er et match:
+Handlingen henter den aktuelle liste med `todo.get_items`, filtrerer de varer, hvis `description` starter med butikkens navn, og sender en push-besked, hvis der er et match:
 
 ```yaml
 - target:
@@ -157,6 +157,6 @@ Handlingen henter den aktuelle liste via `todo.get_items`, filtrerer varer hvis 
   action: notify.alle_enheder
 ```
 
-`regex_match` sammenligner fra starten af teksten, så "Netto" passer på "Netto – 12,95 kr. · til 12/6" uden at bruge contains. Erstat `notify.alle_enheder` med din egen notify-handling — det er den gruppe jeg bruger til at ramme begge telefoner på én gang.
+`regex_match` sammenligner fra starten af teksten, så «Netto» passer på «Netto – 12,95 kr. · til 12/6» uden at bruge contains. Erstat `notify.alle_enheder` med din egen notify-handling. Det er den gruppe, jeg bruger til at ramme begge telefoner på én gang.
 
-Første gang det virkede stod jeg foran Netto på Hylkedalvej. Telefonen vibrerede. To varer. Jeg vidste godt hvad der stod på listen — jeg havde selv skrevet den — men det er noget andet at have den på skærmen i det øjeblik man træder ind ad døren.
+Første gang det virkede, stod jeg foran Netto. Telefonen vibrerede. To varer. Jeg vidste godt, hvad der stod på listen, for jeg havde selv skrevet den, men det er noget andet at have den på skærmen i det øjeblik, man går ind ad døren.
