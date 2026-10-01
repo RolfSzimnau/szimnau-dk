@@ -1,7 +1,7 @@
 ---
-title: "Det der faktisk er nyttigt ved Roborock-kortet i Home Assistant"
+title: "Det, der faktisk er nyttigt ved Roborock-kortet i Home Assistant"
 seoTitle: "De nyttige dele af Roborock-kortet i Home Assistant"
-description: "Roborock S5 Max med interaktivt støvsugerkort, rum-segment-rengøring og vedligeholdelsessensorer der advarer dig inden børsten brænder ud."
+description: "Roborock S5 Max med interaktivt kort, rengøring af enkelte rum og sensorer for vedligeholdelse, der advarer dig, før børsten er slidt op."
 pubDate: 2025-04-04
 tags: ["støvsuger", "dashboard"]
 lang: "da"
@@ -14,13 +14,13 @@ faqs:
     answer: "Officially it is cloud polling at roughly 5-second refresh. Local communication requires extracting keys from device firmware — for starting cleans, battery and room segments, cloud polling is entirely adequate."
 ---
 
-Roborock-integrationen er bygget direkte ind i HA — ingen HACS nødvendig. Tilføj den, log ind med din Roborock-konto, og støvsugeren dukker op. Hvad den ikke fortæller dig er at det interessante kommer fra et separat HACS-kort der gengiver det live kort.
+Roborock-integrationen er bygget ind i HA, så der skal ikke bruges HACS. Tilføj den, log ind med din Roborock-konto, og støvsugeren dukker op. Hvad den ikke fortæller dig, er, at det interessante kommer fra et separat HACS-kort, der viser kortet live.
 
 ## Integrationen
 
-Cloud-polling med 5-sekunders opdatering. Lokal kommunikation er mulig men kræver at man hiver nøgler ud af enhedens firmware, og det gad jeg ikke. Til alt der betyder noget — starte rengøring, tjekke batteri, rum-segmenter — er cloud-polling hurtigt nok.
+Den henter data fra cloud hvert 5. sekund. Lokal forbindelse er mulig, men kræver, at man trækker nøgler ud af enhedens firmware, og det gad jeg ikke. Til alt, der betyder noget, som at starte rengøring, tjekke batteriet eller vælge rum, er cloud hurtigt nok.
 
-Entiteter efter opsætning:
+Entiteter efter opsætningen:
 
 ```
 vacuum.roborock_s5_max
@@ -33,9 +33,9 @@ sensor.roborock_filter_left
 sensor.roborock_sensor_dirty_left
 ```
 
-## Kortkortet
+## Støvsugerkortet på dashboardet
 
-`custom:xiaomi-vacuum-map-card` (HACS) er det der gør opsætningen faktisk nyttig. Det gengiver det live kort med dine rum-zoner markeret, og tryk på et rum starter rengøring af netop det segment.
+`custom:xiaomi-vacuum-map-card` (HACS) er det, der gør opsætningen nyttig. Det viser kortet live med dine rum markeret, og et tryk på et rum starter rengøring af netop det rum.
 
 ```yaml
 type: custom:xiaomi-vacuum-map-card
@@ -62,9 +62,9 @@ map_modes:
   - template: vacuum_goto
 ```
 
-Find dine rum-ID'er: Udviklingsværktøjer → Skabelon, evaluer `{{ state_attr('vacuum.roborock_s5_max', 'room_list') }}`. ID'erne er heltal tildelt da kortet blev oprettet i appen. Mine starter ved 16 — dine vil sandsynligvis være anderledes.
+Find dine rum-id'er: Udviklerværktøjer → Skabelon, og evaluer `{{ state_attr('vacuum.roborock_s5_max', 'room_list') }}`. Id'erne er heltal, der blev tildelt, da kortet blev oprettet i appen. Mine starter ved 16, dine er sandsynligvis anderledes.
 
-Kortkortet bor inde i en glas `stack-in-card`. Kortkort har brug for `border-radius: 0` på det indre kort, og den ydre container har brug for `overflow: hidden` — ellers bløder kortets hjørner ud over den afrundede glasindpakning.
+Støvsugerkortet ligger inde i et glas-`stack-in-card`. Kortet indeni skal have `border-radius: 0`, og beholderen udenom skal have `overflow: hidden`. Ellers stikker kortets hjørner ud over den afrundede glasramme.
 
 ```yaml
 type: custom:stack-in-card
@@ -89,9 +89,9 @@ cards:
 
 ## Vedligeholdelsessensorer
 
-Børste- og filtersensorerne tæller ned fra 100% til 0%. Jeg ignorerede dem for længe og fik så en advarsel om at hovredbørsten var på 8% — hvilket viste sig at være *meget* mere nedslidt end en procent antydede.
+Sensorerne for børster og filter tæller ned fra 100 % til 0 %. Jeg ignorerede dem for længe og fik så en advarsel om, at hovedbørsten var nede på 8 %. Den viste sig at være *meget* mere slidt, end tallet antydede.
 
-Farvede indikatorkort for hver komponent med `custom:mushroom-template-card` (HACS, Mushroom-suite) og `card_mod` (HACS):
+Farvede kort for hver del med `custom:mushroom-template-card` (HACS, Mushroom-pakken) og `card_mod` (HACS):
 
 ```yaml
 type: custom:mushroom-template-card
@@ -103,7 +103,7 @@ icon_color: >
   {% if pct > 40 %}green{% elif pct > 20 %}orange{% else %}red{% endif %}
 ```
 
-Og en vedvarende notifikation (ikke push — jeg behøver ikke at min telefon bimler over en børste) når noget falder under 20%:
+Og en vedvarende notifikation i HA (ikke push, min telefon behøver ikke at bippe over en børste), når noget kommer under 20 %:
 
 ```yaml
 alias: Roborock — Vedligeholdelsesadvarsel
@@ -122,9 +122,9 @@ action:
       notification_id: roborock_maintenance
 ```
 
-## Automatiseringen jeg bruger hver dag
+## Automationen, jeg bruger hver dag
 
-Rengør mens jeg er væk, dock inden jeg kommer hjem:
+Gør rent, mens jeg er væk, og kør i docken, før jeg kommer hjem:
 
 ```yaml
 alias: Roborock — Rengør ved afgang
@@ -161,6 +161,6 @@ action:
       entity_id: vacuum.roborock_s5_max
 ```
 
-5-minutters forsinkelsen ved afgang er vigtig. Uden den trigger et kort GPS-udsving en rengøring, og støvsugeren er halvvejs igennem køkkenet når jeg går ind ad døren igen to minutter efter.
+Forsinkelsen på 5 minutter, når jeg tager af sted, er vigtig. Uden den kan et kort udsving i GPS'en starte en rengøring, og så er støvsugeren halvvejs gennem køkkenet, når jeg kommer ind ad døren igen to minutter efter.
 
-Dock-ved-hjemkomst-automatiseringen har præcis én gang reddet mig fra at træde på støvsugeren i mørket. Værd det.
+Automationen, der sender den i docken, når jeg kommer hjem, har præcis én gang reddet mig fra at træde på støvsugeren i mørket. Det var det værd.

@@ -1,7 +1,7 @@
 ---
-title: "Et Tado-varmedashboard med card_mod, der rent faktisk er værd at se på"
+title: "Et Tado-varmedashboard med card_mod, der faktisk er værd at se på"
 seoTitle: "Et Tado-varmedashboard med card_mod, der er værd at se"
-description: "5 Tado-zoner i Home Assistant med mushroom klimakort, CSS-vejrtrækningsanimation på aktive zoner og tilstedeværelsesbaseret nedsætning der faktisk virker."
+description: "5 Tado-zoner i Home Assistant med Mushroom-klimakort, en CSS-animation, der får aktive zoner til at trække vejret, og sænket temperatur, når ingen er hjemme, der faktisk virker."
 pubDate: 2025-03-07
 tags: ["varme", "dashboard"]
 lang: "da"
@@ -14,15 +14,15 @@ faqs:
     answer: "A card-mod CSS keyframe animation on the mushroom climate card that only runs while hvac_action is heating — five zones in a grid read at a glance because only the active ones pulse."
 ---
 
-Tados HA-integration er en af de bedste out-of-the-box — indbygget i HA, ingen HACS. Du skal bruge Tado Internet Bridge-hardware og en Tado-konto. Tilføj integrationen, log ind, og alle zoner dukker op som `climate.*`-entiteter med fuld understøttelse. Statuspop kommer tilbage under fem sekunder. Det bare virker.
+Tados integration er en af de bedste i HA lige fra start: den er indbygget, så der skal ikke bruges HACS. Du skal have Tados Internet Bridge og en Tado-konto. Tilføj integrationen, log ind, og alle zoner dukker op som `climate.*`-entiteter med fuld understøttelse. Status opdateres på under fem sekunder. Det virker bare.
 
-Så selve opvarmningsdelen var nem. Det interessante var at få dashboardet til at fortælle noget med et øjeblik.
+Selve varmen var altså nem. Det interessante var at få dashboardet til at fortælle noget med et enkelt blik.
 
-## Vejrtrækningsanimationen
+## Animationen, der trækker vejret
 
-Problemet med at vise 5 klimakort i et gitter: de ser alle ens ud uanset om varmen kører eller ej. Temperatur vist, indstillingspunkt vist, tilstand vist. Men man kan ikke se hvilke zoner der aktivt fyrer kedlen.
+Problemet med 5 klimakort i et gitter er, at de ser ens ud, uanset om varmen kører eller ej. Temperaturen står der, den ønskede temperatur står der, tilstanden står der. Men man kan ikke se, hvilke zoner der får kedlen til at fyre.
 
-Jeg tilføjede en CSS keyframe-animation via `card_mod` der kun aktiverer når `hvac_action`-attributten er `heating`:
+Jeg tilføjede en CSS-animation med keyframes via `card_mod`, som kun er aktiv, når attributten `hvac_action` er `heating`:
 
 ```yaml
 type: custom:mushroom-climate-card
@@ -40,15 +40,15 @@ card_mod:
     }
 ```
 
-Aktive zoner pulserer med en varm orange glød. Inaktive er statiske. Over et 5-zones gitter er det øjeblikkeligt tydeligt hvilke rum der bruger energi.
+Aktive zoner pulserer med en varm orange glød. De andre står stille. I et gitter med 5 zoner kan man med det samme se, hvilke rum der bruger energi.
 
-En gæst spurgte om huset åndede. Det føltes rigtigt.
+En gæst spurgte, om huset trak vejret. Det føltes rigtigt.
 
-Dupliker blokken for hver zone og skift entitets-ID. Jinja2 inde i `card_mod` evalueres ved render-tid, så hvert kort beslutter selvstændigt om det skal animere.
+Kopiér blokken til hver zone, og skift entitets-id'et. Jinja2 i `card_mod` beregnes, når kortet tegnes, så hvert kort selv afgør, om det skal animeres.
 
 ## Layout
 
-Fem kort i et 2-kolonne gitter via `custom:layout-card` (HACS), pakket ind i et glas `custom:stack-in-card` (HACS), med `card_mod` (HACS) til CSS-animationerne:
+Fem kort i et gitter med 2 kolonner via `custom:layout-card` (HACS), pakket ind i et glas-`custom:stack-in-card` (HACS) og med `card_mod` (HACS) til animationerne:
 
 ```yaml
 type: custom:stack-in-card
@@ -87,11 +87,11 @@ cards:
       # gentag for hver zone
 ```
 
-`show_temperature_control: true` tilføjer +/- knapper direkte på kortet. En lille ting, men det betyder at man kan justere en zone uden at navigere nogen steder.
+`show_temperature_control: true` giver plus- og minusknapper direkte på kortet. En lille ting, men det betyder, at man kan justere en zone uden at navigere nogen steder hen.
 
-## Tilstedeværelsesbaseret nedsætning
+## Lavere temperatur, når ingen er hjemme
 
-Når alle forlader huset, drop alt til 17°C. Når nogen vender tilbage, gendan auto-tilstand så Tados egen tidsplan overtager:
+Når alle har forladt huset, sænkes alt til 17 °C. Når nogen kommer hjem, skifter zonerne tilbage til auto, så Tados egen tidsplan tager over:
 
 ```yaml
 alias: Tado — Væk nedsætning
@@ -131,13 +131,13 @@ action:
             hvac_mode: auto
 ```
 
-Jeg bruger dette frem for Tados egen geofencing fordi min tilstedeværelsesdetektion kombinerer telefon-GPS, UniFi enhedssporing og en `person.*`-entitet. Det er mere pålideligt end Tados app alene, der af og til beslutter at jeg er gået ud når jeg bare er i haven.
+Jeg bruger det i stedet for Tados egen geofencing, fordi min registrering af, hvem der er hjemme, kombinerer telefonens GPS, sporing af enheder i UniFi og en `person.*`-entitet. Det er mere pålideligt end Tados app alene, som af og til beslutter, at jeg er gået, når jeg bare er i haven.
 
-## Vinduesopdagelse
+## Åbne vinduer
 
-Tados åbent-vindue-detektion er hardware-baseret — TRV'en måler et pludseligt temperaturfald og sætter varmen i den zone på pause automatisk. HA viser det via `binary_sensor.zone_*_window`.
+Tado registrerer åbne vinduer i selve hardwaren: termostaten måler et pludseligt temperaturfald og sætter selv varmen på pause i den zone. HA viser det via `binary_sensor.zone_*_window`.
 
-Jeg tilføjede en notifikation for vinduer der har stået åbne mere end 20 minutter under aktiv opvarmning. Baderummet er den sædvanlige synder. Automatiseringen har sandsynligvis sparet mere i varmeomkostninger end alt andet jeg har bygget med Tado.
+Jeg tilføjede en besked, når et vindue har stået åbent i mere end 20 minutter, mens varmen er tændt. Badeværelset er den sædvanlige synder. Den automation har sandsynligvis sparet mere på varmeregningen end noget andet, jeg har bygget med Tado.
 
 ```yaml
 alias: Tado — Åbent vindue advarsel

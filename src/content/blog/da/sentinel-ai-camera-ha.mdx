@@ -1,7 +1,7 @@
 ---
-title: "AI-kamera i Home Assistant: Notifikationer der rent faktisk giver mening"
+title: "AI-kamera i Home Assistant: notifikationer, der faktisk giver mening"
 seoTitle: "AI-kamera i Home Assistant: notifikationer der giver mening"
-description: "Sådan sender Sentinel-kameraet nyttige beskeder i stedet for 40 bevægelsesalarmer om dagen: én automatisering, lydløs-kontakt og handlingsknapper."
+description: "Sådan sender Sentinel-kameraet nyttige beskeder i stedet for 40 bevægelsesalarmer om dagen: én automation, en lydløs-kontakt og knapper i notifikationen."
 pubDate: 2025-02-07
 tags: ["kamera", "sikkerhed"]
 lang: "da"
@@ -14,13 +14,13 @@ faqs:
     answer: "Yes — the same automation pushes a snapshot to a Fire TV via notify, with a cache-busting timestamp parameter on the image URL and interrupt: 1 so it appears even during playback."
 ---
 
-De første par uger efter jeg installerede Sentinel-kameraet havde jeg bevægelsesnotifikationer slået til. Hver eneste notifikation sagde "Bevægelse registreret." Fugle, skygger, en plastikpose der blæste forbi linsen klokken tre om natten. Jeg slog dem alle fra og lod kameraet sidde der og ikke gøre ret meget nyttigt i endnu en måned.
+De første par uger efter jeg satte Sentinel-kameraet op, havde jeg notifikationer for bevægelse slået til. Hver eneste sagde «Bevægelse registreret». Fugle, skygger, en plastikpose, der blæste forbi linsen klokken tre om natten. Jeg slog dem alle fra og lod kameraet hænge der uden at gøre meget nytte i endnu en måned.
 
-Løsningen var enklere end forventet: trigger kun på person og køretøj — ikke rå bevægelse — og giv notifikationen tre knapper der rent faktisk gør noget.
+Løsningen var enklere end ventet: reager kun på personer og køretøjer, ikke på al bevægelse, og giv notifikationen tre knapper, der faktisk gør noget.
 
-## Hvad integrationen giver
+## Det, integrationen giver
 
-Efter kameraet er tilføjet opretter HA en række binære sensorer fra den indbyggede detektion:
+Når kameraet er tilføjet, opretter HA en række binære sensorer ud fra kameraets egen genkendelse:
 
 ```
 binary_sensor.sentinel_motion
@@ -29,11 +29,11 @@ binary_sensor.sentinel_animal
 binary_sensor.sentinel_vehicle
 ```
 
-Person og køretøj kommer fra kameraets eget AI-chip. Rimelig præcis — bedre end ren bevægelse, ikke fejlfri. Dyresensoren har fanget rigtige ræve og også en stor plastikpose der bevægede sig på en måde der åbenbart lignede et levende væsen.
+Person og køretøj kommer fra kameraets egen AI-chip. Ret præcis, bedre end ren bevægelse, men ikke fejlfri. Dyresensoren har fanget rigtige ræve og også en stor plastikpose, der åbenbart bevægede sig som et levende væsen.
 
-## Én automatisering for begge triggers
+## Én automation til begge udløsere
 
-Person- og køretøjshændelser går gennem én enkelt automatisering i `single`-tilstand. Tilstanden håndterer deduplicering — hvis sensoren triggerer igen mens automatiseringen stadig kører (inkl. 60 sekunders cooldown-forsinkelse til sidst), kasseres triggeren lydløst.
+Hændelser med personer og køretøjer går gennem én automation i tilstanden `single`. Tilstanden forhindrer dubletter: slår sensoren til igen, mens automationen stadig kører (inklusive en pause på 60 sekunder til sidst), bliver den nye udløsning ignoreret uden besked.
 
 ```yaml
 alias: Sentinel — Kamera & Notifikation
@@ -88,23 +88,23 @@ action:
       seconds: 60
 ```
 
-`camera.snapshot`-kaldet gemmer et nyt stillbillede til `/local/sentinel_latest.jpg` inden notifikationen sendes. Selve notifikationen indeholder en live kamera-stream (`camera_stream: true`) — på Android med HA companion-appen udvides den til et live feed direkte i notifikationen.
+`camera.snapshot` gemmer et nyt stillbillede i `/local/sentinel_latest.jpg`, før notifikationen sendes. Selve notifikationen indeholder kameraets live-billede (`camera_stream: true`). På Android med HA's Companion-app kan den foldes ud til live-video direkte i notifikationen.
 
 ## Lydløs-kontakten
 
-Den eneste betingelse er `input_boolean.sentinel_notifikation_lydlos` med tilstanden `off`. Det er portvogtoren. Den er enklere end en `armed_away`-betingelse — ingen alarmcentral nødvendig, fungerer uanset hjemme/væk-tilstand, og selve notifikationen kan slå den til via Lydløs-knappen.
+Den eneste betingelse er, at `input_boolean.sentinel_notifikation_lydlos` står på `off`. Det er den, der bestemmer. Den er enklere end en betingelse på `armed_away`: der skal ingen alarmcentral til, den virker, uanset om man er hjemme eller ude, og notifikationen kan selv slå den til via Lydløs-knappen.
 
-En separat automatisering nulstiller den til `off` ved midnat hver nat, så jeg aldrig behøver huske at slå den fra igen.
+En separat automation sætter den tilbage til `off` ved midnat hver nat, så jeg aldrig skal huske at slå den fra igen.
 
-## Handlingsknapper
+## Knapperne i notifikationen
 
 Notifikationen har tre knapper:
 
-- **Se Kamera** — dybde-link til Overvågning-visningen i HA companion-appen
-- **Tænd Flood** — tænder `light.sentinel_floodlight` via en separat automatisering der lytter efter `sentinel_flood_on`-mobilhandlingshændelsen
-- **Lydløs 30 min** — slår lydløs-kontakten til i 30 minutter og nulstiller den derefter
+- **Se Kamera**: direkte link til visningen Overvågning i HA's Companion-app
+- **Tænd Flood**: tænder `light.sentinel_floodlight` via en separat automation, der lytter efter handlingen `sentinel_flood_on` fra mobilen
+- **Lydløs 30 min**: slår lydløs-kontakten til i 30 minutter og nulstiller den derefter
 
-Håndtering af lydløs-handlingen:
+Sådan håndteres lydløs-knappen:
 
 ```yaml
 alias: Sentinel — Lydløs 30 min
@@ -124,9 +124,9 @@ action:
       entity_id: input_boolean.sentinel_notifikation_lydlos
 ```
 
-## Fire TV-notifikation
+## Besked på Fire TV
 
-Den samme automatisering sender også til TV'et i stuen:
+Den samme automation sender også til TV'et i stuen:
 
 ```yaml
   - action: notify.android_tv_fire_tv_192_168_1_40
@@ -137,11 +137,11 @@ Den samme automatisering sender også til TV'et i stuen:
         interrupt: 1
 ```
 
-`?t=`-parameteren tvinger et nyt billede til at blive hentet — uden den viser Fire TV et cachet stillbillede fra den forrige hændelse. `interrupt: 1` får det til at dukke op selv under afspilning.
+Parameteren `?t=` tvinger et nyt billede frem. Uden den viser Fire TV et gammelt billede fra cachen fra den forrige hændelse. `interrupt: 1` får det til at dukke op, også mens noget afspilles.
 
 ## Dashboard
 
-Overvågnings-visningen viser statuskort og en 24-timers logbog:
+Visningen Overvågning viser statuskort og en logbog for de seneste 24 timer:
 
 ```yaml
 type: vertical-stack
@@ -167,4 +167,4 @@ cards:
     hours_to_show: 24
 ```
 
-Logbogen er det jeg bruger mest efter en rejse — rul gennem 24 timers hændelser i ét sweep i stedet for at gengive push-notifikationer én ad gangen.
+Logbogen er det, jeg bruger mest efter en rejse: rul gennem et døgns hændelser i ét hug i stedet for at gennemgå notifikationerne én ad gangen.

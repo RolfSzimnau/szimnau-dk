@@ -1,7 +1,7 @@
 ---
 title: "Govee- og LEDVANCE-udelys på en solnedgangs-tidsplan i Home Assistant"
 seoTitle: "Govee- og LEDVANCE-udelys på solnedgangs-tidsplan"
-description: "Hvordan jeg automatiserede Govee- og LEDVANCE lyskæder til at tænde ved solnedgang og slukke ved midnat. Én automation der tilpasser sig alle årstider."
+description: "Sådan tænder mine lyskæder fra Govee og LEDVANCE ved solnedgang og slukker ved midnat. Én automation, der passer til alle årstider."
 pubDate: 2025-11-28
 tags: ["lys", "automatisering"]
 lang: "da"
@@ -14,19 +14,19 @@ faqs:
     answer: "In Denmark sunset shifts about six hours between June and December, so fixed times are visibly wrong for weeks every spring and autumn. The sun entity tracks the shift automatically."
 ---
 
-I Danmark er solnedgangen i december kl. 15:37. I juni er den 21:58. Det er mere end seks timers forskel. Jeg indstillede altid udelysene til et fast klokkeslæt, justerede det to gange om året og ramte det aldrig helt rigtigt. I starten af november var det mørkt kl. 17:00 og lysene kom ikke tændt før 20:00. I april tændte de op i fuldt dagslys.
+I Danmark går solen ned kl. 15:37 i december og kl. 21:58 i juni. Det er mere end seks timers forskel. Jeg satte altid udelyset til et fast klokkeslæt, justerede det to gange om året og ramte aldrig helt rigtigt. I starten af november var det mørkt kl. 17, men lyset tændte først kl. 20. I april tændte det i fuldt dagslys.
 
-Det er et problem der løser sig selv, hvis man bruger solen i stedet for uret.
+Det problem løser sig selv, hvis man bruger solen i stedet for uret.
 
 ## Opsætningen
 
-To typer udendørs lys: **Govee**-lys på terrassen og varmt gyldne lyskæder fra Bauhaus styret via **LEDVANCE SMART+**. Begge er integreret i HA — Govee via HACS, LEDVANCE SMART+ er indbygget og finder enheder automatisk på det lokale netværk.
+To slags udendørslys: **Govee**-lys på terrassen og varmt gyldne lyskæder fra Bauhaus, der styres via **LEDVANCE SMART+**. Begge er integreret i HA: Govee via HACS, mens LEDVANCE SMART+ er indbygget og selv finder enhederne på det lokale netværk.
 
-Lyskæderne er varmt gyldne i sig selv — omkring 2200K. De kræver ingen sceneindstilling eller farvetemperatur-kommando. De skal bare tændes.
+Lyskæderne er i sig selv varmt gyldne, omkring 2200 K. De skal ikke have en scene eller en farvetemperatur. De skal bare tændes.
 
 ## Automationen
 
-Én automation styrer begge. Tænd-triggeren bruger HAs sol-platform med 15 minutters offset:
+Én automation styrer begge. Udløseren for at tænde bruger HA's sol-platform med en forskydning på 15 minutter:
 
 ```yaml
 alias: Udelys — Solnedgang tænd
@@ -44,9 +44,9 @@ action:
       brightness_pct: 100
 ```
 
-15-minutters offset betyder at lysene tænder når det faktisk er mørkt — ikke i det øjeblik solen teknisk set går ned, da der stadig er rigeligt restlys.
+Forskydningen på 15 minutter betyder, at lyset tænder, når det faktisk er mørkt, og ikke i det øjeblik, solen teknisk set går ned, hvor der stadig er rigeligt med lys.
 
-Sluk-triggeren er et fast tidspunkt:
+Udløseren for at slukke er et fast tidspunkt:
 
 ```yaml
 alias: Udelys — Midnat sluk
@@ -63,7 +63,7 @@ action:
 
 ## Dashboardet
 
-Et par Mushroom template chips der viser næste udløsertid. Solnedgangstidspunktet beregnes fra sol-entiteten og opdateres dagligt:
+Et par Mushroom-chips viser, hvornår lyset næste gang tænder og slukker. Tidspunktet for solnedgang beregnes ud fra sol-entiteten og opdateres hver dag:
 
 ```yaml
 - type: custom:mushroom-chips-card
@@ -80,8 +80,8 @@ Et par Mushroom template chips der viser næste udløsertid. Solnedgangstidspunk
 
 ![Belysnings-tidsplan i Home Assistant — udelys tændes ved solnedgang +15 min og slukkes ved midnat](/blog-images/hjem_Ourdoor_Schedule.jpg.png)
 
-Den seneste solnedgang i Danmark er ca. 22:00 i juni, den tidligste ca. 15:30 i december. Lysene følger det automatisk, år efter år, uden at nogen rører automationen.
+Den seneste solnedgang i Danmark er cirka kl. 22 i juni, den tidligste cirka kl. 15:30 i december. Lyset følger med af sig selv, år efter år, uden at nogen rører automationen.
 
-## Hvad der ændrede sig
+## Det, der ændrede sig
 
-De to uger i overgangsperioderne — marts og oktober — hvor lysene altid var forkerte, er væk. To triggere, to handlinger. Men det er en af de automationer der gør at huset føles som om det ved hvad tid på året det er.
+De to uger i overgangsperioderne, marts og oktober, hvor lyset altid var forkert, er væk. To udløsere, to handlinger. Men det er en af de automationer, der får huset til at føles, som om det ved, hvilken årstid det er.

@@ -1,7 +1,7 @@
 ---
-title: "En eventliste med kun detektioner til Home Assistant-kameraer"
+title: "En hændelsesliste med kun registreringer fra kameraer i Home Assistant"
 seoTitle: "Eventliste kun med detektioner til Home Assistant-kameraer"
-description: "Logbook-kortet viser både Detected og Cleared for kamera-sensorer. Løsningen: input_text som rullende log, en automation med trigger-id'er og markdown."
+description: "Logbogskortet viser både Detected og Cleared for kamerasensorer. Løsningen: en input_text som løbende log, en automation med trigger-id'er og et markdown-kort."
 pubDate: 2026-07-18
 verifiedOn: "HA 2026.7"
 tags: ["kamera", "sikkerhed", "dashboard", "automatisering"]
@@ -15,19 +15,19 @@ faqs:
     answer: "input_text is hard-capped at 255 characters. With a compact 'HH:MM label' format and a separator, that is roughly the 10 most recent events. For longer history with dates you need a trigger-based template sensor storing a list attribute, which requires YAML configuration."
 ---
 
-Mit overvågnings-view i Home Assistant har en "Recent events"-liste under kameraet — drevet af de fire binary sensors, mit AI-kamera stiller til rådighed: person, bevægelse, dyr og køretøj. Problemet: logbook-kortet viser **hver eneste tilstandsændring**. Hver "Person Detected" efterfølges af en "Person Cleared" tredive sekunder senere, så halvdelen af listen er støj, og historikken dækker kun det halve tidsrum.
+Overvågningsvisningen i min Home Assistant har en liste over seneste hændelser under kameraet. Den bygger på de fire binære sensorer, mit AI-kamera stiller til rådighed: person, bevægelse, dyr og køretøj. Problemet er, at logbogskortet viser **hver eneste ændring af tilstand**. Hver «Person Detected» efterfølges af en «Person Cleared» tredive sekunder senere, så halvdelen af listen er støj, og historikken dækker kun halvt så lang tid.
 
-Og nej — logbook-kortet kan ikke filtrere på tilstand. Det tager en entitetsliste og et tidsvindue. Det er det hele.
+Og nej, logbogskortet kan ikke filtrere på tilstand. Det tager en liste over entiteter og et tidsrum. Det er alt.
 
-## Mulighederne, og hvorfor jeg fravalgte dem
+## Mulighederne, og hvorfor jeg valgte dem fra
 
-**Trigger-baseret template-sensor** med en liste-attribut er den "rigtige" løsning — men den kan ikke oprettes via UI'et og kræver YAML i `configuration.yaml`. **En todo-liste** som event-log virker, men renderer klodset og skal beskæres af endnu en automation. Jeg ville have noget, der kunne bygges færdigt via UI/API på fem minutter og overlever genstart.
+**En trigger-baseret template-sensor** med en liste som attribut er den «rigtige» løsning, men den kan ikke oprettes i brugerfladen og kræver YAML i `configuration.yaml`. **En todo-liste** kan bruges som log, men ser klodset ud og skal ryddes op af endnu en automation. Jeg ville have noget, der kunne bygges færdigt i brugerfladen eller via API'et på fem minutter og overlever en genstart.
 
-## Løsningen: input_text som rullende log
+## Løsningen: en input_text som løbende log
 
-En `input_text`-helper er persistent, UI-venlig og kan opdateres fra en automation. Begrænsningen på 255 tegn er reel — men med formatet `HH:MM label` og en separator er det ca. de 10 seneste hændelser. Til en "Recent events"-liste er det præcis nok.
+En `input_text`-hjælper gemmes permanent, kan oprettes i brugerfladen og kan opdateres fra en automation. Grænsen på 255 tegn er reel, men med formatet `HH:MM label` og et skilletegn er det cirka de 10 seneste hændelser. Til en liste over seneste hændelser er det lige tilpas.
 
-Automationen trigger kun på `on` — "Cleared" rører den aldrig:
+Automationen reagerer kun på `on`. «Cleared» rører den aldrig:
 
 ```yaml
 alias: Sentinel event log
@@ -64,11 +64,11 @@ actions:
         {{ (items | join(' · '))[:255] }}
 ```
 
-Tre detaljer, der bærer det hele: **trigger-id'er** fungerer som labels via opslagstabellen, så én action håndterer alle fire sensorer. **`mode: queued`** sikrer, at to detektioner lige efter hinanden ikke overskriver hinanden. Og **`[:10]`-beskæringen** sker på hændelses-niveau før sammenføjningen, så en post aldrig kappes midt over.
+Tre detaljer bærer det hele. **Trigger-id'er** fungerer som etiketter via opslagstabellen, så én handling klarer alle fire sensorer. **`mode: queued`** sikrer, at to registreringer lige efter hinanden ikke overskriver hinanden. Og **`[:10]`** skærer listen til på hændelsesniveau, før den sættes sammen, så en linje aldrig bliver skåret over på midten.
 
 ## Markdown-kortet
 
-Kortet splitter loggen og renderer én linje pr. hændelse — tidspunktet i fed:
+Kortet deler loggen op og viser én linje pr. hændelse med tidspunktet i fed:
 
 ```yaml
 type: markdown
@@ -80,8 +80,8 @@ content: >-
   {% endfor %}{% endif %}
 ```
 
-Resultatet er listen i billedet øverst: kun detektioner, dobbelt så lang historik på samme plads, ingen "Cleared"-linjer.
+Resultatet er listen på billedet øverst: kun registreringer, dobbelt så lang historik på samme plads og ingen «Cleared»-linjer.
 
-## Begrænsningerne, ærligt
+## Begrænsningerne, ærligt talt
 
-255 tegn er ca. 10 hændelser, og der er kun klokkeslæt — ingen dato. Ruller en hændelse ud af loggen, er den væk (den fulde historik ligger stadig i logbogen/recorder). Skal du bruge længere historik med datoer, er en trigger-baseret template-sensor med en liste-attribut det rigtige værktøj — prisen er YAML-konfiguration og en genstart.
+255 tegn er cirka 10 hændelser, og der er kun klokkeslæt, ingen dato. Ryger en hændelse ud af loggen, er den væk herfra (den fulde historik ligger stadig i logbogen og recorderen). Har du brug for længere historik med datoer, er en trigger-baseret template-sensor med en liste som attribut det rigtige værktøj. Prisen er YAML og en genstart.
