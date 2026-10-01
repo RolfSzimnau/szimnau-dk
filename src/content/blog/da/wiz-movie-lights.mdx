@@ -2,6 +2,7 @@
 title: "WiZ-lys, der reagerer på TV'et, uden en knap til biograftilstand"
 description: "Stuelyset dæmpes, når filmen starter, skrues op ved pause og vender tilbage, når TV'et slukker. Ingen sceneknap, ingen stemmekommando."
 pubDate: 2025-11-14
+updatedDate: 2026-10-01
 tags: ["lys", "medier", "automatisering"]
 lang: "da"
 translationKey: "wiz-movie-lights"
@@ -12,6 +13,12 @@ faqs:
   - question: "Why is there no sunset trigger?"
     answer: "An earlier version dimmed at sunset regardless of the TV and left the room dark when nobody was watching. TV state reflects what is happening in the room; an 18:00 time condition handles dark winter afternoons."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Opdatering, oktober 2026:** Filmlyset er bygget om siden. Det styres nu af én sensor, `binary_sensor.tv_watching`, som alene afgør, om der bliver set TV, og automationen kører kun, når solen er gået ned (`sun.sun` er `below_horizon`) i stedet for efter kl. 18. Pauselyset er en manuel kontakt, `input_boolean.pauselys`, fordi Android TV ikke melder pause i alle apps. Princippet nedenfor holder stadig, men koden er den oprindelige version.
+
+</div>
 
 Alle TV-fjernbetjeninger har en knap, man aldrig bruger. På min var det scene-knappen, der angiveligt skulle dæmpe lyset til biograftilstand. Problemet var ikke knappen, men at huske at trykke på den, og så huske at trykke igen, når man satte på pause for at hente noget at drikke, og igen, når filmen var slut.
 

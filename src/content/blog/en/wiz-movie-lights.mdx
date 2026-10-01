@@ -2,6 +2,7 @@
 title: "WiZ Lights That React to the TV Without a Cinema Mode Button"
 description: "The living room lights dim when a movie starts, brighten on pause and restore when the TV turns off. No scene button, no voice command."
 pubDate: 2025-11-14
+updatedDate: 2026-10-01
 tags: ["lighting", "media", "automation"]
 lang: "en"
 translationKey: "wiz-movie-lights"
@@ -12,6 +13,12 @@ faqs:
   - question: "Why is there no sunset trigger?"
     answer: "An earlier version dimmed at sunset regardless of the TV and left the room dark when nobody was watching. TV state reflects what is happening in the room; an 18:00 time condition handles dark winter afternoons."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, October 2026:** The movie lighting has been rebuilt since. It is now driven by a single sensor, `binary_sensor.tv_watching`, the only definition of whether the TV is being watched, and the automation only runs when the sun has set (`sun.sun` is `below_horizon`) instead of after 18:00. The pause light is a manual toggle, `input_boolean.pauselys`, because Android TV does not report pause in every app. The principle below still holds, but the code is the original version.
+
+</div>
 
 Every TV remote has a button you never use. On mine it was the "scene" button that was supposed to dim the lights for movie mode. The problem wasn't the button — it was remembering to press it, and then remembering to press it again when you paused to get a drink, and again when the film ended.
 

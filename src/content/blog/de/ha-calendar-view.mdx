@@ -3,6 +3,7 @@ title: "Eine Home-Assistant-Ansicht für die Kalender von vier Personen"
 seoTitle: "Home-Assistant-Kalenderansicht für vier Personen"
 description: "Wie ich vier Google Kalender und Müllabfuhr-Daten in einer farbcodierten HA-Ansicht zusammengeführt habe, die unseren jahrelangen Wandkalender ersetzt hat."
 pubDate: 2025-07-25
+updatedDate: 2026-10-01
 tags: ["kalender", "dashboard"]
 lang: "de"
 translationKey: "ha-calendar-view"
@@ -13,6 +14,12 @@ faqs:
   - question: "Is a month-grid calendar view worth building in Home Assistant?"
     answer: "Honestly, the agenda list gets used far more — the month grid only gets opened to check specific dates. The home screen shows the next 3 events, the calendar view 15; two zoom levels off the same data."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, Oktober 2026:** Ich bin von `atomic-calendar-revive` auf `custom:calendar-card-pro` (HACS) umgestiegen, auf der Startseite und in der Kalenderansicht, mit derselben Farbe pro Person und farbigen Markierungen für ganztägige Termine. `atomic-calendar-revive` ist deinstalliert. Das Prinzip unten ist gleich, die YAML-Beispiele gelten aber für die alte Karte.
+
+</div>
 
 Wir hatten jahrelang einen Wandkalender in der Küche. Einen dieser großen Papierkalender mit einer Spalte pro Familienmitglied. Jemand schreibt etwas rein, jemand anderes sieht es nicht, und am Ende gibt es eine Kollision bei der Schulabholung oder einen Geburtstag, der erst am Morgen selbst auffällt. Der Kalender funktionierte gut, solange ihn alle pflegten — was sie nicht verlässlich taten.
 

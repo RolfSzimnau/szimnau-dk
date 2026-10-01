@@ -3,6 +3,7 @@ title: "TV'et går automatisk på pause ved almindelige opkald og Messenger"
 seoTitle: "TV på pause ved almindelige opkald og Messenger"
 description: "Én automation sætter TV'et på pause, når en telefon ringer. Almindelige opkald fortsætter af sig selv bagefter, og Messenger-videoopkald får en knap i notifikationen."
 pubDate: 2025-10-17
+updatedDate: 2026-10-01
 tags: ["medier", "notifikationer", "automatisering"]
 lang: "da"
 translationKey: "tv-pause-phone-calls"
@@ -13,6 +14,12 @@ faqs:
   - question: "Why do Messenger calls need special handling?"
     answer: "Messenger video calls don't change the Android phone state sensor, so they are detected via the notification sensor instead — and since call end can't be detected reliably, the notification carries a manual resume button."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Opdatering, oktober 2026:** Almindelige opkald sætter stadig TV'et på pause som beskrevet. Messenger-delen kører ikke i øjeblikket i min opsætning: sensoren `last_notification` er slået fra i Home Assistant, og den kræver, at Companion-appen har adgang til telefonens notifikationer. Automationen nedenfor er uændret, men den del af den udløses først igen, når sensoren er slået til.
+
+</div>
 
 Problemet er indlysende, når man har oplevet det nok gange. Nogen ringer. Man leder efter fjernbetjeningen. Den ligger under en pude. Man finder den og sætter på pause. Og man har allerede misset den første sætning.
 

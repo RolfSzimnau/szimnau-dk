@@ -2,6 +2,7 @@
 title: "Pausing the TV Automatically for Regular Calls and Messenger"
 description: "One automation pauses the TV the moment either phone rings. Regular calls resume automatically, Messenger video calls get a notification button."
 pubDate: 2025-10-17
+updatedDate: 2026-10-01
 tags: ["media", "notifications", "automation"]
 lang: "en"
 translationKey: "tv-pause-phone-calls"
@@ -12,6 +13,12 @@ faqs:
   - question: "Why do Messenger calls need special handling?"
     answer: "Messenger video calls don't change the Android phone state sensor, so they are detected via the notification sensor instead — and since call end can't be detected reliably, the notification carries a manual resume button."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, October 2026:** Regular calls still pause the TV as described. The Messenger part is not running in my setup right now: the `last_notification` sensor is disabled in Home Assistant, and it needs the Companion app to have access to the phone's notifications. The automation below is unchanged, but that part of it only fires again once the sensor is enabled.
+
+</div>
 
 The problem is obvious once you've experienced it enough times. Someone calls. You scramble for the remote. You find it under a cushion. You pause the film. You've already missed the first sentence of the conversation.
 

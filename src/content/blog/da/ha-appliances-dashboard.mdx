@@ -3,6 +3,7 @@ title: "Sådan planlægger jeg Bosch-opvaskemaskinen i Home Assistant efter elpr
 seoTitle: "Bosch-opvaskemaskinen efter elpris i Home Assistant"
 description: "Opvaskemaskinen via Home Connect: et dashboard med programvalg og sluttid, plus en knap, der finder den billigste time at køre den i."
 pubDate: 2025-08-22
+updatedDate: 2026-10-01
 tags: ["energi", "dashboard"]
 lang: "da"
 translationKey: "ha-appliances-dashboard"
@@ -13,6 +14,12 @@ faqs:
   - question: "What are the limitations of controlling a dishwasher via Home Connect?"
     answer: "Programme changes only work before the machine starts — once running, the select entities become read-only. That is a Bosch firmware restriction, not a Home Assistant one."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Opdatering, oktober 2026:** Opvaskemaskinen kører nu på HACS-integrationen Home Connect Alt (`home_connect_alt`) i stedet for den officielle, fordi den giver adgang til maskinens egen udskudte start. Starttidspunktet sættes derfor som en forsinkelse (`startinrelative`) og ikke som et sluttidspunkt. Ideen med knappen «Planlæg billigst» er den samme, men entitetsnavnene nedenfor er fra den officielle integration.
+
+</div>
 
 Opvaskemaskinen var det apparat, jeg havde de laveste forventninger til. Det er en Bosch. Den kobler sig på Boschs Home Connect-app, hvilket er fint, men bare endnu en app. Jeg tilføjede **Home Connect**-integrationen (indbygget i HA, så ingen HACS, men den kræver en Home Connect-konto) mest for fuldstændighedens skyld.
 

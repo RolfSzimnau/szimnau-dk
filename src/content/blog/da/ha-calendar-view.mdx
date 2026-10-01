@@ -2,6 +2,7 @@
 title: "Ét overblik i Home Assistant til fire menneskers kalendere"
 description: "Sådan samlede jeg fire Google-kalendere og affaldsdata i én farvekodet visning i HA, der erstattede vores vægkalender."
 pubDate: 2025-07-25
+updatedDate: 2026-10-01
 tags: ["kalender", "dashboard"]
 lang: "da"
 translationKey: "ha-calendar-view"
@@ -12,6 +13,12 @@ faqs:
   - question: "Is a month-grid calendar view worth building in Home Assistant?"
     answer: "Honestly, the agenda list gets used far more — the month grid only gets opened to check specific dates. The home screen shows the next 3 events, the calendar view 15; two zoom levels off the same data."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Opdatering, oktober 2026:** Jeg er skiftet fra `atomic-calendar-revive` til `custom:calendar-card-pro` (HACS) på både forsiden og kalendervisningen, med samme farve pr. person og farvede mærker på heldagsaftaler. `atomic-calendar-revive` er afinstalleret. Princippet nedenfor er det samme, men YAML-eksemplerne er til det gamle kort.
+
+</div>
 
 Vi havde en vægkalender i køkkenet i årevis. En af de store papirkalendere med en kolonne pr. familiemedlem. Nogen skriver noget i den, en anden ser det ikke, og pludselig er der dobbeltbooking ved skolehentning eller en fødselsdag, der først bliver husket samme morgen. Kalenderen virkede fint, så længe alle holdt den opdateret. Det gjorde de bare ikke altid.
 
