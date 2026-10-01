@@ -1,7 +1,7 @@
 ---
 title: "Sådan planlægger jeg Bosch-opvaskemaskinen i Home Assistant efter elprisen"
 seoTitle: "Bosch-opvaskemaskinen efter elpris i Home Assistant"
-description: "Opvaskemaskinen via Home Connect: dashboard med programvalg og sluttidskontrol, plus en knap der finder den billigste time at køre den i."
+description: "Opvaskemaskinen via Home Connect: et dashboard med programvalg og sluttid, plus en knap, der finder den billigste time at køre den i."
 pubDate: 2025-08-22
 tags: ["energi", "dashboard"]
 lang: "da"
@@ -14,13 +14,13 @@ faqs:
     answer: "Programme changes only work before the machine starts — once running, the select entities become read-only. That is a Bosch firmware restriction, not a Home Assistant one."
 ---
 
-Opvaskemaskinen var det apparat jeg forventede mindst fra. Det er en Bosch. Den forbinder til Bosch Home Connect-appen, hvilket er fint men bare endnu en app. Jeg tilføjede **Home Connect**-integrationen (indbygget i HA, ingen HACS — kræver en Home Connect-konto) til HA mest for fuldstændighedens skyld.
+Opvaskemaskinen var det apparat, jeg havde de laveste forventninger til. Det er en Bosch. Den kobler sig på Boschs Home Connect-app, hvilket er fint, men bare endnu en app. Jeg tilføjede **Home Connect**-integrationen (indbygget i HA, så ingen HACS, men den kræver en Home Connect-konto) mest for fuldstændighedens skyld.
 
-Så opdagede jeg at den giver adgang til nok styring til at gøre noget faktisk nyttigt: planlæg vasken til at starte i den billigste elektricitetstime.
+Så opdagede jeg, at den giver adgang til nok styring til at gøre noget faktisk nyttigt: at lade opvasken starte i den time, hvor strømmen er billigst.
 
 ## Det giver Home Connect adgang til
 
-Efter tilføjelse af integrationen vises opvaskemaskinen med:
+Når integrationen er tilføjet, dukker opvaskemaskinen op med:
 
 ```
 sensor.dishwasher_operation_state   — Ready, Run, Finished, osv.
@@ -34,19 +34,19 @@ switch.dishwasher_speed_perfect
 button.dishwasher_start
 ```
 
-Den vigtigste er `select.dishwasher_finish_at`. Bosch's egen forsinkede start lader dig fortælle maskinen hvornår du vil have den færdig — den regner baglæns derfra. Det er grebet.
+Den vigtigste er `select.dishwasher_finish_at`. Med Boschs egen udskudte start fortæller du maskinen, hvornår du vil have den færdig, og den regner baglæns derfra. Det er hele tricket.
 
 ## Dashboard-kortet
 
-Dashboardet viser alle kontroller i ét glaskort:
+Dashboardet samler alle knapperne i ét glaskort:
 
 - Driftstilstand (Klar til vask / Kører / Færdig)
 - Programvælger
 - Sluttidsvælger
-- Halvt læs og SpeedPerfect-kontakter
+- Kontakter til halv fyldning og SpeedPerfect
 - To handlingsknapper: **Planlæg billigst** og **Start nu**
 
-"Planlæg billigst"-knappen er et script der læser [Energi Data Service](https://www.energidataservice.dk/) spotpriser (HACS-integration, gratis dansk offentlig API), finder det billigste kommende 1-times vindue inden midnat, lægger programmets køretid til, og sætter `select.dishwasher_finish_at` til det tidspunkt.
+Knappen «Planlæg billigst» er et script, der læser spotpriserne fra [Energi Data Service](https://www.energidataservice.dk/) (HACS-integration, gratis offentlig dansk API), finder den billigste kommende time før midnat, lægger programmets varighed til og sætter `select.dishwasher_finish_at` til det tidspunkt.
 
 ```yaml
 alias: Opvaskemaskine — Planlæg billigste time
@@ -78,18 +78,18 @@ sequence:
 
 ![Bosch opvaskemaskine energioptimering i Home Assistant med billigste time-planlægning og spotpris](/blog-images/bosch-dishwasher-home-assistant-energy-optimization.jpg)
 
-Kortet viser resultatet: "Planlæg billigst — 16:30 · 0,27 kr". Du ser både tidspunktet og prisen inden du bekræfter.
+Kortet viser resultatet, fx «Planlæg billigst: 16:30 · 0,27 kr.». Du ser både tidspunktet og prisen, før du bekræfter.
 
-## Hvorfor det er besværet værd
+## Derfor er det besværet værd
 
-Eco50 kører ca. 2 timer. Prisforskellen mellem den billigste og dyreste time på en typisk dansk hverdag er 1–3 DKK/kWh. Ved 0,8 kWh per vask er det 0,80–2,40 DKK sparet per vask. Ikke dramatisk individuelt. Over 300 vaske om året løber det op, og vigtigst af alt er nettet mindre belastet under spidsbelastning.
+Eco50 kører cirka 2 timer. Forskellen mellem den billigste og den dyreste time på en typisk dansk hverdag er 1 til 3 kr./kWh. Med 0,8 kWh pr. opvask er det 0,80 til 2,40 kr. sparet pr. gang. Ikke voldsomt hver gang for sig. Men over 300 opvaske om året løber det op, og vigtigst af alt belaster det elnettet mindre, når forbruget topper.
 
-Den reelle fordel er adfærdsmæssig. Jeg fylder opvaskemaskinen når den er fuld, trykker på én knap, og tænker ikke mere på det. Maskinen finder ud af hvornår den skal køre. Den er færdig inden jeg går i seng.
+Den egentlige gevinst er i vanerne. Når opvaskemaskinen er fuld, trykker jeg på én knap og tænker ikke mere over det. Maskinen finder selv ud af, hvornår den skal køre, og den er færdig, før jeg går i seng.
 
-## Hvad der ikke virker
+## Det, der ikke virker
 
-Fjernstart skal aktiveres på maskinens fysiske panel — der er et lille ikon på displayet. Hvis jeg glemmer at aktivere det, gør integrationens startkommando ingenting. Jeg har glemt det nok gange til at jeg tilføjede en chip til kortet der viser om fjernstart er tilladt.
+Fjernstart skal slås til på selve maskinens panel, hvor der er et lille ikon på displayet. Glemmer jeg det, gør integrationens startkommando ingenting. Jeg har glemt det så mange gange, at jeg har tilføjet en chip på kortet, der viser, om fjernstart er tilladt.
 
-Programændringer via HA virker kun inden maskinen starter. Når den kører, opdateres tilstandsentiteterne men vælgerne bliver skrivebeskyttede. Det er en Bosch firmware-begrænsning, ikke HA.
+Programmet kan kun ændres fra HA, før maskinen starter. Når den kører, opdateres tilstanden stadig, men valgene kan kun læses. Det er en begrænsning i Boschs firmware, ikke i HA.
 
-`Finished`-tilstandsnotifikationen er det andet. Opvaskemaskinen sender en tilstandsopdatering når den er færdig. Jeg har en alert ticker-post til det på startskærmen — "Opvaskemaskine færdig — tøm mig!" — der vises indtil nogen bekræfter den. Lavteknologisk, men jeg tømmer den faktisk nu i stedet for at lade den stå i tre timer.
+Det andet er beskeden, når den er færdig. Opvaskemaskinen melder sin tilstand, når den er færdig, og jeg har en linje i alert-tickeren på forsiden til det, «Opvaskemaskine færdig, tøm mig!», som bliver stående, til nogen bekræfter den. Simpelt, men nu tømmer jeg den faktisk i stedet for at lade den stå i tre timer.

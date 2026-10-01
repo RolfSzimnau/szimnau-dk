@@ -1,6 +1,6 @@
 ---
-title: "WiZ-lys der reagerer på TV'et uden en biograftilstand-knap"
-description: "Stuelysene dæmper sig når filmen starter, lyser op ved pause og gendannes når TV'et slukker. Ingen sceneknap, ingen stemmekommando."
+title: "WiZ-lys, der reagerer på TV'et, uden en knap til biograftilstand"
+description: "Stuelyset dæmpes, når filmen starter, skrues op ved pause og vender tilbage, når TV'et slukker. Ingen sceneknap, ingen stemmekommando."
 pubDate: 2025-11-14
 tags: ["lys", "medier", "automatisering"]
 lang: "da"
@@ -13,22 +13,22 @@ faqs:
     answer: "An earlier version dimmed at sunset regardless of the TV and left the room dark when nobody was watching. TV state reflects what is happening in the room; an 18:00 time condition handles dark winter afternoons."
 ---
 
-Enhver TV-fjernbetjening har en knap man aldrig bruger. På min var det "scene"-knappen der angiveligt skulle dæmpe lysene til biograftilstand. Problemet var ikke knappen — det var at huske at trykke på den, og derefter huske at trykke igen da man satte på pause for at hente en drink, og igen da filmen var slut.
+Alle TV-fjernbetjeninger har en knap, man aldrig bruger. På min var det scene-knappen, der angiveligt skulle dæmpe lyset til biograftilstand. Problemet var ikke knappen, men at huske at trykke på den, og så huske at trykke igen, når man satte på pause for at hente noget at drikke, og igen, når filmen var slut.
 
-Automationen gør det i stedet. TV'et spiller, lysene dæmper sig. TV'et sætter på pause, lysene kommer op igen. TV'et slukker, lysene gendannes. Intet at huske, intet at trykke på.
+Automationen gør det i stedet. TV'et spiller, lyset dæmpes. TV'et sættes på pause, lyset kommer op igen. TV'et slukker, lyset vender tilbage. Intet at huske, intet at trykke på.
 
 ## Opsætningen
 
 Fire WiZ-lys i stuen:
 
-- To loftlys (`wiz_tunable_white_601970`, `wiz_tunable_white_60421e`) — de primære overhead-lys
-- To accent-/hjørnelys (`wiz_rgbw_tunable_414776`, `wiz_rgbw_tunable_44a4a4`) — RGBW, kan gå ned til 2200K
+- To loftlys (`wiz_tunable_white_601970`, `wiz_tunable_white_60421e`), som er det primære lys i loftet
+- To stemnings- og hjørnelys (`wiz_rgbw_tunable_414776`, `wiz_rgbw_tunable_44a4a4`), RGBW, som kan gå ned til 2200 K
 
-Forskellen mellem de to typer har betydning for hvad der sker når filmen starter.
+Forskellen på de to typer betyder noget for, hvad der sker, når filmen starter.
 
-## Hvad der udløser det
+## Det, der sætter det i gang
 
-TV-entiteten (`media_player.tv_stuen`) kommer fra **Android TV**-integrationen — indbygget i HA, tilføj den under Integrationer med TV'ets IP-adresse.
+TV-entiteten (`media_player.tv_stuen`) kommer fra integrationen **Android TV**, som er indbygget i HA. Tilføj den under Integrationer med TV'ets IP-adresse.
 
 ```yaml
 trigger:
@@ -43,9 +43,9 @@ condition:
     after: "18:00:00"
 ```
 
-Tidsbetingelsen er den afgørende detalje. Det giver ingen mening at dæmpe lysene ved middagstid — solen gør mere end noget loftlys alligevel, og en dæmpet stue midt på dagen ser bare defekt ud. Efter kl. 18 begynder det at betyde noget.
+Tidsbetingelsen er den afgørende detalje. Det giver ingen mening at dæmpe lyset ved middagstid. Solen lyser alligevel mere end noget loftlys, og en dæmpet stue midt på dagen ser bare ud, som om noget er gået i stykker. Efter kl. 18 begynder det at betyde noget.
 
-Tilstand er `restart`. Hvis man sætter på pause og med det samme trykker play igen, annulleres pause-handlingen inden den er færdig. Uden restart-tilstand ville man få et glimt af fuld lysstyrke imellem afspilningerne.
+Tilstanden er `restart`. Sætter man på pause og trykker play igen med det samme, bliver pause-handlingen afbrudt, før den er færdig. Uden `restart` ville man få et glimt af fuldt lys mellem pausen og afspilningen.
 
 ## Når filmen starter
 
@@ -66,7 +66,7 @@ sequence:
         - light.wiz_rgbw_tunable_44a4a4
 ```
 
-Loftlysene slukker helt — ikke dæmpet, slukket. Overhead-lys under en film skaber reflekser på skærmen uanset hvor lavt man sætter dem. Accentlysene falder til 15% ved 2200K, hvilket er en varm rav-farve. Nok til at se rummet, ikke nok til at udvaske billedet.
+Loftlyset slukker helt, ikke dæmpet, men slukket. Lys fra loftet giver reflekser i skærmen under en film, uanset hvor lavt det står. Stemningslysene går ned på 15 % ved 2200 K, som er en varm ravgul farve. Nok til at se rummet, ikke nok til at vaske billedet ud.
 
 ## Når man sætter på pause
 
@@ -84,12 +84,12 @@ sequence:
         - light.wiz_rgbw_tunable_44a4a4
 ```
 
-Alle fire lys til 100%, 4000K. Ikke den varme 2700K jeg normalt ville bruge — 4000K er en smule koldere og mere neutral, hvilket opleves som "man kan se ordentligt igen" frem for hyggeligt aftenlys. Overgangen sker i det øjeblik man trykker pause, hvilket er præcis det tidspunkt man har brug for lyset — ikke fem sekunder senere.
+Alle fire lys går op på 100 % ved 4000 K. Ikke de varme 2700 K, jeg normalt ville bruge: 4000 K er lidt koldere og mere neutralt og føles som «nu kan man se ordentligt igen» frem for hyggeligt aftenlys. Lyset skifter i det øjeblik, man trykker pause, og det er netop der, man har brug for det, ikke fem sekunder senere.
 
-Den samme sekvens kører når TV'et slukker helt. Uanset om man satte på pause et øjeblik eller er færdig med at se, vender rummet tilbage til normalen.
+Det samme sker, når TV'et slukker helt. Uanset om man satte på pause et øjeblik eller er færdig med at se, vender rummet tilbage til det normale.
 
-## Hvorfor ingen solopgangstrigger
+## Hvorfor solen ikke bestemmer
 
-Jeg prøvede en version der også dæmpede ved solnedgang uanset TV'et. Det skabte et problem: at komme hjem om aftenen til en mørk stue når ingen havde set noget. TV-tilstanden er en bedre trigger end solen fordi den er knyttet til hvad der faktisk sker i rummet frem for hvad klokken er udenfor.
+Jeg prøvede en version, der også dæmpede ved solnedgang, uanset hvad TV'et lavede. Det gav et problem: man kom hjem om aftenen til en mørk stue, selvom ingen havde set noget. TV'ets tilstand er en bedre udløser end solen, fordi den hænger sammen med, hvad der faktisk sker i rummet, og ikke med hvad klokken er udenfor.
 
-18:00-betingelsen håndterer kanttilfældet hvor nogen starter en film kl. 16 om vinteren og rummet er mørkt nok til at det gør en forskel. Inden da affyrer automationen simpelthen ikke.
+Betingelsen om kl. 18 tager sig af det særtilfælde, hvor nogen starter en film kl. 16 om vinteren, og rummet er mørkt nok til, at det gør en forskel. Før det tidspunkt kører automationen simpelthen ikke.

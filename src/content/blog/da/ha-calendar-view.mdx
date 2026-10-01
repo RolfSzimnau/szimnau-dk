@@ -1,6 +1,6 @@
 ---
 title: "Ét overblik i Home Assistant til fire menneskers kalendere"
-description: "Hvordan jeg samlede fire Google Kalendere og renovationsdata i én farvekoderet HA-visning der erstattede vores vægkalender."
+description: "Sådan samlede jeg fire Google-kalendere og affaldsdata i én farvekodet visning i HA, der erstattede vores vægkalender."
 pubDate: 2025-07-25
 tags: ["kalender", "dashboard"]
 lang: "da"
@@ -13,15 +13,15 @@ faqs:
     answer: "Honestly, the agenda list gets used far more — the month grid only gets opened to check specific dates. The home screen shows the next 3 events, the calendar view 15; two zoom levels off the same data."
 ---
 
-Vi har haft en vægkalender i køkkenet i årevis. En af de store papirkalendere med en kolonne per familiemedlem. Nogen skriver noget i den, en anden ser det ikke, og pludselig er der dobbeltbooking ved skolehentning eller en fødselsdag der ikke huskes før selve morgenen. Kalenderen virkede fint så længe alle holdt den opdateret — det gjorde de bare ikke, konsekvent.
+Vi havde en vægkalender i køkkenet i årevis. En af de store papirkalendere med en kolonne pr. familiemedlem. Nogen skriver noget i den, en anden ser det ikke, og pludselig er der dobbeltbooking ved skolehentning eller en fødselsdag, der først bliver husket samme morgen. Kalenderen virkede fint, så længe alle holdt den opdateret. Det gjorde de bare ikke altid.
 
-HA-kalendervisningen løste ikke vaneproblemet. Men den lagde den samme information et sted alle alligevel kigger.
+Kalendervisningen i HA løste ikke problemet med vanerne. Men den lagde de samme oplysninger et sted, hvor alle alligevel kigger.
 
 ## Opsætningen
 
-Hvert familiemedlem har en Google Kalender. HA's Google Kalender-integration trækker dem alle ind som separate `calendar.*`-entiteter. Renovationsdata kommer fra `affalddk`-integrationen (HACS) — en dansk kommunal affalds-API der opretter sin egen kalenderentitet med afhentningsdatoer.
+Hvert familiemedlem har en Google-kalender. HA's Google Kalender-integration henter dem alle ind som separate `calendar.*`-entiteter. Affaldsdata kommer fra integrationen `affalddk` (HACS), et dansk kommunalt API for affald, der opretter sin egen kalender med afhentningsdatoerne.
 
-Kalendervisningen bruger `custom:atomic-calendar-revive` (HACS) i agendatilstand. Ingenting fancy — bare en rulleliste over kommende begivenheder, farvekoderet per person.
+Kalendervisningen bruger `custom:atomic-calendar-revive` (HACS) i agendatilstand. Ikke noget fancy, bare en liste over kommende aftaler med en farve pr. person.
 
 ```yaml
 type: custom:atomic-calendar-revive
@@ -45,24 +45,24 @@ showLocation: true
 showDescription: false
 ```
 
-`showRelativeTime: true` er det der ændrede hvordan jeg bruger den. I stedet for "14. maj" står der "om 5 dage". Jeg behandler relativ tid hurtigere end absolutte datoer. Jeg ved ikke hvorfor.
+`showRelativeTime: true` er det, der ændrede, hvordan jeg bruger den. I stedet for «14. maj» står der «om 5 dage». Jeg opfatter relativ tid hurtigere end datoer. Jeg ved ikke hvorfor.
 
-## Hvad affaldskalenderen gør
+## Det, affaldskalenderen gør
 
-`affalddk`-integrationen opretter kalenderbegivenheder for hver afhentningstype: restaffald, genbrug, papir, glas. De vises som grå poster i visningen. På startskærmen vises renovationskortet kun inden for tre dage fra en afhentning — men her i den dedikerede kalendervisning ser man hele skemaet måneder frem.
+`affalddk` opretter aftaler for hver type afhentning: restaffald, genbrug, papir og glas. De vises som grå linjer i visningen. På forsiden vises affaldskortet kun, når der er højst tre dage til en afhentning, men her i kalendervisningen ser man hele planen flere måneder frem.
 
-Det lyder småt. Det er det ikke. At vide at papirafhentning er næste torsdag betyder at jeg faktisk får brudt kartoner ned i tide i stedet for at proppe dem ned i beholderen aftenen inden.
+Det lyder som en lille ting. Det er det ikke. Når jeg ved, at papiret hentes næste torsdag, får jeg faktisk skilt kartonerne ad i tide i stedet for at proppe dem ned i containeren aftenen før.
 
 ## Farvekodningen
 
-Hvert person får én farve, konsekvent. Den samme farve i alle sammenhænge hvor deres begivenheder optræder. Efter et par uger holder man op med at læse navnekolonnen og læser bare farven. Et blik på mandag fortæller hvems dag det er uden at øjnene skal fokusere på tekst.
+Hver person får én farve, og den er den samme alle steder, hvor deres aftaler dukker op. Efter et par uger holder man op med at læse navnene og læser bare farven. Et blik på mandag fortæller, hvis dag det er, uden at man skal læse teksten.
 
-Affaldskalenderen er grå fordi det ikke er en person — det er infrastruktur. Den sidder i listen uden at konkurrere visuelt med de menneskelige begivenheder.
+Affaldskalenderen er grå, fordi den ikke er en person, men infrastruktur. Den står i listen uden at konkurrere med menneskenes aftaler.
 
-## Hvad jeg ikke gjorde
+## Det, jeg ikke gjorde
 
-Jeg lavede ikke en ugevisning. Der er korttyper der viser et ordentligt månedsgitter, og jeg prøvede én. Den så korrekt ud men jeg fandt ud af at jeg brugte den på samme måde som jeg brugte den papirvægkalender: ikke ofte nok, og kun for at tjekke en bestemt dato.
+Jeg lavede ikke en ugevisning. Der findes kort, der viser et rigtigt månedsgitter, og jeg prøvede et. Det så fint ud, men jeg opdagede, at jeg brugte det på samme måde som papirkalenderen: ikke ofte nok og kun for at tjekke en bestemt dato.
 
-Agendavisningen er hvad jeg faktisk bruger. Det er bare en liste over hvad der kommer, i rækkefølge. Ingen rumlig forståelse nødvendig.
+Det er agendavisningen, jeg faktisk bruger. Det er bare en liste over det, der kommer, i rækkefølge. Man skal ikke afkode et gitter.
 
-Startskærmen viser de næste 3 begivenheder fra alle kalendere kombineret. Den dedikerede kalendervisning viser 15. Når jeg vil planlægge en uge frem, går jeg til kalendervisningen. I dagligdagen kigger jeg bare på startskærmen. To zoomniveauer over de samme data.
+Forsiden viser de næste 3 aftaler fra alle kalendere samlet. Kalendervisningen viser 15. Når jeg vil planlægge en uge frem, går jeg til kalendervisningen. Til daglig kigger jeg bare på forsiden. To zoomniveauer på de samme data.

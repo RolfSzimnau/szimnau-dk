@@ -1,7 +1,7 @@
 ---
 title: "Home Assistant Recorder: Sådan reducerede jeg databasevæksten fra 160 MB/dag til under 50 MB"
 seoTitle: "Home Assistant Recorder: fra 160 MB/dag til under 50 MB"
-description: "Min HA SQLite-database nåede 963 MB på seks dage. Den præcise recorder-konfiguration der skar den daglige vækst med over 70%: komplet YAML."
+description: "Min SQLite-database i HA nåede 963 MB på seks dage. Den præcise recorder-konfiguration, der skar den daglige vækst med over 70 %, med komplet YAML."
 pubDate: 2026-05-31
 verifiedOn: "HA 2026.7"
 tags: ["vedligehold"]
@@ -15,22 +15,22 @@ faqs:
     answer: "No. The recorder only controls historical data for the History panel and energy dashboards. Automations, scripts, and real-time Lovelace card states are completely unaffected by recorder exclusions — they read from the state machine, not the database."
 ---
 
-Min Home Assistant SQLite-database nåede 963 MB på bare seks dage — omtrent 160 MB om dagen med en 5-dages opbevaringstid. Det er mere end tre gange hvad et veloptimeret setup bør producere.
+Min SQLite-database i Home Assistant nåede 963 MB på bare seks dage, omkring 160 MB om dagen med 5 dages opbevaring. Det er mere end tre gange så meget, som en veloptimeret opsætning bør give.
 
-Problemet var ikke én stor synder. Det var et dusin Home Assistant-integrationer der stille og roligt loggede tilstandsændringer som aldrig bliver slået op i History-panelet. Her er den præcise konfiguration der reducerede væksten til under 50 MB om dagen — og begrundelsen bag hver ekskludering.
+Der var ikke én stor synder. Det var et dusin integrationer, der i al stilhed gemte ændringer, som ingen nogensinde slår op i historikken. Her er den præcise konfiguration, der fik væksten ned under 50 MB om dagen, og begrundelsen for hver udeladelse.
 
-## Hvorfor Home Assistant recorder-databasen vokser uden at du opdager det
+## Derfor vokser recorder-databasen, uden at du opdager det
 
-Home Assistants recorder logger som udgangspunkt alle tilstandsændringer for alle entiteter. Det er den rigtige adfærd for sensorer du faktisk interesserer dig for — temperatur, energiforbrug, tilstedeværelse. Men de fleste installationer samler hundredvis af entiteter der ikke har nogen historisk værdi:
+Som udgangspunkt gemmer Home Assistants recorder alle ændringer for alle entiteter. Det er det rigtige for de sensorer, du faktisk interesserer dig for: temperatur, energiforbrug og hvem der er hjemme. Men de fleste installationer samler hundredvis af entiteter, der ikke er noget værd som historik:
 
-- **Interne integrationsdiagnostik** — Tado opretter 22 sensorer der sporer sin egen API-kvote, polling-intervaller og rate limit-tærskler. Disse ændrer sig konstant og er ubrugelige som historik.
-- **Permanent unavailable entiteter** — FlightRadar24 lufthavnssensorer der aldrig kom online logger stadig tilstandsændringer.
-- **Update-entiteter** — 59 update-entiteter fordelt på firmware og HACS. Det er øjebliksdata, ikke tidsserier.
-- **Enhedsstatistik** — UniFi access points logger CPU- og hukommelsesprocent hvert minut.
+- **Integrationernes egen diagnostik**: Tado opretter 22 sensorer, der holder øje med sin egen API-kvote, hvor ofte den henter data og grænserne for antal kald. De ændrer sig hele tiden og er ubrugelige som historik.
+- **Entiteter, der altid er unavailable**: FlightRadar24-sensorer for lufthavne, der aldrig kom online, gemmer stadig ændringer.
+- **Update-entiteter**: 59 af dem, fordelt på firmware og HACS. Det er øjebliksbilleder, ikke tidsserier.
+- **Statistik fra enheder**: UniFi-adgangspunkter gemmer CPU- og hukommelsesforbrug hvert minut.
 
 ## Den komplette recorder-konfiguration
 
-Erstat `recorder:`-blokken i `configuration.yaml`. Rediger via **Studio Code Server**-add-on'et:
+Erstat `recorder:`-blokken i `configuration.yaml`. Rediger den med tilføjelsesprogrammet **Studio Code Server**:
 
 ```yaml
 recorder:
@@ -71,21 +71,21 @@ recorder:
       - sensor.skoda_elroq_charging_state
 ```
 
-`include:`-blokken tilsidesætter `sensor.skoda_elroq_*`-glob'en for de tre entiteter jeg faktisk bruger i History-panelet.
+`include:`-blokken laver en undtagelse fra mønsteret `sensor.skoda_elroq_*` for de tre entiteter, jeg faktisk bruger i historikken.
 
-## Begrundelsen bag ekskluderingerne
+## Begrundelsen for udeladelserne
 
-**`domains: update`** er den nemmeste gevinst. Alle firmware- og HACS-opdateringsenheder hører ikke hjemme i tidsserie-lagring.
+**`domains: update`** er den nemmeste gevinst. Opdateringsentiteter for firmware og HACS hører ikke hjemme i en database til tidsserier.
 
-**`sensor.tado_szimnau_*`** er den glob med størst effekt. Tado-integrationen opretter detaljerede interne diagnostiksensorer: API-kald tilbage i dag, aktuelt polling-interval, rate limit-tærskler, kvote-nulstillingshistorik. Disse opdateres ved hvert API-kald — flere gange i timen for hver zone.
+**`sensor.tado_szimnau_*`** er det mønster, der gør størst forskel. Tado-integrationen opretter detaljerede sensorer om sig selv: API-kald tilbage i dag, hvor ofte den henter data, grænser for antal kald og hvornår kvoten blev nulstillet. De opdateres ved hvert API-kald, flere gange i timen for hver zone.
 
-**`sensor.flightradar24_airport_*`** rammer 12 lufthavnsstatistiksensorer der var fejlkonfigureret og sidder fast i `unavailable`. En entitet i vedvarende unavailable-tilstand genererer stadig recorder-skrivninger.
+**`sensor.flightradar24_airport_*`** rammer 12 sensorer med lufthavnsstatistik, der var sat forkert op og hænger fast i `unavailable`. En entitet, der hele tiden er unavailable, skriver stadig til recorderen.
 
-**`sensor.u6_lite_*` og `sensor.uap_ac_pro_*`** dækker UniFi access point-diagnostik. CPU og hukommelsesudnyttelse ændres hvert minut — tusindvis af datapunkter om ugen uden handlingsværdi.
+**`sensor.u6_lite_*` og `sensor.uap_ac_pro_*`** dækker diagnostik fra UniFi-adgangspunkterne. CPU- og hukommelsesforbrug ændrer sig hvert minut, og det giver tusindvis af målinger om ugen, som ingen bruger til noget.
 
-## Anvend ændringerne uden genstart
+## Tag ændringerne i brug uden genstart
 
-Efter du har gemt `configuration.yaml`, reload recorder og komprimer databasen i ét trin:
+Når du har gemt `configuration.yaml`, så genindlæs recorderen og komprimer databasen i ét trin:
 
 ```
 Developer Tools → Actions → recorder.purge
@@ -93,10 +93,10 @@ Developer Tools → Actions → recorder.purge
   repack: true
 ```
 
-`repack: true` kører SQLites `VACUUM`-operation, der fysisk krymper databasefilen. Uden den forbliver filen på sin maksimale størrelse selv efter at gamle poster er fjernet.
+`repack: true` kører SQLites `VACUUM`, som fysisk gør databasefilen mindre. Uden den bliver filen ved med at have sin største størrelse, også efter gamle rækker er slettet.
 
-De nye ekskluderinger træder i kraft med det samme. Historiske data for ekskluderede entiteter renses af den normale daglige purge over de næste fem dage.
+De nye udeladelser virker med det samme. Gamle data for de udeladte entiteter bliver ryddet væk af den normale daglige oprydning over de næste fem dage.
 
-## Hvad der er værd at beholde i historikken
+## Det, der er værd at gemme
 
-Klimasensorer, energisensorer, EV-batteri og rækkevidde samt sikkerhedstilstande hører alle hjemme i historikken. Målet er ikke den mindst mulige database — det er en database hvor hver række tjener et formål.
+Klimasensorer, energisensorer, elbilens batteri og rækkevidde samt sikkerhedstilstande hører alle hjemme i historikken. Målet er ikke den mindst mulige database, men en database, hvor hver række har et formål.
