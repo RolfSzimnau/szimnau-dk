@@ -1,5 +1,5 @@
 ---
-title: "Badeværelsesventilator-overvågning i Home Assistant: XIAO ESP32-C3 Bluetooth-proxy + Fresh Intellivent Sky"
+title: "Badeværelsesventilatorer i Home Assistant: Bluetooth-proxy med XIAO ESP32-C3 og Fresh Intellivent Sky"
 seoTitle: "Fresh Intellivent Sky i Home Assistant via Bluetooth-proxy"
 description: "XIAO ESP32-C3 som Bluetooth-proxy til Home Assistant, Fresh Intellivent Sky over BLE, og et nedbrud der lignede dårlig rækkevidde, men ikke var det."
 pubDate: 2026-07-08
@@ -16,58 +16,58 @@ faqs:
     answer: "A crashed config entry, not a range problem. The integration's own reload handler failed mid-unload and left it in Home Assistant's non-recoverable failed_unload state. Check Settings → Devices & Services → the integration's entry status before assuming a Bluetooth/range issue — only a full Home Assistant restart clears it."
 ---
 
-To Fresh Intellivent Sky-badeværelsesventilatorer, begge udsendende Bluetooth Low Energy, begge længere fra Home Assistant-værten end dens indbyggede radio pålideligt rækker. Løsningen var ikke en ny HA-server eller et net af repeatere — det var en mikrocontroller til nogle få dollars og omkring ti minutter med en browser. Dette indlæg dækker opsætningen af Bluetooth-proxyen, tilføjelsen af ventilatorerne, og en fejl der lignede præcis et hardwareproblem — og ikke var det.
+To Fresh Intellivent Sky-ventilatorer på badeværelserne sender begge via Bluetooth Low Energy, og begge sidder længere fra Home Assistant-serveren, end dens indbyggede radio pålideligt kan nå. Løsningen var ikke en ny server eller et net af repeatere, men en billig mikrocontroller og ti minutter i en browser. Indlægget handler om opsætningen af Bluetooth-proxyen, om at få ventilatorerne ind i Home Assistant, og om en fejl, der lignede et hardwareproblem, men ikke var det.
 
 ## Hardwaren: Seeed Studio XIAO ESP32-C3
 
-XIAO ESP32-C3 er et kort på størrelse med en tommelfingernegl — WiFi, Bluetooth 5 og en USB-C-port, ikke andet du behøver at tænke over. Jeg satte det i en USB-strømadapter i gangen mellem de to badeværelser og har ikke rørt ledningerne siden.
+XIAO ESP32-C3 er et kort på størrelse med en tommelfingernegl med wifi, Bluetooth 5 og et USB-C-stik. Mere skal du ikke tænke over. Jeg satte det i en USB-oplader i gangen mellem de to badeværelser og har ikke rørt det siden.
 
 ![Seeed Studio XIAO ESP32-C3-kort i nærbillede, med USB-C-port og ekstern antennestik](/blog-images/xiao-esp32-c3-board.jpg)
 
-At flashe det er ikke et projekt på den måde, "at flashe firmware" normalt antyder. [ESPHomes browserbaserede projekt-installer](https://esphome.io/projects/) har et færdiglavet **Bluetooth Proxy**-firmware-image — sæt kortet i computeren via USB, åbn installeren i Chrome eller Edge, vælg kortet og Bluetooth Proxy-projektet, og det flasher over WebSerial. Ingen YAML at skrive, ingen ESPHome-dashboard at køre lokalt. Forbind det til WiFi under den guidede opsætning, og det dukker op i Home Assistants discovery inden for et minut.
+At flashe det er ikke det projekt, ordet normalt lyder som. [ESPHomes installationsprogram i browseren](https://esphome.io/projects/) har en færdig **Bluetooth Proxy**-firmware: Sæt kortet i computeren med USB, åbn siden i Chrome eller Edge, vælg kortet og Bluetooth Proxy-projektet, og firmwaren lægges på via WebSerial. Der er ingen YAML at skrive og intet ESPHome-dashboard at køre lokalt. Forbind kortet til wifi i den guidede opsætning, så dukker det op i Home Assistant inden for et minut.
 
-Når det er tilføjet som en ESPHome-enhed, registrerer det sig selv som en Bluetooth-adapter under **Indstillinger → Enheder & Tjenester → Bluetooth**. Home Assistant foretrækker automatisk proxyer frem for sin egen indbyggede adapter for enhver enhed tættere på en proxy — uden nogen konfiguration fra din side.
+Når det er tilføjet som en ESPHome-enhed, melder det sig selv som Bluetooth-adapter under **Indstillinger → Enheder og tjenester → Bluetooth**. Home Assistant bruger automatisk proxyen frem for sin egen adapter til de enheder, der er tættest på proxyen. Du skal ikke konfigurere noget.
 
-## Hvorfor en proxy frem for bare mere rækkevidde
+## Hvorfor en proxy i stedet for bare mere rækkevidde
 
-Home Assistant-værtens Bluetooth-radio dækker cirka ét rum, måske to med fri sigtlinje. Alt derudover er en dødzone for enhver ren BLE-integration — ingen Zigbee-lignende mesh, ingen repeater-logik, bare "inden for rækkevidde" eller "ikke inden for rækkevidde". Et enkelt billigt ESP32-kort løser en hel dødzone på én gang, og du kan sætte flere op hvor som helst du har USB-strøm — hver ny en tilføjer bare dækning, ingen parring eller per-enhed-konfiguration krævet på proxysiden.
+Bluetooth-radioen i Home Assistant-serveren dækker cirka ét rum, måske to, hvis der er frit udsyn. Alt udenfor er et dødt område for rene BLE-integrationer. Der er intet mesh som i Zigbee og ingen repeatere: enheden er enten inden for rækkevidde eller ej. Et enkelt billigt ESP32-kort dækker et helt dødt område, og du kan sætte flere op, hvor der er USB-strøm. Hvert nyt kort giver bare mere dækning, uden parring eller opsætning pr. enhed.
 
-Jeg kører dette sammen med en [Google Find My-opsætning](/da/blog/google-find-my-home-assistant/), der også afhænger af Bluetooth — FAQ'en der peger specifikt på en ESP32 BLE-proxy som det rigtige værktøj, når du har brug for en aflæsning inden for sekunder frem for "når en telefon nu engang går forbi."
+Jeg har tidligere brugt proxyen sammen med en [Google Find My-opsætning](/da/blog/google-find-my-home-assistant/), som også bygger på Bluetooth. Det indlægs FAQ peger netop på en ESP32-proxy som det rigtige værktøj, når du vil have en position inden for sekunder i stedet for «når der engang går en telefon forbi».
 
-## Tilføjelse af Fresh Intellivent Sky-ventilatorerne
+## Sådan kommer ventilatorerne ind i Home Assistant
 
-Fresh Intellivent Sky er en fugtstyret badeværelsesventilator med sin egen Bluetooth-grænseflade, normalt styret gennem Fresh SmartLink-appen. Home Assistant har ingen officiel integration til den — den der virker, er et community-projekt, [`angoyd/freshintelliventHacs`](https://github.com/angoyd/freshintelliventHacs), installeret via HACS som et brugerdefineret repository.
+Fresh Intellivent Sky er en fugtstyret badeværelsesventilator med egen Bluetooth-forbindelse, som normalt styres fra Fresh SmartLink-appen. Home Assistant har ingen officiel integration til den. Den, der virker, er et community-projekt, [`angoyd/freshintelliventHacs`](https://github.com/angoyd/freshintelliventHacs), som installeres via HACS som et brugerdefineret repository.
 
 ![Fresh Intellivent Sky-badeværelsesventilator monteret i en loftsdiffusor](/blog-images/fresh-intellivent-sky-fan-ceiling.jpg)
 
-Med proxyen på plads er opsætningen reelt bare discovery: så snart ventilatorens BLE-annonceringer når en proxy inden for rækkevidde, tilbyder Home Assistant den under **Indstillinger → Enheder & Tjenester → Fundet** med `fresh_intellivent_sky` som kilde. Bekræft den, og den opretter en enhed med fem sensorer:
+Med proxyen på plads går opsætningen næsten af sig selv: Så snart ventilatorens BLE-signal når en proxy, foreslår Home Assistant den under **Indstillinger → Enheder og tjenester → Fundet** med `fresh_intellivent_sky` som kilde. Bekræft, så opretter den en enhed med fem sensorer:
 
 - `sensor.<navn>_humidity`
 - `sensor.<navn>_temperature`
 - `sensor.<navn>_current_speed`
-- `sensor.<navn>_mode` (læsbar — Off, Trickle, Boost osv.)
+- `sensor.<navn>_mode` (læsbar: Off, Trickle, Boost osv.)
 - `sensor.<navn>_mode_raw` (den numeriske kode bag)
 
-**Det er skrivebeskyttet.** Der er ingen `fan.*`, `switch.*` eller `select.*`-entitet — intet i Home Assistant kan ændre ventilatorens hastighed eller udløse en boost. Automationer bygget på denne integration kan give besked om, at du selv skal boost'e ventilatoren manuelt — de kan ikke gøre det for dig. Det er en reel begrænsning, værd at kende, før du planlægger automationer omkring den.
+**Den kan kun læses, ikke styres.** Der er ingen `fan.*`-, `switch.*`- eller `select.*`-entitet, så intet i Home Assistant kan ændre ventilatorens hastighed eller starte boost. Automationer bygget på denne integration kan minde dig om at starte boost selv, men de kan ikke gøre det for dig. Det er en reel begrænsning, som er værd at kende, før du planlægger automationer.
 
 *Opdatering 26/08/2026: ikke længere hele historien — se opdateringsafsnittet nederst i indlægget.*
 
-## Fugtautomationer der rent faktisk virker med skrivebeskyttet data
+## Fugtautomationer, der virker, selvom ventilatoren kun kan læses
 
-To ventilatorer, fem sensorer hver, ingen styring — men luftfugtighed og dens ændringshastighed er stadig nok til at bygge noget nyttigt. Mønsteret jeg landede på:
+To ventilatorer med fem sensorer hver og ingen styring. Men luftfugtigheden, og hvor hurtigt den ændrer sig, er stadig nok til at bygge noget nyttigt. Det mønster, jeg endte med:
 
-- En **Derivative**-hjælper (Indstillinger → Enheder & Tjenester → Hjælpere, ingen YAML) på hver fugtighedssensor, der giver en %/min-værdi — en vedvarende stigning forbi cirka 3,3%/min flager "nogen er i bad" hurtigere, end en fast fugtighedsgrænse nogensinde kunne.
-- En automation med vedvarende grænseværdi for reel skimmelrisiko: fugtighed over 70% i 45+ minutter, uafhængigt af hastighed.
+- En **Derivative**-hjælper (Indstillinger → Enheder og tjenester → Hjælpere, ingen YAML) på hver fugtsensor, som giver en værdi i %/min. En vedvarende stigning over cirka 3,3 %/min betyder, at nogen er i bad, og det opdages langt hurtigere end med en fast fugtgrænse.
+- En automation med en fast grænse for reel skimmelrisiko: luftfugtighed over 70 % i mindst 45 minutter, uanset hvor hurtigt den stiger.
 
-Begge sender bare en notifikation — se skrivebeskyttelsesbegrænsningen ovenfor — men ændringshastigheds-triggeren fanger en brusertur, der starter, inden for et par minutter, længe før en fast "fugtighed over 65%"-grænse ville udløse.
+Begge sender kun en notifikation, jf. begrænsningen ovenfor. Men udløseren på ændringshastigheden fanger et bad inden for et par minutter, længe før en fast grænse på 65 % ville slå til.
 
-## Fejlen der lignede et rækkeviddeproblem
+## Fejlen, der lignede et rækkeviddeproblem
 
-Et par dage efter opsætningen gik alle fem sensorer på den ene ventilator "unavailable", mens den anden fortsatte med at rapportere normalt. Den oplagte antagelse er signal — proxyplacering, BLE-rækkevidde, måske skal ventilatoren parres igen. Jeg tjekkede proxyens dækning først og fandt intet galt med den.
+Et par dage efter opsætningen gik alle fem sensorer på den ene ventilator til «unavailable», mens den anden blev ved med at melde normalt. Det oplagte gæt er signalet: proxyens placering, BLE-rækkevidden, eller at ventilatoren skal parres igen. Jeg tjekkede proxyens dækning først og fandt intet galt.
 
-Den egentlige årsag lå i integrationens config entry, ikke radioen. Home Assistant sporer opsætningsstatus for hver integrationsinstans — én af de mulige værdier er `failed_unload`, som opstår, når en integrations egen reload/unload-handler kaster en fejl midt i nedlukningen. I praksis selvhelbreder den ikke: kun en fuld genstart rydder den. Fejlloggen viste præcis det: en options-update-listener udløste en reload, unload-halvdelen fejlede, og entryen blev efterladt død. Den identiske, upåvirkede ventilators config entry sad derimod i en normal `loaded`-status hele tiden.
+Den egentlige årsag lå i integrationens config entry, ikke i radioen. Home Assistant holder styr på opsætningsstatus for hver integration, og én af de mulige værdier er `failed_unload`. Den opstår, når integrationens egen kode til genindlæsning fejler midt i nedlukningen, og i praksis retter den sig ikke selv: kun en fuld genstart fjerner den. Loggen viste præcis det: en ændring af indstillingerne udløste en genindlæsning, nedlukningsdelen fejlede, og integrationen blev efterladt død. Den anden ventilator, som ikke var ramt, stod hele tiden som `loaded`.
 
-Intet af dette kan diagnosticeres ud fra entity-status alene — "unavailable" ser identisk ud, uanset om årsagen er "integration crashede" eller "enhed er uden for rækkevidde". Fingerpeget er i **Indstillinger → Enheder & Tjenester**, på selve integrations-entryen, eller i Home Assistant-loggen omkring det tidspunkt, hvor entiteten blev forældet. En fuld genstart ryddede den fastlåste entry med det samme; hver sensor rapporterede igen inden for to minutter.
+Intet af det kan ses ud fra entitetens status alene. «Unavailable» ser ens ud, uanset om integrationen er gået ned, eller enheden er uden for rækkevidde. Sporet finder du under **Indstillinger → Enheder og tjenester** på selve integrationen eller i Home Assistant-loggen omkring det tidspunkt, hvor entiteten holdt op med at opdatere. En fuld genstart fjernede fejlen med det samme, og alle sensorer meldte igen inden for to minutter.
 
 ```yaml
 alias: "Bathroom: Fan Sensor Stale Alert"
@@ -94,44 +94,44 @@ action:
             title: "Restart HA"
 ```
 
-Handlingsknappen udløser en anden, lille automation, der lytter efter netop den specifikke `mobile_app_notification_action`-event og kalder `homeassistant.restart` — bevidst ikke automatisk, da en ventilator, der reelt er uden for rækkevidde, bare ville få en ubrugelig genstart i en løkke i stedet for den faktiske løsning.
+Knappen i notifikationen starter en lille automation, der lytter efter netop den `mobile_app_notification_action`-event og kalder `homeassistant.restart`. Det sker bevidst ikke automatisk: er ventilatoren reelt uden for rækkevidde, ville den bare få nytteløse genstarter i en løkke i stedet for den rigtige løsning.
 
-## At style det ind i dashboardet
+## Kortene på dashboardet
 
-Begge ventilatorers kort bruger de samme frostede glas-card_mod-konstanter som resten af dashboardet — et fugtighedstrend-diagram, temperatur/mode/hastighed-fliser, og en kompakt statusflise, der kun vises, når ventilatoren er aktiv, eller fugtigheden stiger, så et inaktivt badeværelse ikke optager permanent plads på dashboardet. Den tidligere fejlramte ventilators kort bærer også en lille "Connectivity: Unavailable"-fallback-flise, drevet af den samme `mode`-sensor, der går "unavailable" — den forsvinder, i det øjeblik sensorerne begynder at rapportere igen, ingen manuel dashboard-redigering nødvendig i nogen af tilfældene.
+Begge ventilatorers kort bruger de samme glaskonstanter i card_mod som resten af dashboardet: en graf over fugtigheden, felter med temperatur, tilstand og hastighed, og et kompakt statusfelt, der kun vises, når ventilatoren kører, eller fugtigheden stiger. Så fylder et badeværelse, hvor der ikke sker noget, ikke på dashboardet. Kortet for ventilatoren, der fejlede, har også et lille reservefelt, «Connectivity: Unavailable», som bygger på samme `mode`-sensor. Det forsvinder, så snart sensorerne melder igen, uden at dashboardet skal redigeres.
 
 ## Opdatering: skiftet til et repo, der faktisk kan noget
 
-Syv uger senere blev jeg kontaktet af en fra Spittie.dk — et dansk site for Home Assistant-entusiaster — der gjorde mig opmærksom på et repo, jeg ikke selv havde fundet: [`Spit68/Fresh-Intellivent-Sky`](https://github.com/Spit68/Fresh-Intellivent-Sky). `angoyd/freshintelliventHacs` — integrationen omtalt ovenfor — er stadig rent skrivebeskyttet, uanset hvor mange gange man genindlæser den; det nye repo er noget helt andet, installeret på samme måde via HACS, men med et helt andet sæt entiteter i den anden ende.
+Syv uger senere skrev en fra Spittie.dk, et dansk site for Home Assistant-entusiaster, til mig om et repo, jeg ikke selv havde fundet: [`Spit68/Fresh-Intellivent-Sky`](https://github.com/Spit68/Fresh-Intellivent-Sky). `angoyd/freshintelliventHacs`, integrationen ovenfor, kan stadig kun læse, uanset hvor mange gange man genindlæser den. Det nye repo er noget helt andet. Det installeres på samme måde via HACS, men giver et helt andet sæt entiteter.
 
-Og det er markant flere entiteter: boost- og pauseknapper med varighed og RPM, en switch til konstant hastighed, RPM pr. driftstilstand, night mode og silent hours med hver deres start- og sluttidspunkt, og følsomhedsvalg for fugt-, VOC- og lysdetektion. Automationer kan nu rent faktisk trykke på boost-knappen selv — ikke bare sende en påmindelse om, at nogen andre skal gøre det.
+Og der er markant flere: knapper til boost og pause med varighed og omdrejninger, en kontakt til konstant hastighed, omdrejninger pr. driftstilstand, nattilstand og stille timer med hver deres start- og sluttidspunkt, og følsomhed for fugt-, VOC- og lysdetektion. Automationer kan nu selv trykke på boost-knappen i stedet for bare at minde nogen om at gøre det.
 
-Det, der forsvandt til gengæld, er en brugbar fugtighedsprocent. Det nye repo har ganske vist en `humidity_sensor_raw`-entitet, men den er slået fra som standard, og før jeg byggede noget videre på den, gik jeg ind i kildekoden for at lede efter en skjult formel. Der er ingen. `sky_sensors.py` pakker BLE-statusbeskeden ud direkte:
+Til gengæld forsvandt en brugbar fugtprocent. Det nye repo har ganske vist en `humidity_sensor_raw`-entitet, men den er slået fra som standard. Før jeg byggede videre på den, gik jeg kildekoden igennem efter en skjult formel. Der er ingen. `sky_sensors.py` pakker BLE-statusbeskeden direkte ud:
 
 ```python
 values = unpack("<2B5H3B", data)
 self.humidity_raw = values[2]
 ```
 
-Et råt 16-bit tal, lige fra enhedens eget register, uden division eller reference at holde det op imod. De to automationer fra afsnittet ovenfor kunne derfor ikke bare kopieres over med et nyt entity-navn — indtil jeg tænkte mig lidt bedre om. Den gamle `angoyd`-integration parser slet ikke selv BLE-data; den læner sig op ad et separat bibliotek, [`pyfreshintellivent`](https://github.com/LaStrada/pyfreshintellivent). Dét biblioteks `sensors.py` læser **samme karakteristik** (`528b80e8-…`, bogstaveligt navngivet "Sensor data" i protokol-dokumentationen) på **samme byte-offset** som `humidity_raw` ovenfor — og regner den om:
+Et råt 16-bit tal direkte fra enhedens eget register, uden division eller noget at sammenligne med. De to automationer ovenfor kunne derfor ikke bare flyttes over med et nyt entitetsnavn. Indtil jeg tænkte mig bedre om: Den gamle `angoyd`-integration læser slet ikke selv BLE-data, men bruger et separat bibliotek, [`pyfreshintellivent`](https://github.com/LaStrada/pyfreshintellivent). Det biblioteks `sensors.py` læser **samme karakteristik** (`528b80e8-…`, som i protokoldokumentationen ligefrem hedder «Sensor data») på **samme byte-position** som `humidity_raw` ovenfor og regner den om:
 
 ```python
 if values[2] != 0:
     self.humidity = round((log(values[2] / 10) * 10), 1)
 ```
 
-En naturlig logaritme, ikke en lineær skalering. Ikke noget Fresh selv har publiceret — bare noget en anden udvikler fandt frem til og har kørt i produktion i årevis. Jeg testede den på de rå tal, jeg allerede havde: 858 → 41,3%, ~2800-3150 → 39,5-58%. Begge lander lige midt i almindelige badeværelses-fugtighedsniveauer, ikke et tilfældigt resultat af at proppe tal ind i en tilfældig formel. Byggede den som to `template`-sensorer i Home Assistant, og satte begge automationer tilbage til deres oprindelige thresholds — 70% i 45 minutter for skimmelrisiko, 3,33%/min for hurtig stigning — nu bare mod en anden kildeentitet end før.
+En naturlig logaritme, ikke en lineær skalering. Formlen er ikke offentliggjort af Fresh, men fundet af en anden udvikler og brugt i årevis. Jeg prøvede den på de rå tal, jeg allerede havde: 858 giver 41,3 %, og 2800 til 3150 giver 39,5 til 58 %. Begge ligger midt i almindelig luftfugtighed for et badeværelse, så det er ikke et tilfældigt resultat. Jeg byggede den som to `template`-sensorer i Home Assistant og satte begge automationer tilbage til de oprindelige grænser, 70 % i 45 minutter for skimmelrisiko og 3,33 %/min for hurtig stigning, nu bare mod en anden sensor end før.
 
-Selve skiftet var ikke kun et spørgsmål om at pege på et nyt GitHub-repo i HACS. Geninstallationen af Bluetooth-proxyen — samme kort som tidligere i indlægget — udløste en kortvarig afbrydelse af dens ESPHome-forbindelse på omkring 20 minutter, der ved første øjekast lignede endnu et nedbrud, men rettede sig selv. Og fordi automationer og dashboardkort begge havde hardcodede entity_id'er fra den gamle integration, skulle hver reference findes og rettes manuelt — hvilket samtidig afslørede, at de to badeværelseskort på dashboardet i lang tid havde vist hinandens data, fordi titel og entity-mapping på et tidspunkt var blevet byttet om uden at jeg havde opdaget det.
+Selve skiftet var ikke kun et spørgsmål om at pege HACS mod et nyt repo. Da Bluetooth-proxyen blev geninstalleret (samme kort som tidligere i indlægget), mistede den forbindelsen til ESPHome i cirka 20 minutter. Det lignede endnu et nedbrud, men rettede sig selv. Og fordi automationer og dashboardkort havde den gamle integrations entity_id'er skrevet direkte ind, skulle hver reference findes og rettes i hånden. Det afslørede samtidig, at de to badeværelseskort i lang tid havde vist hinandens data, fordi titel og entiteter på et tidspunkt var blevet byttet om, uden at jeg havde opdaget det.
 
 ## Opdatering: formlens pålidelighed er stadig uafklaret
 
-Efter dette indlæg blev publiceret, hørte jeg fra udvikleren bag `Spit68/Fresh-Intellivent-Sky`. Det viser sig, at han allerede havde lagt et solidt stykke arbejde i præcis dette problem — prøvet LaStrada's log-formel ovenfor, en række andre formler, skilt en SKY-enhed ad for at se selve fugtsensor-chippen, arbejdet ud fra dens datablad, og endda fodret en AI med en bunke rå-tal/reference-fugtighed-par. Intet af det gav en formel solid nok til at sende som en rigtig procent-sensor — hvilket er præcis derfor `humidity_sensor_raw` er slået fra som standard i hans repo, i stedet for et gæt udklædt som data. Respekt for at holde den linje i stedet for at sende noget der ser rigtigt ud, men ikke er det.
+Efter indlægget kom ud, hørte jeg fra udvikleren bag `Spit68/Fresh-Intellivent-Sky`. Han havde allerede lagt et solidt stykke arbejde i netop det problem: prøvet LaStradas log-formel ovenfor og en række andre, skilt en SKY-enhed ad for at se selve fugtsensoren, arbejdet ud fra dens datablad og endda givet en AI en bunke par af rå tal og målt fugtighed. Intet af det gav en formel, der var god nok til en rigtig procent-sensor. Derfor er `humidity_sensor_raw` slået fra som standard i hans repo i stedet for at vise et gæt forklædt som data. Respekt for at holde fast i det i stedet for at udgive noget, der ser rigtigt ud, men ikke er det.
 
-Det vigtigste datapunkt: to SKY-enheder side om side, i formodentlig ens fugtighed, kan vise rå-tal så forskellige som 100 vs. 300. Det er ikke en lineær forskydning man kan kalibrere væk — det peger på at det rå register slet ikke er på samme skala på tværs af enheder.
+Det vigtigste datapunkt: to SKY-enheder side om side, formentlig i samme luftfugtighed, kan vise rå tal så forskellige som 100 og 300. Det er ikke en fast forskydning, man kan kalibrere væk. Det tyder på, at det rå register slet ikke bruger samme skala fra enhed til enhed.
 
-Det ændrer, hvad jeg egentlig har valideret ovenfor. Log-formlen gav plausible tal for min specifikke ventilator, og mine to automationer virker stadig, fordi de sætter thresholds konsekvent mod netop den ventilators egen baseline over tid — ikke fordi formlen er en bevist, generel rå-til-procent-konvertering. Genskaber du dette for dine egne SKY-enheder, så behandl tallet som en relativ trend-indikator, ikke en kalibreret procent, indtil du har tjekket det mod et rigtigt hygrometer i dit eget badeværelse. Han er heller ikke færdig med at jagte det endnu — nye sammenligningssensorer er på vej hans side — så dukker der en rigtig formel op, opdaterer jeg dette indlæg.
+Det ændrer, hvad jeg faktisk har vist ovenfor. Log-formlen gav troværdige tal for netop min ventilator, og mine to automationer virker stadig, fordi grænserne passer til den ventilators eget normale niveau over tid. Ikke fordi formlen er en bevist, generel omregning fra rå tal til procent. Vil du gøre det samme med dine egne SKY-enheder, så brug tallet til at følge udviklingen, ikke som en kalibreret procent, indtil du har sammenlignet med et rigtigt hygrometer i dit eget badeværelse. Udvikleren er heller ikke færdig: Han har nye sensorer på vej til sammenligning, og dukker der en rigtig formel op, opdaterer jeg indlægget.
 
-## Én ting værd at vide
+## Værd at vide
 
-Hvis du udvider Home Assistants Bluetooth-rækkevidde til andet end en enkelt enhed — Govee-sensorer, andre BLE-trackere, flere af disse ventilatorer — er det proxyen ligegyldigt, hvad den proxyer. Ét XIAO ESP32-C3-kort per dødzone dækker alt inden for rækkevidde, ikke kun den enhed, du satte det op til. Det er samme logik som at køre en LoRa-gateway til en postkassesensor 200 meter væk — billig, formålsbygget radiohardware løser rækkeviddeproblemer, som ingen mængde Home Assistant-konfiguration kan.
+Udvider du Home Assistants Bluetooth-rækkevidde til mere end én enhed, fx Govee-sensorer, andre BLE-trackere eller flere af disse ventilatorer, er det ligegyldigt for proxyen, hvad den videresender. Ét XIAO ESP32-C3-kort pr. dødt område dækker alt inden for rækkevidde, ikke kun den enhed, du satte det op til. Det er samme tankegang som en LoRa-gateway til en postkassesensor 200 meter væk: billig radiohardware, der er lavet til formålet, løser rækkeviddeproblemer, som ingen mængde konfiguration i Home Assistant kan.

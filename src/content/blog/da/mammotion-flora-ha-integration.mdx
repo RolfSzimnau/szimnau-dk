@@ -1,6 +1,6 @@
 ---
-title: "Mammotion Flora i Home Assistant: det der faktisk virker"
-description: "GPS-klipning uden perimeterkabel, vejrbevidst tidsplan via HA, og satellitantal-sensoren ingen advarer dig om. Et ærligt kig efter flere måneders brug."
+title: "Mammotion Flora i Home Assistant: det, der faktisk virker"
+description: "GPS-klipning uden kantkabel, en tidsplan i HA, der tager højde for vejret, og sensoren for antal satellitter, som ingen advarer dig om. Et ærligt kig efter flere måneders brug."
 pubDate: 2025-01-10
 tags: ["plæneklipper", "automatisering"]
 lang: "da"
@@ -13,23 +13,23 @@ faqs:
     answer: "It is heavily cloud/4G-dependent, and the GPS boundary map can only be drawn in the vendor app — HA can control mowing but never define the lawn. Watch the satellite count sensor: low counts explain most seemingly random stops."
 ---
 
-Min Husqvarna 213C kørte i årevis uden nogensinde at have det mindste at gøre med Home Assistant. En ridende plæneklipper gør det ikke — man sætter sig op, kører, og så er det det. Hvis det regnede, aflyste jeg selv. Var jeg væk, ventede plænen.
+Min Husqvarna 213C kørte i årevis uden at have det mindste med Home Assistant at gøre. Det har en siddeklipper ikke: man sætter sig op, kører, og så er man færdig. Regnede det, aflyste jeg selv. Var jeg væk, ventede plænen.
 
-Det var der egentlig ikke noget dramatisk ved. Bare irriterende nok til at jeg til sidst skiftede.
+Der var ikke noget dramatisk ved det. Bare irriterende nok til, at jeg til sidst skiftede.
 
-Jeg erstattede den med en **Mammotion Luba Mini 2** (jeg kalder den Flora) for ca. et år siden. Primært fordi den har en rigtig HA-integration. Her er hvad jeg har fundet ud af efter et år med den.
+Jeg skiftede den ud med en **Mammotion Luba Mini 2** (jeg kalder den Flora) for cirka et år siden, først og fremmest fordi den har en rigtig HA-integration. Her er, hvad jeg har lært efter et år.
 
 ## Opsætning
 
-Flora bruger GPS + RTK til navigation — intet perimeterkabel. RTK-korrektioner leveres af iNav NetRTK over 4G. Jeg droppede den fysiske RTK-basestation i haven til fordel for Network RTK, som sender korrektionsdata via mobilnettet og Mammotions cloud. Ingen antenne på taget, intet kabel ud i haven. Prisen er, at hvert positionstjek gør en tur via internettet — og det viser sig at have større betydning, end man umiddelbart tror. Mere om det under "Hvad der er træls".
+Flora navigerer med GPS og RTK, uden kantkabel. RTK-korrektionerne kommer fra iNav NetRTK over 4G. Jeg droppede den fysiske RTK-basestation i haven og valgte Network RTK, som sender korrektionerne via mobilnettet og Mammotions cloud. Ingen antenne på taget, intet kabel ud i haven. Prisen er, at hvert positionstjek går en tur over internettet, og det betyder mere, end man skulle tro. Mere om det under «Det, der er træls».
 
-Grænsen tegnes i Mammotion-appen én gang, og derefter holder klipperen sig inden for koordinaterne. Vision-modulet er et lille kamera på kroppen der registrerer forhindringer.
+Grænsen tegnes én gang i Mammotion-appen, og derefter holder klipperen sig inden for den. Vision-modulet er et lille kamera på klipperen, der opdager forhindringer.
 
 ![Flora efter en tur i haven](/blog-images/Hjem_Luba.jpg)
 
-Flora klarer hele 1.000 m² selv. Intet nedgravet kabel, ingen kortlægningstape, ingen plastikpinde der markerer forbudte zoner. Tegn grænsen én gang i appen — hun klarer resten ved hvert eneste klip, arbejder sig rundt om træer, dammen og hvad der ellers er endt på plænen.
+Flora klarer alle 1.000 m² selv. Intet nedgravet kabel og ingen plastikpinde, der markerer forbudte områder. Tegn grænsen én gang i appen, så klarer hun resten ved hver eneste klipning og arbejder sig uden om træer, dammen og hvad der ellers er havnet på plænen.
 
-Installation: HACS → søg Mammotion → godkend med din konto. Derefter dukker disse op:
+Installation: HACS, søg efter Mammotion, og log ind med din konto. Derefter dukker disse op:
 
 ```
 lawn_mower.flora
@@ -38,26 +38,26 @@ sensor.flora_satellites_robot   — den vigtige, se nedenfor
 sensor.flora_wifi_rssi
 ```
 
-## Satellitantal-sensoren
+## Sensoren for antal satellitter
 
-`sensor.flora_satellites_robot` er den mest nyttige entitet integrationen eksponerer. Og det er den ingen taler om.
+`sensor.flora_satellites_robot` er den mest nyttige entitet, integrationen giver dig. Og det er den, ingen taler om.
 
-Under ca. 10 aktive satellitter begynder GPS-positioneringen at vakle. Klipperen stopper ikke — den tøver bare ved grænsekanterne og kryber sommetider lidt ud mod hækken. Jeg opdagede det ved at se den opføre sig underligt på overskyede morgener og til sidst sammenstille det med lave satellitantal.
+Under cirka 10 satellitter begynder GPS-positionen at blive usikker. Klipperen stopper ikke, men den tøver ved grænserne og kommer sommetider lidt for tæt på hækken. Jeg opdagede det, fordi den opførte sig underligt på overskyede morgener, og til sidst kunne jeg koble det til et lavt antal satellitter.
 
-Jeg har sat en `card_mod`-farvetærskel på chippen: grøn over 12, orange 8-12, rød under 8. Nu kan jeg med et blik se om forholdene er gode inden den planlagte start.
+Jeg har sat farvegrænser på chippen med `card_mod`: grøn over 12, orange fra 8 til 12 og rød under 8. Nu kan jeg med et blik se, om forholdene er gode, før klipperen starter.
 
-## Erstatning af app-tidsplanen
+## En ny tidsplan i stedet for appens
 
-Mammotion-appens planlægger gør én ting: kør klipperen på faste tidspunkter på faste dage. Den har ingen vejrbevidsthed.
+Tidsplanen i Mammotion-appen kan én ting: køre klipperen på faste tidspunkter på faste dage. Den tager ikke højde for vejret.
 
-Jeg erstattede den med HA-hjælpere — én `input_boolean` per ugedag, én `input_number` til timen:
+Jeg erstattede den med hjælpere i HA: én `input_boolean` pr. ugedag og én `input_number` til klokkeslættet:
 
 ```
 input_boolean.flora_mandag ... flora_sondag
 input_number.flora_starttidspunkt   (7-20, step 0.5)
 ```
 
-Automatiseringen tjekker hver time:
+Automationen tjekker hver time:
 
 ```yaml
 alias: Flora — Kør efter tidsplan
@@ -86,11 +86,11 @@ action:
       entity_id: lawn_mower.flora
 ```
 
-Dashboardet er en række til/fra-kontakter, én per dag. Man kan se præcis hvad tidsplanen er og ændre den uden at åbne nogen app. Det alene var migreringen værd.
+Dashboardet er en række kontakter, én pr. dag. Man kan se præcis, hvad tidsplanen er, og ændre den uden at åbne en app. Det alene var skiftet værd.
 
 ## Dashboard
 
-`custom:lawn-mower-card` (HACS) viser en grafik af klipperen med batteriniveau. Mushroom chips nedenunder med telemetri:
+`custom:lawn-mower-card` (HACS) viser en tegning af klipperen med batteriniveau og nedenunder Mushroom-chips med måledata:
 
 ```yaml
 - type: custom:mushroom-chips-card
@@ -108,27 +108,27 @@ Dashboardet er en række til/fra-kontakter, én per dag. Man kan se præcis hvad
 
 ## Vision-modulet
 
-Pindsvin. Det er det første folk spørger om i Danmark, og svaret er ja — Vision-modulet stopper for dem.
+Pindsvin. Det er det første, folk spørger om i Danmark, og svaret er ja: Vision-modulet stopper for dem.
 
-Det stopper også for en glemt haveslange, havemøbler og én gang for en skygge fra en flagstang på et bestemt tidspunkt på en eftermiddag. Den fejltagelse tog mig et stykke tid at gennemskue. Klipperen stoppede kl. 16.30 hver solrig dag, rapporterede ingen forhindring og kørte videre efter et minut. Det var skyggevinklen. Modulet reagerer på kontrast-mønstre, ikke kun fysiske objekter.
+Det stopper også for en glemt haveslange, havemøbler og en enkelt gang for skyggen fra en flagstang på et bestemt tidspunkt om eftermiddagen. Den fejl tog mig et stykke tid at gennemskue. Klipperen stoppede kl. 16.30 hver solskinsdag, meldte ingen forhindring og kørte videre efter et minut. Det var skyggens vinkel. Modulet reagerer på kontraster, ikke kun på fysiske ting.
 
-Mammotion har forbedret dette i firmware-opdateringer. Det er for det meste fint nu.
+Mammotion har forbedret det i senere firmwareopdateringer. Det er for det meste fint nu.
 
-Der er ingen HA-sensor for Vision-modul-hændelser, så jeg kan ikke automatisere på dem. Det er en reel mangel.
+Der er ingen sensor i HA for hændelser fra Vision-modulet, så jeg kan ikke lave automationer på dem. Det er en reel mangel.
 
 ![Floras Vision-modul efter hardwarefejlen](/blog-images/Hjem_Luba_Defekt.png)
 
-Dette forår, da jeg tog Flora ud af værkstedet efter hendes første vinter i opbevaring, var Vision-modulet gået i stykker. Ikke gradvis forringelse — der havde dannet sig fugt inde i det ene kameraobjektiv over vinteren, det kan man se på billedet. Det holdt simpelthen op med at se noget.
+I foråret, da jeg tog Flora ud af værkstedet efter hendes første vinter i opbevaring, var Vision-modulet gået i stykker. Det var ikke slidt ned. Der var trængt fugt ind i det ene kameraobjektiv over vinteren, som man kan se på billedet, og det holdt simpelthen op med at se noget.
 
-Jeg kontaktede Mammotion support og forventede den sædvanlige troubleshooting-runddans — indsend en sag, send billeder, vent, send de samme billeder igen. Sådan gik det ikke. De diagnosticerede problemet klart og hurtigt, kommunikerede professionelt i hele forløbet og sendte et nyt modul inden for et par dage, uden diskussion. Det der stak ud var opfølgningen: de vendte tilbage efter erstatningsmodulet var ankommet for at høre, om alt kørte som det skulle. Den slags efterkøbskontakt er sjælden fra hardwarebrands, og det gjorde en reel forskel.
+Jeg kontaktede Mammotions support og ventede den sædvanlige runddans: opret en sag, send billeder, vent, send de samme billeder igen. Sådan gik det ikke. De fandt hurtigt frem til problemet, var professionelle hele vejen og sendte et nyt modul inden for et par dage uden diskussion. Det, der skilte sig ud, var opfølgningen: Da det nye modul var kommet, vendte de tilbage for at høre, om alt kørte, som det skulle. Den slags opfølgning efter købet er sjælden hos hardwareproducenter, og den gjorde en reel forskel.
 
-Modulet kan altså fejle. Vinterpause og fugtdannelse er en kombination, man skal have i baghovedet. Men fejler det, er du i gode hænder.
+Modulet kan altså gå i stykker, og vinteropbevaring med fugt er en kombination, man skal have i baghovedet. Men sker det, er du i gode hænder.
 
-## Hvad der er træls
+## Det, der er træls
 
-Integrationen har en latens-udfordring. Kommandoer tager 30-60 sekunder at slå igennem. Jeg troede længe, det bare var et langsomt API. Efter at have kørt Flora på 4G Network RTK i en hel sæson tror jeg, forklaringen er mere strukturel: Floras hele navigationsloop kører via Mammotions cloud. Hvert RTK-korrektionssignal rejser over 4G til deres servere og tilbage ved hvert enkelt positionstjek. Cloud-API'et er allerede under konstant belastning blot for at holde hende på ret kurs — HA's statustjek må vente i den kø. Det er ikke en fejl, det er arkitekturen.
+Integrationen er langsom til at reagere. Kommandoer tager 30 til 60 sekunder om at slå igennem. Længe troede jeg bare, at API'et var langsomt. Efter en hel sæson med Flora på 4G Network RTK tror jeg, at forklaringen ligger dybere: hele Floras navigation går via Mammotions cloud. Hvert RTK-korrektionssignal rejser over 4G til deres servere og tilbage ved hvert eneste positionstjek. Cloud-API'et har altså travlt bare med at holde hende på rette kurs, og HA's statusforespørgsler må vente i køen. Det er ikke en fejl, det er arkitekturen.
 
-Det er stadig irriterende på dashboardet. Mit workaround er et lille script, der sender `start_mow` og tvinger et entity-refresh fem sekunder efter — nok tid til at kommandoen er registreret, hurtigt nok til at dashboardet ikke sidder og ser forkert ud:
+Det er stadig irriterende på dashboardet. Min løsning er et lille script, der sender `start_mow` og tvinger en opdatering af entiteten fem sekunder efter. Det er tid nok til, at kommandoen er registreret, og hurtigt nok til, at dashboardet ikke viser noget forkert:
 
 ```yaml
 alias: Flora — Start og opdater
@@ -143,9 +143,9 @@ sequence:
       entity_id: lawn_mower.flora
 ```
 
-"Robot out of task area"-fejlen sker stadig periodisk, altid ved no go-zonerne rundt om blomsterbedene. Min oprindelige teori var ren multipath — GPS-signaler der kastes af de hævede bede. Efter en hel sæson med at observere det tror jeg, det er en kombination: multipath skaber et øjebliks positionsusikkerhed, og 4G-latens forhindrer RTK-korrektionen i at nå frem hurtigt nok til at opklare det. Når signalet bouncer af et højbed, har Flora brug for en øjeblikkelig korrektion for at bekræfte, hun er inden for grænsen. Har mobilnettet et mikro-dyk i ping præcist i det sekund, når korrektionen ikke frem i tide og hun stopper. To problemer der rammer samtidig og gør hinanden værre.
+Fejlen «Robot out of task area» kommer stadig af og til, altid ved de forbudte zoner rundt om blomsterbedene. Min første teori var ren multipath, altså GPS-signaler, der reflekteres af de hævede bede. Efter en hel sæson tror jeg, at det er en kombination: multipath giver et øjebliks usikkerhed om positionen, og forsinkelsen på 4G gør, at RTK-korrektionen ikke når frem hurtigt nok til at rette op på det. Når signalet reflekteres af et højbed, har Flora brug for en korrektion med det samme for at bekræfte, at hun er inden for grænsen. Har mobilnettet et kort udfald præcis i det sekund, når korrektionen ikke frem i tide, og hun stopper. To problemer, der rammer samtidig og forstærker hinanden.
 
-Den reelle mangel er, at der ingen error code-sensor er i integrationen. Ingen push-besked, når hun har stået fastlåst i haven i 20 minutter — jeg er nødt til at åbne Mammotion-appen for at opdage, at noget er galt. Indtil den sensor findes, kører jeg denne automatisering:
+Den reelle mangel er, at integrationen ikke har en sensor for fejlkoder. Der kommer ingen besked, når hun har siddet fast i haven i 20 minutter. Jeg skal åbne Mammotion-appen for at opdage, at noget er galt. Indtil den sensor findes, kører jeg denne automation:
 
 ```yaml
 alias: Flora — Advarselsbesked ved pause
@@ -162,8 +162,8 @@ action:
       message: "Flora har stået på pause i 10 minutter — tjek haven."
 ```
 
-Primitiv, men den virker. Hun er enten fastlåst eller færdig tidligere end planlagt — begge dele vil jeg gerne vide.
+Primitiv, men den virker. Enten sidder hun fast, eller også er hun færdig tidligere end planlagt, og begge dele vil jeg gerne vide.
 
-Initial opsætning af grænsen kræver appen — ingen vej uden om. Når det er gjort én gang behøver du aldrig appen igen. Men du behøver den den første gang.
+Første gang skal grænsen tegnes i appen, det er der ingen vej uden om. Når det er gjort, behøver du aldrig appen igen. Men første gang skal du bruge den.
 
-Alt i alt: mere end det hele værd. Flora er mere internet-afhængig end noget haveredskab jeg nogensinde har ejet — 4G-afhængigheden stikker dybere end man umiddelbart forventer — men jeg er oprigtigt vild med hende. Hun er en del af smart-hjemmet nu, og det er svært at give afkald på, når man først har prøvet det.
+Alt i alt er den det hele værd og mere til. Flora er mere afhængig af internettet end noget andet haveredskab, jeg har haft, og afhængigheden af 4G stikker dybere, end man skulle tro. Men jeg er oprigtigt glad for hende. Hun er en del af det smarte hjem nu, og det er svært at undvære, når man først har prøvet det.

@@ -130,7 +130,7 @@ variables:
   butik_navn: "{{ butik_lookup[trigger.zone] | default('') }}"
 ```
 
-Handlingen henter den aktuelle liste via `todo.get_items`, filtrerer varer hvis `description` starter med butiksnavnet, og sender en push hvis der er matches:
+Handlingen henter den aktuelle liste via `todo.get_items`, filtrerer varer hvis `description` starter med butiksnavnet, og sender en push hvis der er et match:
 
 ```yaml
 - target:
@@ -157,6 +157,6 @@ Handlingen henter den aktuelle liste via `todo.get_items`, filtrerer varer hvis 
   action: notify.alle_enheder
 ```
 
-`regex_match` matcher fra starten af strengen, så "Netto" matcher "Netto – 12,95 kr. · til 12/6" uden at bruge contains. Erstat `notify.alle_enheder` med din egen notify-service — det er den gruppe jeg bruger til at ramme begge telefoner på én gang.
+`regex_match` sammenligner fra starten af teksten, så "Netto" passer på "Netto – 12,95 kr. · til 12/6" uden at bruge contains. Erstat `notify.alle_enheder` med din egen notify-handling — det er den gruppe jeg bruger til at ramme begge telefoner på én gang.
 
 Første gang det virkede stod jeg foran Netto på Hylkedalvej. Telefonen vibrerede. To varer. Jeg vidste godt hvad der stod på listen — jeg havde selv skrevet den — men det er noget andet at have den på skærmen i det øjeblik man træder ind ad døren.

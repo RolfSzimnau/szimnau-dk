@@ -35,9 +35,9 @@ Fem højttalere, to mærker, nul native kompatibilitet.
 
 **Sonos**-integrationen i HA er indbygget og solid. Den finder højttaleren automatisk over lokalt netværk — ingen afhængighed af Sonos-skyen til basal afspilningsstyring.
 
-Google-højttalere integreres via **Google Home**-integrationen (indbygget, eller den ældre **Cast**-integration — begge ligger i HA's integrationsliste). Begge giver `media_player`-entiteter med standard play/pause/volumen-services.
+Google-højttalere integreres via **Google Home**-integrationen (indbygget, eller den ældre **Cast**-integration — begge ligger i HA's integrationsliste). Begge giver `media_player`-entiteter med de almindelige handlinger til afspilning, pause og lydstyrke.
 
-Fordi HA mapper alt til samme `media_player`-domæne, kan du styre en Sonos og en Google-højttaler med identiske service-kald:
+Fordi HA mapper alt til samme `media_player`-domæne, kan du styre en Sonos og en Google-højttaler med de samme handlinger:
 
 ```yaml
 service: media_player.volume_set

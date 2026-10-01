@@ -16,7 +16,7 @@ faqs:
 
 Den aften jeg byggede det her, havde DMI to gule varsler kørende samtidig for mit område: torden indtil kl. 20 og høj varme indtil kl. 18. Home Assistant har en indbygget MeteoAlarm-integration, som burde vise begge — men den kan kun vise ét varsel ad gangen. Det andet forsvinder bare.
 
-Det er ikke en konfigurationsfejl. Det er [core issue #131045](https://github.com/home-assistant/core/issues/131045): integrationen eksponerer én binary sensor pr. region, og når der er flere aktive varsler, vinder ét af dem. Til et dashboard, der skal skelne mellem storm, skybrud, snestorm og hedebølge, er det ubrugeligt.
+Det er ikke en konfigurationsfejl. Det er [core issue #131045](https://github.com/home-assistant/core/issues/131045): integrationen giver én binær sensor pr. region, og når der er flere aktive varsler, vinder ét af dem. Til et dashboard, der skal skelne mellem storm, skybrud, snestorm og hedebølge, er det ubrugeligt.
 
 ## cap_alerts: én entitet pr. aktivt varsel
 

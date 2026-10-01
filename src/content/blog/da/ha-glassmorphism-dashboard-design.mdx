@@ -1,6 +1,6 @@
 ---
 title: "CSS'en bag mine glassmorphism-dashboards i Home Assistant"
-description: "De seks CSS-konstanter på tværs af alle kort i mine HA-dashboards, plus mønstre for statusbjælker, map-kort og undertrykkelse af Frosted Glass Dark ::before."
+description: "De seks CSS-konstanter for alle kort i mine HA-dashboards, plus mønstre for statusbjælker, map-kort og undertrykkelse af Frosted Glass Dark ::before."
 pubDate: 2024-12-13
 verifiedOn: "HA 2026.7"
 tags: ["dashboard"]
@@ -85,7 +85,7 @@ Mellem indre kort bruger jeg en svag skillelinje:
 border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
 ```
 
-Lysere end du ville forvente. Er den for synlig skærer den glasoverfladen over. Ved 0,06 opacitet læses den som et sektionsskift uden at tiltrække opmærksomhed.
+Lysere end du ville forvente. Er den for synlig skærer den glasoverfladen over. Med en alfaværdi på 0,06 læses den som et sektionsskift uden at tiltrække opmærksomhed.
 
 ## Statusbjælker via `::after`
 
@@ -156,9 +156,9 @@ card_mod:
 
 `"."`-nøglen er den rigtige for mushroom-kort i HA 2024+. Ikke `ha-card`, ikke komponentnavnet — `"."`. Jeg testede for mange andre selektorer inden denne virkede.
 
-## Opnå visuel konsistens på tværs af HA-dashboards
+## Samme udtryk i alle HA-dashboards
 
-YAML har ikke variabler. Hvert kort der bruger glasbehandlingen får sin egen kopi af de seks CSS-linjer. Vil jeg justere baggrundsopaciteten på tværs af dashboardet, ændrer jeg det 25 steder.
+YAML har ikke variabler. Hvert kort der bruger glasbehandlingen får sin egen kopi af de seks CSS-linjer. Vil jeg justere baggrundens gennemsigtighed i hele dashboardet, ændrer jeg det 25 steder.
 
 Min løsning: en lokal `snippets.yaml`-fil med den fulde ydre kortskabelon som en kommentarblok. Indsæt derfra ved oprettelse af nye kort. Det er ikke elegant, men det er til at vedligeholde.
 

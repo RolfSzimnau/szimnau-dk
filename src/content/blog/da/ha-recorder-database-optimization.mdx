@@ -23,9 +23,9 @@ Problemet var ikke én stor synder. Det var et dusin Home Assistant-integratione
 
 Home Assistants recorder logger som udgangspunkt alle tilstandsændringer for alle entiteter. Det er den rigtige adfærd for sensorer du faktisk interesserer dig for — temperatur, energiforbrug, tilstedeværelse. Men de fleste installationer samler hundredvis af entiteter der ikke har nogen historisk værdi:
 
-- **Interne integrationsdiagnostik** — Tado eksponerer 22 sensorer der sporer sin egen API-kvote, polling-intervaller og rate limit-tærskler. Disse ændrer sig konstant og er ubrugelige som historik.
+- **Interne integrationsdiagnostik** — Tado opretter 22 sensorer der sporer sin egen API-kvote, polling-intervaller og rate limit-tærskler. Disse ændrer sig konstant og er ubrugelige som historik.
 - **Permanent unavailable entiteter** — FlightRadar24 lufthavnssensorer der aldrig kom online logger stadig tilstandsændringer.
-- **Update-entiteter** — 59 update-entiteter på tværs af firmware og HACS. Det er øjebliksdata, ikke tidsserier.
+- **Update-entiteter** — 59 update-entiteter fordelt på firmware og HACS. Det er øjebliksdata, ikke tidsserier.
 - **Enhedsstatistik** — UniFi access points logger CPU- og hukommelsesprocent hvert minut.
 
 ## Den komplette recorder-konfiguration
@@ -77,7 +77,7 @@ recorder:
 
 **`domains: update`** er den nemmeste gevinst. Alle firmware- og HACS-opdateringsenheder hører ikke hjemme i tidsserie-lagring.
 
-**`sensor.tado_szimnau_*`** er den glob med størst effekt. Tado-integrationen eksponerer detaljerede interne diagnostiksensorer: API-kald tilbage i dag, aktuelt polling-interval, rate limit-tærskler, kvote-nulstillingshistorik. Disse opdateres ved hvert API-kald — adskillige gange i timen på tværs af flere zoner.
+**`sensor.tado_szimnau_*`** er den glob med størst effekt. Tado-integrationen opretter detaljerede interne diagnostiksensorer: API-kald tilbage i dag, aktuelt polling-interval, rate limit-tærskler, kvote-nulstillingshistorik. Disse opdateres ved hvert API-kald — flere gange i timen for hver zone.
 
 **`sensor.flightradar24_airport_*`** rammer 12 lufthavnsstatistiksensorer der var fejlkonfigureret og sidder fast i `unavailable`. En entitet i vedvarende unavailable-tilstand genererer stadig recorder-skrivninger.
 

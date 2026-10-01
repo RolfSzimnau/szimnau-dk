@@ -20,7 +20,7 @@ const WARNINGS = [
   [/\biteration(er|en)?\b/i, "«forsøg» eller «omgange»"],
   [/\bopacitet/i, "«gennemsigtighed»"],
   [/\bswitch(es)?\b/i, "«kontakt» (HA's danske ord) uden for backticks"],
-  [/(?<!Info )\bservices?\b/i,"«handling» (HA's danske ord) uden for backticks"],
+  [/(?<!(Info|Data|Play) )(?<!systemd-)\bservices?\b/i, "«handling» (HA's danske ord) uden for backticks"],
   [/\beksponere[rt]?\b/i, "«viser» eller «giver adgang til»"],
   [/\b(lowercase|uppercase)\b/i, "«små/store bogstaver»"],
   [/\bcase\b/i, "«store/små bogstaver» eller omskriv"],

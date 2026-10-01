@@ -1,7 +1,7 @@
 ---
 title: "En talt morgenbriefing i Home Assistant: kalender, vejr og elpris"
 seoTitle: "Talt morgenbriefing i Home Assistant: kalender og elpris"
-description: "Daglig kl. 06:00-talebesked i Home Assistant: Google AI TTS, tre familiekalendere, EV-status, Waze-trafik, elpris og affaldstæller."
+description: "En talt besked kl. 06:00 hver dag i Home Assistant: Google AI TTS, tre familiekalendere, elbilens status, trafik fra Waze, elpris og affaldsnedtælling."
 pubDate: 2026-05-31
 tags: ["stemme", "kalender", "energi", "automatisering"]
 lang: "da"
@@ -14,9 +14,9 @@ faqs:
     answer: "Add another calendar.get_events action with a new response_variable name, then append that variable's events list to the combined events list in the TTS message template. The pattern is: set events = events_a + events_b + events_c. Each calendar.get_events call must have its own unique response_variable."
 ---
 
-Hver morgen åbnede jeg Home Assistant-appen for at tjekke dagens kalender, kigge på vejret og vurdere om aftenen var et godt tidspunkt at starte opvaskemaskinen baseret på elprisen. Tre separate opslag inden kaffen.
+Hver morgen åbnede jeg Home Assistant-appen for at se dagens kalender, kigge på vejret og vurdere ud fra elprisen, om aftenen var et godt tidspunkt at starte opvaskemaskinen. Tre forskellige opslag før kaffen.
 
-Morgenbriefing-automationen erstattede det hele. Kl. 06:00 læser køkkenhøjttaleren dagens aftaler op på tværs af tre familiekalendere, udetemperaturen, en affaldspåmindelse når afhentning er i morgen og den aktuelle elpris. Det hele tager cirka 15 sekunder.
+Morgenbriefingen erstattede det hele. Kl. 06:00 læser højttaleren i køkkenet dagens aftaler fra tre familiekalendere op, sammen med udetemperaturen, en påmindelse om affald, når det hentes i morgen, og den aktuelle elpris. Det hele tager cirka 15 sekunder.
 
 ## Hvad briefingen siger
 
@@ -24,13 +24,13 @@ På en typisk morgen lyder det sådan her:
 
 > *"God morgen! I dag er det mandag. Temperaturen ude er 14 grader. Du har 2 aftaler i dag: tandlæge, teammøde. Husk: affald hentes i morgen. Elprisen er 0,42 kroner per kilowattime."*
 
-På en rolig dag uden aftaler og ingen nært forestående afhentning trimmes den ned til vejr og pris. Intet læses op hvis der ikke er noget at sige.
+På en rolig dag uden aftaler og uden affaldsafhentning lige forude bliver den kortet ned til vejr og pris. Der læses ikke noget op, hvis der ikke er noget at sige.
 
-## Nøglemønsteret: `calendar.get_events` med `response_variable`
+## Det centrale mønster: `calendar.get_events` med `response_variable`
 
-De fleste Home Assistant-automatiseringsguides stopper ved at trigge på en kalenderbegivenhed. Denne automation tager en anden tilgang: den forespørger aktivt kalenderen på dagens begivenheder og bruger svaret i en template.
+De fleste vejledninger til automationer i Home Assistant stopper ved at udløse noget, når en kalenderaftale starter. Denne automation gør noget andet: den spørger selv kalenderen om dagens aftaler og bruger svaret i en template.
 
-`calendar.get_events`-handlingen returnerer et struktureret svar som kan gemmes i en variabel og tilgås i efterfølgende trin:
+Handlingen `calendar.get_events` returnerer et struktureret svar, som kan gemmes i en variabel og bruges i de følgende trin:
 
 ```yaml
 - action: calendar.get_events
@@ -42,17 +42,17 @@ De fleste Home Assistant-automatiseringsguides stopper ved at trigge på en kale
   response_variable: kalender
 ```
 
-Svaret er en dict med entitets-ID som nøgle. Tilgå begivenhedslisten sådan:
+Svaret er en dict med entitets-id'et som nøgle. Sådan får du fat i listen over aftaler:
 
 ```jinja
 {% set events = kalender['calendar.rolf_szimnau_dk']['events'] %}
 ```
 
-Hver begivenhed i listen har et `summary`-felt (begivenhedens titel). Til en talebesked er det det eneste der er brug for.
+Hver aftale i listen har et `summary`-felt med titlen. Til en talt besked er det det eneste, der skal bruges.
 
-## Tilføjelse af flere kalendere
+## Flere kalendere
 
-Kør en separat `calendar.get_events`-handling for hver kalender med sin egen `response_variable`, og kombiner derefter listerne i template'en:
+Kør `calendar.get_events` én gang for hver kalender med hver sin `response_variable`, og saml derefter listerne i templaten:
 
 ```yaml
 - action: calendar.get_events
@@ -64,7 +64,7 @@ Kør en separat `calendar.get_events`-handling for hver kalender med sin egen `r
   response_variable: kalender_annette
 ```
 
-I beskedtemplate'en:
+I templaten for beskeden:
 
 ```jinja
 {% set events = events_rolf + events_annette + events_louise %}
@@ -148,7 +148,7 @@ action:
 
 ## Tilpasning
 
-**Kun hverdage** — tilføj en betingelse over handlingerne:
+**Kun hverdage**: tilføj en betingelse før handlingerne:
 
 ```yaml
 condition:
@@ -156,17 +156,17 @@ condition:
     weekday: [mon, tue, wed, thu, fri]
 ```
 
-**Anden højttaler** — erstat `media_player.hojtaler_kokken` med en vilkårlig HA media player-entitet.
+**En anden højttaler**: erstat `media_player.hojtaler_kokken` med en hvilken som helst media player-entitet i HA.
 
-**Anden TTS-motor** — byt `tts.google_ai_tts` ud med `tts.google_translate_en_com` for den gratis mulighed.
+**En anden TTS-motor**: skift `tts.google_ai_tts` ud med `tts.google_translate_en_com`, hvis du vil have den gratis løsning.
 
-**Anden elpris-sensor** — erstat `sensor.energi_data_service` med din spot-prissensor.
+**En anden elpris-sensor**: erstat `sensor.energi_data_service` med din egen sensor for spotprisen.
 
-## Tilføj EV-status og forvarmning
+## Elbilens status og forvarmning
 
-To sensorer fra MyŠkoda-integrationen giver briefingen besked om bilen er klar til dagen.
+To sensorer fra MyŠkoda-integrationen fortæller i briefingen, om bilen er klar til dagen.
 
-**Ladestatus** — briefingen taler kun, når der er noget at gøre. Nåede bilen sit mål natten over, siges der ingenting.
+**Ladestatus**: briefingen siger kun noget, når der er noget at gøre. Nåede bilen sit lademål i løbet af natten, siges der ingenting.
 
 ```jinja
 {% set bat = states('sensor.skoda_elroq_battery_percentage') | int(0) %}
@@ -177,9 +177,9 @@ To sensorer fra MyŠkoda-integrationen giver briefingen besked om bilen er klar 
 {% endif %}
 ```
 
-`sensor.skoda_elroq_target_battery_percentage` er sat i MyŠkoda-appen og eksponeres direkte som en HA-sensor. Bruger din EV-integration ikke lademål, erstat `maal` med et fast tal som `80`.
+`sensor.skoda_elroq_target_battery_percentage` sættes i MyŠkoda-appen og findes direkte som sensor i HA. Bruger din elbils integration ikke et lademål, så erstat `maal` med et fast tal som `80`.
 
-**Forvarmningsbekræftelse** — hvis en morgenopvarmningsautomation kører få minutter før kl. 06:00, kan briefingen bekræfte at den faktisk startede:
+**Bekræftelse af forvarmningen**: kører en automation, der varmer bilen op, få minutter før kl. 06:00, kan briefingen bekræfte, at den faktisk gik i gang:
 
 ```jinja
 {% set ac = states('climate.skoda_elroq_air_conditioning') %}
@@ -187,19 +187,19 @@ To sensorer fra MyŠkoda-integrationen giver briefingen besked om bilen er klar 
 {% endif %}
 ```
 
-Det virker fordi opvarmningsautomationen kører kl. 05:55 — fem minutter før briefingen. Kl. 06:00 er `climate.skoda_elroq_air_conditioning` enten aktiv (én kort bekræftelseslinje) eller stadig `off` (intet siges — opvarmningsautomationen håndterer selv sin fejlalarm).
+Det virker, fordi opvarmningen starter kl. 05:55, fem minutter før briefingen. Kl. 06:00 er `climate.skoda_elroq_air_conditioning` enten i gang (så kommer en kort bekræftelse) eller stadig `off` (så siges der ingenting, for opvarmningsautomationen sender selv en advarsel, hvis den fejler).
 
-## Tilføj trafikinformation
+## Trafikinformation
 
-Waze Travel Time-integrationen opretter en sensor med aktuel rejsetid inkl. live trafik. Ingen API-nøgle kræves — Waze-data er gratis.
+Integrationen Waze Travel Time opretter en sensor med den aktuelle rejsetid, hvor trafikken er regnet med. Der skal ingen API-nøgle til, data fra Waze er gratis.
 
-**Installer via:** Settings → Devices & Services → Tilføj integration → *Waze Travel Time*
+**Installation:** Indstillinger → Enheder og tjenester → Tilføj integration → *Waze Travel Time*
 
-Brug **GPS-koordinater** (`breddegrad,længdegrad`-format) til origin og destination fremfor adresser. Waze's adresse-parsing er upålidelig for danske adresser — koordinater er entydige. Find dine ved at højreklikke på en placering i Google Maps og kopiere koordinatparret.
+Brug **GPS-koordinater** (i formatet `breddegrad,længdegrad`) til start og mål i stedet for adresser. Waze tolker danske adresser upålideligt, mens koordinater er entydige. Du finder dem ved at højreklikke på et sted i Google Maps og kopiere koordinaterne.
 
-Sæt **Region** til `EU` og **Rutetype** til `hurtigste`. Giv sensoren et beskrivende navn, f.eks. *Rejsetid Vejle* — HA genererer entitets-ID'et ud fra det, typisk `sensor.rejsetid_vejle_travel_time`.
+Sæt **Region** til `EU` og **Rutetype** til `hurtigste`. Giv sensoren et sigende navn, fx *Rejsetid Vejle*. HA laver entitets-id'et ud fra navnet, typisk `sensor.rejsetid_vejle_travel_time`.
 
-Tilføj dette blok i beskedtemplate'en, lige før elprisen:
+Tilføj denne blok i templaten for beskeden, lige før elprisen:
 
 ```jinja
 {% set rejsetid = states('sensor.rejsetid_vejle_travel_time') | float(0) | round(0) | int %}
@@ -210,10 +210,10 @@ Tilføj dette blok i beskedtemplate'en, lige før elprisen:
 {% endif %}
 ```
 
-`now().weekday() < 5` springer automatisk weekend over. Juster 40-minutters-grænsen til din normale pendlingstid plus en buffer.
+`now().weekday() < 5` springer automatisk weekenden over. Tilpas grænsen på 40 minutter til din normale køretid til arbejde plus lidt luft.
 
-## Hvorfor `tts.speak` og ikke den gamle service
+## Hvorfor `tts.speak` og ikke den gamle handling
 
-Home Assistant 2024+ bruger `tts.speak` kaldt på TTS-motor-entiteten, med `media_player_entity_id` som datafelt. Den gamle `tts.google_translate_say`-service virker stadig men er forældet. Det nye mønster adskiller motoren fra afspilleren — lettere at skifte begge uafhængigt.
+Fra Home Assistant 2024 kaldes `tts.speak` på selve TTS-motorens entitet med `media_player_entity_id` som datafelt. Den gamle handling `tts.google_translate_say` virker stadig, men er forældet. Det nye mønster holder motor og afspiller adskilt, så du let kan skifte den ene uden den anden.
 
-`tts.google_ai_tts` leveres af **Google Generative AI**-integrationen — den samme integration der driver Gemini-samtaleagenten i Home Assistant. Den kræver en Google AI Studio API-nøgle, men producerer naturlig, menneskelignende tale sammenlignet med den robotagtige lyd fra den gratis Google Translate TTS.
+`tts.google_ai_tts` kommer fra integrationen **Google Generative AI**, den samme, der står bag Gemini som samtaleagent i Home Assistant. Den kræver en API-nøgle fra Google AI Studio, men stemmen lyder naturlig og menneskelig sammenlignet med den robotagtige lyd fra den gratis Google Translate TTS.

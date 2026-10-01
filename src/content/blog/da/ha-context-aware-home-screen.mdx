@@ -1,6 +1,6 @@
 ---
 title: "Home Assistant-forsiden der kun viser det, der betyder noget"
-description: "En HA-forside hvor hvert kort gør sig fortjent: conditional cards, en prioriteret alert-ticker og en Škoda-sektion der følger laderens status."
+description: "En HA-forside, hvor hvert kort skal gøre sig fortjent: betingede kort, en prioriteret alert-ticker og en Škoda-sektion, der følger laderens status."
 pubDate: 2025-06-27
 tags: ["dashboard", "automatisering"]
 lang: "da"
@@ -13,15 +13,15 @@ faqs:
     answer: "A docked vacuum or a locked car is confirmation, not information. Hiding the 'still fine' cards makes screen length itself the signal: a short page means a quiet house."
 ---
 
-Min datter spurgte mig engang hvad jeg kigger på når jeg åbner Home Assistant om morgenen. Jeg svarede at jeg tjekker hvad der sker. Det var ikke helt rigtigt. Jeg scannede forbi en masse ting der bare bekræftede at intet usædvanligt var sket — parkeret støvsuger, slukkede lys, låst bil. Det er ikke information. Det er støj.
+Min datter spurgte mig engang, hvad jeg kigger på, når jeg åbner Home Assistant om morgenen. Jeg svarede, at jeg tjekker, hvad der sker. Det var ikke helt rigtigt. Jeg skimmede forbi en masse ting, der bare bekræftede, at intet usædvanligt var sket: støvsugeren i docken, slukkede lys, låst bil. Det er ikke information. Det er støj.
 
-Jeg begyndte at fjerne alt der kun sagde "stadig fint".
+Så jeg begyndte at fjerne alt, der kun sagde «stadig fint».
 
-Skærmbilledet herover er fra i dag. Opvaskemaskinen kører (blåt kort). Laderen er sat i bilen, så "Unlock Cable" sidder ved siden af "Klima Boost". Home status er tom — ingen lys tændt, ingen robots i gang. Energi siger billigst nu. Det er det. Fire aktive ting, vist. Alt andet, gemt.
+Skærmbilledet ovenfor er fra i dag. Opvaskemaskinen kører (blåt kort). Kablet sidder i bilen, så «Unlock Cable» står ved siden af «Klima Boost». Home status er tom: ingen lys tændt, ingen robotter i gang. Energi siger, at strømmen er billigst nu. Det er alt. Fire ting, der er i gang, er vist. Resten er skjult.
 
 ## Alert-tickeren øverst
 
-Øverst sidder en `custom:alert-ticker-card` (HACS) med `show_when_clear: false`. Når intet kræver opmærksomhed eksisterer den ikke. Når noget gør, roterer den med beskeder i prioritetsrækkefølge:
+Øverst sidder en `custom:alert-ticker-card` (HACS) med `show_when_clear: false`. Når intet kræver opmærksomhed, findes den ikke. Når noget gør, skifter den mellem beskederne i prioriteret rækkefølge:
 
 ```yaml
 type: custom:alert-ticker-card
@@ -46,25 +46,25 @@ alerts:
     priority: 1
 ```
 
-Person-detektion er prioritet 1. Renovation i morgen er prioritet 3. Tapper man på person-alarmen navigerer den direkte til overvågning. Når alt er roligt: ingenting. Ikke en tom bjælke, ikke "Alt okay". Bare ingenting.
+En person foran kameraet har prioritet 1. Renovation i morgen har prioritet 3. Trykker man på personalarmen, går man direkte til overvågningen. Når alt er roligt, er der ingenting. Ikke en tom bjælke, ikke «Alt okay». Bare ingenting.
 
 ## Opvaskemaskinen har tre tilstande
 
-Dette tog tid at få rigtigt. Opvaskemaskinens kort har tre helt forskellige udseender afhængig af tilstand:
+Det tog tid at få rigtigt. Opvaskemaskinens kort ser helt forskelligt ud afhængigt af tilstanden:
 
-**Skjult** — når maskinen er slukket eller færdig. Intet kort, ingen sektion.
+**Skjult**, når maskinen er slukket eller færdig. Intet kort, ingen sektion.
 
-**Klar** — når `OperationState` er `Ready` OG fjernstart er tilladt. Viser et tile med "Opvaskemaskine klar — indstil sluttid". Det dukker op i præcis det vindue hvor du har fyldt den men ikke startet den endnu.
+**Klar**, når `OperationState` er `Ready`, og fjernstart er tilladt. Viser et felt med «Opvaskemaskine klar, indstil sluttid». Det dukker op præcis i det tidsrum, hvor du har fyldt den, men ikke startet den endnu.
 
-**Kører** — når `OperationState` er `Run`. Andet kort, blå baggrund, ingen handling nødvendig — bare bevidsthed.
+**Kører**, når `OperationState` er `Run`. Et andet kort med blå baggrund. Der skal ikke gøres noget, det er kun til orientering.
 
-Tre tilstande, tre forskellige kort, ingen redundans.
+Tre tilstande, tre forskellige kort, intet dobbelt.
 
-## Lys — to lag, ét princip
+## Lys: to lag, ét princip
 
-Lys følger et to-lags mønster. Begge lag er betinget af at noget er tændt.
+Lyset følger et mønster i to lag. Begge lag vises kun, når noget er tændt.
 
-**Lag 1 — Quick Actions:** Når et vilkårligt lys er tændt dukker et amber-farvet kort op øverst med antal og ét tryk til at slukke alt:
+**Lag 1, Quick Actions:** Når et hvilket som helst lys er tændt, dukker et ravgult kort op øverst med antallet og ét tryk for at slukke alt:
 
 ```yaml
 - type: conditional
@@ -103,21 +103,21 @@ Lys følger et to-lags mønster. Begge lag er betinget af at noget er tændt.
         border: 1px solid rgba(255,152,0,0.25) !important; }
 ```
 
-Ét tryk. Ingen navigation, ingen bekræftelse, alt slukket. Det er det kort jeg bruger 90% af gangene.
+Ét tryk. Ingen navigation, ingen bekræftelse, alt slukket. Det er det kort, jeg bruger 9 ud af 10 gange.
 
-**Lag 2 — Home Status:** Når indendørs lys specifikt er tændt dukker de individuelle mushroom-lys-kort op længere nede — med fulde lysstyrkeskydere og farvetemperaturkontrol. Ikke bare til/fra. Hvis du har glemt lyset og står i rummet og vil dæmpe det, er kontrollen der uden at navigere væk.
+**Lag 2, Home Status:** Når der specifikt er tændt lys indenfor, dukker de enkelte Mushroom-lyskort op længere nede, med skydere til lysstyrke og farvetemperatur. Ikke bare tænd og sluk. Har du glemt lyset og står i rummet og vil dæmpe det, er knapperne der, uden at du skal navigere væk.
 
-Udendørs-sektionen virker på samme måde men udløses ved solnedgang ELLER at et udendørs lys er tændt. Midt på dagen: usynlig. Kl. 21:30: der med individuelle kontroller for oversvømmelseslys, terrasselys og lyskæde.
+Udendørssektionen virker på samme måde, men vises ved solnedgang, eller når et udendørs lys er tændt. Midt på dagen er den usynlig. Kl. 21:30 er den der med knapper til projektører, terrassebelysning og lyskæde.
 
-De to lag dækker forskelligt behov. Quick Actions er til "jeg tager af sted, sluk alt." Home Status er til "jeg er her og vil justere." Samme betingede logik, forskellig kontroldybde.
+De to lag dækker hvert sit behov. Quick Actions er til «jeg tager af sted, sluk det hele». Home Status er til «jeg er her og vil justere». Samme betingede logik, forskellig grad af kontrol.
 
-## Škoda-sektionen ændrer sig med kontekst
+## Škoda-sektionen skifter efter situationen
 
-Bilen vises altid — låsestatus, om den er hjemme. Men hvad der sidder nedenunder afhænger af om laderen er tilsluttet.
+Bilen vises altid: om den er låst, og om den er hjemme. Men hvad der står nedenunder, afhænger af, om kablet er sat i.
 
-**Lader ikke tilsluttet:** ét kort — "Klima Boost". Forvarm bilen inden du tager af sted, ét tryk.
+**Kablet er ikke sat i:** ét kort, «Klima Boost». Forvarm bilen, inden du kører, med ét tryk.
 
-**Lader tilsluttet:** to kort side om side — "Klima Boost" og "Unlock Cable". Knappen til at frigøre ladekablet giver kun mening når kablet faktisk sidder i. Så den dukker kun op da.
+**Kablet er sat i:** to kort side om side, «Klima Boost» og «Unlock Cable». Knappen, der frigør ladekablet, giver kun mening, når kablet faktisk sidder i. Så det er kun der, den dukker op.
 
 ```yaml
 - type: conditional
@@ -137,27 +137,27 @@ Bilen vises altid — låsestatus, om den er hjemme. Men hvad der sidder nedenun
         icon_color: orange
 ```
 
-Det er mønstret jeg endte med at bruge overalt: vis ikke kontroller der ikke er relevante for enhedens nuværende tilstand.
+Det er det mønster, jeg endte med at bruge overalt: vis ikke knapper, der ikke er relevante for enhedens nuværende tilstand.
 
-## Home status — sektionen der skal gøre sig fortjent til indhold
+## Home status: sektionen, der skal gøre sig fortjent til sit indhold
 
-Home status-sektionen indeholder flere betingede kort. Alle kræver at noget er aktivt:
+Home status-sektionen indeholder flere betingede kort. Alle kræver, at noget er i gang:
 
-- **Stuelys** — kun synligt når mindst ét indendørs lys er tændt. Når det dukker op viser det fulde mushroom-lys-kort med dimmerskydere. Du er der allerede fordi noget er tændt, så giv fuld kontrol.
-- **Udendørs sektion** — dukker op når solen er under horisonten ELLER et udendørs lys er tændt. Midt på en solrig dag: væk. Kl. 21:30 eller hvis oversvømmelseslysene er tændt: der.
-- **Roborock** — kun når ikke docket og ikke idle. Støvsuger, vender tilbage, pauseret, fejl — vis det. Sidder i docken: irrelevant.
-- **Flora** — samme logik. Klipper eller vender tilbage: vis status og tryk ind til plænemowers-view. Parkeret: ingenting.
+- **Stuelys**: kun synligt, når mindst ét lys indenfor er tændt. Så viser det de fulde Mushroom-lyskort med dæmpere. Du er der allerede, fordi noget er tændt, så giv fuld kontrol.
+- **Udendørssektionen**: dukker op, når solen er gået ned, eller når et udendørs lys er tændt. Midt på en solrig dag er den væk. Kl. 21:30, eller hvis projektørerne er tændt, er den der.
+- **Roborock**: kun når den hverken er i docken eller står stille. Støvsuger, er på vej hjem, er sat på pause eller har en fejl: vis det. Står den i docken, er det uinteressant.
+- **Flora**: samme logik. Klipper den eller er på vej hjem, vises status, og et tryk fører til plæneklipperens visning. Står den parkeret, vises ingenting.
 
 ## Skærmlængden er signalet
 
-Det her opdagede jeg ikke med det samme. Efter et par uger mærkede jeg at jeg læste skærmlængden inden jeg læste indholdet. Kort skærm: rolig dag. Lang skærm: noget foregår — scroll ned og find ud af hvad.
+Det opdagede jeg ikke med det samme. Efter et par uger lagde jeg mærke til, at jeg så på skærmens længde, før jeg læste indholdet. Kort skærm: rolig dag. Lang skærm: der sker noget, så scroll ned og find ud af hvad.
 
-Renovationskortet dukker kun op inden for 3 dage af afhentning. Det meste af året er det ikke der. Ugen inden afhentning vises det med farvekodet nedtælling: amber ved 3 dage, orange ved 2, rød ved 1. Jeg har ikke glemt at sætte skraldespandene ud siden jeg satte det op.
+Renovationskortet dukker først op, når der er højst 3 dage til afhentning. Det meste af tiden er det der ikke. Op til afhentningen vises en farvet nedtælling: ravgul ved 3 dage, orange ved 2 og rød ved 1. Jeg har ikke glemt at sætte skraldespandene ud, siden jeg lavede det.
 
-Energikortet er altid der — nuværende pris og hvornår næste billige vindue er. Det fortjente permanent plads fordi det faktisk ændrer hvad jeg gør. Jeg planlægger opvaskemaskine og tørretumbler efter det.
+Energikortet er der altid, med den aktuelle pris og hvornår strømmen bliver billig næste gang. Det har fortjent sin faste plads, fordi det faktisk ændrer, hvad jeg gør. Jeg planlægger opvaskemaskine og tørretumbler efter det.
 
-## Hvad der aldrig vises
+## Det, der aldrig vises
 
-Ingenting for "alt er fint". Intet kort der siger bilen er hjemme og låst. Intet der bekræfter at robotten er docket. Fraværet af et kort fortæller dig det.
+Intet for «alt er fint». Intet kort, der siger, at bilen er hjemme og låst. Intet, der bekræfter, at robotten står i docken. At kortet mangler, fortæller dig det.
 
-Det var det der tog længst tid at stole på. Når skærmen er kort er instinktet at spekulere på om noget er gået i stykker. Det er det ikke. Kort betyder roligt.
+Det var det, der tog længst tid at stole på. Når skærmen er kort, er instinktet at spekulere på, om noget er gået i stykker. Det er det ikke. Kort betyder roligt.

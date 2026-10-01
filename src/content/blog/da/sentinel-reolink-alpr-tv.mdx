@@ -1,6 +1,6 @@
 ---
 title: "Nummerpladegenkendelse og TV-snapshots fra en Reolink CX810"
-description: "Hvordan jeg fik et Reolink CX810 4K PoE kamera til at læse nummerplader med AI og sende et snapshot direkte til TV'et når nogen kører ind i indkørslen."
+description: "Sådan fik jeg et Reolink CX810 4K PoE-kamera til at læse nummerplader med AI og sende et billede direkte til TV'et, når nogen kører ind i indkørslen."
 pubDate: 2025-09-19
 tags: ["kamera", "sikkerhed", "medier"]
 lang: "da"
@@ -13,11 +13,11 @@ faqs:
     answer: "Binary sensors for person and vehicle from the onboard AI chip, plus two streams: camera.sentinel_clear (full 4K) and camera.sentinel_fluent (lower resolution, faster for notifications)."
 ---
 
-Vi har aldrig fået installeret en dørklokke med kamera. Reolink CX810 der peger ned mod indkørslen endte med at gøre mere end nogen dørklokke ville have gjort — uden abonnement, uden app, og med TV'et som notifikationsskærm i stedet for en telefon man måske ikke kigger på.
+Vi har aldrig fået sat en dørklokke med kamera op. Reolink CX810, der peger ned mod indkørslen, endte med at gøre mere, end en dørklokke ville have gjort: uden abonnement, uden app og med TV'et som skærm til beskederne i stedet for en telefon, man måske ikke kigger på.
 
 ## Kameraet
 
-CX810 er et 4K 8MP PoE kamera. Det kører på et dedikeret VLAN, taler med HA over det lokale netværk, og dukker op som `camera.sentinel_clear` (fuld opløsning) og `camera.sentinel_fluent` (lavere opløsning, hurtigere). Kameraets eget AI-chip giver binære sensorer direkte:
+CX810 er et 4K-kamera på 8 MP med PoE. Det kører på sit eget VLAN, taler med HA over det lokale netværk og dukker op som `camera.sentinel_clear` (fuld opløsning) og `camera.sentinel_fluent` (lavere opløsning, hurtigere). Kameraets egen AI-chip giver binære sensorer direkte:
 
 ```
 binary_sensor.sentinel_vehicle
@@ -25,11 +25,11 @@ binary_sensor.sentinel_person
 binary_sensor.sentinel_motion
 ```
 
-Bil- og persondetektion fra kameraets eget chip er god nok til at filtrere de åbenlyse falske positiver fra — fugle, skygger, katten. Ikke perfekt, men det er det rette udgangspunkt.
+Kameraets egen genkendelse af biler og personer er god nok til at sortere de åbenlyse falske alarmer fra: fugle, skygger, katten. Den er ikke perfekt, men det er det rigtige sted at starte.
 
 ## Nummerpladegenkendelse
 
-Når en bil udløser sensoren, venter automationen 2 sekunder — nok til at bilen kan køre ind og en nummerplade er synlig — tager derefter et snapshot og sender det til `llmvision.image_analyzer` med en meget kort, specifik prompt:
+Når en bil udløser sensoren, venter automationen 2 sekunder, så bilen kan nå at køre ind, og nummerpladen er synlig. Så tager den et billede og sender det til `llmvision.image_analyzer` med en meget kort og præcis prompt:
 
 ```yaml
 message: >
@@ -40,15 +40,15 @@ max_tokens: 15
 temperature: 0.1
 ```
 
-15 tokens. Lav temperatur. Ingen plads til snak. Enten returnerer den en nummerplade eller "none".
+15 tokens. Lav temperatur. Ingen plads til snak. Enten svarer den med en nummerplade eller med «none».
 
-Hvis første forsøg kommer tomt tilbage, venter automationen 3 sekunder mere og prøver igen med et nyt snapshot. To forsøg er nok — hvis pladen ikke kan læses efter to forsøg er det fordi vinklen er dårlig eller det er mørkt, ikke fordi modellen havde brug for mere tid.
+Kommer første forsøg tomt tilbage, venter automationen 3 sekunder mere og prøver igen med et nyt billede. To forsøg er nok. Kan pladen ikke læses efter to forsøg, skyldes det en dårlig vinkel eller mørke, ikke at modellen skulle have mere tid.
 
-Det bedste resultat fra ét af de to forsøg vinder. Det gemmes i `input_text.last_5_plates` som en rullende JSON-liste — en simpel log over de seneste fem plader der er kørt ind i indkørslen, med tidsstempler.
+Det bedste resultat af de to forsøg vinder. Det gemmes i `input_text.last_5_plates` som en løbende JSON-liste: en enkel log over de seneste fem nummerplader, der er kørt ind i indkørslen, med tidspunkt.
 
-## Hvad der lander på TV'et
+## Det, der kommer frem på TV'et
 
-Én app gør det muligt på TV-siden: **[Notifications for Android TV](https://play.google.com/store/apps/details?id=de.cyberdream.androidtv.notifications.phone)** (gratis, Google Play). Den kører en lille HTTP-server på port 7676 som HA's "Notifications for Android TV / Fire TV"-integration poster til. Ingen konto, ingen cloud — notifikationen går direkte fra HA til TV'et over det lokale netværk. Installer appen, notér TV'ets IP, tilføj integrationen i HA under Indstillinger → Enheder og tjenester, og du får en `notify.android_tv_*`-service.
+Én app gør det muligt på TV'et: **[Notifications for Android TV](https://play.google.com/store/apps/details?id=de.cyberdream.androidtv.notifications.phone)** (gratis, Google Play). Den kører en lille webserver på port 7676, som HA's integration «Notifications for Android TV / Fire TV» sender til. Ingen konto og ingen cloud: beskeden går direkte fra HA til TV'et over det lokale netværk. Installer appen, notér TV'ets IP-adresse, tilføj integrationen i HA under Indstillinger → Enheder og tjenester, og du får en `notify.android_tv_*`-handling.
 
 `notify.android_tv_fire_tv_192_168_1_40` sender direkte til TV'et:
 
@@ -61,31 +61,31 @@ data:
     interrupt: 1
 ```
 
-`interrupt: 1` tvinger notifikationen til at dukke op selv om TV'et er i gang med noget. Billedet vises i hjørnet med pladeteksten nedenunder. Man ser en film, en bil kører ind, et miniaturebillede dukker op i hjørnet med nummerplade — man kaster et blik på det og ignorerer det enten eller griber telefonen. Ingen opsamling af telefonen for at tjekke, ingen åbning af en app.
+`interrupt: 1` tvinger beskeden frem, også når TV'et er i gang med noget. Billedet vises i hjørnet med nummerpladen nedenunder. Man ser en film, en bil kører ind, og et lille billede med nummerpladen dukker op i hjørnet. Man kaster et blik på det og ignorerer det eller tager telefonen. Man skal ikke finde telefonen frem for at tjekke eller åbne en app.
 
-Telefonerne får det samme snapshot via `notify.alle_enheder`, med et tidsstemplet URL så det ikke serverer et cachet billede fra det forrige besøg.
+Telefonerne får det samme billede via `notify.alle_enheder` med et tidsstempel i adressen, så de ikke viser et gammelt billede fra cachen fra sidste besøg.
 
-Persondetektion får en enklere version: intet ALPR-forsøg, bare en snapshot-notifikation. Det er nok til at se om det er postbudet eller nogen man ikke genkender.
+Når kameraet ser en person, er det en enklere version: ingen forsøg på at læse nummerplader, bare en besked med billede. Det er nok til at se, om det er postbuddet eller en, man ikke kender.
 
-## Hvad jeg ikke tog med
+## Det, jeg ikke tog med
 
-Jeg prøvede en version der annoncerede nummerplade via tekst-til-tale på TV-højttaleren. Det virkede men føltes som en afgangstavle i lufthavnen. Den visuelle notifikation er mere diskret — man ser den hvis man kigger, overser den hvis man ikke gør, og TV'et afbryder ikke sig selv for at læse et nummer op.
+Jeg prøvede en version, der læste nummerpladen højt via TV'ets højttaler. Det virkede, men føltes som en afgangstavle i en lufthavn. Beskeden på skærmen er mere diskret: man ser den, hvis man kigger, overser den, hvis man ikke gør, og TV'et afbryder ikke sig selv for at læse et nummer op.
 
-## Hvad der faktisk gik galt
+## Det, der faktisk gik galt
 
-Den første uge automationen kørte, holdt den op med at virke. Ikke synligt — automationen gennemførte, ingen fejl i trace'en, men TV'et viste kun tekst uden billede, og telefonerne fik slet ingenting.
+I den første uge holdt automationen op med at virke, uden at det kunne ses. Den kørte igennem uden fejl i sporingen, men TV'et viste kun tekst uden billede, og telefonerne fik slet ingenting.
 
-Problemet var billedstørrelse. nfandroidtv-integrationen sender et snapshot til TV-appen via HTTP POST på port 7676. Jeg brugte `camera.sentinel_clear` — det fulde opløsnings-feed — som producerer frames på ca. 1,9 MB. TV-appen brugte mere end 5 sekunder på at behandle det. HA ramte en ReadTimeout, afbrød script-steget midt i kørslen, og telefon-notifikationerne blev aldrig afsendt.
+Problemet var billedernes størrelse. Integrationen nfandroidtv sender billedet til TV-appen via HTTP POST på port 7676. Jeg brugte `camera.sentinel_clear`, altså strømmen i fuld opløsning, som giver billeder på cirka 1,9 MB. TV-appen brugte mere end 5 sekunder på at behandle dem. HA løb ind i en ReadTimeout og afbrød scriptet midt i kørslen, så beskederne til telefonerne blev aldrig sendt.
 
-Derudover var integrationen havnet i `failed_unload`-tilstand — sandsynligvis fra en HA-genstart under et af de timeouts. Symptomet: `notify.android_tv` forsvandt fra de tilgængelige services i perioder og kom så tilbage igen. Integrationen stod som indlæst, men HA havde ikke rent registreret dens services.
+Derudover var integrationen havnet i tilstanden `failed_unload`, sandsynligvis efter en genstart af HA under en af timeoutene. Symptomet: `notify.android_tv` forsvandt i perioder fra de tilgængelige handlinger og kom så tilbage igen. Integrationen stod som indlæst, men HA havde ikke fået registreret dens handlinger ordentligt.
 
-Tre rettelser i rækkefølge:
+Tre rettelser i denne rækkefølge:
 
-**1. Slet og opret integrationen igen.** Indstillinger → Enheder og tjenester → find "Notifications for Android TV / Fire TV" → slet → tilføj igen. Det rydder failed_unload-tilstanden og genregistrerer `notify.android_tv` rent.
+**1. Slet integrationen, og tilføj den igen.** Indstillinger → Enheder og tjenester → find «Notifications for Android TV / Fire TV» → slet → tilføj igen. Det fjerner `failed_unload` og registrerer `notify.android_tv` korrekt igen.
 
-**2. Skift snapshot-kilde.** Ændret begge snapshot-steps i automationen fra `camera.sentinel_clear` til `camera.sentinel_fluent`. Fluent-streamen producerer 50–200 KB frames i stedet for 1,9 MB — lille nok til at TV-appen behandler det på under et sekund. Billedkvaliteten er stadig mere end nok til at identificere en person eller læse en nummerplade i godt lys.
+**2. Skift kilde til billederne.** Begge billedtrin i automationen er ændret fra `camera.sentinel_clear` til `camera.sentinel_fluent`. Fluent-strømmen giver billeder på 50 til 200 KB i stedet for 1,9 MB, så TV-appen behandler dem på under et sekund. Kvaliteten er stadig rigeligt til at genkende en person eller læse en nummerplade i godt lys.
 
-**3. Tilføj `continue_on_error: true` på TV-notify-steget:**
+**3. Tilføj `continue_on_error: true` på trinnet, der sender til TV'et:**
 
 ```yaml
 - action: notify.android_tv_fire_tv_192_168_1_40
@@ -97,8 +97,8 @@ Tre rettelser i rækkefølge:
       interrupt: 1
 ```
 
-Hvis TV'et timeouter eller integrationen falder ud igen, kommer telefon-notifikationerne stadig igennem. TV'et er rart at have. Telefonerne er ikke valgfrie.
+Svarer TV'et ikke i tide, eller falder integrationen ud igen, kommer beskederne til telefonerne stadig igennem. TV'et er rart at have. Telefonerne er ikke til forhandling.
 
-De tre ting tilsammen løste det. TV'et viser nu snapshot'et inden for ca. et sekund, og i de tilfælde hvor TV'et er slukket eller integrationen fejler, får telefonerne altid notifikation uanset hvad.
+De tre ting løste det tilsammen. TV'et viser nu billedet inden for cirka et sekund, og hvis TV'et er slukket, eller integrationen fejler, får telefonerne altid beskeden.
 
-**Opdatering, maj 2026:** Nummerpladegenkendelsen er taget ud. Nøjagtigheden om natten var ikke pålidelig nok — plader i dårlige vinkler eller ved kraftig regn returnerede "none" oftere end et egentligt resultat, og to LLM Vision-kald per køretøjshændelse tilføjede en latens der fik notifikationen til at føles langsom. Det nuværende setup springer ALPR helt over: bil- eller persondetektion → fluent snapshot → TV og telefoner. Den rullende pladeliste er væk. Kameraet, TV-integrationen og `continue_on_error`-tilgangen er bevaret. AI-laget er ikke.
+**Opdatering, maj 2026:** Nummerpladegenkendelsen er taget ud. Den var ikke pålidelig nok om natten: plader i dårlige vinkler eller i kraftig regn gav oftere «none» end et egentligt resultat, og to kald til LLM Vision pr. bil gjorde beskeden mærkbart langsommere. Den nuværende opsætning springer nummerpladerne helt over: bil eller person, et billede fra fluent-strømmen, og så til TV og telefoner. Den løbende liste over nummerplader er væk. Kameraet, TV-integrationen og `continue_on_error` er der stadig. AI-laget er ikke.

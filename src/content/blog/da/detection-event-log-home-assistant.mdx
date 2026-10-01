@@ -15,7 +15,7 @@ faqs:
     answer: "input_text is hard-capped at 255 characters. With a compact 'HH:MM label' format and a separator, that is roughly the 10 most recent events. For longer history with dates you need a trigger-based template sensor storing a list attribute, which requires YAML configuration."
 ---
 
-Mit overvågnings-view i Home Assistant har en "Recent events"-liste under kameraet — drevet af de fire binary sensors, mit AI-kamera eksponerer: person, bevægelse, dyr og køretøj. Problemet: logbook-kortet viser **hver eneste tilstandsændring**. Hver "Person Detected" efterfølges af en "Person Cleared" tredive sekunder senere, så halvdelen af listen er støj, og historikken dækker kun det halve tidsrum.
+Mit overvågnings-view i Home Assistant har en "Recent events"-liste under kameraet — drevet af de fire binary sensors, mit AI-kamera stiller til rådighed: person, bevægelse, dyr og køretøj. Problemet: logbook-kortet viser **hver eneste tilstandsændring**. Hver "Person Detected" efterfølges af en "Person Cleared" tredive sekunder senere, så halvdelen af listen er støj, og historikken dækker kun det halve tidsrum.
 
 Og nej — logbook-kortet kan ikke filtrere på tilstand. Det tager en entitetsliste og et tidsvindue. Det er det hele.
 

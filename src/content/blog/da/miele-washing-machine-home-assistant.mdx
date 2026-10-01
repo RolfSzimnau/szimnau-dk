@@ -38,7 +38,7 @@ binary_sensor.washing_machine_problem
 button.washing_machine_start / _stop / _pause
 ```
 
-Hovedsensoren har nitten mulige værdier, hvilket undrede mig indtil jeg fandt ud af at den deles på tværs af hele Mieles apparatflåde. `supercooling` og `superfreezing` er der for køl/frys-produkter. En vaskemaskine kommer aldrig til at ramme dem, men integrationen ved ikke det på forhånd, så man får hele enummet uanset.
+Hovedsensoren har nitten mulige værdier, hvilket undrede mig indtil jeg fandt ud af at den deles af alle Mieles apparater. `supercooling` og `superfreezing` er der for køl/frys-produkter. En vaskemaskine kommer aldrig til at ramme dem, men integrationen ved ikke det på forhånd, så man får hele enummet uanset.
 
 ## Knappen der ikke var der
 
@@ -90,7 +90,7 @@ Begge apparater melder sig på køkkenhøjttaleren når de er færdige. Jeg kopi
 
 ## Der hvor det stadig halter
 
-Der er ingen procent-færdig-sensor. Opvaskemaskinen (Bosch/Home Connect) eksponerer et pænt 0–100-tal; Miele giver kun forløbne og resterende minutter. Jeg kunne selv udregne en procentsats, men et udledt tal som maskinen faktisk ikke rapporterer selv føltes forkert at sætte på et dashboard, så kortet viser bare fasen og minutterne tilbage.
+Der er ingen procent-færdig-sensor. Opvaskemaskinen (Bosch/Home Connect) giver et pænt tal fra 0 til 100; Miele giver kun forløbne og resterende minutter. Jeg kunne selv udregne en procentsats, men et udledt tal som maskinen faktisk ikke rapporterer selv føltes forkert at sætte på et dashboard, så kortet viser bare fasen og minutterne tilbage.
 
 `binary_sensor.washing_machine_problem` er også frustrerende vag — den går bare til `on`, og det er det. Ingen fejlkode, ingen beskrivelse. Jeg har en ticker-post til den, og den siger "tjek den", hvilket er ærligt men ikke ligefrem handlingsanvisende.
 
