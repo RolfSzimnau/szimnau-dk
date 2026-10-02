@@ -1,0 +1,136 @@
+---
+import type { Lang } from '../i18n/ui';
+import { feedPath } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const origin = Astro.site?.origin ?? 'https://szimnau.dk';
+const feedUrl = `${origin}${feedPath(lang)}`;
+const encoded = encodeURIComponent(feedUrl);
+
+const readers = [
+  { name: 'Feedly', href: `https://feedly.com/i/subscription/feed/${encoded}` },
+  { name: 'Inoreader', href: `https://www.inoreader.com/?add_feed=${encoded}` },
+];
+
+const otherFeeds = ([
+  ['en', 'English'],
+  ['da', 'Dansk'],
+  ['de', 'Deutsch'],
+] as Array<[Lang, string]>).filter(([l]) => l !== lang);
+
+const text = {
+  en: {
+    eyebrow: 'RSS',
+    title: 'Follow the blog with RSS',
+    intro: 'RSS lets you follow the site without a newsletter or an algorithm. Your feed reader checks for new posts and shows them when they go up. There is no account here, nothing is tracked, and you unsubscribe by deleting the feed.',
+    copyH: '1. Copy the feed address',
+    copy: 'Copy',
+    copied: 'Copied',
+    addH: '2. Add it to your feed reader',
+    add: 'One click if you use one of these:',
+    other: 'Any other reader works too: paste the address above. Most readers also find the feed on their own if you just paste szimnau.dk.',
+    noneH: 'No feed reader yet?',
+    none: 'Feedly and Inoreader have free plans and run in the browser. On Mac and iPhone, NetNewsWire is free and open source.',
+    langsH: 'Other languages',
+    langs: 'The blog is written separately in each language, so each has its own feed:',
+  },
+  da: {
+    eyebrow: 'RSS',
+    title: 'Følg bloggen med RSS',
+    intro: 'Med RSS følger du sitet uden nyhedsbrev og uden en algoritme imellem. Din RSS-læser holder selv øje med nye indlæg og viser dem, når de udkommer. Du opretter ingen konto her, intet bliver sporet, og vil du ikke følge med længere, sletter du bare feedet.',
+    copyH: '1. Kopiér feedets adresse',
+    copy: 'Kopiér',
+    copied: 'Kopieret',
+    addH: '2. Tilføj den i din RSS-læser',
+    add: 'Bruger du en af dem her, klarer du det med ét klik:',
+    other: 'Alle andre RSS-læsere virker også. Indsæt bare adressen ovenfor. De fleste finder i øvrigt selv feedet, hvis du blot skriver szimnau.dk.',
+    noneH: 'Har du ingen RSS-læser?',
+    none: 'Feedly og Inoreader er gratis i en basisudgave og kører i browseren. Til Mac og iPhone er NetNewsWire gratis og open source.',
+    langsH: 'Andre sprog',
+    langs: 'Bloggen er skrevet for sig på hvert sprog, så hvert sprog har sit eget feed:',
+  },
+  de: {
+    eyebrow: 'RSS',
+    title: 'Den Blog per RSS abonnieren',
+    intro: 'Mit RSS verfolgst du die Seite ohne Newsletter und ohne Algorithmus dazwischen. Dein Feedreader schaut selbst nach neuen Beiträgen und zeigt sie an, sobald sie erscheinen. Kein Konto, kein Tracking, und abbestellen heißt einfach: Feed löschen.',
+    copyH: '1. Feed-Adresse kopieren',
+    copy: 'Kopieren',
+    copied: 'Kopiert',
+    addH: '2. Im Feedreader hinzufügen',
+    add: 'Mit einem Klick, wenn du einen von diesen nutzt:',
+    other: 'Jeder andere Feedreader geht auch: Adresse von oben einfügen. Die meisten finden den Feed übrigens selbst, wenn du nur szimnau.dk eingibst.',
+    noneH: 'Noch keinen Feedreader?',
+    none: 'Feedly und Inoreader gibt es kostenlos im Browser. Für Mac und iPhone ist NetNewsWire gratis und Open Source.',
+    langsH: 'Andere Sprachen',
+    langs: 'Der Blog wird in jeder Sprache eigenständig geschrieben, deshalb hat jede Sprache ihren eigenen Feed:',
+  },
+}[lang];
+---
+
+<div class="max-w-3xl mx-auto px-6 py-24">
+  <header class="mb-12">
+    <p class="flex items-center gap-3 font-mono text-blue text-sm mb-3 tracking-wider uppercase"><span class="h-px w-8 bg-blue/60"></span>{text.eyebrow}</p>
+    <h1 class="font-heading text-4xl sm:text-5xl font-bold text-text-primary mb-6">{text.title}</h1>
+    <p class="text-text-muted text-lg leading-relaxed">{text.intro}</p>
+  </header>
+
+  <div class="prose">
+    <h2>{text.copyH}</h2>
+  </div>
+  <div class="flex flex-col sm:flex-row gap-3 mb-10">
+    <code id="feed-url" class="flex-1 min-w-0 break-all rounded-xl border border-glass-border bg-white/[0.03] px-4 py-3 font-mono text-sm text-text-primary">{feedUrl}</code>
+    <button
+      type="button"
+      data-copy-feed
+      data-copied={text.copied}
+      class="shrink-0 rounded-xl bg-blue text-navy font-bold px-6 py-3 hover:bg-blue-dim transition-colors"
+    >{text.copy}</button>
+  </div>
+
+  <div class="prose">
+    <h2>{text.addH}</h2>
+    <p>{text.add}</p>
+  </div>
+  <div class="flex flex-wrap gap-3 mb-6">
+    {readers.map(r => (
+      <a href={r.href} target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-xl border border-blue/40 text-blue font-bold px-6 py-3 hover:bg-blue/5 transition-colors">{r.name}</a>
+    ))}
+  </div>
+
+  <div class="prose">
+    <p>{text.other}</p>
+
+    <h2>{text.noneH}</h2>
+    <p>{text.none}</p>
+
+    <h2>{text.langsH}</h2>
+    <p>{text.langs}</p>
+    <ul>
+      {otherFeeds.map(([l, name]) => (
+        <li><a href={`/${l}/rss/`} hreflang={l}>{name}</a>: <code>{`${origin}${feedPath(l)}`}</code></li>
+      ))}
+    </ul>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-feed]').forEach(btn => {
+    const label = btn.textContent ?? '';
+    btn.addEventListener('click', async () => {
+      const url = document.getElementById('feed-url')?.textContent ?? '';
+      try {
+        await navigator.clipboard.writeText(url);
+        btn.textContent = btn.dataset.copied ?? label;
+        setTimeout(() => { btn.textContent = label; }, 2000);
+      } catch {
+        // Clipboard blocked: select the address so the reader can copy it by hand.
+        const el = document.getElementById('feed-url');
+        if (el) window.getSelection()?.selectAllChildren(el);
+      }
+    });
+  });
+</script>

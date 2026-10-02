@@ -21,9 +21,9 @@ interface Props {
 const { title, description, lang, pubDate, updatedDate, verifiedOn, heroImage, tags, faqs, translationKey, headings, seoTitle } = Astro.props;
 
 const labels = {
-  en: { back: 'All posts', updated: 'Updated', verified: 'Verified on', toc: 'On this page', related: 'Related articles' },
-  da: { back: 'Alle indlæg', updated: 'Opdateret', verified: 'Verificeret på', toc: 'På denne side', related: 'Relaterede artikler' },
-  de: { back: 'Alle Beiträge', updated: 'Aktualisiert', verified: 'Verifiziert mit', toc: 'Auf dieser Seite', related: 'Ähnliche Artikel' },
+  en: { back: 'All posts', updated: 'Updated', verified: 'Verified on', toc: 'On this page', related: 'Related articles', follow: 'New posts in your feed reader:', followLink: 'follow with RSS' },
+  da: { back: 'Alle indlæg', updated: 'Opdateret', verified: 'Verificeret på', toc: 'På denne side', related: 'Relaterede artikler', follow: 'Nye indlæg direkte i din RSS-læser:', followLink: 'følg med via RSS' },
+  de: { back: 'Alle Beiträge', updated: 'Aktualisiert', verified: 'Verifiziert mit', toc: 'Auf dieser Seite', related: 'Ähnliche Artikel', follow: 'Neue Beiträge direkt im Feedreader:', followLink: 'per RSS folgen' },
 }[lang];
 
 const tocHeadings = (headings ?? []).filter(h => h.depth === 2);
@@ -151,8 +151,12 @@ const breadcrumbJsonLd = {
       <slot />
     </div>
 
+    <p data-pagefind-ignore class="mt-16 border-t border-glass-border pt-8 text-sm text-text-muted">
+      {labels.follow} <a href={`/${lang}/rss/`} class="text-blue hover:underline">{labels.followLink}</a>
+    </p>
+
     {related.length > 0 && (
-      <aside data-pagefind-ignore class="mt-16 border-t border-glass-border pt-10">
+      <aside data-pagefind-ignore class="mt-10 border-t border-glass-border pt-10">
         <h2 class="font-heading text-xl font-bold text-text-primary mb-6">{labels.related}</h2>
         <div class="grid gap-4 sm:grid-cols-3">
           {related.map(({ post }) => (

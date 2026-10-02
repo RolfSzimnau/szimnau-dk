@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import RssContent from '../../components/RssContent.astro';
+
+const lang = 'da';
+---
+
+<Base
+  title="Følg bloggen med RSS"
+  description="Følg szimnau.dk i din RSS-læser: kopiér feedets adresse, eller tilføj det til Feedly eller Inoreader med ét klik. Ingen konto, intet nyhedsbrev."
+  lang={lang}
+>
+  <RssContent lang={lang} />
+</Base>

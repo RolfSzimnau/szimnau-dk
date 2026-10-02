@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import RssContent from '../../components/RssContent.astro';
+
+const lang = 'de';
+---
+
+<Base
+  title="Den Blog per RSS abonnieren"
+  description="Folge szimnau.dk in jedem Feedreader: Feed-Adresse kopieren oder mit einem Klick zu Feedly oder Inoreader hinzufügen. Kein Konto, kein Newsletter."
+  lang={lang}
+>
+  <RssContent lang={lang} />
+</Base>
