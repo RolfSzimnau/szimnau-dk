@@ -11,6 +11,13 @@ npm install
 
 Build output goes to `dist/`. Always run a full build to validate before committing.
 
+```bash
+npm run validate       # source checks + SEO checks on dist/ (run after build)
+npm run validate:src   # source checks only, runs automatically as pre-commit hook
+```
+
+`scripts/validate.mjs` enforces the SEO rules below on every built page (title format, description 120–160, robots, canonical, hreflang, OG/Twitter tags, og:image exists, one h1, no skipped heading levels, hero image attributes, duplicate descriptions) plus source rules (required frontmatter, `translationKey` present in all 3 locales, every `/blog-images/` reference exists and is tracked in git). Voice findings ("seamlessly", "Conclusion" headings) are warnings only. The hook is enabled by `npm install` via `core.hooksPath .githooks`. Skip it once with `git commit --no-verify`.
+
 ### Shiki language identifiers
 
 Use the correct Shiki language name in code blocks — wrong names produce build warnings and disable syntax highlighting:
@@ -108,9 +115,7 @@ faqs:               # optional, but write in the post's language
 ```
 Create matching versions in `da/` and `de/` with translated content.
 
-**Also update the homepage hero bio** in all 3 `pages/{en,da,de}/index.astro` files — the `<span class="text-text-primary">` line ("Just shipped: ...") should reference the newest post. It goes stale fast: it referenced two posts that had already shipped 10 days earlier before this was caught (2026-07-28). There's no automated freshness check, so this is a manual step every time a post goes live.
-
-**Image commit check:** after dropping a new image into `public/blog-images/`, run `git status` before committing and confirm the image shows as staged alongside the MDX edit. Git happily commits the MDX reference without the binary if it wasn't `git add`ed — Cloudflare then deploys a page with a 404'd `<img>`. New images: use `.webp` (25–35% smaller than JPEG, full browser support) — existing `.jpg` files stay as-is, don't convert them.
+**Image commit check:** the pre-commit hook blocks a commit when an MDX file references a `/blog-images/` file that is not tracked in git. Git happily commits the MDX reference without the binary if it wasn't `git add`ed — Cloudflare then deploys a page with a 404'd `<img>`. New images: use `.webp` (25–35% smaller than JPEG, full browser support) — existing `.jpg` files stay as-is, don't convert them.
 
 ---
 

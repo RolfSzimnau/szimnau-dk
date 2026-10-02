@@ -10,7 +10,10 @@
     "build": "node -e \"require('fs').rmSync('./dist',{recursive:true,force:true})\" && astro build && pagefind --site dist",
     "preview": "astro preview",
     "astro": "astro",
-    "lint:da": "node scripts/lint-da.mjs"
+    "lint:da": "node scripts/lint-da.mjs",
+    "validate": "node scripts/validate.mjs",
+    "validate:src": "node scripts/validate.mjs --src",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.4",

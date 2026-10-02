@@ -1,0 +1,3 @@
+#!/bin/sh
+# Fast source checks before every commit. Skip once with: git commit --no-verify
+exec node scripts/validate.mjs --src
