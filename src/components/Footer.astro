@@ -1,6 +1,6 @@
 ---
 import type { Lang } from '../i18n/ui';
-import { useTranslations } from '../i18n/utils';
+import { feedPath, useTranslations } from '../i18n/utils';
 
 interface Props {
   lang: Lang;
@@ -27,7 +27,7 @@ const year = new Date().getFullYear();
         <a href={`/${lang}/about/`} class="inline-block py-3 text-text-muted hover:text-blue text-sm transition-colors">{t('nav.about')}</a>
         <a href={`/${lang}/#hardware-lab`} class="inline-block py-3 text-text-muted hover:text-blue text-sm transition-colors">{t('nav.hardware')}</a>
         <a href={`/${lang}/privacy/`} class="inline-block py-3 text-text-muted hover:text-blue text-sm transition-colors">{t('footer.privacy')}</a>
-        <a href="/rss.xml" class="inline-block py-3 font-mono text-text-muted hover:text-blue text-sm transition-colors">RSS</a>
+        <a href={feedPath(lang)} class="inline-block py-3 font-mono text-text-muted hover:text-blue text-sm transition-colors">RSS</a>
       </nav>
 
       <div class="flex items-center gap-4">

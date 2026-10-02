@@ -1,5 +1,6 @@
 ---
 import type { Lang } from '../i18n/ui';
+import { feedPath, useTranslations } from '../i18n/utils';
 
 interface Props {
   title: string;
@@ -23,6 +24,7 @@ const {
   noindex = false,
 } = Astro.props;
 
+const t = useTranslations(lang);
 const siteTitle = `${title} | szimnau.dk`;
 const siteOrigin = Astro.site?.origin ?? 'https://szimnau.dk';
 const ogImage = heroImage
@@ -80,7 +82,7 @@ const websiteJsonLd = {
   <link rel="alternate" hreflang={localeMap[l]} href={buildAlternate(l)} />
 ))}
 {!noindex && hasAlternates && <link rel="alternate" hreflang="x-default" href={buildAlternate('en')} />}
-<link rel="alternate" type="application/rss+xml" title="szimnau.dk: From the Lab" href={`${new URL(canonicalURL).origin}/rss.xml`} />
+<link rel="alternate" type="application/rss+xml" title={`szimnau.dk: ${t('blog.title')}`} href={`${new URL(canonicalURL).origin}${feedPath(lang)}`} />
 
 <meta property="og:title" content={siteTitle} />
 <meta property="og:description" content={description} />

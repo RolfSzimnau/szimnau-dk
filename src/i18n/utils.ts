@@ -35,3 +35,6 @@ export function switchLocale(currentPath: string, targetLang: Lang): string {
   }
   return '/' + parts.join('/');
 }
+
+// English feed stays at /rss.xml so existing subscribers keep working.
+export const feedPath = (lang: Lang) => (lang === 'en' ? '/rss.xml' : `/${lang}/rss.xml`);

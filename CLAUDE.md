@@ -96,7 +96,7 @@ All `og:image` and `BlogPosting.image` values must be absolute URLs (prepend `si
 ### New Files in `public/`
 
 - `og-default.png` must remain at `public/og-default.png` (1200×630 px) — replace with branded version when possible
-- `robots.txt`, `ai.txt`, `llms.txt` must not be deleted
+- `robots.txt` and `ai.txt` must not be deleted. `/llms.txt` is generated from frontmatter by `src/pages/llms.txt.ts` (do not add a static copy to `public/`, it would conflict)
 
 ### When Adding a New Blog Post
 
@@ -170,7 +170,6 @@ public/
   og-default.png       # 1200x630 OG fallback
   robots.txt
   ai.txt
-  llms.txt
 ```
 
 ## Deployment
