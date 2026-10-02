@@ -8,10 +8,10 @@ lang: "da"
 translationKey: "danish-electricity-prices-ev-charging"
 heroImage: "/blog-images/energi-elpriser.jpg"
 faqs:
-  - question: "How do you get hourly electricity spot prices into Home Assistant?"
-    answer: "Through the Energi Data Service integration (HACS) — a free Danish public API with no key required. It exposes sensor.energi_data_service with raw_today and raw_tomorrow attributes; tomorrow's prices appear around 13:00 when the Nord Pool auction settles."
-  - question: "Does automated spot-price EV charging actually save money?"
-    answer: "Only on nights with a large price spread — some Danish weeks the spread is tiny and the automation makes no difference. The bigger saving came from behavioural change: timing the dishwasher and washing machine to the cheapest window."
+  - question: "Hvordan får man timepriser på strøm ind i Home Assistant?"
+    answer: "Med Energi Data Service-integrationen fra HACS. Den bruger en gratis, offentlig dansk API uden nøgle og giver sensor.energi_data_service med attributterne raw_today og raw_tomorrow. Morgendagens priser kommer omkring kl. 13, når Nord Pool-auktionen er afgjort."
+  - question: "Sparer det reelt penge at lade elbilen efter spotprisen?"
+    answer: "Kun de nætter, hvor der er stor forskel på dyre og billige timer. Nogle uger er forskellen så lille, at automationen ikke gør nogen forskel. Den store besparelse kom fra vanerne: opvaskeren og vaskemaskinen kører nu i de billigste timer."
 ---
 
 En nat i februar kostede strømmen 0,18 kr./kWh kl. 3 og 3,40 kr./kWh kl. 8. Næsten 20 gange så dyrt på fem timer. Lader bilen efter en fast natplan, er det rent held, hvilken ende af det spænd du rammer.

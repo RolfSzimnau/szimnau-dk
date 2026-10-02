@@ -9,10 +9,10 @@ lang: "da"
 translationKey: "google-find-my-home-assistant"
 heroImage: "/blog-images/google-find-my-home-assistant.jpg"
 faqs:
-  - question: "Why do my Google Find My devices show as unavailable in Home Assistant?"
-    answer: "The FMDN integration doesn't cache historical positions. On startup it waits for the next crowd-sourced Bluetooth ping, which can take minutes to hours. Press the 'Locate Now' button entity in Developer Tools to force an immediate position update from Google's network."
-  - question: "Can I use Google Find My to remind me when I leave my keys at home?"
-    answer: "Not reliably. FMDN depends on nearby Android phones pinging your tracker via Bluetooth, which can take anywhere from one minute to half an hour. For immediate key detection at the door, an ESP32 with a BLE proxy integration is the correct tool — it reports within seconds."
+  - question: "Hvorfor står mine Google Find My-enheder som utilgængelige i Home Assistant?"
+    answer: "FMDN-integrationen gemmer ikke tidligere positioner. Ved opstart venter den på næste Bluetooth-ping fra en fremmed telefon, og det kan tage fra minutter til timer. Tryk på knap-entiteten »Locate Now« under Udviklerværktøjer for at hente en ny position fra Googles netværk med det samme."
+  - question: "Kan Google Find My minde mig om, at nøglerne ligger hjemme?"
+    answer: "Ikke pålideligt. FMDN er afhængig af, at Android-telefoner i nærheden opfanger trackeren via Bluetooth, og det kan tage alt fra et minut til en halv time. Skal nøglerne opdages ved døren med det samme, er en ESP32 som BLE-proxy det rigtige værktøj. Den melder tilbage på få sekunder."
 ---
 
 Der er to fundamentalt forskellige use cases for sporing af genstande, og de fleste opdager forskellen på den hårde måde. **Google Find My** (FMDN) er bygget til én af dem: du har mistet din taske et sted i byen og skal indkredse den til et kvarter. Det gør den godt. Den anden gør den ikke godt: du vil vide, om dine nøgler hænger på krogen, inden du låser hoveddøren.

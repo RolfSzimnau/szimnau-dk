@@ -8,10 +8,10 @@ lang: "da"
 translationKey: "ha-glassmorphism-dashboard-design"
 heroImage: "/blog-images/ha-glass-dashboard-cards-2026.jpg"
 faqs:
-  - question: "What CSS makes the glassmorphism look work on Home Assistant cards?"
-    answer: "Six card-mod constants on every outer card: 28px border-radius, rgba(255,255,255,0.05) background, blur(15px) backdrop-filter, a 1px rgba(255,255,255,0.10) border and a soft shadow — plus suppressing the Frosted Glass Dark theme's ::before overlay."
-  - question: "Can the glass style be defined once instead of repeated per card?"
-    answer: "Not cleanly without maintaining a custom theme — card-mod styles don't cascade into nested cards reliably, so a snippets.yaml template is pasted per card. CSS custom properties in a theme YAML would be the proper fix."
+  - question: "Hvilken CSS giver glaseffekten på kortene i Home Assistant?"
+    answer: "Seks card-mod-værdier på hvert ydre kort: 28px border-radius, baggrunden rgba(255,255,255,0.05), backdrop-filter med blur(15px), en kant på 1px i rgba(255,255,255,0.10) og en blød skygge. Derudover skal Frosted Glass Dark-temaets ::before-lag slås fra."
+  - question: "Kan glasstilen defineres ét sted i stedet for på hvert kort?"
+    answer: "Ikke uden at vedligeholde et eget tema. card-mod-stilarter arves ikke pålideligt ned i indlejrede kort, så en skabelon fra snippets.yaml bliver kopieret ind på hvert kort. Den rigtige løsning ville være CSS-variabler i et tema i YAML."
 ---
 
 Jeg byggede mine Home Assistant-dashboards om tre gange, før de så ud til at høre sammen. Den første version var flade kort. Fin nok. Den anden havde for mange farver. Den tredje endte med glassmorphism, halvgennemsigtige frostede kort på en dyb marineblå baggrund, og den har jeg ikke rørt siden.

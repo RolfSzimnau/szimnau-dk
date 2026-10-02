@@ -7,10 +7,10 @@ lang: "da"
 translationKey: "ha-nightly-health-check"
 heroImage: "/blog-images/home-assistant-proxmox-github-actions-ci.webp"
 faqs:
-  - question: "Why does Home Assistant testing require a self-hosted GitHub Actions runner?"
-    answer: "GitHub's cloud runners cannot reach your local Home Assistant instance. A self-hosted runner installed on the same network as your HA server can make direct API calls to test live entities, services, and dashboard resources."
-  - question: "What should nightly Home Assistant tests cover?"
-    answer: "Critical automations and scripts, notification services, custom Lovelace card resources, and key entity states. The goal is catching silent breakages — integrations that stop working after a HA update without throwing visible errors."
+  - question: "Hvorfor kræver test af Home Assistant en selvhostet GitHub Actions-runner?"
+    answer: "GitHubs runnere i skyen kan ikke nå din lokale Home Assistant. En selvhostet runner på samme netværk som HA-serveren kan kalde API'et direkte og teste rigtige entiteter, handlinger og dashboard-ressourcer."
+  - question: "Hvad skal de natlige tests i Home Assistant dække?"
+    answer: "De vigtigste automationer og scripts, notifikationer, ressourcer til brugerdefinerede Lovelace-kort og tilstanden på centrale entiteter. Formålet er at fange de stille fejl: integrationer, der holder op med at virke efter en HA-opdatering uden at sige noget."
 ---
 
 Opvaskemaskine-notifikationen virkede perfekt i måneder. Så en dag gjorde den det ikke. `notify.android_tv`-servicen var stille og roligt forsvundet efter en Home Assistant-genstart, og jeg fandt først ud af det da jeg stod i køkkenet og ventede på en alarm der aldrig kom.

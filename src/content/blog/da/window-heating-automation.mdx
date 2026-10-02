@@ -8,10 +8,10 @@ lang: "da"
 translationKey: "window-heating-automation"
 heroImage: "/blog-images/Hjem_MYGGBETT_Hero.jpg.png"
 faqs:
-  - question: "How does the window-open heating automation work?"
-    answer: "An IKEA window sensor triggers a Blueprint automation: when the window opens, the Mill radiator's state is snapshotted and heating turns off after a 1-minute delay; closing the window restores the exact previous state."
-  - question: "Why build it as a Blueprint instead of a normal automation?"
-    answer: "Reuse — adding the next room is Blueprint, pick sensor, pick radiator: about 30 seconds with no new code. It works for the Mill radiators; the Tado-managed living room needs separate logic."
+  - question: "Hvordan virker automationen, der slukker varmen, når vinduet åbnes?"
+    answer: "En vinduessensor fra IKEA starter en blueprint-automation. Når vinduet åbnes, gemmes Mill-radiatorens tilstand, og varmen slukkes efter et minut. Når vinduet lukkes, får radiatoren præcis den tidligere tilstand tilbage."
+  - question: "Hvorfor en blueprint og ikke en almindelig automation?"
+    answer: "For at kunne genbruge den. Næste rum er bare blueprint, vælg sensor, vælg radiator. Det tager cirka 30 sekunder og kræver ingen ny kode. Det virker til Mill-radiatorerne, mens stuen, der styres af Tado, kræver sin egen logik."
 ---
 
 Radiatoren i Louises værelse kørte for fuld varme med vinduet åbent. Hun er snart tyve — at huske at lukke vinduet er ikke noget der sker konsekvent. Jeg lagde mærke til at vinduet havde stået åbent i en time, varmen på, udetemperatur på cirka 4°C. Det er penge ud af vinduet — bogstaveligt talt — og det ville blive ved med at ske.

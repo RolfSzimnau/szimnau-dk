@@ -9,10 +9,10 @@ lang: "da"
 translationKey: "detection-event-log-home-assistant"
 heroImage: "/blog-images/detection-event-log-home-assistant.jpg"
 faqs:
-  - question: "Can the Home Assistant logbook card filter out state changes like 'Cleared'?"
-    answer: "No. The built-in logbook card only accepts an entity list and a time window — there is no state filter, so every on/off transition is shown. To get a detections-only list you have to build your own log, for example an input_text helper fed by an automation."
-  - question: "How many events fit in an input_text helper?"
-    answer: "input_text is hard-capped at 255 characters. With a compact 'HH:MM label' format and a separator, that is roughly the 10 most recent events. For longer history with dates you need a trigger-based template sensor storing a list attribute, which requires YAML configuration."
+  - question: "Kan logbogskortet i Home Assistant skjule tilstande som »Ryddet«?"
+    answer: "Nej. Det indbyggede logbogskort tager kun en liste af entiteter og et tidsrum. Der er intet filter på tilstand, så hvert skift mellem til og fra kommer med. Vil du kun se detektioner, må du bygge din egen log, f.eks. en input_text-hjælper, som en automation skriver til."
+  - question: "Hvor mange hændelser kan der være i en input_text-hjælper?"
+    answer: "input_text kan højst rumme 255 tegn. Med et kort format som »TT:MM tekst« og et skilletegn bliver det til cirka de 10 seneste hændelser. Vil du have længere historik med datoer, skal du bruge en triggerbaseret skabelonsensor med en liste i en attribut, og den kræver YAML."
 ---
 
 Overvågningsvisningen i min Home Assistant har en liste over seneste hændelser under kameraet. Den bygger på de fire binære sensorer, mit AI-kamera stiller til rådighed: person, bevægelse, dyr og køretøj. Problemet er, at logbogskortet viser **hver eneste ændring af tilstand**. Hver «Person Detected» efterfølges af en «Person Cleared» tredive sekunder senere, så halvdelen af listen er støj, og historikken dækker kun halvt så lang tid.

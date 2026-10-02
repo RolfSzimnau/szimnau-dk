@@ -8,10 +8,10 @@ lang: "da"
 translationKey: "sentinel-ai-camera-ha"
 heroImage: "/blog-images/overvagning-sentinel.jpg"
 faqs:
-  - question: "How do you stop a security camera from spamming motion notifications?"
-    answer: "Trigger on the camera's person and vehicle AI sensors instead of raw motion, add an input_boolean mute toggle, and give the notification action buttons — open camera, mute, dismiss — so alerts are useful instead of noise."
-  - question: "Can the camera notification show on a TV as well?"
-    answer: "Yes — the same automation pushes a snapshot to a Fire TV via notify, with a cache-busting timestamp parameter on the image URL and interrupt: 1 so it appears even during playback."
+  - question: "Hvordan stopper man et overvågningskamera i at sende en strøm af bevægelsesnotifikationer?"
+    answer: "Lad automationen reagere på kameraets AI-sensorer for person og køretøj i stedet for rå bevægelse, tilføj en input_boolean til at slå lyden fra, og giv notifikationen knapper til at åbne kameraet, slå lyden fra og afvise. Så bliver advarslerne til at bruge."
+  - question: "Kan kameranotifikationen også vises på TV'et?"
+    answer: "Ja. Samme automation sender et snapshot til et Fire TV via notify. Billedets URL får et tidsstempel, så cachen ikke viser et gammelt billede, og interrupt: 1 sørger for, at det kommer frem, mens der spiller noget."
 ---
 
 De første par uger efter jeg satte Sentinel-kameraet op, havde jeg notifikationer for bevægelse slået til. Hver eneste sagde «Bevægelse registreret». Fugle, skygger, en plastikpose, der blæste forbi linsen klokken tre om natten. Jeg slog dem alle fra og lod kameraet hænge der uden at gøre meget nytte i endnu en måned.

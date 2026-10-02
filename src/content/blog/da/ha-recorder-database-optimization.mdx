@@ -9,10 +9,10 @@ lang: "da"
 translationKey: "ha-recorder-database-optimization"
 heroImage: "/blog-images/ha-recorder-database-optimization.jpg"
 faqs:
-  - question: "How do I check if my Home Assistant recorder database is too large?"
-    answer: "Go to Settings → System → System Health. The recorder section shows 'estimated_db_size'. For a 5-day retention period, anything above 500 MB suggests noisy entities worth investigating. You can also run recorder.purge with repack: true and compare the before/after size."
-  - question: "Does excluding entities from the recorder affect automations or dashboards?"
-    answer: "No. The recorder only controls historical data for the History panel and energy dashboards. Automations, scripts, and real-time Lovelace card states are completely unaffected by recorder exclusions — they read from the state machine, not the database."
+  - question: "Hvordan ser jeg, om recorder-databasen i Home Assistant er for stor?"
+    answer: "Gå til Indstillinger → System → Systemsundhed. Under recorder står estimated_db_size. Med 5 dages historik tyder alt over 500 MB på, at nogle entiteter skriver for meget. Du kan også køre recorder.purge med repack: true og sammenligne størrelsen før og efter."
+  - question: "Påvirker det automationer eller dashboards, når entiteter udelukkes fra recorderen?"
+    answer: "Nej. Recorderen styrer kun historikken i Historik-panelet og energi-dashboardet. Automationer, scripts og de aktuelle tilstande på Lovelace-kort er ikke berørt, for de læser fra tilstandsmaskinen og ikke fra databasen."
 ---
 
 Min SQLite-database i Home Assistant nåede 963 MB på bare seks dage, omkring 160 MB om dagen med 5 dages opbevaring. Det er mere end tre gange så meget, som en veloptimeret opsætning bør give.

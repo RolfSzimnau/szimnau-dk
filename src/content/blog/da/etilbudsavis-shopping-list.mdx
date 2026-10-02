@@ -9,10 +9,10 @@ lang: "da"
 translationKey: "etilbudsavis-shopping-list"
 heroImage: "/blog-images/etilbudsavis-notification.webp"
 faqs:
-  - question: "What does the eTilbudsavis integration add to a Home Assistant shopping list?"
-    answer: "The CagosDk HACS integration creates a todo list where items carry the store name and current offer price in the description, sorted by store, so the list groups itself by where each offer is valid."
-  - question: "How do the store proximity notifications work?"
-    answer: "HA zones are defined around each store, and an automation matches the zone name against item descriptions on arrival — walking into Bilka pushes a notification listing only the items on offer there. It requires maintaining a zone per store you shop in."
+  - question: "Hvad tilføjer eTilbudsavis-integrationen til indkøbslisten i Home Assistant?"
+    answer: "CagosDk-integrationen fra HACS laver en todo-liste, hvor hver vare har butikkens navn og den aktuelle tilbudspris i beskrivelsen. Listen er sorteret efter butik, så varerne samler sig efter, hvor tilbuddet gælder."
+  - question: "Hvordan virker notifikationerne, når man nærmer sig en butik?"
+    answer: "Der er en zone i HA omkring hver butik. Når du ankommer, sammenligner en automation zonens navn med varernes beskrivelse, så du i Bilka kun får en notifikation med de varer, der er på tilbud netop der. Det kræver, at du vedligeholder en zone for hver butik, du handler i."
 ---
 
 Jeg stod i Netto og vidste ikke, om der var noget på listen herfra. Det var der, men det lå gemt midt i femten varer fra tre andre butikker. Jeg scrollede og fandt dem til sidst. Sådan gik det hver gang.

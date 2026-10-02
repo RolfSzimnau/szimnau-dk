@@ -8,10 +8,10 @@ lang: "da"
 translationKey: "dmi-weather-alerts-home-assistant"
 heroImage: "/blog-images/dmi-weather-alert-ticker-2026.jpg"
 faqs:
-  - question: "Why does the built-in Home Assistant MeteoAlarm integration only show one weather alert?"
-    answer: "The core meteoalarm integration exposes one binary sensor per region and only surfaces a single active alert at a time (Home Assistant core issue #131045). Concurrent alerts — say a storm warning and a cloudburst warning — overwrite each other. The cap_alerts custom integration solves this by creating one sensor entity per active CAP alert."
-  - question: "Which MeteoAlarm region covers my Danish municipality?"
-    answer: "Denmark has only 8 land regions (DK001–DK008) plus around 20 marine zones. Kolding Municipality falls under DK005 'Syd- og Sønderjylland'. Verify against the live feed at feeds.meteoalarm.org instead of guessing — local area names like 'Trekantområdet' are not MeteoAlarm regions."
+  - question: "Hvorfor viser MeteoAlarm-integrationen i Home Assistant kun ét varsel?"
+    answer: "Den indbyggede meteoalarm-integration har én binær sensor pr. region og viser kun ét aktivt varsel ad gangen (Home Assistant core issue #131045). Kommer der to varsler samtidig, f.eks. storm og skybrud, overskriver det ene det andet. Den brugerdefinerede integration cap_alerts løser det ved at oprette én sensor pr. aktivt CAP-varsel."
+  - question: "Hvilken MeteoAlarm-region hører min kommune til?"
+    answer: "Danmark har kun 8 regioner på land (DK001 til DK008) og omkring 20 havområder. Kolding Kommune ligger i DK005 »Syd- og Sønderjylland«. Slå det op i feedet på feeds.meteoalarm.org i stedet for at gætte. Lokale navne som »Trekantområdet« er ikke MeteoAlarm-regioner."
 ---
 
 Den aften, jeg byggede det her, havde DMI to gule varsler for mit område på samme tid: torden indtil kl. 20 og høj varme indtil kl. 18. Home Assistant har en indbygget MeteoAlarm-integration, som burde vise begge, men den kan kun vise ét varsel ad gangen. Det andet forsvinder bare.

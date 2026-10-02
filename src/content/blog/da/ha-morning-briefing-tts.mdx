@@ -8,10 +8,10 @@ lang: "da"
 translationKey: "ha-morning-briefing-tts"
 heroImage: "/blog-images/ha-morning-briefing-tts.jpg"
 faqs:
-  - question: "Can I use Google Translate TTS instead of Google AI TTS for the Home Assistant morning briefing?"
-    answer: "Yes. Replace the target entity_id with tts.google_translate_en_com (or your configured Google Translate TTS entity) and remove the language field. Google Translate TTS is free but sounds more robotic. Google AI TTS requires a Google AI Studio API key but produces natural-sounding speech."
-  - question: "How do I add more calendars to the Home Assistant morning briefing automation?"
-    answer: "Add another calendar.get_events action with a new response_variable name, then append that variable's events list to the combined events list in the TTS message template. The pattern is: set events = events_a + events_b + events_c. Each calendar.get_events call must have its own unique response_variable."
+  - question: "Kan jeg bruge Google Translate TTS i stedet for Google AI TTS til morgenbriefingen?"
+    answer: "Ja. Skift entity_id ud med tts.google_translate_en_com (eller den Google Translate TTS-entitet, du har sat op), og fjern feltet language. Google Translate TTS er gratis, men lyder mere som en robot. Google AI TTS kræver en API-nøgle fra Google AI Studio, men stemmen lyder naturlig."
+  - question: "Hvordan tilføjer jeg flere kalendere til morgenbriefingen?"
+    answer: "Tilføj endnu en calendar.get_events-handling med et nyt navn i response_variable, og læg dens liste af begivenheder til den samlede liste i TTS-skabelonen, altså set events = events_a + events_b + events_c. Hvert kald til calendar.get_events skal have sin egen response_variable."
 ---
 
 Hver morgen åbnede jeg Home Assistant-appen for at se dagens kalender, kigge på vejret og vurdere ud fra elprisen, om aftenen var et godt tidspunkt at starte opvaskemaskinen. Tre forskellige opslag før kaffen.
