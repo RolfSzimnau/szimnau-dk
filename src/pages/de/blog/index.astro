@@ -27,7 +27,10 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
       <p class="text-text-muted max-w-2xl">
         Praxisnahe Home Assistant-Guides, Hardware-Reviews und Automatisierungs-Blueprints. Kein Bullshit, nur was funktioniert.
       </p>
-      <a href={`/${lang}/rss/`} class="inline-flex items-center gap-2 mt-4 py-2 font-mono text-sm text-blue hover:underline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>Per RSS folgen</a>
+      <div class="flex flex-wrap gap-x-6 mt-4">
+        <a href={`/${lang}/rss/`} class="inline-flex items-center gap-2 py-2 font-mono text-sm text-blue hover:underline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>Per RSS folgen</a>
+        <a href={`/${lang}/automations/`} class="inline-flex items-center gap-2 py-2 font-mono text-sm text-blue hover:underline">Automatisierungen zum Kopieren →</a>
+      </div>
     </header>
     <section class="mb-12" aria-label="Artikel durchsuchen">
       <div id="search"></div>

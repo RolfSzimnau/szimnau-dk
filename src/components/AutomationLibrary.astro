@@ -1,0 +1,125 @@
+---
+import { Code } from 'astro:components';
+import { getCollection } from 'astro:content';
+import type { Lang } from '../i18n/ui';
+import { automations } from '../i18n/automations';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+const posts = await getCollection('blog', (p) => p.data.lang === lang);
+const postTitle = (key: string) => posts.find((p) => p.data.translationKey === key)?.data.title ?? key;
+
+const text = {
+  en: {
+    eyebrow: 'Automations',
+    title: 'Home Assistant automations, ready to copy',
+    intro: 'Short versions of the automations from the blog. The entity IDs are placeholders, so swap in your own. The full story, including what broke along the way, is in the linked post.',
+    trigger: 'Trigger',
+    conditions: 'Conditions',
+    actions: 'Actions',
+    needs: 'Requires',
+    story: 'The full story',
+    copy: 'Copy',
+    copied: 'Copied',
+    contents: 'In this library',
+  },
+  da: {
+    eyebrow: 'Automationer',
+    title: 'Automationer til Home Assistant, klar til at kopiere',
+    intro: 'Korte udgaver af automationerne fra bloggen. Entitets-ID’erne er pladsholdere, så skift dem ud med dine egne. Hele historien, også det der gik galt undervejs, står i indlægget, der er linket til.',
+    trigger: 'Trigger',
+    conditions: 'Betingelser',
+    actions: 'Handlinger',
+    needs: 'Kræver',
+    story: 'Hele historien',
+    copy: 'Kopiér',
+    copied: 'Kopieret',
+    contents: 'I biblioteket',
+  },
+  de: {
+    eyebrow: 'Automatisierungen',
+    title: 'Home-Assistant-Automatisierungen zum Kopieren',
+    intro: 'Kurzfassungen der Automatisierungen aus dem Blog. Die Entity-IDs sind Platzhalter, also tausch sie gegen deine eigenen. Die ganze Geschichte, auch was unterwegs schiefging, steht im verlinkten Beitrag.',
+    trigger: 'Auslöser',
+    conditions: 'Bedingungen',
+    actions: 'Aktionen',
+    needs: 'Voraussetzungen',
+    story: 'Die ganze Geschichte',
+    copy: 'Kopieren',
+    copied: 'Kopiert',
+    contents: 'In dieser Sammlung',
+  },
+}[lang];
+---
+
+<div class="max-w-3xl mx-auto px-6 py-24">
+  <header class="mb-12">
+    <p class="flex items-center gap-3 font-mono text-blue text-sm mb-3 tracking-wider uppercase"><span class="h-px w-8 bg-blue/60"></span>{text.eyebrow}</p>
+    <h1 class="font-heading text-4xl sm:text-5xl font-bold text-text-primary mb-6">{text.title}</h1>
+    <p class="text-text-muted text-lg leading-relaxed">{text.intro}</p>
+  </header>
+
+  <nav aria-label={text.contents} class="mb-16 rounded-xl border border-glass-border bg-white/[0.03] px-6 py-5">
+    <p class="font-mono text-xs uppercase tracking-widest text-text-muted mb-3">{text.contents}</p>
+    <ul class="space-y-1.5">
+      {automations.map((a) => (
+        <li><a href={`#${a.id}`} class="text-sm text-text-muted hover:text-blue transition-colors">{a.text[lang].title}</a></li>
+      ))}
+    </ul>
+  </nav>
+
+  {automations.map((a) => {
+    const t = a.text[lang];
+    return (
+      <section id={a.id} class="prose mb-20 scroll-mt-24">
+        <h2>{t.title}</h2>
+        <p>{t.summary}</p>
+        <dl class="grid gap-x-6 gap-y-2 sm:grid-cols-[9rem_1fr] text-sm mb-6">
+          <dt class="font-mono text-blue">{text.trigger}</dt><dd>{t.trigger}</dd>
+          <dt class="font-mono text-blue">{text.conditions}</dt><dd>{t.conditions}</dd>
+          <dt class="font-mono text-blue">{text.actions}</dt><dd>{t.actions}</dd>
+          <dt class="font-mono text-blue">{text.needs}</dt><dd>{t.needs}</dd>
+        </dl>
+        {a.yaml.map((block) => (
+          <div data-code-block>
+            <div class="flex items-end justify-between gap-3 mb-2">
+              <p class="font-mono text-xs text-text-muted break-all !mb-0">{block.caption[lang]}</p>
+              <button
+                type="button"
+                data-copy-code
+                data-copied={text.copied}
+                class="shrink-0 rounded-lg border border-glass-border px-3 py-1.5 font-mono text-xs text-text-muted hover:text-blue hover:border-blue/40 transition-colors"
+              >{text.copy}</button>
+            </div>
+            <Code code={block.code} lang="yaml" />
+          </div>
+        ))}
+        <p>
+          {text.story}: <a href={`/${lang}/blog/${a.post}/`}>{postTitle(a.post)}</a>
+        </p>
+      </section>
+    );
+  })}
+</div>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-code]').forEach((btn) => {
+    const label = btn.textContent ?? '';
+    btn.addEventListener('click', async () => {
+      const code = btn.closest('[data-code-block]')?.querySelector('pre')?.textContent ?? '';
+      try {
+        await navigator.clipboard.writeText(code);
+        btn.textContent = btn.dataset.copied ?? label;
+        setTimeout(() => { btn.textContent = label; }, 2000);
+      } catch {
+        // Clipboard blocked: select the code so it can be copied by hand.
+        const pre = btn.closest('[data-code-block]')?.querySelector('pre');
+        if (pre) window.getSelection()?.selectAllChildren(pre);
+      }
+    });
+  });
+</script>

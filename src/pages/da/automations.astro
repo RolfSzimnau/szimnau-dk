@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import AutomationLibrary from '../../components/AutomationLibrary.astro';
+
+const lang = 'da';
+---
+
+<Base
+  title="Automationsbibliotek til Home Assistant"
+  description="Automationer fra et rigtigt hjem, klar til at kopiere: TV-pause ved opkald, blueprint til varme og åbne vinduer, lys ved solnedgang og døgnrytmelys."
+  lang={lang}
+>
+  <AutomationLibrary lang={lang} />
+</Base>

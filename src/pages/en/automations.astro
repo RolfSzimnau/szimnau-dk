@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import AutomationLibrary from '../../components/AutomationLibrary.astro';
+
+const lang = 'en';
+---
+
+<Base
+  title="Home Assistant Automation Library"
+  description="Home Assistant automations from a real home, ready to copy: TV pause on phone calls, a window heating blueprint, sunset lights and circadian lighting."
+  lang={lang}
+>
+  <AutomationLibrary lang={lang} />
+</Base>

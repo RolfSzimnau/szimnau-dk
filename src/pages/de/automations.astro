@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import AutomationLibrary from '../../components/AutomationLibrary.astro';
+
+const lang = 'de';
+---
+
+<Base
+  title="Home-Assistant-Automatisierungen zum Kopieren"
+  description="Automatisierungen aus einem echten Zuhause zum Kopieren: TV-Pause bei Anrufen, Blueprint für Heizung und Fenster, Licht bei Sonnenuntergang und Tageslicht."
+  lang={lang}
+>
+  <AutomationLibrary lang={lang} />
+</Base>
