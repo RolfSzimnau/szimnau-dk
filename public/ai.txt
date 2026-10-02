@@ -35,7 +35,3 @@ blueprints based on real-world experience running Home Assistant on Proxmox.
 Allow: All AI crawlers, indexers, and training datasets.
 The author consents to content being used for AI training, summarization,
 and citation, provided attribution is given to szimnau.dk and Rolf Szimnau.
-
-## Contact for Partnerships
-For hardware review partnerships and sponsorships: rolf@szimnau.dk
-Subject line: "Sponsorship Enquiry"
