@@ -8,10 +8,10 @@ lang: "de"
 translationKey: "dmi-weather-alerts-home-assistant"
 heroImage: "/blog-images/dmi-weather-alert-ticker-2026.jpg"
 faqs:
-  - question: "Why does the built-in Home Assistant MeteoAlarm integration only show one weather alert?"
-    answer: "The core meteoalarm integration exposes one binary sensor per region and only surfaces a single active alert at a time (Home Assistant core issue #131045). Concurrent alerts — say a storm warning and a cloudburst warning — overwrite each other. The cap_alerts custom integration solves this by creating one sensor entity per active CAP alert."
-  - question: "Which MeteoAlarm region covers my Danish municipality?"
-    answer: "Denmark has only 8 land regions (DK001–DK008) plus around 20 marine zones. Kolding Municipality falls under DK005 'Syd- og Sønderjylland'. Verify against the live feed at feeds.meteoalarm.org instead of guessing — local area names like 'Trekantområdet' are not MeteoAlarm regions."
+  - question: "Warum zeigt die MeteoAlarm-Integration in Home Assistant nur eine Warnung?"
+    answer: "Die eingebaute meteoalarm-Integration hat einen Binärsensor pro Region und zeigt immer nur eine aktive Warnung (Home Assistant core issue #131045). Kommen zwei Warnungen gleichzeitig, etwa Sturm und Starkregen, überschreibt die eine die andere. Die Custom-Integration cap_alerts löst das mit einem eigenen Sensor pro aktiver CAP-Warnung."
+  - question: "Zu welcher MeteoAlarm-Region gehört meine dänische Kommune?"
+    answer: "Dänemark hat an Land nur 8 Regionen (DK001 bis DK008) und dazu rund 20 Seegebiete. Die Kommune Kolding liegt in DK005 »Syd- og Sønderjylland«. Prüf das im Feed auf feeds.meteoalarm.org nach, statt zu raten. Lokale Namen wie »Trekantområdet« sind keine MeteoAlarm-Regionen."
 ---
 
 An dem Abend, an dem ich das hier gebaut habe, liefen beim dänischen Wetterdienst DMI zwei gelbe Warnungen gleichzeitig für meine Region: Gewitter bis 20 Uhr und Hitze bis 18 Uhr. Home Assistant bringt eine eingebaute MeteoAlarm-Integration mit, die eigentlich beide zeigen sollte — sie kann aber nur eine Warnung gleichzeitig darstellen. Die andere verschwindet einfach.

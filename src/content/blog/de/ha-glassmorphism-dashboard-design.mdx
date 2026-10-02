@@ -9,10 +9,10 @@ lang: "de"
 translationKey: "ha-glassmorphism-dashboard-design"
 heroImage: "/blog-images/ha-glass-dashboard-cards-2026.jpg"
 faqs:
-  - question: "What CSS makes the glassmorphism look work on Home Assistant cards?"
-    answer: "Six card-mod constants on every outer card: 28px border-radius, rgba(255,255,255,0.05) background, blur(15px) backdrop-filter, a 1px rgba(255,255,255,0.10) border and a soft shadow — plus suppressing the Frosted Glass Dark theme's ::before overlay."
-  - question: "Can the glass style be defined once instead of repeated per card?"
-    answer: "Not cleanly without maintaining a custom theme — card-mod styles don't cascade into nested cards reliably, so a snippets.yaml template is pasted per card. CSS custom properties in a theme YAML would be the proper fix."
+  - question: "Welches CSS sorgt für den Glas-Look der Karten in Home Assistant?"
+    answer: "Sechs card-mod-Werte auf jeder äußeren Karte: 28px border-radius, Hintergrund rgba(255,255,255,0.05), backdrop-filter mit blur(15px), ein 1px-Rand in rgba(255,255,255,0.10) und ein weicher Schatten. Dazu muss die ::before-Ebene des Themes Frosted Glass Dark abgeschaltet werden."
+  - question: "Lässt sich der Glas-Stil einmal zentral festlegen?"
+    answer: "Nicht sauber, ohne ein eigenes Theme zu pflegen. card-mod-Stile werden nicht zuverlässig an verschachtelte Karten vererbt, also wird eine Vorlage aus snippets.yaml in jede Karte kopiert. Richtig wäre es mit CSS-Variablen in einem Theme in YAML."
 ---
 
 Ich habe meine Home Assistant-Dashboards dreimal neu gebaut, bevor sie so aussahen, als würden sie zusammengehören. Die erste Version waren flache Karten. Okay. Die zweite hatte zu viele Farben. Die dritte landete bei Glassmorphism — halbtransparente Karten auf tiefem Marineblau — und die habe ich seitdem nicht mehr angetastet.

@@ -9,10 +9,10 @@ lang: "de"
 translationKey: "google-find-my-home-assistant"
 heroImage: "/blog-images/google-find-my-home-assistant.jpg"
 faqs:
-  - question: "Why do my Google Find My devices show as unavailable in Home Assistant?"
-    answer: "The FMDN integration doesn't cache historical positions. On startup it waits for the next crowd-sourced Bluetooth ping, which can take minutes to hours. Press the 'Locate Now' button entity in Developer Tools to force an immediate position update from Google's network."
-  - question: "Can I use Google Find My to remind me when I leave my keys at home?"
-    answer: "Not reliably. FMDN depends on nearby Android phones pinging your tracker via Bluetooth, which can take anywhere from one minute to half an hour. For immediate key detection at the door, an ESP32 with a BLE proxy integration is the correct tool — it reports within seconds."
+  - question: "Warum sind meine Google-Find-My-Geräte in Home Assistant nicht verfügbar?"
+    answer: "Die FMDN-Integration speichert keine früheren Positionen. Nach dem Start wartet sie auf den nächsten Bluetooth-Ping eines fremden Handys, und das dauert Minuten bis Stunden. Drück die Button-Entität »Locate Now« unter Entwicklerwerkzeuge, um sofort eine neue Position aus Googles Netz zu holen."
+  - question: "Kann Google Find My mich erinnern, wenn der Schlüssel zu Hause liegt?"
+    answer: "Nicht zuverlässig. FMDN ist darauf angewiesen, dass Android-Handys in der Nähe den Tracker per Bluetooth erfassen, und das dauert zwischen einer Minute und einer halben Stunde. Soll der Schlüssel an der Tür sofort erkannt werden, ist ein ESP32 als BLE-Proxy das richtige Werkzeug. Der meldet sich innerhalb von Sekunden."
 ---
 
 Es gibt zwei grundlegend verschiedene Anwendungsfälle für die Objektverfolgung, und die meisten Menschen lernen den Unterschied auf die harte Tour. **Google Find My** (FMDN) ist für einen davon gebaut: Man hat seine Tasche irgendwo in der Stadt verloren und muss sie auf ein Viertel eingrenzen. Das macht es gut. Das andere macht es nicht gut: Man möchte wissen, ob die Schlüssel am Haken hängen, bevor man die Haustür abschließt.

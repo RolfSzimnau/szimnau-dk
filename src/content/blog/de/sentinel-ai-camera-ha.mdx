@@ -8,10 +8,10 @@ lang: "de"
 translationKey: "sentinel-ai-camera-ha"
 heroImage: "/blog-images/overvagning-sentinel.jpg"
 faqs:
-  - question: "How do you stop a security camera from spamming motion notifications?"
-    answer: "Trigger on the camera's person and vehicle AI sensors instead of raw motion, add an input_boolean mute toggle, and give the notification action buttons — open camera, mute, dismiss — so alerts are useful instead of noise."
-  - question: "Can the camera notification show on a TV as well?"
-    answer: "Yes — the same automation pushes a snapshot to a Fire TV via notify, with a cache-busting timestamp parameter on the image URL and interrupt: 1 so it appears even during playback."
+  - question: "Wie verhindert man, dass eine Überwachungskamera mit Bewegungsmeldungen nervt?"
+    answer: "Lass die Automatisierung auf die KI-Sensoren der Kamera für Person und Fahrzeug reagieren statt auf rohe Bewegung, ergänze einen input_boolean zum Stummschalten und gib der Benachrichtigung Buttons zum Öffnen der Kamera, Stummschalten und Verwerfen. Dann sind die Meldungen nützlich statt Lärm."
+  - question: "Kann die Kamerameldung auch auf dem Fernseher erscheinen?"
+    answer: "Ja. Dieselbe Automatisierung schickt per notify einen Schnappschuss an einen Fire TV. Die Bild-URL bekommt einen Zeitstempel, damit kein altes Bild aus dem Cache kommt, und interrupt: 1 sorgt dafür, dass es auch während der Wiedergabe erscheint."
 ---
 
 Die ersten zwei Wochen nach der Installation der Sentinel-Kamera hatte ich Bewegungsbenachrichtigungen aktiviert. Jede einzelne sagte "Bewegung erkannt." Vögel, Schatten, eine Plastiktüte, die nachts um drei an der Linse vorbeiwehte. Ich schaltete alle aus und ließ die Kamera für einen weiteren Monat nutzlos herumstehen.

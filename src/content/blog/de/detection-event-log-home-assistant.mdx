@@ -9,10 +9,10 @@ lang: "de"
 translationKey: "detection-event-log-home-assistant"
 heroImage: "/blog-images/detection-event-log-home-assistant.jpg"
 faqs:
-  - question: "Can the Home Assistant logbook card filter out state changes like 'Cleared'?"
-    answer: "No. The built-in logbook card only accepts an entity list and a time window — there is no state filter, so every on/off transition is shown. To get a detections-only list you have to build your own log, for example an input_text helper fed by an automation."
-  - question: "How many events fit in an input_text helper?"
-    answer: "input_text is hard-capped at 255 characters. With a compact 'HH:MM label' format and a separator, that is roughly the 10 most recent events. For longer history with dates you need a trigger-based template sensor storing a list attribute, which requires YAML configuration."
+  - question: "Kann die Logbuch-Karte in Home Assistant Zustände wie »Frei« ausblenden?"
+    answer: "Nein. Die eingebaute Logbuch-Karte kennt nur eine Liste von Entitäten und einen Zeitraum. Einen Filter nach Zustand gibt es nicht, also landet jeder Wechsel zwischen an und aus im Log. Wer nur Erkennungen sehen will, baut sich ein eigenes Log, etwa einen input_text-Helfer, in den eine Automatisierung schreibt."
+  - question: "Wie viele Ereignisse passen in einen input_text-Helfer?"
+    answer: "input_text ist hart auf 255 Zeichen begrenzt. Mit einem knappen Format wie »HH:MM Text« und einem Trennzeichen reicht das für ungefähr die letzten 10 Ereignisse. Für eine längere Historie mit Datum brauchst du einen triggerbasierten Template-Sensor mit einer Liste im Attribut, und der geht nur per YAML."
 ---
 
 Mein Überwachungs-View in Home Assistant hat eine „Recent events"-Liste unter dem Kamerabild — gespeist von den vier Binärsensoren meiner KI-Kamera: Person, Bewegung, Tier und Fahrzeug. Das Problem: Die Logbook-Karte zeigt **jede einzelne Zustandsänderung**. Auf jedes „Person Detected" folgt dreißig Sekunden später ein „Person Cleared" — die halbe Liste ist Rauschen, und die Historie deckt nur die halbe Zeitspanne ab.

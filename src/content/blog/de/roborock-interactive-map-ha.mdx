@@ -8,10 +8,10 @@ lang: "de"
 translationKey: "roborock-interactive-map-ha"
 heroImage: "/blog-images/roborock-map-dashboard-2026.jpg"
 faqs:
-  - question: "How do you get a live interactive Roborock map in Home Assistant?"
-    answer: "The built-in Roborock integration (cloud account required) provides the vacuum entity, and the Xiaomi Vacuum Map Card from HACS renders the live map with tap-to-clean room segments."
-  - question: "Does the Roborock integration work locally?"
-    answer: "Officially it is cloud polling at roughly 5-second refresh. Local communication requires extracting keys from device firmware — for starting cleans, battery and room segments, cloud polling is entirely adequate."
+  - question: "Wie bekommt man eine interaktive Live-Karte des Roborock in Home Assistant?"
+    answer: "Die eingebaute Roborock-Integration (braucht ein Cloud-Konto) liefert die Saugroboter-Entität, und die Xiaomi Vacuum Map Card aus HACS zeichnet die Karte live. Ein Tipp auf einen Raum startet die Reinigung dort."
+  - question: "Läuft die Roborock-Integration lokal?"
+    answer: "Offiziell fragt sie die Cloud etwa alle 5 Sekunden ab. Für lokalen Betrieb müsstest du Schlüssel aus der Firmware des Geräts holen. Zum Starten, für den Akku und für die Räume reicht die Cloud völlig."
 ---
 
 Die Roborock-Integration ist direkt in HA eingebaut — kein HACS nötig. Hinzufügen, mit dem Roborock-Konto einloggen (ein Roborock-Cloud-Konto ist erforderlich), der Staubsauger erscheint. Was einem niemand sagt: das Interessante kommt von einer separaten HACS-Karte, die die Live-Karte rendert.

@@ -10,10 +10,10 @@ lang: "de"
 translationKey: "miele-washing-machine-home-assistant"
 heroImage: "/blog-images/miele-washing-machine-home-assistant.jpg"
 faqs:
-  - question: "What does the core Miele integration expose in Home Assistant?"
-    answer: "The built-in `miele` integration (HA 2025.5+, no HACS required) exposes program state, program phase, elapsed and remaining time, energy and water consumption forecasts, TwinDos detergent levels, and three buttons: start, stop, and pause."
-  - question: "Can Home Assistant schedule a Miele washing machine to start at the cheapest electricity hour?"
-    answer: "Not natively — unlike Bosch's Home Connect, Miele exposes no delayed-start register. The workaround is an input_datetime helper holding the computed start time plus a time-trigger automation that presses the start button when it arrives."
+  - question: "Was liefert die eingebaute Miele-Integration in Home Assistant?"
+    answer: "Die Integration `miele` (ab HA 2025.5, ohne HACS) zeigt Programmstatus, Programmphase, verstrichene und verbleibende Zeit, den erwarteten Strom- und Wasserverbrauch, den Füllstand von TwinDos und drei Buttons: Start, Stopp und Pause."
+  - question: "Kann Home Assistant eine Miele-Waschmaschine zur günstigsten Stromstunde starten?"
+    answer: "Nicht direkt. Anders als Boschs Home Connect hat Miele kein Register für einen verzögerten Start. Die Lösung ist ein input_datetime-Helfer mit der berechneten Startzeit und eine Automatisierung mit Zeit-Trigger, die zur richtigen Zeit den Start-Button drückt."
 ---
 
 Die alte Waschmaschine hat an einem Sonntag aufgegeben. Genau dann, wenn man keine Lust auf tagelange Recherche hat. Es wurde eine Miele — teils weil es schnell gehen musste, teils weil Miele seit HA 2025.5 eine offizielle Core-Integration hat. Kein HACS, kein Drittanbieter-Maintainer, der irgendwann nicht mehr auf GitHub-Issues antwortet. Nach dem Geschirrspüler dachte ich, ich wüsste ungefähr, worauf ich mich einlasse.
