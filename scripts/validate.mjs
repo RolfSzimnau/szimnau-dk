@@ -113,7 +113,10 @@ const meta = (html, key, value) => {
   const tag = html.match(new RegExp(`<meta[^>]*\\b${key}="${value}"[^>]*>`))?.[0];
   return tag ? attr(tag, "content") : undefined;
 };
-const decode = (s) => s.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+const decode = (s) => s
+  .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+  .replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 
 function checkDist() {
   if (!existsSync("dist")) { error("dist/", "findes ikke, kør astro build først"); return; }
