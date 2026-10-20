@@ -1,29 +1,15 @@
 ---
 name: glassmorphism
-description: Create distinctive glassmorphism interfaces with frosted-glass surfaces, backdrop blur, layered depth, and WCAG AA accessibility. Use this skill when building UI components, pages, or sections for szimnau.dk. Source: typeui.sh/design-skills/glassmorphism
+description: Glassmorphism design system for szimnau.dk: frosted-glass cards, backdrop blur, layered depth, WCAG AA. Use when building UI components, pages or sections for the site.
 ---
-
-A modern design system featuring liquid glass effects and glassmorphism. Produces UIs where panels and cards feel like panes of frosted glass floating over rich backgrounds, creating depth and spatial hierarchy.
 
 ## Project Context (szimnau.dk)
 
 This project has an established design system — work within it:
 
-- **Background**: dark navy `#0a0f1a` (NOT white — this is a dark glassmorphism variant)
-- **Primary accent**: `#00d4ff` (cyan electric blue, NOT `#1856FF`)
-- **Body font**: Inter — already locked in, do NOT change it
-- **Display/heading font**: Plus Jakarta Sans or another distinctive pairing with Inter
-- **Monospace**: JetBrains Mono (already in use for code blocks)
+- **Body font**: Inter, locked. Do NOT change it
 - **Stack**: Astro 6, Tailwind v4, no React/Vue — CSS-only animations preferred
-- **Glass constants** (already established — use these exact values):
-  ```css
-  background: rgba(255,255,255,0.05)
-  backdrop-filter: blur(15px)
-  -webkit-backdrop-filter: blur(15px)
-  border-radius: 28px
-  border: 1px solid rgba(255,255,255,0.10)
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3)
-  ```
+- **Glass constants**: use the Standard glass card values below.
 - **Inner cards** (inside stack-in-card): `background: transparent; box-shadow: none; border: none`
 - **Dividers**: `border-bottom: 1px solid rgba(255,255,255,0.06)`
 - Always add `ha-card::before { display: none !important; }` when targeting HA cards
@@ -31,9 +17,9 @@ This project has an established design system — work within it:
 ## Design Tokens
 
 ### Color Palette (szimnau.dk adapted)
-- **Primary**: `#00d4ff` — primary actions, links, key interactive elements
+- **Primary**: `#00d4ff` (not `#1856FF`) — primary actions, links, key interactive elements
 - **Primary dim**: `#0090b3` — hover states, secondary actions
-- **Navy**: `#0a0f1a` — base background
+- **Navy**: `#0a0f1a` — base background (dark variant, never white)
 - **Navy light**: `#111827` — slightly elevated surfaces
 - **Success**: `#07CA6B` — confirmations, positive states
 - **Warning**: `#E89558` — caution, pending
@@ -59,9 +45,7 @@ Three intensity levels — choose based on layer depth:
 
 ### Typography
 
-- **Display/headings**: Plus Jakarta Sans — geometric, modern, pairs well with Inter. Load from Google Fonts.
-- **Body**: Inter (established, locked)
-- **Code/mono**: JetBrains Mono (established)
+- **Display/headings**: Plus Jakarta Sans (Google Fonts) or another pairing with Inter. Body Inter and mono JetBrains Mono are locked.
 - Scale: mobile-first compact — headings that work on 390px before scaling up
 
 ### Spacing
@@ -145,9 +129,3 @@ Glassmorphism has unique contrast risks — enforce these:
 - `::before` for progress bars or overlays — reserved for theme suppression
 - Opacity so low (< 3%) that the glass surface is invisible — glass needs to be perceptible
 - Opacity so high (> 20% on dark) that it becomes an opaque card with a blur prop
-
-## Design Philosophy
-
-1. **Glass is spatial hierarchy** — each layer communicates depth. Use it purposefully.
-2. **Clarity through blur** — blur softens the background behind content, improving focus. Every blur must serve readability.
-3. **Accessibility first** — the frosted look only works if users can read text and navigate with a keyboard. When in doubt, increase opacity or darken the background.
