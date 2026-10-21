@@ -1,0 +1,4 @@
+Contact: mailto:rolf@szimnau.dk
+Expires: 2027-10-21T00:00:00.000Z
+Preferred-Languages: en, da, de
+Canonical: https://szimnau.dk/.well-known/security.txt
