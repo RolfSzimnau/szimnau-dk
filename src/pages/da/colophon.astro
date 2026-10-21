@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import ColophonContent from '../../components/ColophonContent.astro';
+
+const lang = 'da';
+---
+
+<Base
+  title="Sådan er sitet bygget"
+  description="Sådan er szimnau.dk bygget og hostet: Astro 7, Tailwind CSS 4, Pagefind-søgning og Cloudflare Workers, uden egne cookies og uden sporing."
+  lang={lang}
+>
+  <ColophonContent lang={lang} />
+</Base>

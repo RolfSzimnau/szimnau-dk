@@ -13,6 +13,7 @@ const SITE = `## Site
 
 - [Automation library](https://szimnau.dk/en/automations/): Short, copyable YAML for automations described on the blog, with placeholder entity IDs and a link to each full post.
 - [About Rolf Szimnau](https://szimnau.dk/en/about/): Background, role, and the hardware stack behind the site.
+- [How this site is built](https://szimnau.dk/en/colophon/): Stack, hosting on Cloudflare Workers, privacy and security choices.
 - [Hardware Lab](https://szimnau.dk/en/#hardware-lab): Full list of devices actively running in the setup — Dell OptiPlex 7060, Home Assistant OS, Home Assistant Connect ZBT-2 (Thread Border Router), UniFi, Reolink CX810, Roborock S5 Max, Mammotion Luba Mini 2, Škoda Elroq, Tado, Sonos, WiZ, LEDVANCE, Govee, IKEA Home Smart (Thread), Bosch Home Connect, Miele, Mill Norway, ESPHome sensors.`;
 
 const SECTIONS: Array<[Lang, string]> = [
