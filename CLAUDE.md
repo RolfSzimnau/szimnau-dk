@@ -13,7 +13,7 @@ npm run validate       # source + SEO checks on dist/ (run after build)
 npm run validate:src   # source checks only, runs as pre-commit hook
 ```
 
-`scripts/validate.mjs` enforces on every built page: title format `[Title] | szimnau.dk`, description 120-160 and unique, robots `index, follow`, canonical, hreflang (`en-US`, `da-DK`, `de-DE`, `x-default`, absolute with trailing slash), OG/Twitter tags, existing absolute og:image, one h1 with no skipped levels, hero attributes (`width="768" height="432" loading="eager" fetchpriority="high" decoding="async"`). Source rules: required frontmatter, `translationKey` in all 3 locales, every `/blog-images/` file exists and is git-tracked. Voice findings are warnings. Fix what it reports. Skip the hook once with `git commit --no-verify`.
+`scripts/validate.mjs` checks every built page: title `[Title] | szimnau.dk`, description 120-160 and unique, canonical, hreflang (`en-US`, `da-DK`, `de-DE`, `x-default`), OG tags, one h1 with no skipped levels, hero attributes (`width="768" height="432" loading="eager" fetchpriority="high" decoding="async"`). In source: frontmatter, `translationKey` in all 3 locales, `/blog-images/` files exist and are git-tracked. Fix what it reports. Skip the hook once with `git commit --no-verify`.
 
 Shiki: use `jinja`, never `jinja2` (wrong names disable highlighting and warn).
 
@@ -21,10 +21,8 @@ Astro 7 config in `astro.config.mjs` is deliberate. Keep `compressHTML: true` (t
 
 ## Security and CI
 
-- `scripts/build-csp.mjs` runs after build and writes a `Content-Security-Policy` with SHA-256 hashes of inline scripts into `dist/_headers`. Inline scripts are hashed automatically. A new external script, font, image host or `fetch` target must be added to the policy in that file, or the browser blocks it. Other security headers live in `public/_headers`.
-- `.github/workflows/ci.yml` runs `validate:src`, build, `validate` and `npm audit --omit=dev --audit-level=high` on PRs, pushes to `main` and weekly. Dependabot opens update PRs. Merge them only with green CI.
-- `public/.well-known/security.txt`: the validator fails 30 days before `Expires`. Renew by setting `Expires` one year ahead.
-- Node 24 (`.node-version`, read by CI and Cloudflare). Astro 7 needs `>=22.23.4`.
+- The build writes a CSP into `dist/_headers` via `scripts/build-csp.mjs`. A new external script, font, image host or `fetch` target must be added there, or the browser blocks it.
+- CI, Dependabot, security.txt renewal, Cloudflare settings and recovery: see `README.md`. Merge PRs only with green CI.
 
 ## SEO rules the validator does not check
 
@@ -61,4 +59,4 @@ DA/DE traps to check before finalizing a sentence:
 
 ## Deployment
 
-`git push` to GitHub (`RolfSzimnau/szimnau-dk`). Cloudflare Workers Builds builds `main` and deploys it (`wrangler.toml`: static assets from `dist/`, `src/redirect-worker.js` runs first for www and trailing-slash 301s). **Never use Wrangler CLI to deploy.** Settings that live outside git and the recovery steps are in `README.md`.
+`git push` to GitHub (`RolfSzimnau/szimnau-dk`). Cloudflare Workers Builds deploys `main` (`wrangler.toml`, redirect Worker in `src/redirect-worker.js`). **Never use Wrangler CLI to deploy.**

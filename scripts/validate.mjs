@@ -106,6 +106,28 @@ function checkSource() {
   else if (days > 366) warn(SECURITY_TXT, `Expires ${expires} er mere end 1 år frem (RFC 9116 anbefaler under 1 år)`);
 }
 
+// --- Token budget ----------------------------------------------------------
+// CLAUDE.md and skill frontmatter load on every turn. Approximate tokens as chars / 4.
+
+const BUDGET_WARN = 1400, BUDGET_ERROR = 1800;
+
+function checkBudget() {
+  let chars = 0;
+  if (existsSync("CLAUDE.md")) chars += readFileSync("CLAUDE.md", "utf8").length;
+  const skills = ".claude/skills";
+  if (existsSync(skills)) {
+    for (const name of readdirSync(skills)) {
+      const file = join(skills, name, "SKILL.md");
+      if (!existsSync(file)) continue;
+      chars += readFileSync(file, "utf8").match(/^---\r?\n[\s\S]*?\r?\n---/)?.[0].length ?? 0;
+    }
+  }
+  const tokens = Math.round(chars / 4);
+  const msg = `${tokens} tokens i CLAUDE.md og skill-frontmatter (grænse ${BUDGET_WARN}/${BUDGET_ERROR}), flyt detaljer til en skill`;
+  if (tokens > BUDGET_ERROR) error("token-budget", msg);
+  else if (tokens > BUDGET_WARN) warn("token-budget", msg);
+}
+
 // --- Built HTML checks -----------------------------------------------------
 
 function htmlFiles(dir) {
@@ -204,6 +226,7 @@ function checkDist() {
 }
 
 checkSource();
+checkBudget();
 if (!srcOnly) checkDist();
 console.log(`\n${errors} fejl, ${warnings} advarsler`);
 process.exit(errors ? 1 : 0);
