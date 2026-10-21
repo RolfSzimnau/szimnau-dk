@@ -37,6 +37,7 @@ export const ui = {
     'footer.tagline': 'Home Automation · Home Assistant · Smart Hardware',
     'footer.rights': 'All rights reserved.',
     'footer.privacy': 'Privacy',
+    'footer.colophon': 'Colophon',
     'blog.tag.title': 'Articles tagged:',
   },
   da: {
@@ -68,6 +69,7 @@ export const ui = {
     'footer.tagline': 'Hjemmeautomatisering · Home Assistant · Smart Hardware',
     'footer.rights': 'Alle rettigheder forbeholdes.',
     'footer.privacy': 'Privatliv',
+    'footer.colophon': 'Om sitet',
     'blog.tag.title': 'Artikler med tag:',
   },
   de: {
@@ -99,6 +101,7 @@ export const ui = {
     'footer.tagline': 'Heimautomatisierung · Home Assistant · Smart Hardware',
     'footer.rights': 'Alle Rechte vorbehalten.',
     'footer.privacy': 'Datenschutz',
+    'footer.colophon': 'Über die Website',
     'blog.tag.title': 'Artikel mit Tag:',
   },
 } satisfies Record<Lang, Record<string, string>>;

@@ -1,0 +1,207 @@
+---
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+interface Link {
+  label: string;
+  href: string;
+}
+
+interface Section {
+  h: string;
+  p: string;
+  links?: Link[];
+}
+
+const ext = {
+  astro: 'https://astro.build',
+  tailwind: 'https://tailwindcss.com',
+  pagefind: 'https://pagefind.app',
+  cloudflare: 'https://workers.cloudflare.com',
+  repo: 'https://github.com/RolfSzimnau/szimnau-dk',
+};
+
+const securityTxt = '/.well-known/security.txt';
+
+const text: Record<Lang, { eyebrow: string; title: string; intro: string; sections: Section[]; updated: string }> = {
+  en: {
+    eyebrow: 'Colophon',
+    title: 'How this site is built',
+    intro: 'A personal site has to keep running in the weeks when I am busy with other things. So it is boring on purpose: plain HTML files, no server, no database and nothing to log in to.',
+    sections: [
+      {
+        h: 'What it is built with',
+        p: 'The pages are generated with Astro 7 and styled with Tailwind CSS 4. I write the posts in MDX, which is Markdown with room for components, in English, Danish and German. Search is Pagefind. It builds its index when the site is built and then runs in your browser. The fonts are Inter, Plus Jakarta Sans and JetBrains Mono, served from this site. The icons are Phosphor.',
+        links: [
+          { label: 'Astro', href: ext.astro },
+          { label: 'Tailwind CSS', href: ext.tailwind },
+          { label: 'Pagefind', href: ext.pagefind },
+        ],
+      },
+      {
+        h: 'Where it runs',
+        p: 'Cloudflare builds the site from GitHub and serves it from its own network. The domain and DNS are at Cloudflare too. One small Cloudflare Worker sits in front of the files. Its only job is to send www.szimnau.dk and addresses without a trailing slash to the right place with a permanent redirect.',
+        links: [{ label: 'Cloudflare Workers', href: ext.cloudflare }],
+      },
+      {
+        h: 'How a post goes live',
+        p: 'Everything is written in Git. Before a change can reach the site, it runs through automatic checks of titles, descriptions, the links between the three languages, headings and images. If one check fails, the change stays out. Dependabot keeps the building blocks up to date the same way.',
+      },
+      {
+        h: 'Privacy and security',
+        p: 'The site sets no cookies of its own, has no trackers and loads no fonts from Google. Visits are counted with Cloudflare Web Analytics, without cookies. Every page is sent with a Content Security Policy and HSTS, and a security.txt file says where to report a vulnerability.',
+        links: [
+          { label: 'Privacy', href: '/en/privacy/' },
+          { label: 'security.txt', href: securityTxt },
+        ],
+      },
+      {
+        h: 'What I found by accident',
+        p: 'On 21 October 2026 I upgraded to Astro 7 and compared every page before and after. That is how I found out that the tables in two posts had been showing raw pipe characters for months. The upgrade fixed them. Nobody had written to tell me.',
+      },
+      {
+        h: 'What does not work',
+        p: 'Search needs JavaScript. Without it, the post list and the tags still work. The security policy still allows inline styles, because the code highlighting colours each word with its own style attribute.',
+      },
+      {
+        h: 'Source code',
+        p: 'The whole site is public on GitHub, including the checks and this page.',
+        links: [{ label: 'RolfSzimnau/szimnau-dk on GitHub', href: ext.repo }],
+      },
+    ],
+    updated: 'Last updated 21 October 2026.',
+  },
+  da: {
+    eyebrow: 'Om sitet',
+    title: 'Sådan er sitet bygget',
+    intro: 'Et personligt site skal kunne passe sig selv i de uger, hvor jeg har travlt med andet. Derfor er det kedeligt med vilje: almindelige HTML-filer, ingen server, ingen database og intet at logge ind på.',
+    sections: [
+      {
+        h: 'Værktøjerne',
+        p: 'Siderne bliver genereret med Astro 7, og udseendet kommer fra Tailwind CSS 4. Indlæggene skriver jeg i MDX, altså Markdown med plads til komponenter, på dansk, engelsk og tysk. Søgningen er Pagefind. Den laver sit indeks, når sitet bygges, og kører derefter i din browser. Skrifttyperne Inter, Plus Jakarta Sans og JetBrains Mono ligger på sitet selv, og ikonerne er fra Phosphor.',
+        links: [
+          { label: 'Astro', href: ext.astro },
+          { label: 'Tailwind CSS', href: ext.tailwind },
+          { label: 'Pagefind', href: ext.pagefind },
+        ],
+      },
+      {
+        h: 'Hosting',
+        p: 'Cloudflare bygger sitet direkte fra GitHub og leverer det fra sit eget netværk. Domænet og DNS ligger også hos Cloudflare. Foran filerne sidder en lille Cloudflare Worker. Den sender bare www.szimnau.dk og adresser uden skråstreg til sidst videre med en permanent omdirigering.',
+        links: [{ label: 'Cloudflare Workers', href: ext.cloudflare }],
+      },
+      {
+        h: 'Fra tekst til site',
+        p: 'Alt bliver skrevet i Git. Før en ændring kommer ud på sitet, kører den gennem automatiske tjek af titler, beskrivelser, sammenhængen mellem de tre sprog, overskrifter og billeder. Fejler ét af dem, bliver ændringen ude. Dependabot holder byggeklodserne opdateret på samme måde.',
+      },
+      {
+        h: 'Privatliv og sikkerhed',
+        p: 'Sitet sætter ingen egne cookies, har ingen sporing og henter ingen skrifter hos Google. Besøg tælles med Cloudflare Web Analytics uden cookies. Hver side sendes med en Content Security Policy og HSTS, og en security.txt-fil fortæller, hvor man melder en sårbarhed.',
+        links: [
+          { label: 'Privatliv', href: '/da/privacy/' },
+          { label: 'security.txt', href: securityTxt },
+        ],
+      },
+      {
+        h: 'Det, der næsten gik galt',
+        p: 'Da jeg opgraderede til Astro 7 i oktober 2026, havde den nye Markdown-motor en indstilling, der laver lige anførselstegn om til engelske “ ”. Den ville have ændret 886 anførselstegn på tværs af de tre sprog, også i de danske og tyske tekster, hvor de ser forkerte ud. Jeg slog den fra, før opdateringen gik i luften.',
+      },
+      {
+        h: 'Det, der ikke virker',
+        p: 'Søgningen kræver JavaScript. Uden JavaScript virker bloglisten og emnerne stadig. Sikkerhedspolitikken tillader stadig styles direkte i HTML-koden, fordi kodefarvningen giver hvert ord sin egen farve via en style-attribut.',
+      },
+      {
+        h: 'Kildekoden',
+        p: 'Hele sitet ligger åbent på GitHub, også tjekkene og den her side.',
+        links: [{ label: 'RolfSzimnau/szimnau-dk på GitHub', href: ext.repo }],
+      },
+    ],
+    updated: 'Senest opdateret 21. oktober 2026.',
+  },
+  de: {
+    eyebrow: 'Über diese Website',
+    title: 'So ist diese Website gebaut',
+    intro: 'Eine private Website muss auch dann laufen, wenn ich wochenlang keine Zeit für sie habe. Deshalb ist sie absichtlich langweilig: einfache HTML-Dateien, kein Server, keine Datenbank, kein Login.',
+    sections: [
+      {
+        h: 'Womit sie gebaut ist',
+        p: 'Die Seiten erzeugt Astro 7, das Aussehen kommt von Tailwind CSS 4. Die Beiträge schreibe ich in MDX, also Markdown mit Komponenten, auf Deutsch, Englisch und Dänisch. Die Suche ist Pagefind. Der Index entsteht beim Bauen der Website, gesucht wird direkt in deinem Browser. Die Schriften Inter, Plus Jakarta Sans und JetBrains Mono liegen auf dieser Website, die Icons stammen von Phosphor.',
+        links: [
+          { label: 'Astro', href: ext.astro },
+          { label: 'Tailwind CSS', href: ext.tailwind },
+          { label: 'Pagefind', href: ext.pagefind },
+        ],
+      },
+      {
+        h: 'Wo sie läuft',
+        p: 'Cloudflare baut die Website direkt aus GitHub und liefert sie über das eigene Netzwerk aus. Domain und DNS liegen ebenfalls bei Cloudflare. Vor den Dateien sitzt ein kleiner Cloudflare Worker. Er leitet www.szimnau.dk und Adressen ohne Schrägstrich am Ende dauerhaft an die richtige Adresse weiter.',
+        links: [{ label: 'Cloudflare Workers', href: ext.cloudflare }],
+      },
+      {
+        h: 'Vom Text zur Website',
+        p: 'Alles entsteht in Git. Bevor eine Änderung online geht, durchläuft sie automatische Prüfungen von Titeln, Beschreibungen, der Verknüpfung der drei Sprachen, Überschriften und Bildern. Schlägt eine fehl, bleibt die Änderung draußen. Dependabot hält die Bausteine auf dieselbe Weise aktuell.',
+      },
+      {
+        h: 'Datenschutz und Sicherheit',
+        p: 'Die Website setzt keine eigenen Cookies, hat kein Tracking und lädt keine Schriften von Google. Besuche zählt Cloudflare Web Analytics ohne Cookies. Jede Seite wird mit einer Content Security Policy und HSTS ausgeliefert, und eine security.txt nennt den Kontakt für Sicherheitslücken.',
+        links: [
+          { label: 'Datenschutz', href: '/de/privacy/' },
+          { label: 'security.txt', href: securityTxt },
+        ],
+      },
+      {
+        h: 'Ein Fehler, den Google gefunden hat',
+        p: 'Am 10. September 2026 zeigte mir die Google Search Console dieselben Seiten doppelt, einmal mit www und einmal ohne. Beide Adressen lieferten die ganze Website aus, ohne Weiterleitung. Seitdem schickt der Worker jede www-Adresse mit einem 301 an die Hauptdomain.',
+      },
+      {
+        h: 'Was nicht funktioniert',
+        p: 'Die Suche braucht JavaScript. Ohne JavaScript funktionieren die Beitragsliste und die Themen trotzdem. Die Sicherheitsrichtlinie erlaubt noch Styles direkt im HTML, weil die Syntaxhervorhebung jedes Wort über ein eigenes style-Attribut einfärbt.',
+      },
+      {
+        h: 'Quellcode',
+        p: 'Die ganze Website liegt öffentlich auf GitHub, einschließlich der Prüfungen und dieser Seite.',
+        links: [{ label: 'RolfSzimnau/szimnau-dk auf GitHub', href: ext.repo }],
+      },
+    ],
+    updated: 'Zuletzt aktualisiert am 21. Oktober 2026.',
+  },
+};
+
+const t = text[lang];
+const isExternal = (href: string) => href.startsWith('http');
+---
+
+<div class="max-w-3xl mx-auto px-6 py-24">
+  <header class="mb-12">
+    <p class="flex items-center gap-3 font-mono text-blue text-sm mb-3 tracking-wider uppercase"><span class="h-px w-8 bg-blue/60"></span>{t.eyebrow}</p>
+    <h1 class="font-heading text-4xl sm:text-5xl font-bold text-text-primary mb-6">{t.title}</h1>
+    <p class="text-text-muted text-lg leading-relaxed">{t.intro}</p>
+  </header>
+
+  <div class="prose">
+    {t.sections.map(s => (
+      <>
+        <h2>{s.h}</h2>
+        <p>{s.p}</p>
+        {s.links && (
+          <p>
+            {s.links.map((l, i) => (
+              <>
+                {i > 0 && ' · '}
+                {isExternal(l.href)
+                  ? <a href={l.href} target="_blank" rel="noopener noreferrer">{l.label}</a>
+                  : <a href={l.href}>{l.label}</a>}
+              </>
+            ))}
+          </p>
+        )}
+      </>
+    ))}
+    <p class="text-sm">{t.updated}</p>
+  </div>
+</div>
