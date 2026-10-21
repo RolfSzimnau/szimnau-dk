@@ -96,6 +96,14 @@ function checkSource() {
     const missing = LANGS.filter((l) => !langs.has(l));
     if (missing.length) error(`translationKey «${key}»`, `mangler version på: ${missing.join(", ")}`);
   }
+
+  // security.txt: an expired file is worse than none, so fail 30 days ahead.
+  const SECURITY_TXT = "public/.well-known/security.txt";
+  const expires = existsSync(SECURITY_TXT) && readFileSync(SECURITY_TXT, "utf8").match(/^Expires:\s*(\S+)/m)?.[1];
+  const days = expires ? (new Date(expires) - Date.now()) / 86400000 : NaN;
+  if (Number.isNaN(days)) error(SECURITY_TXT, "mangler gyldig «Expires»");
+  else if (days < 30) error(SECURITY_TXT, `Expires ${expires} ${days < 0 ? "er udløbet" : `er om ${Math.floor(days)} dage`}. Sæt den 1 år frem.`);
+  else if (days > 366) warn(SECURITY_TXT, `Expires ${expires} er mere end 1 år frem (RFC 9116 anbefaler under 1 år)`);
 }
 
 // --- Built HTML checks -----------------------------------------------------

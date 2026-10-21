@@ -2,13 +2,13 @@
 
 Astro 7 + Tailwind CSS 4 static site on Cloudflare. Node 24 (`.node-version`). Locales: `en` (default), `da`, `de`. All routes are locale-prefixed (`/en/`, `/da/`, `/de/`).
 
-Layout: pages in `src/pages/[lang]/`, layouts `Base.astro` and `BlogPost.astro`, SEO in `src/components/SEO.astro`, strings in `src/i18n/ui.ts`, posts in `content/blog/{en,da,de}/`.
+Layout: pages in `src/pages/[lang]/`, layouts `Base.astro` and `BlogPost.astro`, SEO in `src/components/SEO.astro`, strings in `src/i18n/ui.ts`, posts in `src/content/blog/{en,da,de}/`.
 
 ## Build & Validate
 
 ```bash
-npm install
-./node_modules/.bin/astro build   # must complete with 0 errors before any commit
+npm ci
+npm run build          # astro build + pagefind + CSP. Must complete with 0 errors before any commit
 npm run validate       # source + SEO checks on dist/ (run after build)
 npm run validate:src   # source checks only, runs as pre-commit hook
 ```
@@ -16,6 +16,15 @@ npm run validate:src   # source checks only, runs as pre-commit hook
 `scripts/validate.mjs` enforces on every built page: title format `[Title] | szimnau.dk`, description 120-160 and unique, robots `index, follow`, canonical, hreflang (`en-US`, `da-DK`, `de-DE`, `x-default`, absolute with trailing slash), OG/Twitter tags, existing absolute og:image, one h1 with no skipped levels, hero attributes (`width="768" height="432" loading="eager" fetchpriority="high" decoding="async"`). Source rules: required frontmatter, `translationKey` in all 3 locales, every `/blog-images/` file exists and is git-tracked. Voice findings are warnings. Fix what it reports. Skip the hook once with `git commit --no-verify`.
 
 Shiki: use `jinja`, never `jinja2` (wrong names disable highlighting and warn).
+
+Astro 7 config in `astro.config.mjs` is deliberate. Keep `compressHTML: true` (the `'jsx'` default drops spaces between inline elements) and `smartPunctuation: false` (it writes English quotes into da/de posts).
+
+## Security and CI
+
+- `scripts/build-csp.mjs` runs after build and writes a `Content-Security-Policy` with SHA-256 hashes of inline scripts into `dist/_headers`. Inline scripts are hashed automatically. A new external script, font, image host or `fetch` target must be added to the policy in that file, or the browser blocks it. Other security headers live in `public/_headers`.
+- `.github/workflows/ci.yml` runs `validate:src`, build, `validate` and `npm audit --omit=dev --audit-level=high` on PRs, pushes to `main` and weekly. Dependabot opens update PRs. Merge them only with green CI.
+- `public/.well-known/security.txt`: the validator fails 30 days before `Expires`. Renew by setting `Expires` one year ahead.
+- Node 24 (`.node-version`, read by CI and Cloudflare). Astro 7 needs `>=22.23.4`.
 
 ## SEO rules the validator does not check
 
@@ -52,4 +61,4 @@ DA/DE traps to check before finalizing a sentence:
 
 ## Deployment
 
-`git push` to GitHub (`RolfSzimnau/szimnau-dk`). Cloudflare Pages builds and deploys. **Never use Wrangler CLI to deploy.** Static output to `dist/`.
+`git push` to GitHub (`RolfSzimnau/szimnau-dk`). Cloudflare Workers Builds builds `main` and deploys it (`wrangler.toml`: static assets from `dist/`, `src/redirect-worker.js` runs first for www and trailing-slash 301s). **Never use Wrangler CLI to deploy.** Settings that live outside git and the recovery steps are in `README.md`.
