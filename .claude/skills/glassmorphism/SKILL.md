@@ -8,7 +8,7 @@ description: Glassmorphism design system for szimnau.dk: frosted-glass cards, ba
 This project has an established design system — work within it:
 
 - **Body font**: Inter, locked. Do NOT change it
-- **Stack**: Astro 6, Tailwind v4, no React/Vue — CSS-only animations preferred
+- **Stack**: Astro 7, Tailwind v4, no React/Vue — CSS-only animations preferred
 - **Glass constants**: use the Standard glass card values below.
 - **Inner cards** (inside stack-in-card): `background: transparent; box-shadow: none; border: none`
 - **Dividers**: `border-bottom: 1px solid rgba(255,255,255,0.06)`

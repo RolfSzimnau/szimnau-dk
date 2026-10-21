@@ -7,7 +7,7 @@ Avoid generic "AI slop" aesthetics. Implement real working code with attention t
 
 ## Project constraints (szimnau.dk)
 
-Astro 6 SSG, Tailwind v4, MDX, no React/Vue. CSS tokens live in `src/styles/global.css` under `@theme {}`. The palette, Inter body font and glass card values are fixed. They are defined in the `glassmorphism` skill. Do not change them. Display/heading fonts are free to choose if they pair with Inter.
+Astro 7 SSG, Tailwind v4, MDX, no React/Vue. CSS tokens live in `src/styles/global.css` under `@theme {}`. The palette, Inter body font and glass card values are fixed. They are defined in the `glassmorphism` skill. Do not change them. Display/heading fonts are free to choose if they pair with Inter.
 
 ## Design thinking
 
