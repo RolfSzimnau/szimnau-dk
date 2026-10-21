@@ -23,7 +23,6 @@ const ext = {
   tailwind: 'https://tailwindcss.com',
   pagefind: 'https://pagefind.app',
   cloudflare: 'https://workers.cloudflare.com',
-  repo: 'https://github.com/RolfSzimnau/szimnau-dk',
 };
 
 const securityTxt = '/.well-known/security.txt';
@@ -68,11 +67,6 @@ const text: Record<Lang, { eyebrow: string; title: string; intro: string; sectio
         h: 'What does not work',
         p: 'Search needs JavaScript. Without it, the post list and the tags still work. The security policy still allows inline styles, because the code highlighting colours each word with its own style attribute.',
       },
-      {
-        h: 'Source code',
-        p: 'The whole site is public on GitHub, including the checks and this page.',
-        links: [{ label: 'RolfSzimnau/szimnau-dk on GitHub', href: ext.repo }],
-      },
     ],
     updated: 'Last updated 21 October 2026.',
   },
@@ -115,11 +109,6 @@ const text: Record<Lang, { eyebrow: string; title: string; intro: string; sectio
         h: 'Det, der ikke virker',
         p: 'Søgningen kræver JavaScript. Uden JavaScript virker bloglisten og emnerne stadig. Sikkerhedspolitikken tillader stadig styles direkte i HTML-koden, fordi kodefarvningen giver hvert ord sin egen farve via en style-attribut.',
       },
-      {
-        h: 'Kildekoden',
-        p: 'Hele sitet ligger åbent på GitHub, også tjekkene og den her side.',
-        links: [{ label: 'RolfSzimnau/szimnau-dk på GitHub', href: ext.repo }],
-      },
     ],
     updated: 'Senest opdateret 21. oktober 2026.',
   },
@@ -161,11 +150,6 @@ const text: Record<Lang, { eyebrow: string; title: string; intro: string; sectio
       {
         h: 'Was nicht funktioniert',
         p: 'Die Suche braucht JavaScript. Ohne JavaScript funktionieren die Beitragsliste und die Themen trotzdem. Die Sicherheitsrichtlinie erlaubt noch Styles direkt im HTML, weil die Syntaxhervorhebung jedes Wort über ein eigenes style-Attribut einfärbt.',
-      },
-      {
-        h: 'Quellcode',
-        p: 'Die ganze Website liegt öffentlich auf GitHub, einschließlich der Prüfungen und dieser Seite.',
-        links: [{ label: 'RolfSzimnau/szimnau-dk auf GitHub', href: ext.repo }],
       },
     ],
     updated: 'Zuletzt aktualisiert am 21. Oktober 2026.',
