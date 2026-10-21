@@ -1,6 +1,6 @@
 # szimnau.dk — Development Guide
 
-Astro 6 + Tailwind CSS 4 static site on Cloudflare. Locales: `en` (default), `da`, `de`. All routes are locale-prefixed (`/en/`, `/da/`, `/de/`).
+Astro 7 + Tailwind CSS 4 static site on Cloudflare. Node 24 (`.node-version`). Locales: `en` (default), `da`, `de`. All routes are locale-prefixed (`/en/`, `/da/`, `/de/`).
 
 Layout: pages in `src/pages/[lang]/`, layouts `Base.astro` and `BlogPost.astro`, SEO in `src/components/SEO.astro`, strings in `src/i18n/ui.ts`, posts in `content/blog/{en,da,de}/`.
 
