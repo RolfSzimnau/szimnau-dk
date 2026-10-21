@@ -33,7 +33,11 @@ export function switchLocale(currentPath: string, targetLang: Lang): string {
   } else {
     parts.unshift(targetLang);
   }
-  return '/' + parts.join('/');
+  // Site uses trailingSlash: 'always'. A slashless href costs a 301 on every click
+  // and Google keeps recrawling the slashless URL ("Page with redirect").
+  const last = parts[parts.length - 1] ?? '';
+  const looksLikeFile = /\.[^/.]+$/.test(last);
+  return '/' + parts.join('/') + (looksLikeFile ? '' : '/');
 }
 
 // English feed stays at /rss.xml so existing subscribers keep working.
