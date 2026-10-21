@@ -15,13 +15,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: npm
       - run: npm ci
       - run: npm run validate:src
       - run: npm run build
       - run: npm run validate
-      # Report only until Astro 7 is adopted: the open advisories have no fix inside Astro 6.
       - name: Audit runtime dependencies
-        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high

@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import { satteri } from '@astrojs/markdown-satteri';
 import { readFileSync, readdirSync } from 'node:fs';
 
 // lastmod for blog posts: updatedDate, else pubDate. Pages without a
@@ -23,6 +24,14 @@ export default defineConfig({
   site: 'https://szimnau.dk',
   trailingSlash: 'always',
   output: 'static',
+  // Astro 7 defaults to 'jsx', which drops the space between inline elements
+  // on separate lines. true keeps the Astro 6 HTML whitespace rules.
+  compressHTML: true,
+  markdown: {
+    // Smart punctuation turns quotes into English “ ”, which is wrong for the
+    // da and de posts. Keep quotes exactly as written in the source.
+    processor: satteri({ features: { smartPunctuation: false } }),
+  },
   vite: {
     plugins: [tailwindcss()],
   },
