@@ -44,12 +44,12 @@ The code is complete in git. These settings are not, so check them after any acc
 | | Web Analytics | on (allowed in the CSP) |
 | Cloudflare, zone `szimnau.dk` | DNS records | export with **DNS > Records > Export** and store a copy outside this machine |
 | | Mail DNS | SPF, DKIM and DMARC records for the mail provider |
-| Domain registrar | Registration and nameservers | `<registrar-name>`, nameservers point to Cloudflare, renewal date `<yyyy-mm-dd>` |
+| Cloudflare Registrar | Domain `szimnau.dk` | **Manage Domains**: auto-renew on, valid payment card, registrar lock on. Nameservers are always Cloudflare |
 | GitHub | Repository settings | Dependabot on, Actions enabled, branch protection on `main` if set |
 
 ## Accounts and recovery
 
-Losing the machine is only a problem if it held the only way to sign in. For GitHub, Cloudflare, the registrar and the mail account:
+Losing the machine is only a problem if it held the only way to sign in. The Cloudflare account holds the domain, DNS and hosting together, so losing access to it takes the whole site offline. For GitHub, Cloudflare and the mail account:
 
 - Keep the recovery codes somewhere other than this machine, such as a password manager or a printed copy.
 - Use passkeys that sync (password manager or phone) or a hardware key, not a passkey stored only on this machine.
