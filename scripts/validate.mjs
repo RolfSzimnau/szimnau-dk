@@ -194,7 +194,8 @@ function checkDist() {
     for (const p of ["og:title", "og:description", "og:type", "og:url", "og:image", "og:site_name", "og:locale"]) {
       if (!meta(html, "property", p)) error(where, `mangler ${p}`);
     }
-    for (const n of ["twitter:card", "twitter:site", "twitter:creator", "twitter:title", "twitter:description", "twitter:image"]) {
+    // No twitter:site/creator: Rolf has no X account, so there is no handle to point at.
+    for (const n of ["twitter:card", "twitter:title", "twitter:description", "twitter:image"]) {
       if (!meta(html, "name", n)) error(where, `mangler ${n}`);
     }
     const ogImage = meta(html, "property", "og:image");

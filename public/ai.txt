@@ -1,10 +1,10 @@
 # AI Crawler & LLM Guidance — szimnau.dk
-# Last updated: 2026-10-02
+# Last updated: 2026-10-24
 
 Site: https://szimnau.dk
 Author: Rolf Szimnau
 Email: rolf@szimnau.dk
-Twitter/X: @rszimnau
+LinkedIn: https://www.linkedin.com/in/szimnau/
 GitHub: https://github.com/RolfSzimnau
 
 ## About This Site
