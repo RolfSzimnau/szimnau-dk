@@ -13,17 +13,6 @@ const skills = [
   'Information Security', 'Network Architecture',
 ];
 
-const personJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Person',
-  name: 'Rolf Szimnau',
-  url: 'https://szimnau.dk',
-  jobTitle: 'CISO & Technical Advisor',
-  description: 'Rolf Szimnau is a CISO and Technical Advisor with 29+ years of experience. By day he runs enterprise cloud infrastructure for a SaaS company. At home he runs Home Assistant on Proxmox and publishes in-depth guides on automation, hardware, and smart home engineering.',
-  sameAs: ['https://github.com/RolfSzimnau', 'https://www.linkedin.com/in/szimnau'],
-  knowsAbout: ['Home Assistant', 'Home Automation', 'Proxmox', 'Smart Home', 'ESPHome', 'Microsoft Azure', 'Information Security'],
-  knowsLanguage: ['English', 'Danish', 'German'],
-};
 ---
 
 <Base
@@ -31,8 +20,6 @@ const personJsonLd = {
   description="CISO and Technical Advisor with 29+ years of experience. Runs Home Assistant on Proxmox and publishes smart home guides in English, Danish and German."
   lang={lang}
 >
-  <script type="application/ld+json" set:html={JSON.stringify(personJsonLd)} />
-
   <div class="max-w-4xl mx-auto px-6 py-24">
     <header class="mb-16 flex flex-col-reverse sm:flex-row sm:items-end sm:justify-between gap-8">
       <div>

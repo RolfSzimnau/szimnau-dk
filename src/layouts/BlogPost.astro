@@ -1,6 +1,7 @@
 ---
 import Base from './Base.astro';
 import type { Lang } from '../i18n/ui';
+import { personRef } from '../data/person';
 import { getCollection } from 'astro:content';
 
 interface Props {
@@ -51,19 +52,8 @@ const jsonLd = {
   description,
   datePublished: pubDate.toISOString(),
   dateModified: (updatedDate ?? pubDate).toISOString(),
-  author: {
-    '@type': 'Person',
-    name: 'Rolf Szimnau',
-    url: `${siteOrigin}/en/about/`,
-    sameAs: [
-      'https://www.linkedin.com/in/szimnau/',
-    ],
-  },
-  publisher: {
-    '@type': 'Person',
-    name: 'Rolf Szimnau',
-    url: `${siteOrigin}/en/about/`,
-  },
+  author: personRef(siteOrigin),
+  publisher: personRef(siteOrigin),
   mainEntityOfPage: {
     '@type': 'WebPage',
     '@id': Astro.url.href,

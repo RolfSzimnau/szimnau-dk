@@ -1,6 +1,7 @@
 ---
 import type { Lang } from '../i18n/ui';
 import { feedPath, useTranslations } from '../i18n/utils';
+import { personJsonLd as buildPerson, personRef } from '../data/person';
 
 interface Props {
   title: string;
@@ -50,24 +51,14 @@ function buildAlternate(targetLang: Lang): string {
   return url.toString();
 }
 
-const personJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Person',
-  name: 'Rolf Szimnau',
-  url: siteOrigin,
-  sameAs: [
-    'https://www.linkedin.com/in/szimnau/',
-  ],
-  knowsAbout: ['Home Assistant', 'Home Automation', 'Proxmox', 'Smart Home', 'ESPHome'],
-  knowsLanguage: ['en', 'da', 'de'],
-};
+const personJsonLd = buildPerson(siteOrigin);
 
 const websiteJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'szimnau.dk',
   url: siteOrigin,
-  author: personJsonLd,
+  author: personRef(siteOrigin),
   description: 'Home Automation & Home Assistant authority site by Rolf Szimnau.',
   inLanguage: lang,
 };
