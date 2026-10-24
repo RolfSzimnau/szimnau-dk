@@ -75,7 +75,8 @@ function checkSource() {
       for (const img of images) {
         const path = join("public", img);
         if (!existsSync(path)) error(file, `billedet ${img} findes ikke i public/`);
-        else if (tracked && !tracked.has(path)) error(file, `billedet ${img} er ikke tracked i git (git add ${path})`);
+        // git ls-files always uses forward slashes; join() gives backslashes on Windows
+        else if (tracked && !tracked.has(path.replaceAll("\\", "/"))) error(file, `billedet ${img} er ikke tracked i git (git add ${path})`);
       }
 
       // Voice: prose only, code blocks and inline code skipped.
