@@ -3,6 +3,7 @@ title: "Elspotpriser i Home Assistant: sådan lader bilen i de billige timer"
 seoTitle: "Elspotpriser i Home Assistant: lad bilen i de billige timer"
 description: "Energi Data Service til spotpriser i realtid, et trappediagram i ApexCharts og automatisk opladning af Škoda Elroq uden at røre appen."
 pubDate: 2025-05-02
+updatedDate: 2026-10-24
 tags: ["energi", "ev", "automatisering"]
 lang: "da"
 translationKey: "danish-electricity-prices-ev-charging"
@@ -66,7 +67,12 @@ En template-sensor, der finder de billigste to sammenhængende timer, der er til
 
 ```yaml
 template:
-  - sensor:
+  - triggers:
+      - trigger: state
+        entity_id: sensor.energi_data_service
+      - trigger: time_pattern
+        minutes: "/15"
+    sensor:
       - name: "Billigste opladningsvindue"
         state: >
           {% set prices = state_attr('sensor.energi_data_service', 'raw_today') %}
@@ -86,6 +92,8 @@ template:
 ```
 
 Den vises som `02:00` eller `14:00` på dashboardet. Opladningsautomationen bruger den ikke direkte, for den kører hver time og beslutter ud fra prisen lige nu. Men den er nyttig til at tjekke, at bilen lader på et fornuftigt tidspunkt.
+
+De to triggere er der af en grund. En anden af mine template-sensorer løb prislisten igennem på samme måde, og den holdt op med at opdatere uden at skrive så meget som en linje i loggen. Den stod fast på sin første værdi i over to timer, mens priserne skiftede. Uden triggere skal Home Assistant selv finde ud af, hvilke entiteter skabelonen afhænger af, og med en løkke over prislisten gik det galt. Med triggerne bliver sensoren regnet ud igen, hver gang prissensoren ændrer sig, og ellers hvert kvarter.
 
 ### Som et dashboard-kort
 

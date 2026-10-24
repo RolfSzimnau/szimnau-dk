@@ -2,6 +2,7 @@
 title: "Auto laden nach dänischen Spotpreisen mit Home Assistant"
 description: "Energi Data Service in Home Assistant für Echtzeit-Spotpreise, günstigstes Ladefenster finden und Škoda Elroq automatisch laden ohne die App anzufassen."
 pubDate: 2025-05-02
+updatedDate: 2026-10-24
 tags: ["energie", "ev", "automatisierung"]
 lang: "de"
 translationKey: "danish-electricity-prices-ev-charging"
@@ -65,7 +66,12 @@ Ein Template-Sensor, der den günstigsten zusammenhängenden 2-Stunden-Block fin
 
 ```yaml
 template:
-  - sensor:
+  - triggers:
+      - trigger: state
+        entity_id: sensor.energi_data_service
+      - trigger: time_pattern
+        minutes: "/15"
+    sensor:
       - name: "Günstigstes Ladefenster"
         state: >
           {% set prices = state_attr('sensor.energi_data_service', 'raw_today') %}
@@ -85,6 +91,8 @@ template:
 ```
 
 Wird als `02:00` oder `14:00` auf dem Dashboard angezeigt. Nicht direkt in der Ladeautomatisierung verwendet — die läuft stündlich und entscheidet anhand des aktuellen Preises — aber nützlich zur Überprüfung, ob das Auto zu einer vernünftigen Zeit lädt.
+
+Die beiden Trigger haben einen Grund. Ein anderer Template-Sensor von mir ging die Preisliste auf dieselbe Weise durch und hörte auf zu aktualisieren, ohne eine einzige Zeile im Log. Über zwei Stunden blieb er auf seinem ersten Wert stehen, während sich die Preise änderten. Ohne Trigger muss Home Assistant selbst erkennen, von welchen Entitäten ein Template abhängt, und bei einer Schleife über die Preisliste ging das schief. Mit Triggern wird der Sensor bei jeder Änderung des Preissensors neu berechnet und sonst alle 15 Minuten.
 
 ### Als Dashboard-Karte
 
