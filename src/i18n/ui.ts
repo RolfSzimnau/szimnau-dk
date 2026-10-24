@@ -38,6 +38,7 @@ export const ui = {
     'footer.rights': 'All rights reserved.',
     'footer.privacy': 'Privacy',
     'footer.colophon': 'Colophon',
+    'footer.preferred': 'Google preferred source',
     'blog.tag.title': 'Articles tagged:',
   },
   da: {
@@ -70,6 +71,7 @@ export const ui = {
     'footer.rights': 'Alle rettigheder forbeholdes.',
     'footer.privacy': 'Privatliv',
     'footer.colophon': 'Om sitet',
+    'footer.preferred': 'Foretrukken kilde i Google',
     'blog.tag.title': 'Artikler med tag:',
   },
   de: {
@@ -102,6 +104,7 @@ export const ui = {
     'footer.rights': 'Alle Rechte vorbehalten.',
     'footer.privacy': 'Datenschutz',
     'footer.colophon': 'Über die Website',
+    'footer.preferred': 'Bevorzugte Quelle bei Google',
     'blog.tag.title': 'Artikel mit Tag:',
   },
 } satisfies Record<Lang, Record<string, string>>;

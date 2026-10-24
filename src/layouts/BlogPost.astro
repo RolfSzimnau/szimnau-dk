@@ -21,9 +21,9 @@ interface Props {
 const { title, description, lang, pubDate, updatedDate, verifiedOn, heroImage, tags, faqs, translationKey, headings, seoTitle } = Astro.props;
 
 const labels = {
-  en: { back: 'All posts', updated: 'Updated', verified: 'Verified on', toc: 'On this page', related: 'Related articles', follow: 'New posts in your feed reader:', followLink: 'follow with RSS' },
-  da: { back: 'Alle indlæg', updated: 'Opdateret', verified: 'Verificeret på', toc: 'På denne side', related: 'Relaterede artikler', follow: 'Nye indlæg direkte i din RSS-læser:', followLink: 'følg med via RSS' },
-  de: { back: 'Alle Beiträge', updated: 'Aktualisiert', verified: 'Verifiziert mit', toc: 'Auf dieser Seite', related: 'Ähnliche Artikel', follow: 'Neue Beiträge direkt im Feedreader:', followLink: 'per RSS folgen' },
+  en: { back: 'All posts', updated: 'Updated', verified: 'Verified on', toc: 'On this page', related: 'Related articles', follow: 'New posts in your feed reader:', followLink: 'follow with RSS', preferred: 'In Google Search:', preferredLink: 'add szimnau.dk as a preferred source' },
+  da: { back: 'Alle indlæg', updated: 'Opdateret', verified: 'Verificeret på', toc: 'På denne side', related: 'Relaterede artikler', follow: 'Nye indlæg direkte i din RSS-læser:', followLink: 'følg med via RSS', preferred: 'I Google-søgning:', preferredLink: 'vælg szimnau.dk som foretrukken kilde' },
+  de: { back: 'Alle Beiträge', updated: 'Aktualisiert', verified: 'Verifiziert mit', toc: 'Auf dieser Seite', related: 'Ähnliche Artikel', follow: 'Neue Beiträge direkt im Feedreader:', followLink: 'per RSS folgen', preferred: 'In der Google-Suche:', preferredLink: 'szimnau.dk als bevorzugte Quelle wählen' },
 }[lang];
 
 const tocHeadings = (headings ?? []).filter(h => h.depth === 2);
@@ -152,7 +152,8 @@ const breadcrumbJsonLd = {
     </div>
 
     <p data-pagefind-ignore class="mt-16 border-t border-glass-border pt-8 text-sm text-text-muted">
-      {labels.follow} <a href={`/${lang}/rss/`} class="text-blue hover:underline">{labels.followLink}</a>
+      <span class="block">{labels.follow} <a href={`/${lang}/rss/`} class="text-blue hover:underline">{labels.followLink}</a></span>
+      <span class="block mt-2">{labels.preferred} <a href="https://www.google.com/preferences/source?q=szimnau.dk" target="_blank" rel="noopener noreferrer" class="text-blue hover:underline">{labels.preferredLink}</a></span>
     </p>
 
     {related.length > 0 && (
