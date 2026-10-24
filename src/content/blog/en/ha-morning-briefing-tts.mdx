@@ -3,6 +3,7 @@ title: "A Spoken Morning Briefing in Home Assistant: Calendar, Weather, and Elec
 seoTitle: "Spoken Morning Briefing in Home Assistant with TTS"
 description: "A daily 06:00 spoken briefing in Home Assistant: Google AI TTS, three family calendars, EV charge status, Waze traffic, power price and waste day."
 pubDate: 2026-05-31
+updatedDate: 2026-10-24
 tags: ["voice", "calendar", "energy", "automation"]
 lang: "en"
 translationKey: "ha-morning-briefing-tts"
@@ -136,6 +137,7 @@ action:
         {% set lader = states('sensor.skoda_elroq_charging_state') %}
         {% set ac = states('climate.skoda_elroq_air_conditioning') %}
         {% set rejsetid = states('sensor.rejsetid_vejle_travel_time') | float(0) | round(0) | int %}
+        {% set normal = states('sensor.rejsetid_vejle_normal') | float(0) | round(0) | int %}
         God morgen! I dag er det {{ dag }}.
         Temperaturen ude er {{ temp }} grader.
         {% if events | length > 0 %}
@@ -143,8 +145,8 @@ action:
         {% for event in events %}{{ event.summary }}{% if not loop.last %}, {% endif %}{% endfor %}.
         {% else %}Ingen aftaler i dag.
         {% endif %}
-        {% if affald <= 1 %}Husk: affald hentes i dag!
-        {% elif affald <= 2 %}Husk: affald hentes i morgen.
+        {% if affald == 0 %}Husk: affald hentes i dag!
+        {% elif affald == 1 %}Husk: affald hentes i morgen.
         {% endif %}
         {% if km > 0 and km < 100 %}Elroq har kun {{ km }} kilometer tilbage.
         {% endif %}
@@ -153,9 +155,9 @@ action:
         {% endif %}
         {% if ac != 'off' %}Elroq varmer op.
         {% endif %}
-        {% if now().weekday() < 5 and rejsetid > 0 %}
-        {% if rejsetid > 40 %}Trafik til Vejle: {{ rejsetid }} minutter – forvent forsinkelse.
-        {% else %}Kørsel til Vejle tager {{ rejsetid }} minutter.
+        {% if now().weekday() < 5 %}
+        {% if rejsetid > 0 %}Kørsel til arbejde tager {{ rejsetid }} minutter{% if normal > 0 and rejsetid - normal >= 5 %}, {{ rejsetid - normal }} minutter mere end normalt{% endif %}.
+        {% else %}Trafikdata mangler.
         {% endif %}{% endif %}
         Elprisen er {{ elpris }} kroner per kilowattime.
 ```
@@ -212,26 +214,93 @@ This works because the warmup automation runs at 05:55 — five minutes before t
 
 ## Adding a traffic report
 
-The Waze Travel Time integration adds a sensor showing current door-to-door travel time including live traffic. No API key required — Waze data is free.
+The Waze Travel Time integration adds a sensor with the current travel time, live traffic included. It needs no API key. Install it under Settings → Devices & Services → Add integration → *Waze Travel Time*.
 
-**Install:** Settings → Devices & Services → Add integration → *Waze Travel Time*
+Three settings decide whether it works. Use `zone.home` as the origin. A typed address is looked up by Waze, and mine landed 3.3 km from the house, so the commute was calculated from the wrong place. For the destination, copy the coordinates of your workplace from Google Maps.
 
-When configuring origin and destination, use **GPS coordinates** (`lat,lon` format) rather than street addresses. Waze's address parsing is unreliable for Danish addresses — coordinates are unambiguous. Find yours by right-clicking a location in Google Maps and copying the coordinate pair.
+Leave the include and exclude filters empty unless you know exactly what goes in them. They are compared character for character with the street names in the route, road number in brackets included (`E45`, `E20 / E45`). An address in one of them makes Waze reject every route. The sensor then sits at `unknown`, and the only trace is a warning in the log: "No routes matched your filters". Mine ran like that until I went looking. To see the exact street names, call `waze_travel_time.get_travel_times` under Developer tools → Actions with your origin and destination. The response lists them for each route.
 
-Set **Region** to `EU` and **Route type** to `fastest`. Give the sensor a descriptive name like *Commute to Vejle* — Home Assistant generates the entity ID from it, typically `sensor.commute_to_vejle_travel_time`.
+Home Assistant derives the entity ID from the name you give the integration. I renamed mine to `sensor.commute` and `sensor.commute_normal`, which the examples below use.
 
-Add this block to the TTS message template, just before the electricity price line:
+### How much worse than usual?
+
+A fixed threshold like "more than 40 minutes" says little, because a normal morning varies. Add the integration a second time with the same origin and destination, then turn off **Realtime** in its options. That sensor gives the travel time on a typical day, and the difference is the delay:
 
 ```jinja
-{% set commute = states('sensor.commute_to_vejle_travel_time') | float(0) | round(0) | int %}
-{% if now().weekday() < 5 and commute > 0 %}
-{% if commute > 40 %}Traffic to work: {{ commute }} minutes today – expect delays.
-{% else %}Drive to work: {{ commute }} minutes.
+{% set now_min = states('sensor.commute') | float(0) | round(0) | int %}
+{% set normal = states('sensor.commute_normal') | float(0) | round(0) | int %}
+{% if now().weekday() < 5 %}
+{% if now_min > 0 %}Drive to work: {{ now_min }} minutes{% if normal > 0 and now_min - normal >= 5 %}, {{ now_min - normal }} more than usual{% endif %}.
+{% else %}Traffic data is missing.
 {% endif %}
 {% endif %}
 ```
 
-`now().weekday() < 5` skips weekends automatically. Adjust the 40-minute threshold to your normal commute plus a reasonable buffer — if your baseline is 25 minutes, 35 is a sensible warning point.
+The last branch matters as much as the rest. My first version skipped the sentence when the travel time was 0, so a broken sensor only made the briefing a little shorter, and nobody noticed. "Traffic data is missing" gets noticed the next morning.
+
+### Country road or motorway
+
+I can drive to work on a country road or on the motorway, and which one is faster changes from day to day. Waze returns up to four alternatives, and from my house the motorway was never among them, even on days when Google Maps put it first. A filter only chooses among the routes Waze returns, so it can't force the motorway.
+
+The fix is to split the motorway route at a point on the motorway itself: one Waze entry from home to that point and one from the point to work, added together in the template. Pick the point on the carriageway in your direction of travel. The two carriageways are only about ten metres apart, and a point on the wrong one gives a detour with a U-turn, which shows up as an odd distance in `get_travel_times`. On the country-road sensor, put the motorway names in the exclude filter, so it never switches to the motorway by itself.
+
+With the normal-day twins that comes to six Waze sensors, which is a lot of calls every five minutes for one sentence a day. I turned off polling on all of them (the integration entry's ⋮ menu → System options) and let the automation refresh them right before it speaks:
+
+```yaml
+  - action: homeassistant.update_entity
+    target:
+      entity_id:
+        - sensor.commute
+        - sensor.commute_normal
+    continue_on_error: true
+  - delay:
+      seconds: 20
+```
+
+### Accidents and roadworks
+
+The Waze integration gives the travel time, not the reason for a delay. In Denmark, the road directorate's traffic map (trafikkort.vejdirektoratet.dk) loads its incidents from a public JSON feed that needs no key. The feed is undocumented, so it can change without notice. This REST sensor keeps only active incidents within 1.5 km of your route. Replace `ROUTE` with points along your own route, roughly one per kilometre, as `[latitude, longitude]`:
+
+```yaml
+rest:
+  - resource: https://storage.googleapis.com/trafikkort-data/geojson/big-screen-events.json
+    scan_interval: 300
+    timeout: 30
+    sensor:
+      - name: Traffic incidents commute
+        value_template: >-
+          {#- points along your route, about 1 km apart -#}
+          {%- set ROUTE = [[56.0000, 9.0000], [56.0090, 9.0010], [56.0180, 9.0030]] -%}
+          {%- set ns = namespace(seen=[], out=[]) -%}
+          {%- for fc in value_json | reverse -%}
+          {%- for f in fc.features -%}
+          {%- set p = f.properties -%}
+          {%- set id = p.featureId | default('') | regex_replace('\\.\\d+$', '') -%}
+          {%- if id not in ns.seen -%}
+          {%- set ns.seen = ns.seen + [id] -%}
+          {%- set c = f.geometry.coordinates -%}
+          {%- if c[0] is not number -%}{%- set c = c[0] -%}{%- endif -%}
+          {%- set lon = c[0] | float(0) -%}{%- set lat = c[1] | float(0) -%}
+          {%- set near = namespace(v=false) -%}
+          {%- for q in ROUTE -%}{%- if ((lat - q[0]) * 111.2) ** 2 + ((lon - q[1]) * 62.9) ** 2 < 2.25 -%}{%- set near.v = true -%}{%- endif -%}{%- endfor -%}
+          {%- set h = p.header | default('') | regex_replace('&lt;[^&]*&gt;\\s*', '') | regex_replace('<[^>]*>\\s*', '') | replace('&amp;', '&') | trim -%}
+          {%- set start = strptime(p.beginPeriod | default(''), '%d-%m-%Y kl. %H:%M', none) -%}
+          {%- set fresh = start is not none and (as_timestamp(now()) - as_timestamp(as_local(start))) < 43200 -%}
+          {%- if p.suspended | string | lower == 'false' and near.v and fresh and h not in ns.out -%}
+          {%- set ns.out = ns.out + [h] -%}
+          {%- endif -%}{%- endif -%}
+          {%- endfor -%}{%- endfor -%}
+          {{ (ns.out | join('. ') or 'None')[:250] }}
+```
+
+Two details took the longest. Every incident appears in several versions, with IDs ending in `.1`, `.2` and so on, and only the newest says whether it is over (`suspended`). The template groups on the ID without the suffix and uses the newest. And the feed only holds about a day of history, so test against an incident that is happening now, not one from yesterday.
+
+The briefing then reads the sensor out when it holds anything other than `None`:
+
+```jinja
+{% set incidents = states('sensor.traffic_incidents_commute') %}
+{% if incidents not in ['None', 'unknown', 'unavailable'] %}Traffic report: {{ incidents }}.{% endif %}
+```
 
 ## Why `tts.speak` and not the older service
 

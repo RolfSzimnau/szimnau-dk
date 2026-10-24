@@ -3,6 +3,7 @@ title: "Ein gesprochenes Morgen-Briefing in Home Assistant: Kalender, Wetter und
 seoTitle: "Gesprochenes Morgen-Briefing in Home Assistant"
 description: "Tägliches 06:00-Sprachbriefing in Home Assistant: Google AI TTS, drei Familienkalender, EV-Status, Waze-Verkehr, Strompreis und Müllabfuhr."
 pubDate: 2026-05-31
+updatedDate: 2026-10-24
 tags: ["sprache", "kalender", "energie", "automatisierung"]
 lang: "de"
 translationKey: "ha-morning-briefing-tts"
@@ -100,6 +101,7 @@ action:
         {% set lader = states('sensor.skoda_elroq_charging_state') %}
         {% set ac = states('climate.skoda_elroq_air_conditioning') %}
         {% set rejsetid = states('sensor.rejsetid_vejle_travel_time') | float(0) | round(0) | int %}
+        {% set normal = states('sensor.rejsetid_vejle_normal') | float(0) | round(0) | int %}
         God morgen! I dag er det {{ dag }}.
         Temperaturen ude er {{ temp }} grader.
         {% if events | length > 0 %}
@@ -107,8 +109,8 @@ action:
         {% for event in events %}{{ event.summary }}{% if not loop.last %}, {% endif %}{% endfor %}.
         {% else %}Ingen aftaler i dag.
         {% endif %}
-        {% if affald <= 1 %}Husk: affald hentes i dag!
-        {% elif affald <= 2 %}Husk: affald hentes i morgen.
+        {% if affald == 0 %}Husk: affald hentes i dag!
+        {% elif affald == 1 %}Husk: affald hentes i morgen.
         {% endif %}
         {% if km > 0 and km < 100 %}Elroq har kun {{ km }} kilometer tilbage.
         {% endif %}
@@ -117,9 +119,9 @@ action:
         {% endif %}
         {% if ac != 'off' %}Elroq varmer op.
         {% endif %}
-        {% if now().weekday() < 5 and rejsetid > 0 %}
-        {% if rejsetid > 40 %}Trafik til arbejde: {{ rejsetid }} minutter – forvent forsinkelse.
-        {% else %}Kørsel til arbejde: {{ rejsetid }} minutter.
+        {% if now().weekday() < 5 %}
+        {% if rejsetid > 0 %}Kørsel til arbejde tager {{ rejsetid }} minutter{% if normal > 0 and rejsetid - normal >= 5 %}, {{ rejsetid - normal }} minutter mere end normalt{% endif %}.
+        {% else %}Trafikdata mangler.
         {% endif %}{% endif %}
         Elprisen er {{ elpris }} kroner per kilowattime.
 ```
@@ -167,26 +169,93 @@ Das funktioniert, weil die Aufwärmautomation um 05:55 Uhr läuft — fünf Minu
 
 ## Verkehrsinformationen hinzufügen
 
-Die Waze Travel Time-Integration erstellt einen Sensor mit der aktuellen Fahrtzeit inkl. Live-Verkehr. Kein API-Schlüssel erforderlich — Waze-Daten sind kostenlos.
+Die Integration Waze Travel Time liefert einen Sensor mit der aktuellen Fahrzeit einschließlich Verkehr. Ein API-Schlüssel ist nicht nötig. Sie finden sie unter Einstellungen → Geräte & Dienste → Integration hinzufügen → *Waze Travel Time*.
 
-**Installation:** Einstellungen → Geräte & Dienste → Integration hinzufügen → *Waze Travel Time*
+Drei Einstellungen entscheiden, ob sie funktioniert. Verwenden Sie `zone.home` als Startpunkt. Eine eingetippte Adresse schlägt Waze selbst nach, und meine landete 3,3 km vom Haus entfernt, sodass die Fahrzeit vom falschen Ort aus berechnet wurde. Als Ziel kopieren Sie die Koordinaten Ihres Arbeitsplatzes aus Google Maps.
 
-Für Herkunft und Ziel **GPS-Koordinaten** (`Breitengrad,Längengrad`-Format) statt Adressen verwenden. Waze's Adress-Parsing ist für dänische Adressen unzuverlässig — Koordinaten sind eindeutig. Die eigenen Koordinaten lassen sich durch Rechtsklick auf einen Ort in Google Maps ermitteln.
+Lassen Sie die Felder für einzuschließende und auszuschließende Straßen leer, solange Sie nicht genau wissen, was hineingehört. Sie werden Zeichen für Zeichen mit den Straßennamen der Route verglichen, die Straßennummer in Klammern eingeschlossen (`E45`, `E20 / E45`). Steht dort eine Adresse, verwirft Waze jede Route. Der Sensor bleibt dann auf `unknown`, und die einzige Spur ist eine Warnung im Log: „No routes matched your filters“. Meiner lief so, bis ich nach dem Fehler gesucht habe. Die genauen Straßennamen liefert die Aktion `waze_travel_time.get_travel_times` unter Entwicklerwerkzeuge → Aktionen, aufgerufen mit Start und Ziel. Die Antwort listet sie für jede Route auf.
 
-**Region** auf `EU` und **Routentyp** auf `schnellste` setzen. Dem Sensor einen beschreibenden Namen geben, z.B. *Pendelzeit Vejle* — HA generiert daraus die Entitäts-ID, typischerweise `sensor.pendelzeit_vejle_travel_time`.
+Home Assistant bildet die Entitäts-ID aus dem Namen der Integration. Ich habe meine in `sensor.pendelzeit` und `sensor.pendelzeit_normal` umbenannt, und diese Namen verwenden die Beispiele unten.
 
-Diesen Block in die Nachrichten-Vorlage einfügen, direkt vor dem Strompreis:
+### Wie viel schlechter als sonst?
+
+Eine feste Grenze wie „mehr als 40 Minuten“ sagt wenig, weil auch ein normaler Morgen schwankt. Fügen Sie die Integration ein zweites Mal mit demselben Start und Ziel hinzu und schalten Sie in den Optionen **Echtzeit** aus. Dieser Sensor liefert die Fahrzeit an einem gewöhnlichen Tag, und die Differenz ist die Verspätung:
 
 ```jinja
-{% set fahrzeit = states('sensor.pendelzeit_vejle_travel_time') | float(0) | round(0) | int %}
-{% if now().weekday() < 5 and fahrzeit > 0 %}
-{% if fahrzeit > 40 %}Verkehr zur Arbeit: {{ fahrzeit }} Minuten heute – Verzögerungen möglich.
-{% else %}Fahrtzeit zur Arbeit: {{ fahrzeit }} Minuten.
+{% set fahrzeit = states('sensor.pendelzeit') | float(0) | round(0) | int %}
+{% set normal = states('sensor.pendelzeit_normal') | float(0) | round(0) | int %}
+{% if now().weekday() < 5 %}
+{% if fahrzeit > 0 %}Fahrt zur Arbeit: {{ fahrzeit }} Minuten{% if normal > 0 and fahrzeit - normal >= 5 %}, {{ fahrzeit - normal }} mehr als sonst{% endif %}.
+{% else %}Verkehrsdaten fehlen.
 {% endif %}
 {% endif %}
 ```
 
-`now().weekday() < 5` überspringt Wochenenden automatisch. Den 40-Minuten-Schwellenwert an die normale Pendelzeit plus einen Puffer anpassen.
+Der letzte Zweig ist genauso wichtig wie der Rest. Meine erste Version ließ den Satz weg, wenn die Fahrzeit 0 war. Ein kaputter Sensor machte das Briefing also nur etwas kürzer, und niemand merkte es. „Verkehrsdaten fehlen“ fällt am nächsten Morgen auf.
+
+### Landstraße oder Autobahn
+
+Ich kann über die Landstraße oder über die Autobahn zur Arbeit fahren, und was schneller ist, wechselt von Tag zu Tag. Waze liefert bis zu vier Alternativen, und von meinem Haus aus war die Autobahn nie dabei, auch nicht an Tagen, an denen Google Maps sie ganz oben zeigte. Ein Filter wählt nur unter den Routen, die Waze liefert, und kann die Autobahn deshalb nicht erzwingen.
+
+Die Lösung ist, die Autobahnroute an einem Punkt auf der Autobahn selbst zu teilen: ein Waze-Sensor vom Haus bis zu diesem Punkt und einer vom Punkt bis zur Arbeit, im Template addiert. Wählen Sie den Punkt auf der Fahrbahn in Ihrer Fahrtrichtung. Die beiden Fahrbahnen liegen nur etwa zehn Meter auseinander, und ein Punkt auf der falschen ergibt einen Umweg mit Wenden, den Sie an einer seltsamen Entfernung in `get_travel_times` erkennen. Beim Landstraßen-Sensor tragen Sie die Autobahnnamen in das Feld für ausgeschlossene Straßen ein, damit er nie von selbst auf die Autobahn wechselt.
+
+Mit den Zwillingen für einen normalen Tag sind das sechs Waze-Sensoren, also viele Abfragen alle fünf Minuten für einen einzigen Satz am Tag. Ich habe bei allen das automatische Aktualisieren abgeschaltet (Menü ⋮ der Integration → Systemoptionen) und lasse die Automation sie direkt vor der Ansage aktualisieren:
+
+```yaml
+  - action: homeassistant.update_entity
+    target:
+      entity_id:
+        - sensor.pendelzeit
+        - sensor.pendelzeit_normal
+    continue_on_error: true
+  - delay:
+      seconds: 20
+```
+
+### Unfälle und Baustellen
+
+Die Waze-Integration liefert die Fahrzeit, aber nicht den Grund für eine Verspätung. In Dänemark lädt die Verkehrskarte der Straßenbehörde (trafikkort.vejdirektoratet.dk) ihre Meldungen aus einem öffentlichen JSON-Feed ohne Schlüssel. Der Feed ist nicht dokumentiert und kann sich ohne Vorwarnung ändern. Dieser REST-Sensor behält nur aktive Meldungen im Umkreis von 1,5 km um Ihre Route. Ersetzen Sie `ROUTE` durch Punkte entlang Ihrer eigenen Route, etwa einen pro Kilometer, als `[Breitengrad, Längengrad]`:
+
+```yaml
+rest:
+  - resource: https://storage.googleapis.com/trafikkort-data/geojson/big-screen-events.json
+    scan_interval: 300
+    timeout: 30
+    sensor:
+      - name: Verkehrsmeldungen Pendel
+        value_template: >-
+          {#- Punkte entlang der Route, etwa 1 km Abstand -#}
+          {%- set ROUTE = [[56.0000, 9.0000], [56.0090, 9.0010], [56.0180, 9.0030]] -%}
+          {%- set ns = namespace(seen=[], out=[]) -%}
+          {%- for fc in value_json | reverse -%}
+          {%- for f in fc.features -%}
+          {%- set p = f.properties -%}
+          {%- set id = p.featureId | default('') | regex_replace('\\.\\d+$', '') -%}
+          {%- if id not in ns.seen -%}
+          {%- set ns.seen = ns.seen + [id] -%}
+          {%- set c = f.geometry.coordinates -%}
+          {%- if c[0] is not number -%}{%- set c = c[0] -%}{%- endif -%}
+          {%- set lon = c[0] | float(0) -%}{%- set lat = c[1] | float(0) -%}
+          {%- set near = namespace(v=false) -%}
+          {%- for q in ROUTE -%}{%- if ((lat - q[0]) * 111.2) ** 2 + ((lon - q[1]) * 62.9) ** 2 < 2.25 -%}{%- set near.v = true -%}{%- endif -%}{%- endfor -%}
+          {%- set h = p.header | default('') | regex_replace('&lt;[^&]*&gt;\\s*', '') | regex_replace('<[^>]*>\\s*', '') | replace('&amp;', '&') | trim -%}
+          {%- set start = strptime(p.beginPeriod | default(''), '%d-%m-%Y kl. %H:%M', none) -%}
+          {%- set fresh = start is not none and (as_timestamp(now()) - as_timestamp(as_local(start))) < 43200 -%}
+          {%- if p.suspended | string | lower == 'false' and near.v and fresh and h not in ns.out -%}
+          {%- set ns.out = ns.out + [h] -%}
+          {%- endif -%}{%- endif -%}
+          {%- endfor -%}{%- endfor -%}
+          {{ (ns.out | join('. ') or 'Keine')[:250] }}
+```
+
+Zwei Details haben am meisten Zeit gekostet. Jede Meldung gibt es in mehreren Versionen, deren ID auf `.1`, `.2` und so weiter endet, und nur die neueste sagt, ob sie vorbei ist (`suspended`). Das Template gruppiert deshalb nach der ID ohne Endung und nimmt die neueste. Außerdem enthält der Feed nur etwa einen Tag Verlauf, also testen Sie mit einer Meldung, die gerade aktiv ist, nicht mit einer von gestern.
+
+Das Briefing liest den Sensor dann vor, sobald er etwas anderes als `Keine` enthält:
+
+```jinja
+{% set meldung = states('sensor.verkehrsmeldungen_pendel') %}
+{% if meldung not in ['Keine', 'unknown', 'unavailable'] %}Verkehrsmeldung: {{ meldung }}.{% endif %}
+```
 
 ## Warum `tts.speak` und nicht der alte Service
 
