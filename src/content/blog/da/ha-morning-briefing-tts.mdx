@@ -223,7 +223,7 @@ Jeg kan køre på arbejde ad landevejen eller ad motorvejen, og det skifter fra 
 
 Løsningen er at dele motorvejsruten ved et punkt på selve motorvejen: én Waze-sensor fra hjemmet til punktet og én fra punktet til arbejdet, som lægges sammen i skabelonen. Vælg punktet på kørebanen i din egen kørselsretning. De to kørebaner ligger kun cirka ti meter fra hinanden, og et punkt på den forkerte giver en omvej med en U-vending, som viser sig som en mærkelig distance i `get_travel_times`. På landevejssensoren skriver du motorvejens navne i feltet med udelukkede veje, så den aldrig selv skifter til motorvejen.
 
-Med tvillingerne for en normal dag bliver det seks Waze-sensorer, og det er mange opslag hvert femte minut for én sætning om dagen. Jeg har slået automatisk opdatering fra på dem alle (menuen ⋮ på integrationen → Systemindstillinger) og lader automationen opdatere dem, lige før den taler:
+Hver rejsetid har nu en sensor for en normal dag ved siden af, og med motorvejen delt i to bliver det seks Waze-sensorer. Det er mange opslag hvert femte minut for én sætning om dagen. Jeg har slået automatisk opdatering fra på dem alle (menuen ⋮ på integrationen → Systemindstillinger) og lader automationen opdatere dem, lige før den taler:
 
 ```yaml
   - action: homeassistant.update_entity

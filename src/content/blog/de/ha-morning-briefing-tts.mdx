@@ -199,7 +199,7 @@ Ich kann über die Landstraße oder über die Autobahn zur Arbeit fahren, und wa
 
 Die Lösung ist, die Autobahnroute an einem Punkt auf der Autobahn selbst zu teilen: ein Waze-Sensor vom Haus bis zu diesem Punkt und einer vom Punkt bis zur Arbeit, im Template addiert. Wählen Sie den Punkt auf der Fahrbahn in Ihrer Fahrtrichtung. Die beiden Fahrbahnen liegen nur etwa zehn Meter auseinander, und ein Punkt auf der falschen ergibt einen Umweg mit Wenden, den Sie an einer seltsamen Entfernung in `get_travel_times` erkennen. Beim Landstraßen-Sensor tragen Sie die Autobahnnamen in das Feld für ausgeschlossene Straßen ein, damit er nie von selbst auf die Autobahn wechselt.
 
-Mit den Zwillingen für einen normalen Tag sind das sechs Waze-Sensoren, also viele Abfragen alle fünf Minuten für einen einzigen Satz am Tag. Ich habe bei allen das automatische Aktualisieren abgeschaltet (Menü ⋮ der Integration → Systemoptionen) und lasse die Automation sie direkt vor der Ansage aktualisieren:
+Jede Fahrzeit hat jetzt einen Sensor für einen normalen Tag neben sich, und mit der geteilten Autobahn sind das sechs Waze-Sensoren. Das sind viele Abfragen alle fünf Minuten für einen einzigen Satz am Tag. Ich habe bei allen das automatische Aktualisieren abgeschaltet (Menü ⋮ der Integration → Systemoptionen) und lasse die Automation sie direkt vor der Ansage aktualisieren:
 
 ```yaml
   - action: homeassistant.update_entity

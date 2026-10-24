@@ -244,7 +244,7 @@ I can drive to work on a country road or on the motorway, and which one is faste
 
 The fix is to split the motorway route at a point on the motorway itself: one Waze entry from home to that point and one from the point to work, added together in the template. Pick the point on the carriageway in your direction of travel. The two carriageways are only about ten metres apart, and a point on the wrong one gives a detour with a U-turn, which shows up as an odd distance in `get_travel_times`. On the country-road sensor, put the motorway names in the exclude filter, so it never switches to the motorway by itself.
 
-With the normal-day twins that comes to six Waze sensors, which is a lot of calls every five minutes for one sentence a day. I turned off polling on all of them (the integration entry's ⋮ menu → System options) and let the automation refresh them right before it speaks:
+Every travel time now has a normal-day sensor next to it, and with the motorway split in two that makes six Waze sensors. That is a lot of calls every five minutes for one sentence a day. I turned off polling on all of them (the integration entry's ⋮ menu → System options) and let the automation refresh them right before it speaks:
 
 ```yaml
   - action: homeassistant.update_entity
