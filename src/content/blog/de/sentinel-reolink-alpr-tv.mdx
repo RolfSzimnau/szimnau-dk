@@ -15,6 +15,8 @@ faqs:
     answer: "Binärsensoren für Person und Fahrzeug aus dem eingebauten KI-Chip und zwei Streams: camera.sentinel_clear in vollem 4K und camera.sentinel_fluent in niedrigerer Auflösung, schneller für Benachrichtigungen."
 ---
 
+**Update, November 2026:** Home Assistant 2026.11 hat die alte Aktion `notify.android_tv_*` als veraltet markiert, ab Version 2027.5 funktioniert sie nicht mehr. Deshalb nutzen die TV-Beispiele jetzt `nfandroidtv.send_message`. HA holt das Bild selbst von der Kamera und schickt es an den TV, die URL mit dem Zeitstempel entfällt also, und `interactive: true` ersetzt `interrupt: 1`. Auch der Satz über die Telefone ist korrigiert, das hat aber nichts mit der neuen Version zu tun. Der Fehler weiter unten trat noch mit der alten Aktion auf, deshalb steht dort weiterhin `notify.android_tv`.
+
 Eine Türklingel mit Kamera haben wir nie installiert. Die Reolink CX810, die auf die Auffahrt zeigt, leistet am Ende mehr als jede Türklingel es getan hätte — ohne Abo, ohne App, und mit dem TV als Benachrichtigungsbildschirm statt einem Handy, auf das man vielleicht gerade nicht schaut.
 
 ## Die Kamera
@@ -110,5 +112,3 @@ Wenn der TV einen Timeout hat oder die Integration wieder ausfällt, kommen die 
 Diese drei Dinge zusammen haben es gelöst. Der TV zeigt den Snapshot jetzt innerhalb von etwa einer Sekunde, und in den Fällen wo der TV aus ist oder die Integration hakt, bekommen die Telefone immer eine Benachrichtigung, egal was passiert.
 
 **Update, Mai 2026:** Die Kennzeichenerkennung ist rausgeflogen. Die Genauigkeit bei Nacht war nicht zuverlässig genug — Kennzeichen bei ungünstigem Winkel oder bei starkem Regen gaben häufiger "none" zurück als ein echtes Ergebnis, und zwei LLM-Vision-Aufrufe pro Fahrzeugereignis addierten eine Latenz die die Benachrichtigung langsam wirken ließ. Das aktuelle Setup überspringt ALPR komplett: Fahrzeug- oder Personenerkennung → Fluent-Snapshot → TV und Telefone. Die rollende Kennzeichenliste ist weg. Die Kamera, die TV-Integration und der `continue_on_error`-Ansatz sind geblieben. Der KI-Layer nicht.
-
-**Update, November 2026:** Home Assistant stellt die alte Aktion `notify.android_tv_*` ein, ab Version 2027.5 funktioniert sie nicht mehr. Die Beispiele oben nutzen deshalb `nfandroidtv.send_message`. HA holt das Bild jetzt selbst von der Kamera und schickt es an den TV, das ersetzt die URL mit dem Zeitstempel. `interactive: true` ersetzt `interrupt: 1`. Der Fehler oben trat noch mit der alten Aktion auf, deshalb steht dort weiterhin `notify.android_tv`.

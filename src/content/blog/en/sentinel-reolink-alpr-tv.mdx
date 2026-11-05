@@ -14,6 +14,8 @@ faqs:
     answer: "Binary sensors for person and vehicle from the onboard AI chip, plus two streams: camera.sentinel_clear (full 4K) and camera.sentinel_fluent (lower resolution, faster for notifications)."
 ---
 
+**Update, November 2026:** Home Assistant 2026.11 deprecated the old `notify.android_tv_*` action, and it stops working in version 2027.5, so the TV examples now use `nfandroidtv.send_message`. HA takes the frame from the camera itself and sends the image to the TV, which replaces the URL with the timestamp, and `interactive: true` replaces `interrupt: 1`. I also corrected the sentence about the phones, which has nothing to do with the new version. The failure described further down happened on the old action, so it still names `notify.android_tv`.
+
 We never installed a doorbell camera. The Reolink CX810 pointed at the driveway ended up doing more than any doorbell would have — without the subscription, without the app, and with the TV as the notification screen instead of a phone I might not be looking at.
 
 ## The camera
@@ -109,5 +111,3 @@ If the TV times out or the integration drops again, the phone notifications stil
 All three together solved it. The TV now shows the snapshot within about a second, and in cases where the TV is off or the integration hiccups, phones always get the notification regardless.
 
 **Update, May 2026:** The plate reading came out. Night accuracy wasn't reliable enough — plates at steep angles or in rain returned "none" more often than a real result, and two LLM Vision calls per vehicle event added latency that made the notification feel slow. The current setup skips ALPR entirely: vehicle or person trigger → fluent snapshot → TV and phones. The rolling plate log is gone. The camera, the TV integration, and the `continue_on_error` approach all stayed. The AI layer didn't.
-
-**Update, November 2026:** Home Assistant is phasing out the old `notify.android_tv_*` action, and it stops working in version 2027.5, so the examples above use `nfandroidtv.send_message`. HA now takes the frame from the camera itself and sends the image to the TV, which replaces the URL with the timestamp. `interactive: true` replaces `interrupt: 1`. The failure described above happened on the old action, so it still names `notify.android_tv`.

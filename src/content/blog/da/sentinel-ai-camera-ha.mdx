@@ -15,6 +15,8 @@ faqs:
     answer: "Ja. Samme automation sender et nyt billede fra kameraet til et Fire TV med nfandroidtv.send_message, og interactive: true sørger for, at det kommer frem, mens der spiller noget."
 ---
 
+**Opdatering, november 2026:** Home Assistant 2026.11 har gjort den gamle handling `notify.android_tv_*` forældet, og den holder op med at virke i version 2027.5. Derfor bruger TV-eksemplet nu `nfandroidtv.send_message`. Resten af indlægget er rettet, så det passer til min opsætning i dag: de ændringer skyldes ikke den nye version. Automationen gemmer heller ikke længere et stillbillede i `/local`, fordi filer dér kan hentes uden login.
+
 De første par uger efter jeg satte Sentinel-kameraet op, havde jeg notifikationer for bevægelse slået til. Hver eneste sagde «Bevægelse registreret». Fugle, skygger, en plastikpose, der blæste forbi linsen klokken tre om natten. Jeg slog dem alle fra og lod kameraet hænge der uden at gøre meget nytte i endnu en måned.
 
 Løsningen var enklere end ventet: reager kun på personer og køretøjer, ikke på al bevægelse, og giv notifikationen tre knapper, der faktisk gør noget.
@@ -147,8 +149,6 @@ Den samme automation sender også til TV'et i stuen:
 ```
 
 HA henter selv et nyt billede fra kameraet og sender selve billedet til TV'et, så der er ingen URL og intet gammelt billede fra cachen. `interactive: true` får det til at dukke op, også mens noget afspilles. Behold `continue_on_error: true`: uden den stopper automationen, hvis TV'et er slukket, og trinnene efter kører aldrig.
-
-**Opdatering, november 2026:** Home Assistant er ved at udfase den gamle handling `notify.android_tv_*`, som holder op med at virke i version 2027.5. Eksemplet her viser den nye form. Før var billedet en URL, og i stedet for `interactive: true` stod der `interrupt: 1`. Resten af indlægget passer nu også til automationen, som den kører i dag: en ventetid pr. type, ét kald pr. enhed, nulstilling af lydløs efter 30 minutter og en liste over seneste hændelser i stedet for logbogen. Automationen gemmer ikke længere et stillbillede i `/local`, fordi filer dér kan hentes uden login.
 
 ## Dashboard
 

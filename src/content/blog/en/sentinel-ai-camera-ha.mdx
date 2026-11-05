@@ -14,6 +14,8 @@ faqs:
     answer: "Yes. The same automation sends a fresh camera frame to a Fire TV with nfandroidtv.send_message, and interactive: true makes it appear even during playback."
 ---
 
+**Update, November 2026:** Home Assistant 2026.11 deprecated the old `notify.android_tv_*` action, and it stops working in version 2027.5, so the TV example now uses `nfandroidtv.send_message`. I also corrected the rest of the post to match my setup today: those changes have nothing to do with the new version. The automation no longer saves a still to `/local` either, because files there can be fetched without logging in.
+
 For about two weeks after installing the Sentinel camera, I had motion notifications turned on. Every notification said "Motion detected." Birds, shadows, a plastic bag blowing past the lens at 3am. I turned them all off and left the camera sitting there doing nothing useful for another month.
 
 The fix was simpler than I expected: trigger on person and vehicle only — not raw motion — and give the notification three buttons that actually do something.
@@ -146,8 +148,6 @@ The same automation also pushes to the TV in the living room:
 ```
 
 HA takes a fresh frame from the camera and sends the image itself to the TV, so there is no URL and no cached still from the previous event. `interactive: true` makes it pop up even during playback. Keep `continue_on_error: true`: without it, a TV that is switched off stops the run, and the steps after it never happen.
-
-**Update, November 2026:** Home Assistant is phasing out the old `notify.android_tv_*` action, and it stops working in version 2027.5. This example shows the new form. The old one took the image as a URL and used `interrupt: 1` instead of `interactive: true`. I also brought the rest of the post in line with the automation as it runs today: a cooldown per type, one call per device, a 30-minute mute reset and a list of recent events instead of the logbook. The automation no longer saves a still to `/local`, because files there can be fetched without logging in.
 
 ## The dashboard
 

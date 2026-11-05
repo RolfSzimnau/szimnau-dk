@@ -14,6 +14,8 @@ faqs:
     answer: "Binære sensorer for person og køretøj fra kameraets indbyggede AI-chip og to streams: camera.sentinel_clear i fuld 4K og camera.sentinel_fluent i lavere opløsning, som er hurtigere til notifikationer."
 ---
 
+**Opdatering, november 2026:** Home Assistant 2026.11 har gjort den gamle handling `notify.android_tv_*` forældet, og den holder op med at virke i version 2027.5. Derfor bruger TV-eksemplerne nu `nfandroidtv.send_message`. HA henter selv billedet fra kameraet og sender det til TV'et, så URL'en med tidsstemplet er væk, og `interactive: true` afløser `interrupt: 1`. Sætningen om telefonerne er også rettet, men det skyldes ikke den nye version. Fejlen længere nede skete med den gamle handling, og derfor står der stadig `notify.android_tv`.
+
 Vi har aldrig fået sat en dørklokke med kamera op. Reolink CX810, der peger ned mod indkørslen, endte med at gøre mere, end en dørklokke ville have gjort: uden abonnement, uden app og med TV'et som skærm til beskederne i stedet for en telefon, man måske ikke kigger på.
 
 ## Kameraet
@@ -109,5 +111,3 @@ Svarer TV'et ikke i tide, eller falder integrationen ud igen, kommer beskederne 
 De tre ting løste det tilsammen. TV'et viser nu billedet inden for cirka et sekund, og hvis TV'et er slukket, eller integrationen fejler, får telefonerne altid beskeden.
 
 **Opdatering, maj 2026:** Nummerpladegenkendelsen er taget ud. Den var ikke pålidelig nok om natten: plader i dårlige vinkler eller i kraftig regn gav oftere «none» end et egentligt resultat, og to kald til LLM Vision pr. bil gjorde beskeden mærkbart langsommere. Den nuværende opsætning springer nummerpladerne helt over: bil eller person, et billede fra fluent-strømmen, og så til TV og telefoner. Den løbende liste over nummerplader er væk. Kameraet, TV-integrationen og `continue_on_error` er der stadig. AI-laget er ikke.
-
-**Opdatering, november 2026:** Home Assistant er ved at udfase den gamle handling `notify.android_tv_*`, som holder op med at virke i version 2027.5, så eksemplerne ovenfor bruger `nfandroidtv.send_message`. HA henter nu selv billedet fra kameraet og sender det til TV'et, og det afløser URL'en med tidsstemplet. `interactive: true` afløser `interrupt: 1`. Fejlen ovenfor skete med den gamle handling, og derfor står der stadig `notify.android_tv`.

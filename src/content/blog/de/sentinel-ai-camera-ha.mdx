@@ -15,6 +15,8 @@ faqs:
     answer: "Ja. Dieselbe Automatisierung schickt mit nfandroidtv.send_message ein frisches Kamerabild an einen Fire TV, und interactive: true sorgt dafür, dass es auch während der Wiedergabe erscheint."
 ---
 
+**Update, November 2026:** Home Assistant 2026.11 hat die alte Aktion `notify.android_tv_*` als veraltet markiert, ab Version 2027.5 funktioniert sie nicht mehr. Deshalb nutzt das TV-Beispiel jetzt `nfandroidtv.send_message`. Auch der Rest des Beitrags ist korrigiert und passt zu meinem heutigen Setup: Diese Änderungen haben nichts mit der neuen Version zu tun. Außerdem speichert die Automatisierung kein Standbild mehr unter `/local`, denn Dateien dort lassen sich ohne Anmeldung abrufen.
+
 Die ersten zwei Wochen nach der Installation der Sentinel-Kamera hatte ich Bewegungsbenachrichtigungen aktiviert. Jede einzelne sagte "Bewegung erkannt." Vögel, Schatten, eine Plastiktüte, die nachts um drei an der Linse vorbeiwehte. Ich schaltete alle aus und ließ die Kamera für einen weiteren Monat nutzlos herumstehen.
 
 Die Lösung war einfacher als erwartet: nur bei Personen und Fahrzeugen auslösen — nicht bei roher Bewegungserkennung — und der Benachrichtigung drei Schaltflächen geben, die tatsächlich etwas tun.
@@ -147,8 +149,6 @@ Dieselbe Automatisierung sendet auch an den Fernseher im Wohnzimmer:
 ```
 
 HA holt selbst ein frisches Bild von der Kamera und schickt das Bild direkt an den Fernseher. Es gibt also keine URL und kein altes Bild aus dem Cache. `interactive: true` lässt es auch während der Wiedergabe erscheinen. `continue_on_error: true` muss bleiben: Ohne den Parameter stoppt ein ausgeschalteter Fernseher die Automatisierung, und die folgenden Schritte laufen nicht mehr.
-
-**Update, November 2026:** Home Assistant stellt die alte Aktion `notify.android_tv_*` ein, ab Version 2027.5 funktioniert sie nicht mehr. Das Beispiel zeigt die neue Form. Vorher war das Bild eine URL, und statt `interactive: true` stand dort `interrupt: 1`. Auch der Rest des Beitrags passt jetzt zur Automatisierung, wie sie heute läuft: eine Sperrzeit pro Typ, ein Aufruf pro Gerät, Zurücksetzen der Stummschaltung nach 30 Minuten und eine Liste der letzten Ereignisse statt des Logbuchs. Die Automatisierung speichert kein Standbild mehr unter `/local`, denn Dateien dort lassen sich ohne Anmeldung abrufen.
 
 ## Das Dashboard
 
