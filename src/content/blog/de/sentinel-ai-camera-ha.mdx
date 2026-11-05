@@ -10,7 +10,7 @@ translationKey: "sentinel-ai-camera-ha"
 heroImage: "/blog-images/overvagning-sentinel.jpg"
 faqs:
   - question: "Wie verhindert man, dass eine Überwachungskamera mit Bewegungsmeldungen nervt?"
-    answer: "Lass die Automatisierung auf die KI-Sensoren der Kamera für Person und Fahrzeug reagieren statt auf rohe Bewegung, ergänze einen input_boolean zum Stummschalten und gib der Benachrichtigung Buttons zum Öffnen der Kamera, Stummschalten und Verwerfen. Dann sind die Meldungen nützlich statt Lärm."
+    answer: "Lass die Automatisierung auf die KI-Sensoren der Kamera für Person und Fahrzeug reagieren statt auf rohe Bewegung, ergänze einen input_boolean zum Stummschalten und gib der Benachrichtigung Buttons zum Öffnen der Kamera, Einschalten des Flutlichts und Stummschalten. Dann sind die Meldungen nützlich statt Lärm."
   - question: "Kann die Kamerameldung auch auf dem Fernseher erscheinen?"
     answer: "Ja. Dieselbe Automatisierung schickt mit nfandroidtv.send_message ein frisches Kamerabild an einen Fire TV, und interactive: true sorgt dafür, dass es auch während der Wiedergabe erscheint."
 ---
@@ -34,11 +34,11 @@ Personen- und Fahrzeugerkennung kommen vom KI-Chip der Kamera. Ziemlich präzise
 
 ## Eine Automatisierung für beide Auslöser
 
-Personen- und Fahrzeugereignisse laufen durch eine einzige Automatisierung im `single`-Modus. Der Modus übernimmt die Deduplizierung — wenn der Sensor erneut auslöst, während die Automatisierung noch läuft (einschließlich einer 60-Sekunden-Cooldown-Verzögerung am Ende), wird der Auslöser lautlos verworfen.
+Personen- und Fahrzeugereignisse laufen durch eine einzige Automatisierung im `parallel`-Modus, sodass eine Person und ein Auto gleichzeitig je eine Meldung auslösen können. Jeder Typ hat seine eigene Sperrzeit: Der Zeitpunkt der letzten Meldung landet in einem `input_datetime`, und die Template-Bedingung verwirft alles, was innerhalb von 60 Sekunden kommt.
 
 ```yaml
-alias: Sentinel — Kamera & Benachrichtigung
-mode: single
+alias: "Sentinel: Kamera & Benachrichtigung"
+mode: parallel
 max_exceeded: silent
 trigger:
   - platform: state
@@ -51,20 +51,24 @@ trigger:
     from: "off"
     to: "on"
     id: fahrzeug
+variables:
+  notif_title: "{{ '\U0001F697 Fahrzeug an der Einfahrt' if trigger.id == 'fahrzeug' else '\U0001F464 Person an der Einfahrt' }}"
+  notif_message: "{{ 'Sentinel hat ein Fahrzeug erkannt' if trigger.id == 'fahrzeug' else 'Sentinel hat eine Person erkannt' }}"
+  cooldown_entity: "{{ 'input_datetime.sentinel_last_vehicle_notification' if trigger.id == 'fahrzeug' else 'input_datetime.sentinel_last_person_notification' }}"
 condition:
   - condition: state
     entity_id: input_boolean.sentinel_notifikation_lydlos
     state: "off"
+  - condition: template
+    value_template: >-
+      {% set last = states(cooldown_entity) %}
+      {% if last in ['unknown', 'unavailable', ''] %}
+        true
+      {% else %}
+        {{ (now().timestamp() - as_timestamp(last, 0)) > 60 }}
+      {% endif %}
 action:
-  - variables:
-      notif_title: "{{ '\U0001F697 Fahrzeug an der Einfahrt' if trigger.id == 'fahrzeug' else '\U0001F464 Person an der Einfahrt' }}"
-      notif_message: "{{ 'Sentinel hat ein Fahrzeug erkannt' if trigger.id == 'fahrzeug' else 'Sentinel hat eine Person erkannt' }}"
-  - action: camera.snapshot
-    target:
-      entity_id: camera.sentinel_fluent
-    data:
-      filename: /config/www/sentinel_latest.jpg
-  - action: notify.alle_enheder
+  - action: notify.mobile_app_pixel_10
     data:
       title: "{{ notif_title }}"
       message: "{{ notif_message }}"
@@ -72,10 +76,9 @@ action:
         ttl: 0
         priority: high
         channel: Sicherheit
+        importance: high
         tag: sentinel_alert
-        entity_id: camera.sentinel_fluent
-        camera_stream: true
-        image: /api/camera_proxy/camera.sentinel_fluent
+        image: /api/camera_proxy/camera.sentinel_snapshots_clear
         actions:
           - action: URI
             title: Kamera anzeigen
@@ -85,39 +88,40 @@ action:
           - action: sentinel_mute_30
             title: 30 Min. stumm
         clickAction: /nyt-mobil/overvagning
-  - delay:
-      seconds: 60
+  # derselbe Aufruf geht an die beiden anderen Geräte
+  # hier folgt der TV-Schritt, siehe unten
+  - action: input_datetime.set_datetime
+    target:
+      entity_id: "{{ cooldown_entity }}"
+    data:
+      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
 ```
 
-Der `camera.snapshot`-Aufruf speichert ein frisches Standbild unter `/local/sentinel_latest.jpg`, bevor die Benachrichtigung gesendet wird. Die Benachrichtigung selbst enthält einen Live-Kamera-Stream (`camera_stream: true`) — auf Android mit der HA-Companion-App wird dieser direkt in der Benachrichtigung angezeigt.
+Zwei Telefone und ein Tablet bekommen je einen Aufruf mit demselben Inhalt: ein Standbild von `camera.sentinel_snapshots_clear` und drei Schaltflächen.
 
 ## Der Stummschalten-Schalter
 
-Die einzige Bedingung ist `input_boolean.sentinel_notifikation_lydlos` (Benachrichtigung stumm) mit dem Zustand `off`. Das ist das einzige Gate. Es ist einfacher als eine `armed_away`-Bedingung — kein Alarmfeld erforderlich, funktioniert unabhängig vom Zuhause/Abwesend-Status, und die Benachrichtigung selbst kann ihn über die Stumm-Schaltfläche umschalten.
+Die erste Bedingung ist `input_boolean.sentinel_notifikation_lydlos` (Benachrichtigung stumm) mit dem Zustand `off`. Das ist einfacher als eine `armed_away`-Bedingung: Es braucht keine Alarmzentrale, es funktioniert unabhängig davon, ob man zu Hause ist oder nicht, und die Benachrichtigung selbst kann den Schalter über die Stumm-Schaltfläche einschalten.
 
-Eine separate Automatisierung setzt ihn jede Nacht um Mitternacht auf `off` zurück, sodass ich nie daran denken muss, ihn wieder einzuschalten.
+Eine separate Automatisierung schaltet ihn nach 30 Minuten wieder aus, sodass ich nie daran denken muss.
 
 ## Aktionsschaltflächen
 
 Die Benachrichtigung hat drei Schaltflächen:
 
-- **Kamera anzeigen** — Deep-Link zur Sicherheitsansicht in der HA-Companion-App
-- **Flutlicht einschalten** — aktiviert `light.sentinel_floodlight` über eine separate Automatisierung, die auf das `sentinel_flood_on`-Mobile-Aktionsereignis hört
-- **30 Min. stumm** — schaltet den Stummschalten-Schalter für 30 Minuten ein und setzt ihn danach zurück
+- **Kamera anzeigen**: Deep-Link zur Sicherheitsansicht in der HA-Companion-App
+- **Flutlicht einschalten**: schaltet `light.sentinel_floodlight` über eine separate Automatisierung ein, die auf das `sentinel_flood_on`-Ereignis vom Telefon hört
+- **30 Min. stumm**: schaltet den Stummschalter über dieselbe Automatisierung ein, und das Zurücksetzen unten schaltet ihn nach 30 Minuten wieder aus
 
-Behandlung der Stumm-Aktion:
+Die Stumm-Schaltfläche schaltet den Schalter nur ein. Das Zurücksetzen ist eine eigene Automatisierung und greift deshalb auch, wenn der Schalter auf andere Weise eingeschaltet wird:
 
 ```yaml
-alias: Sentinel — 30 Min. stumm
+alias: "Sentinel: Stummschaltung zurücksetzen"
 trigger:
-  - platform: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: sentinel_mute_30
+  - platform: state
+    entity_id: input_boolean.sentinel_notifikation_lydlos
+    to: "on"
 action:
-  - action: input_boolean.turn_on
-    target:
-      entity_id: input_boolean.sentinel_notifikation_lydlos
   - delay:
       minutes: 30
   - action: input_boolean.turn_off
@@ -144,34 +148,58 @@ Dieselbe Automatisierung sendet auch an den Fernseher im Wohnzimmer:
 
 HA holt selbst ein frisches Bild von der Kamera und schickt das Bild direkt an den Fernseher. Es gibt also keine URL und kein altes Bild aus dem Cache. `interactive: true` lässt es auch während der Wiedergabe erscheinen. `continue_on_error: true` muss bleiben: Ohne den Parameter stoppt ein ausgeschalteter Fernseher die Automatisierung, und die folgenden Schritte laufen nicht mehr.
 
-**Update, November 2026:** Home Assistant stellt die alte Aktion `notify.android_tv_*` ein, ab Version 2027.5 funktioniert sie nicht mehr. Das Beispiel zeigt die neue Form. Vorher war das Bild eine URL, und statt `interactive: true` stand dort `interrupt: 1`.
+**Update, November 2026:** Home Assistant stellt die alte Aktion `notify.android_tv_*` ein, ab Version 2027.5 funktioniert sie nicht mehr. Das Beispiel zeigt die neue Form. Vorher war das Bild eine URL, und statt `interactive: true` stand dort `interrupt: 1`. Auch der Rest des Beitrags passt jetzt zur Automatisierung, wie sie heute läuft: eine Sperrzeit pro Typ, ein Aufruf pro Gerät, Zurücksetzen der Stummschaltung nach 30 Minuten und eine Liste der letzten Ereignisse statt des Logbuchs. Die Automatisierung speichert kein Standbild mehr unter `/local`, denn Dateien dort lassen sich ohne Anmeldung abrufen.
 
 ## Das Dashboard
 
-Die Sicherheitsansicht zeigt Status-Chips und ein 24-Stunden-Logbuch:
+Die Sicherheitsansicht zeigt oben die Kamera, dann Status-Chips für Bewegung, Person, Tier und Fahrzeug und eine Liste der letzten Ereignisse. Die Chips folgen alle demselben Muster:
 
 ```yaml
-type: vertical-stack
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: entity
-        entity: binary_sensor.sentinel_person
-        icon: mdi:account
-        icon_color: red
-      - type: entity
-        entity: binary_sensor.sentinel_vehicle
-        icon: mdi:car
-      - type: entity
-        entity: input_boolean.sentinel_notifikation_lydlos
-        icon: mdi:bell-off
-        tap_action:
-          action: toggle
-  - type: logbook
-    entities:
-      - binary_sensor.sentinel_person
-      - binary_sensor.sentinel_vehicle
-    hours_to_show: 24
+type: custom:mushroom-chips-card
+chips:
+  - type: template
+    entity: binary_sensor.sentinel_person
+    icon: mdi:walk
+    icon_color: "{% if is_state('binary_sensor.sentinel_person','on') %}orange{% else %}disabled{% endif %}"
+    content: Person
+    tap_action:
+      action: more-info
 ```
 
-Das Logbuch unten ist das, was ich nach einer Reise am häufigsten nutze — einmal durch 24 Stunden Ereignisse scrollen, statt Push-Benachrichtigungen einzeln nachzuspielen.
+Eine kleine Automatisierung führt die Liste und setzt jedes neue Ereignis an den Anfang eines `input_text`:
+
+```yaml
+alias: Sentinel event log
+mode: queued
+max: 10
+trigger:
+  - trigger: state
+    entity_id: binary_sensor.sentinel_person
+    to: "on"
+    id: person
+  - trigger: state
+    entity_id: binary_sensor.sentinel_motion
+    to: "on"
+    id: motion
+  - trigger: state
+    entity_id: binary_sensor.sentinel_animal
+    to: "on"
+    id: animal
+  - trigger: state
+    entity_id: binary_sensor.sentinel_vehicle
+    to: "on"
+    id: vehicle
+action:
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.sentinel_event_log
+    data:
+      value: >-
+        {% set m = {'person':'👤 Person','motion':'🏃 Motion','animal':'🐾 Animal','vehicle':'🚗 Vehicle'} %}
+        {% set new = now().strftime('%H:%M') ~ ' ' ~ m[trigger.id] %}
+        {% set old = states('input_text.sentinel_event_log') %}
+        {% set items = ([new] + (old.split(' · ') if old not in ['unknown','unavailable',''] else []))[:10] %}
+        {{ (items | join(' · '))[:255] }}
+```
+
+Die Liste enthält die letzten zehn Ereignisse, und Bewegung zählt mit, also verdrängt ein unruhiger Nachmittag den Vormittag. Die Grenze von 255 Zeichen kommt von `input_text` selbst.

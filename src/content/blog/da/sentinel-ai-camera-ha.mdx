@@ -10,7 +10,7 @@ translationKey: "sentinel-ai-camera-ha"
 heroImage: "/blog-images/overvagning-sentinel.jpg"
 faqs:
   - question: "Hvordan stopper man et overvågningskamera i at sende en strøm af bevægelsesnotifikationer?"
-    answer: "Lad automationen reagere på kameraets AI-sensorer for person og køretøj i stedet for rå bevægelse, tilføj en input_boolean til at slå lyden fra, og giv notifikationen knapper til at åbne kameraet, slå lyden fra og afvise. Så bliver advarslerne til at bruge."
+    answer: "Lad automationen reagere på kameraets AI-sensorer for person og køretøj i stedet for rå bevægelse, tilføj en input_boolean til at slå lyden fra, og giv notifikationen knapper til at åbne kameraet, tænde projektøren og slå lyden fra. Så bliver advarslerne til at bruge."
   - question: "Kan kameranotifikationen også vises på TV'et?"
     answer: "Ja. Samme automation sender et nyt billede fra kameraet til et Fire TV med nfandroidtv.send_message, og interactive: true sørger for, at det kommer frem, mens der spiller noget."
 ---
@@ -34,11 +34,11 @@ Person og køretøj kommer fra kameraets egen AI-chip. Ret præcis, bedre end re
 
 ## Én automation til begge udløsere
 
-Hændelser med personer og køretøjer går gennem én automation i tilstanden `single`. Tilstanden forhindrer dubletter: slår sensoren til igen, mens automationen stadig kører (inklusive en pause på 60 sekunder til sidst), bliver den nye udløsning ignoreret uden besked.
+Hændelser med personer og køretøjer går gennem én automation i tilstanden `parallel`, så en person og en bil kan sende hver sin besked samtidig. Hver type har sin egen ventetid: tidspunktet for den seneste besked gemmes i en `input_datetime`, og skabelonbetingelsen afviser alt, der kommer inden for 60 sekunder.
 
 ```yaml
-alias: Sentinel — Kamera & Notifikation
-mode: single
+alias: "Sentinel: Kamera & Notifikation"
+mode: parallel
 max_exceeded: silent
 trigger:
   - platform: state
@@ -51,20 +51,24 @@ trigger:
     from: "off"
     to: "on"
     id: bil
+variables:
+  notif_title: "{{ '\U0001F697 Bil ved indkørslen' if trigger.id == 'bil' else '\U0001F464 Person ved indkørslen' }}"
+  notif_message: "{{ 'Sentinel har registreret et køretøj' if trigger.id == 'bil' else 'Sentinel har registreret en person' }}"
+  cooldown_entity: "{{ 'input_datetime.sentinel_last_vehicle_notification' if trigger.id == 'bil' else 'input_datetime.sentinel_last_person_notification' }}"
 condition:
   - condition: state
     entity_id: input_boolean.sentinel_notifikation_lydlos
     state: "off"
+  - condition: template
+    value_template: >-
+      {% set last = states(cooldown_entity) %}
+      {% if last in ['unknown', 'unavailable', ''] %}
+        true
+      {% else %}
+        {{ (now().timestamp() - as_timestamp(last, 0)) > 60 }}
+      {% endif %}
 action:
-  - variables:
-      notif_title: "{{ '\U0001F697 Bil ved indkørslen' if trigger.id == 'bil' else '\U0001F464 Person ved indkørslen' }}"
-      notif_message: "{{ 'Sentinel har registreret et køretøj' if trigger.id == 'bil' else 'Sentinel har registreret en person' }}"
-  - action: camera.snapshot
-    target:
-      entity_id: camera.sentinel_fluent
-    data:
-      filename: /config/www/sentinel_latest.jpg
-  - action: notify.alle_enheder
+  - action: notify.mobile_app_pixel_10
     data:
       title: "{{ notif_title }}"
       message: "{{ notif_message }}"
@@ -72,10 +76,9 @@ action:
         ttl: 0
         priority: high
         channel: Overvågning
+        importance: high
         tag: sentinel_alert
-        entity_id: camera.sentinel_fluent
-        camera_stream: true
-        image: /api/camera_proxy/camera.sentinel_fluent
+        image: /api/camera_proxy/camera.sentinel_snapshots_clear
         actions:
           - action: URI
             title: Se Kamera
@@ -85,17 +88,22 @@ action:
           - action: sentinel_mute_30
             title: Lydløs 30 min
         clickAction: /nyt-mobil/overvagning
-  - delay:
-      seconds: 60
+  # samme kald går til de to andre enheder
+  # her kommer trinnet til TV'et, se længere nede
+  - action: input_datetime.set_datetime
+    target:
+      entity_id: "{{ cooldown_entity }}"
+    data:
+      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
 ```
 
-`camera.snapshot` gemmer et nyt stillbillede i `/local/sentinel_latest.jpg`, før notifikationen sendes. Selve notifikationen indeholder kameraets live-billede (`camera_stream: true`). På Android med HA's Companion-app kan den foldes ud til live-video direkte i notifikationen.
+To telefoner og en tablet får hvert sit kald med samme indhold: et stillbillede fra `camera.sentinel_snapshots_clear` og tre knapper.
 
 ## Lydløs-kontakten
 
-Den eneste betingelse er, at `input_boolean.sentinel_notifikation_lydlos` står på `off`. Det er den, der bestemmer. Den er enklere end en betingelse på `armed_away`: der skal ingen alarmcentral til, den virker, uanset om man er hjemme eller ude, og notifikationen kan selv slå den til via Lydløs-knappen.
+Den første betingelse er, at `input_boolean.sentinel_notifikation_lydlos` står på `off`. Den er enklere end en betingelse på `armed_away`: der skal ingen alarmcentral til, den virker, uanset om man er hjemme eller ude, og notifikationen kan selv slå den til via Lydløs-knappen.
 
-En separat automation sætter den tilbage til `off` ved midnat hver nat, så jeg aldrig skal huske at slå den fra igen.
+En separat automation slår den fra igen efter 30 minutter, så jeg aldrig skal huske det.
 
 ## Knapperne i notifikationen
 
@@ -103,21 +111,17 @@ Notifikationen har tre knapper:
 
 - **Se Kamera**: direkte link til visningen Overvågning i HA's Companion-app
 - **Tænd Flood**: tænder `light.sentinel_floodlight` via en separat automation, der lytter efter handlingen `sentinel_flood_on` fra mobilen
-- **Lydløs 30 min**: slår lydløs-kontakten til i 30 minutter og nulstiller den derefter
+- **Lydløs 30 min**: slår lydløs-kontakten til via samme automation, og nulstillingen herunder slår den fra igen efter 30 minutter
 
-Sådan håndteres lydløs-knappen:
+Lydløs-knappen slår kun kontakten til. Nulstillingen er sin egen automation, så den også virker, hvis kontakten bliver slået til på en anden måde:
 
 ```yaml
-alias: Sentinel — Lydløs 30 min
+alias: "Sentinel: Nulstil Lydløs Tilstand"
 trigger:
-  - platform: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: sentinel_mute_30
+  - platform: state
+    entity_id: input_boolean.sentinel_notifikation_lydlos
+    to: "on"
 action:
-  - action: input_boolean.turn_on
-    target:
-      entity_id: input_boolean.sentinel_notifikation_lydlos
   - delay:
       minutes: 30
   - action: input_boolean.turn_off
@@ -144,34 +148,58 @@ Den samme automation sender også til TV'et i stuen:
 
 HA henter selv et nyt billede fra kameraet og sender selve billedet til TV'et, så der er ingen URL og intet gammelt billede fra cachen. `interactive: true` får det til at dukke op, også mens noget afspilles. Behold `continue_on_error: true`: uden den stopper automationen, hvis TV'et er slukket, og trinnene efter kører aldrig.
 
-**Opdatering, november 2026:** Home Assistant er ved at udfase den gamle handling `notify.android_tv_*`, som holder op med at virke i version 2027.5. Eksemplet her viser den nye form. Før var billedet en URL, og i stedet for `interactive: true` stod der `interrupt: 1`.
+**Opdatering, november 2026:** Home Assistant er ved at udfase den gamle handling `notify.android_tv_*`, som holder op med at virke i version 2027.5. Eksemplet her viser den nye form. Før var billedet en URL, og i stedet for `interactive: true` stod der `interrupt: 1`. Resten af indlægget passer nu også til automationen, som den kører i dag: en ventetid pr. type, ét kald pr. enhed, nulstilling af lydløs efter 30 minutter og en liste over seneste hændelser i stedet for logbogen. Automationen gemmer ikke længere et stillbillede i `/local`, fordi filer dér kan hentes uden login.
 
 ## Dashboard
 
-Visningen Overvågning viser statuskort og en logbog for de seneste 24 timer:
+Visningen Overvågning har kameraet øverst, statuskort for bevægelse, person, dyr og køretøj og en liste over de seneste hændelser. Statuskortene følger alle samme mønster:
 
 ```yaml
-type: vertical-stack
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: entity
-        entity: binary_sensor.sentinel_person
-        icon: mdi:account
-        icon_color: red
-      - type: entity
-        entity: binary_sensor.sentinel_vehicle
-        icon: mdi:car
-      - type: entity
-        entity: input_boolean.sentinel_notifikation_lydlos
-        icon: mdi:bell-off
-        tap_action:
-          action: toggle
-  - type: logbook
-    entities:
-      - binary_sensor.sentinel_person
-      - binary_sensor.sentinel_vehicle
-    hours_to_show: 24
+type: custom:mushroom-chips-card
+chips:
+  - type: template
+    entity: binary_sensor.sentinel_person
+    icon: mdi:walk
+    icon_color: "{% if is_state('binary_sensor.sentinel_person','on') %}orange{% else %}disabled{% endif %}"
+    content: Person
+    tap_action:
+      action: more-info
 ```
 
-Logbogen er det, jeg bruger mest efter en rejse: rul gennem et døgns hændelser i ét hug i stedet for at gennemgå notifikationerne én ad gangen.
+En lille automation holder styr på listen og lægger hver ny hændelse forrest i en `input_text`:
+
+```yaml
+alias: Sentinel event log
+mode: queued
+max: 10
+trigger:
+  - trigger: state
+    entity_id: binary_sensor.sentinel_person
+    to: "on"
+    id: person
+  - trigger: state
+    entity_id: binary_sensor.sentinel_motion
+    to: "on"
+    id: motion
+  - trigger: state
+    entity_id: binary_sensor.sentinel_animal
+    to: "on"
+    id: animal
+  - trigger: state
+    entity_id: binary_sensor.sentinel_vehicle
+    to: "on"
+    id: vehicle
+action:
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.sentinel_event_log
+    data:
+      value: >-
+        {% set m = {'person':'👤 Person','motion':'🏃 Motion','animal':'🐾 Animal','vehicle':'🚗 Vehicle'} %}
+        {% set new = now().strftime('%H:%M') ~ ' ' ~ m[trigger.id] %}
+        {% set old = states('input_text.sentinel_event_log') %}
+        {% set items = ([new] + (old.split(' · ') if old not in ['unknown','unavailable',''] else []))[:10] %}
+        {{ (items | join(' · '))[:255] }}
+```
+
+Listen rummer de ti seneste hændelser, og bevægelse tæller med, så en travl eftermiddag skubber formiddagen ud. Grænsen på 255 tegn kommer fra `input_text` selv.

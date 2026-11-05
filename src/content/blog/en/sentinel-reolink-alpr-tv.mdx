@@ -67,7 +67,7 @@ data:
 
 `interactive: true` forces the notification to appear even if the TV is busy. The image shows up in the corner with the plate text underneath. You're watching something, a car pulls in, a thumbnail appears in the corner with the plate — you glance at it and either ignore it or grab your phone. No picking up the phone to check, no opening an app.
 
-Phones get the same snapshot via `notify.alle_enheder`, with a timestamp-busted URL so it doesn't serve a cached image from the previous visit.
+Phones get their own image through `notify.mobile_app_*`, with one call per device.
 
 Person detection gets a simpler version: no ALPR attempt, just a snapshot notification. It's enough to see whether it's the postman or someone you don't recognise.
 

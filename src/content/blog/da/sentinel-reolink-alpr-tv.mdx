@@ -67,7 +67,7 @@ data:
 
 `interactive: true` tvinger beskeden frem, også når TV'et er i gang med noget. Billedet vises i hjørnet med nummerpladen nedenunder. Man ser en film, en bil kører ind, og et lille billede med nummerpladen dukker op i hjørnet. Man kaster et blik på det og ignorerer det eller tager telefonen. Man skal ikke finde telefonen frem for at tjekke eller åbne en app.
 
-Telefonerne får det samme billede via `notify.alle_enheder` med et tidsstempel i adressen, så de ikke viser et gammelt billede fra cachen fra sidste besøg.
+Telefonerne får deres eget billede via `notify.mobile_app_*` med ét kald pr. enhed.
 
 Når kameraet ser en person, er det en enklere version: ingen forsøg på at læse nummerplader, bare en besked med billede. Det er nok til at se, om det er postbuddet eller en, man ikke kender.
 

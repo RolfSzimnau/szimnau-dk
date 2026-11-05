@@ -9,7 +9,7 @@ translationKey: "sentinel-ai-camera-ha"
 heroImage: "/blog-images/overvagning-sentinel.jpg"
 faqs:
   - question: "How do you stop a security camera from spamming motion notifications?"
-    answer: "Trigger on the camera's person and vehicle AI sensors instead of raw motion, add an input_boolean mute toggle, and give the notification action buttons — open camera, mute, dismiss — so alerts are useful instead of noise."
+    answer: "Trigger on the camera's person and vehicle AI sensors instead of raw motion, add an input_boolean mute toggle, and give the notification action buttons (open camera, turn on the floodlight, mute) so alerts are useful instead of noise."
   - question: "Can the camera notification show on a TV as well?"
     answer: "Yes. The same automation sends a fresh camera frame to a Fire TV with nfandroidtv.send_message, and interactive: true makes it appear even during playback."
 ---
@@ -33,11 +33,11 @@ Person and vehicle come from the camera's own AI chip. Reasonably accurate — b
 
 ## One automation for both triggers
 
-Person and vehicle events go through a single automation in `single` mode. The mode handles deduplication — if the sensor fires again while the automation is still running (which includes a 60-second cooldown delay at the end), the trigger is discarded silently.
+Person and vehicle events go through a single automation in `parallel` mode, so a person and a car can each send an alert at the same time. Each type has its own cooldown: the time of the last alert goes into an `input_datetime`, and the template condition drops anything within 60 seconds of it.
 
 ```yaml
-alias: Sentinel — Camera & Notification
-mode: single
+alias: "Sentinel: Camera & Notification"
+mode: parallel
 max_exceeded: silent
 trigger:
   - platform: state
@@ -50,20 +50,24 @@ trigger:
     from: "off"
     to: "on"
     id: vehicle
+variables:
+  notif_title: "{{ '\U0001F697 Vehicle at the driveway' if trigger.id == 'vehicle' else '\U0001F464 Person at the driveway' }}"
+  notif_message: "{{ 'Sentinel detected a vehicle' if trigger.id == 'vehicle' else 'Sentinel detected a person' }}"
+  cooldown_entity: "{{ 'input_datetime.sentinel_last_vehicle_notification' if trigger.id == 'vehicle' else 'input_datetime.sentinel_last_person_notification' }}"
 condition:
   - condition: state
     entity_id: input_boolean.sentinel_notifikation_lydlos
     state: "off"
+  - condition: template
+    value_template: >-
+      {% set last = states(cooldown_entity) %}
+      {% if last in ['unknown', 'unavailable', ''] %}
+        true
+      {% else %}
+        {{ (now().timestamp() - as_timestamp(last, 0)) > 60 }}
+      {% endif %}
 action:
-  - variables:
-      notif_title: "{{ '\U0001F697 Vehicle at the driveway' if trigger.id == 'vehicle' else '\U0001F464 Person at the driveway' }}"
-      notif_message: "{{ 'Sentinel detected a vehicle' if trigger.id == 'vehicle' else 'Sentinel detected a person' }}"
-  - action: camera.snapshot
-    target:
-      entity_id: camera.sentinel_fluent
-    data:
-      filename: /config/www/sentinel_latest.jpg
-  - action: notify.alle_enheder
+  - action: notify.mobile_app_pixel_10
     data:
       title: "{{ notif_title }}"
       message: "{{ notif_message }}"
@@ -71,10 +75,9 @@ action:
         ttl: 0
         priority: high
         channel: Security
+        importance: high
         tag: sentinel_alert
-        entity_id: camera.sentinel_fluent
-        camera_stream: true
-        image: /api/camera_proxy/camera.sentinel_fluent
+        image: /api/camera_proxy/camera.sentinel_snapshots_clear
         actions:
           - action: URI
             title: View Camera
@@ -84,39 +87,40 @@ action:
           - action: sentinel_mute_30
             title: Mute 30 min
         clickAction: /nyt-mobil/overvagning
-  - delay:
-      seconds: 60
+  # the same call goes to the other two devices
+  # the TV step goes here, see below
+  - action: input_datetime.set_datetime
+    target:
+      entity_id: "{{ cooldown_entity }}"
+    data:
+      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
 ```
 
-The `camera.snapshot` call saves a fresh still to `/local/sentinel_latest.jpg` before the notification fires. The notification itself carries a live camera stream (`camera_stream: true`) — on Android with the HA companion app this expands to a live feed directly in the notification.
+Two phones and a tablet get a call each with the same content: a still from `camera.sentinel_snapshots_clear` and three buttons.
 
 ## The mute toggle
 
-The only condition is `input_boolean.sentinel_notifikation_lydlos` (notification mute) being `off`. That's the sole gate. It's simpler than an `armed_away` condition — no alarm panel required, it works regardless of home or away state, and the notification itself can flip it via the Mute button.
+The first condition is `input_boolean.sentinel_notifikation_lydlos` (notification mute) being `off`. It's simpler than an `armed_away` condition: no alarm panel required, it works regardless of home or away state, and the notification itself can flip it via the Mute button.
 
-A separate automation resets it to `off` at midnight each night, so I never have to remember to turn it back on.
+A separate automation turns it off again after 30 minutes, so I never have to remember to do it.
 
 ## Action buttons
 
 The notification carries three buttons:
 
-- **View Camera** — deep-links to the Security view in the HA companion app
-- **Turn on Flood** — triggers `light.sentinel_floodlight` via a separate automation listening for the `sentinel_flood_on` mobile action event
-- **Mute 30 min** — turns on the mute toggle for 30 minutes, then resets it
+- **View Camera**: deep-links to the Security view in the HA companion app
+- **Turn on Flood**: turns on `light.sentinel_floodlight` through a separate automation listening for the `sentinel_flood_on` mobile action event
+- **Mute 30 min**: turns on the mute toggle through that same automation, and the reset below turns it off after 30 minutes
 
-Handling the mute action:
+The Mute button only turns the toggle on. The reset is its own automation, so it also works when the toggle gets turned on some other way:
 
 ```yaml
-alias: Sentinel — Mute 30 min
+alias: "Sentinel: Reset Mute"
 trigger:
-  - platform: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: sentinel_mute_30
+  - platform: state
+    entity_id: input_boolean.sentinel_notifikation_lydlos
+    to: "on"
 action:
-  - action: input_boolean.turn_on
-    target:
-      entity_id: input_boolean.sentinel_notifikation_lydlos
   - delay:
       minutes: 30
   - action: input_boolean.turn_off
@@ -143,34 +147,58 @@ The same automation also pushes to the TV in the living room:
 
 HA takes a fresh frame from the camera and sends the image itself to the TV, so there is no URL and no cached still from the previous event. `interactive: true` makes it pop up even during playback. Keep `continue_on_error: true`: without it, a TV that is switched off stops the run, and the steps after it never happen.
 
-**Update, November 2026:** Home Assistant is phasing out the old `notify.android_tv_*` action, and it stops working in version 2027.5. This example shows the new form. The old one took the image as a URL and used `interrupt: 1` instead of `interactive: true`.
+**Update, November 2026:** Home Assistant is phasing out the old `notify.android_tv_*` action, and it stops working in version 2027.5. This example shows the new form. The old one took the image as a URL and used `interrupt: 1` instead of `interactive: true`. I also brought the rest of the post in line with the automation as it runs today: a cooldown per type, one call per device, a 30-minute mute reset and a list of recent events instead of the logbook. The automation no longer saves a still to `/local`, because files there can be fetched without logging in.
 
 ## The dashboard
 
-The Security view shows status chips and a 24-hour logbook:
+The Security view has the camera at the top, status chips for motion, person, animal and vehicle, and a list of recent events. The chips all follow the same pattern:
 
 ```yaml
-type: vertical-stack
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: entity
-        entity: binary_sensor.sentinel_person
-        icon: mdi:account
-        icon_color: red
-      - type: entity
-        entity: binary_sensor.sentinel_vehicle
-        icon: mdi:car
-      - type: entity
-        entity: input_boolean.sentinel_notifikation_lydlos
-        icon: mdi:bell-off
-        tap_action:
-          action: toggle
-  - type: logbook
-    entities:
-      - binary_sensor.sentinel_person
-      - binary_sensor.sentinel_vehicle
-    hours_to_show: 24
+type: custom:mushroom-chips-card
+chips:
+  - type: template
+    entity: binary_sensor.sentinel_person
+    icon: mdi:walk
+    icon_color: "{% if is_state('binary_sensor.sentinel_person','on') %}orange{% else %}disabled{% endif %}"
+    content: Person
+    tap_action:
+      action: more-info
 ```
 
-The logbook is what I actually use most after a trip away — scroll through 24 hours of events in one pass rather than replaying push notifications one by one.
+A small automation keeps the list by adding each new event to the front of an `input_text`:
+
+```yaml
+alias: Sentinel event log
+mode: queued
+max: 10
+trigger:
+  - trigger: state
+    entity_id: binary_sensor.sentinel_person
+    to: "on"
+    id: person
+  - trigger: state
+    entity_id: binary_sensor.sentinel_motion
+    to: "on"
+    id: motion
+  - trigger: state
+    entity_id: binary_sensor.sentinel_animal
+    to: "on"
+    id: animal
+  - trigger: state
+    entity_id: binary_sensor.sentinel_vehicle
+    to: "on"
+    id: vehicle
+action:
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.sentinel_event_log
+    data:
+      value: >-
+        {% set m = {'person':'👤 Person','motion':'🏃 Motion','animal':'🐾 Animal','vehicle':'🚗 Vehicle'} %}
+        {% set new = now().strftime('%H:%M') ~ ' ' ~ m[trigger.id] %}
+        {% set old = states('input_text.sentinel_event_log') %}
+        {% set items = ([new] + (old.split(' · ') if old not in ['unknown','unavailable',''] else []))[:10] %}
+        {{ (items | join(' · '))[:255] }}
+```
+
+The list holds the last ten events, and motion counts too, so a busy afternoon pushes out the morning. The 255-character limit comes from `input_text` itself.
