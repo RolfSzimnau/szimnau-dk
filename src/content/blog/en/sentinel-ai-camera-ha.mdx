@@ -2,6 +2,7 @@
 title: "Camera Notifications That Actually Tell You Something"
 description: "How I got the Sentinel camera to send useful, actionable alerts instead of 40 motion pings a day: one automation, a mute toggle, and action buttons."
 pubDate: 2025-02-07
+updatedDate: 2026-11-05
 tags: ["camera", "security"]
 lang: "en"
 translationKey: "sentinel-ai-camera-ha"
@@ -10,7 +11,7 @@ faqs:
   - question: "How do you stop a security camera from spamming motion notifications?"
     answer: "Trigger on the camera's person and vehicle AI sensors instead of raw motion, add an input_boolean mute toggle, and give the notification action buttons — open camera, mute, dismiss — so alerts are useful instead of noise."
   - question: "Can the camera notification show on a TV as well?"
-    answer: "Yes — the same automation pushes a snapshot to a Fire TV via notify, with a cache-busting timestamp parameter on the image URL and interrupt: 1 so it appears even during playback."
+    answer: "Yes. The same automation sends a fresh camera frame to a Fire TV with nfandroidtv.send_message, and interactive: true makes it appear even during playback."
 ---
 
 For about two weeks after installing the Sentinel camera, I had motion notifications turned on. Every notification said "Motion detected." Birds, shadows, a plastic bag blowing past the lens at 3am. I turned them all off and left the camera sitting there doing nothing useful for another month.
@@ -128,15 +129,21 @@ action:
 The same automation also pushes to the TV in the living room:
 
 ```yaml
-  - action: notify.android_tv_fire_tv_192_168_1_40
+  - action: nfandroidtv.send_message
+    continue_on_error: true
+    target:
+      entity_id: notify.android_tv_fire_tv_192_168_1_40
     data:
       message: "{{ '\U0001F697 Vehicle detected at the driveway' if trigger.id == 'vehicle' else '\U0001F464 Person detected outside' }}"
-      data:
-        image: "http://192.168.1.171:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
-        interrupt: 1
+      image:
+        media_content_id: media-source://camera/camera.sentinel_fluent
+        media_content_type: image/jpeg
+      interactive: true
 ```
 
-The `?t=` timestamp parameter forces a fresh image load — without it the Fire TV shows a cached still from the previous event. `interrupt: 1` makes it pop up even during playback.
+HA takes a fresh frame from the camera and sends the image itself to the TV, so there is no URL and no cached still from the previous event. `interactive: true` makes it pop up even during playback. Keep `continue_on_error: true`: without it, a TV that is switched off stops the run, and the steps after it never happen.
+
+**Update, November 2026:** Home Assistant is phasing out the old `notify.android_tv_*` action, and it stops working in version 2027.5. This example shows the new form. The old one took the image as a URL and used `interrupt: 1` instead of `interactive: true`.
 
 ## The dashboard
 

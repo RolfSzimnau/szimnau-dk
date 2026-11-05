@@ -3,6 +3,7 @@ title: "Kennzeichenerkennung und TV-Snapshots von einer Reolink CX810"
 seoTitle: "Kennzeichenerkennung mit Reolink CX810 und TV-Snapshot"
 description: "Eine Reolink CX810 4K PoE liest Kennzeichen per KI und schickt bei der Einfahrt sofort ein Snapshot-Bild auf den TV, gesteuert in Home Assistant."
 pubDate: 2025-09-19
+updatedDate: 2026-11-05
 tags: ["kamera", "sicherheit", "medien"]
 lang: "de"
 translationKey: "sentinel-reolink-alpr-tv"
@@ -49,20 +50,23 @@ Das beste Ergebnis aus einem der beiden Versuche gewinnt. Es wird in `input_text
 
 ## Was auf dem TV landet
 
-Eine App macht das auf der TV-Seite möglich: **[Notifications for Android TV](https://play.google.com/store/apps/details?id=de.cyberdream.androidtv.notifications.phone)** (kostenlos, Google Play). Sie betreibt einen kleinen HTTP-Server auf Port 7676, an den die HA-Integration "Notifications for Android TV / Fire TV" postet. Kein Konto, keine Cloud — die Benachrichtigung geht direkt von HA über das lokale Netzwerk zum TV. App installieren, TV-IP notieren, Integration in HA unter Einstellungen → Geräte & Dienste hinzufügen, und man bekommt einen `notify.android_tv_*`-Dienst.
+Eine App macht das auf der TV-Seite möglich: **[Notifications for Android TV](https://play.google.com/store/apps/details?id=de.cyberdream.androidtv.notifications.phone)** (kostenlos, Google Play). Sie betreibt einen kleinen HTTP-Server auf Port 7676, an den die HA-Integration "Notifications for Android TV / Fire TV" postet. Kein Konto, keine Cloud — die Benachrichtigung geht direkt von HA über das lokale Netzwerk zum TV. App installieren, TV-IP notieren, Integration in HA unter Einstellungen → Geräte & Dienste hinzufügen, und man bekommt eine `notify.android_tv_*`-Entität.
 
-`notify.android_tv_fire_tv_192_168_1_40` sendet direkt an den TV:
+`nfandroidtv.send_message` sendet direkt an den TV, mit dieser Entität als Ziel:
 
 ```yaml
-action: notify.android_tv_fire_tv_192_168_1_40
+action: nfandroidtv.send_message
+target:
+  entity_id: notify.android_tv_fire_tv_192_168_1_40
 data:
   message: "🚗 Fahrzeug erkannt! Kennzeichen: {{ plate_text }}"
-  data:
-    image: "http://192.168.x.x:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
-    interrupt: 1
+  image:
+    media_content_id: media-source://camera/camera.sentinel_fluent
+    media_content_type: image/jpeg
+  interactive: true
 ```
 
-Das `interrupt: 1`-Flag zwingt die Benachrichtigung dazu, auch dann zu erscheinen wenn der TV beschäftigt ist. Das Bild erscheint in der Ecke mit dem Kennzeichentext darunter. Man schaut etwas an, ein Auto fährt ein, ein Miniaturbild erscheint in der Ecke mit dem Kennzeichen — man wirft einen Blick drauf und ignoriert es entweder oder greift zum Handy. Kein Handy in die Hand nehmen zum Nachschauen, keine App öffnen.
+`interactive: true` zwingt die Benachrichtigung dazu, auch dann zu erscheinen, wenn der TV beschäftigt ist. Das Bild erscheint in der Ecke mit dem Kennzeichentext darunter. Man schaut etwas an, ein Auto fährt ein, ein Miniaturbild erscheint in der Ecke mit dem Kennzeichen — man wirft einen Blick drauf und ignoriert es entweder oder greift zum Handy. Kein Handy in die Hand nehmen zum Nachschauen, keine App öffnen.
 
 Die Telefone bekommen denselben Snapshot über `notify.alle_enheder`, mit einer zeitgestempelten URL damit kein gecachtes Bild vom letzten Besuch geliefert wird.
 
@@ -89,13 +93,16 @@ Drei Korrekturen der Reihe nach:
 **3. `continue_on_error: true` beim TV-Notify-Schritt hinzufügen:**
 
 ```yaml
-- action: notify.android_tv_fire_tv_192_168_1_40
+- action: nfandroidtv.send_message
   continue_on_error: true
+  target:
+    entity_id: notify.android_tv_fire_tv_192_168_1_40
   data:
     message: "🚗 {{ plate_text }}"
-    data:
-      image: "http://192.168.x.x:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
-      interrupt: 1
+    image:
+      media_content_id: media-source://camera/camera.sentinel_fluent
+      media_content_type: image/jpeg
+    interactive: true
 ```
 
 Wenn der TV einen Timeout hat oder die Integration wieder ausfällt, kommen die Telefonbenachrichtigungen trotzdem durch. Der TV ist schön zu haben. Telefone sind es nicht.
@@ -103,3 +110,5 @@ Wenn der TV einen Timeout hat oder die Integration wieder ausfällt, kommen die 
 Diese drei Dinge zusammen haben es gelöst. Der TV zeigt den Snapshot jetzt innerhalb von etwa einer Sekunde, und in den Fällen wo der TV aus ist oder die Integration hakt, bekommen die Telefone immer eine Benachrichtigung, egal was passiert.
 
 **Update, Mai 2026:** Die Kennzeichenerkennung ist rausgeflogen. Die Genauigkeit bei Nacht war nicht zuverlässig genug — Kennzeichen bei ungünstigem Winkel oder bei starkem Regen gaben häufiger "none" zurück als ein echtes Ergebnis, und zwei LLM-Vision-Aufrufe pro Fahrzeugereignis addierten eine Latenz die die Benachrichtigung langsam wirken ließ. Das aktuelle Setup überspringt ALPR komplett: Fahrzeug- oder Personenerkennung → Fluent-Snapshot → TV und Telefone. Die rollende Kennzeichenliste ist weg. Die Kamera, die TV-Integration und der `continue_on_error`-Ansatz sind geblieben. Der KI-Layer nicht.
+
+**Update, November 2026:** Home Assistant stellt die alte Aktion `notify.android_tv_*` ein, ab Version 2027.5 funktioniert sie nicht mehr. Die Beispiele oben nutzen deshalb `nfandroidtv.send_message`. HA holt das Bild jetzt selbst von der Kamera und schickt es an den TV, das ersetzt die URL mit dem Zeitstempel. `interactive: true` ersetzt `interrupt: 1`. Der Fehler oben trat noch mit der alten Aktion auf, deshalb steht dort weiterhin `notify.android_tv`.

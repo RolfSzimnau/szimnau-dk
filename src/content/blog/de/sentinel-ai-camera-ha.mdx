@@ -3,6 +3,7 @@ title: "KI-Kamera in Home Assistant: Benachrichtigungen, die keinen verrückt ma
 seoTitle: "KI-Kamera in Home Assistant: Meldungen ohne Alarmflut"
 description: "Die Sentinel-Kamera schickt nützliche Meldungen statt 40 Bewegungsalarme am Tag: eine Automatisierung, Stumm-Schalter und Aktionsknöpfe."
 pubDate: 2025-02-07
+updatedDate: 2026-11-05
 tags: ["kamera", "sicherheit"]
 lang: "de"
 translationKey: "sentinel-ai-camera-ha"
@@ -11,7 +12,7 @@ faqs:
   - question: "Wie verhindert man, dass eine Überwachungskamera mit Bewegungsmeldungen nervt?"
     answer: "Lass die Automatisierung auf die KI-Sensoren der Kamera für Person und Fahrzeug reagieren statt auf rohe Bewegung, ergänze einen input_boolean zum Stummschalten und gib der Benachrichtigung Buttons zum Öffnen der Kamera, Stummschalten und Verwerfen. Dann sind die Meldungen nützlich statt Lärm."
   - question: "Kann die Kamerameldung auch auf dem Fernseher erscheinen?"
-    answer: "Ja. Dieselbe Automatisierung schickt per notify einen Schnappschuss an einen Fire TV. Die Bild-URL bekommt einen Zeitstempel, damit kein altes Bild aus dem Cache kommt, und interrupt: 1 sorgt dafür, dass es auch während der Wiedergabe erscheint."
+    answer: "Ja. Dieselbe Automatisierung schickt mit nfandroidtv.send_message ein frisches Kamerabild an einen Fire TV, und interactive: true sorgt dafür, dass es auch während der Wiedergabe erscheint."
 ---
 
 Die ersten zwei Wochen nach der Installation der Sentinel-Kamera hatte ich Bewegungsbenachrichtigungen aktiviert. Jede einzelne sagte "Bewegung erkannt." Vögel, Schatten, eine Plastiktüte, die nachts um drei an der Linse vorbeiwehte. Ich schaltete alle aus und ließ die Kamera für einen weiteren Monat nutzlos herumstehen.
@@ -129,15 +130,21 @@ action:
 Dieselbe Automatisierung sendet auch an den Fernseher im Wohnzimmer:
 
 ```yaml
-  - action: notify.android_tv_fire_tv_192_168_1_40
+  - action: nfandroidtv.send_message
+    continue_on_error: true
+    target:
+      entity_id: notify.android_tv_fire_tv_192_168_1_40
     data:
       message: "{{ '\U0001F697 Fahrzeug an der Einfahrt erkannt' if trigger.id == 'fahrzeug' else '\U0001F464 Person draußen erkannt' }}"
-      data:
-        image: "http://192.168.1.171:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
-        interrupt: 1
+      image:
+        media_content_id: media-source://camera/camera.sentinel_fluent
+        media_content_type: image/jpeg
+      interactive: true
 ```
 
-Der `?t=`-Parameter erzwingt das Laden eines neuen Bildes — ohne ihn zeigt der Fire TV ein zwischengespeichertes Standbild vom vorherigen Ereignis. `interrupt: 1` lässt es auch während der Wiedergabe erscheinen.
+HA holt selbst ein frisches Bild von der Kamera und schickt das Bild direkt an den Fernseher. Es gibt also keine URL und kein altes Bild aus dem Cache. `interactive: true` lässt es auch während der Wiedergabe erscheinen. `continue_on_error: true` muss bleiben: Ohne den Parameter stoppt ein ausgeschalteter Fernseher die Automatisierung, und die folgenden Schritte laufen nicht mehr.
+
+**Update, November 2026:** Home Assistant stellt die alte Aktion `notify.android_tv_*` ein, ab Version 2027.5 funktioniert sie nicht mehr. Das Beispiel zeigt die neue Form. Vorher war das Bild eine URL, und statt `interactive: true` stand dort `interrupt: 1`.
 
 ## Das Dashboard
 

@@ -2,6 +2,7 @@
 title: "License Plate Reading and TV Snapshots From a Reolink CX810"
 description: "How I got a Reolink CX810 4K PoE camera to read license plates with AI and push a snapshot straight to the TV when someone pulls into the driveway."
 pubDate: 2025-09-19
+updatedDate: 2026-11-05
 tags: ["camera", "security", "media"]
 lang: "en"
 translationKey: "sentinel-reolink-alpr-tv"
@@ -48,20 +49,23 @@ The best result from either attempt wins. It gets stored in `input_text.last_5_p
 
 ## What lands on the TV
 
-One app makes this work on the TV side: **[Notifications for Android TV](https://play.google.com/store/apps/details?id=de.cyberdream.androidtv.notifications.phone)** (free, Google Play). It runs a small HTTP server on port 7676 that HA's "Notifications for Android TV / Fire TV" integration posts to. No account, no cloud — the notification goes directly from HA to the TV over the local network. Install the app, note the TV's IP, add the integration in HA under Settings → Devices & Services, and you get a `notify.android_tv_*` service.
+One app makes this work on the TV side: **[Notifications for Android TV](https://play.google.com/store/apps/details?id=de.cyberdream.androidtv.notifications.phone)** (free, Google Play). It runs a small HTTP server on port 7676 that HA's "Notifications for Android TV / Fire TV" integration posts to. No account, no cloud — the notification goes directly from HA to the TV over the local network. Install the app, note the TV's IP, add the integration in HA under Settings → Devices & Services, and you get a `notify.android_tv_*` entity.
 
-`notify.android_tv_fire_tv_192_168_1_40` sends to the TV directly:
+`nfandroidtv.send_message` sends to the TV directly, with that entity as the target:
 
 ```yaml
-action: notify.android_tv_fire_tv_192_168_1_40
+action: nfandroidtv.send_message
+target:
+  entity_id: notify.android_tv_fire_tv_192_168_1_40
 data:
   message: "🚗 Bil registreret! Nummerplade: {{ plate_text }}"
-  data:
-    image: "http://192.168.x.x:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
-    interrupt: 1
+  image:
+    media_content_id: media-source://camera/camera.sentinel_fluent
+    media_content_type: image/jpeg
+  interactive: true
 ```
 
-The `interrupt: 1` flag forces the notification to appear even if the TV is busy. The image shows up in the corner with the plate text underneath. You're watching something, a car pulls in, a thumbnail appears in the corner with the plate — you glance at it and either ignore it or grab your phone. No picking up the phone to check, no opening an app.
+`interactive: true` forces the notification to appear even if the TV is busy. The image shows up in the corner with the plate text underneath. You're watching something, a car pulls in, a thumbnail appears in the corner with the plate — you glance at it and either ignore it or grab your phone. No picking up the phone to check, no opening an app.
 
 Phones get the same snapshot via `notify.alle_enheder`, with a timestamp-busted URL so it doesn't serve a cached image from the previous visit.
 
@@ -88,13 +92,16 @@ Three fixes, in order:
 **3. Add `continue_on_error: true` on the TV notify step:**
 
 ```yaml
-- action: notify.android_tv_fire_tv_192_168_1_40
+- action: nfandroidtv.send_message
   continue_on_error: true
+  target:
+    entity_id: notify.android_tv_fire_tv_192_168_1_40
   data:
     message: "🚗 {{ plate_text }}"
-    data:
-      image: "http://192.168.x.x:8123/local/sentinel_latest.jpg?t={{ now().timestamp() | int }}"
-      interrupt: 1
+    image:
+      media_content_id: media-source://camera/camera.sentinel_fluent
+      media_content_type: image/jpeg
+    interactive: true
 ```
 
 If the TV times out or the integration drops again, the phone notifications still go out. The TV is a nice-to-have. Phones are not optional.
@@ -102,3 +109,5 @@ If the TV times out or the integration drops again, the phone notifications stil
 All three together solved it. The TV now shows the snapshot within about a second, and in cases where the TV is off or the integration hiccups, phones always get the notification regardless.
 
 **Update, May 2026:** The plate reading came out. Night accuracy wasn't reliable enough — plates at steep angles or in rain returned "none" more often than a real result, and two LLM Vision calls per vehicle event added latency that made the notification feel slow. The current setup skips ALPR entirely: vehicle or person trigger → fluent snapshot → TV and phones. The rolling plate log is gone. The camera, the TV integration, and the `continue_on_error` approach all stayed. The AI layer didn't.
+
+**Update, November 2026:** Home Assistant is phasing out the old `notify.android_tv_*` action, and it stops working in version 2027.5, so the examples above use `nfandroidtv.send_message`. HA now takes the frame from the camera itself and sends the image to the TV, which replaces the URL with the timestamp. `interactive: true` replaces `interrupt: 1`. The failure described above happened on the old action, so it still names `notify.android_tv`.
