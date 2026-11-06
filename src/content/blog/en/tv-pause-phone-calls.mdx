@@ -11,7 +11,7 @@ faqs:
   - question: "How does Home Assistant know a phone is ringing?"
     answer: "The HA Companion App exposes a phone state sensor (ringing, in_call, offhook, idle). One automation pauses the TV when either phone leaves idle and resumes playback when the call ends."
   - question: "Why do Messenger calls need special handling?"
-    answer: "Messenger video calls don't change the Android phone state sensor, so they are detected via the notification sensor instead — and since call end can't be detected reliably, the notification carries a manual resume button."
+    answer: "Messenger video calls don't change the Android phone state sensor, so they are detected via the notification sensor instead. Since call end can't be detected reliably, the notification carries a manual resume button."
 ---
 
 <div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
@@ -26,9 +26,9 @@ The automation is one condition: if a phone rings and the TV is on, pause it. Wh
 
 ## The phone sensor
 
-The **HA Companion App** (free, Google Play / App Store) exposes `sensor.pixel_10_phone_state` with four states: `ringing`, `in_call`, `offhook`, `idle`. Install the app, sign in to your HA instance, and the sensor appears automatically — no extra configuration. The trigger covers all three non-idle states — you want the TV to pause the moment the phone rings, not after you've answered.
+The **HA Companion App** (free, Google Play / App Store) exposes `sensor.pixel_10_phone_state` with four states: `ringing`, `in_call`, `offhook`, `idle`. Install the app, sign in to your HA instance, and the sensor appears automatically with no extra configuration. The trigger covers all three non-idle states, because you want the TV to pause the moment the phone rings, not after you've answered.
 
-The TV remote entity (`remote.tv_stuen`) comes from the **Android TV** integration — built into HA, add it under Integrations and point it at your TV's IP. The automation first checks whether the TV remote is actually on. There's no point sending a pause command to a TV that's already off or was already paused. `input_boolean.tv_was_playing` handles the latter — it's set to `on` when the automation pauses and checked before resuming. Without it, a call could restart something that was intentionally paused before the call came in.
+The TV remote entity (`remote.tv_stuen`) comes from the **Android TV** integration. It's built into HA: add it under Integrations and point it at your TV's IP. The automation first checks whether the TV remote is actually on. There's no point sending a pause command to a TV that's already off or was already paused. `input_boolean.tv_was_playing` handles the latter. It's set to `on` when the automation pauses and checked before resuming. Without it, a call could restart something that was intentionally paused before the call came in.
 
 ```yaml
 alias: TV — Pause on phone call
@@ -74,7 +74,7 @@ action:
       entity_id: input_boolean.tv_was_playing
 ```
 
-The 2-second delay before resuming is intentional. Without it the play command fires while the call is still technically ending — the phone sensor hits `idle` a fraction of a second before the call actually drops, and the audio comes back mid-goodbye.
+The 2-second delay before resuming is intentional. Without it the play command fires while the call is still technically ending. The phone sensor hits `idle` a fraction of a second before the call actually drops, and the audio comes back mid-goodbye.
 
 The 2-hour timeout is a safety net. If a call somehow doesn't register as ended, the automation doesn't sit waiting forever. `continue_on_timeout: true` means it resumes regardless after two hours.
 
@@ -121,10 +121,10 @@ The handling is different because the end of a Messenger call is less reliable t
               command: MEDIA_PLAY
 ```
 
-The 30-minute timeout on Messenger versus 2 hours on regular calls reflects reality — Messenger video calls rarely last more than half an hour. A regular phone call to a parent might go for an hour and a half.
+The 30-minute timeout on Messenger versus 2 hours on regular calls reflects reality: Messenger video calls rarely last more than half an hour. A regular phone call to a parent might go for an hour and a half.
 
 ## What this actually solves
 
-The scramble for the remote. That's it. It sounds small. After a few weeks of not having to do it, you notice how often it used to happen — and how the first thing you did when the call ended was find the remote and un-pause, which is not what you want to be thinking about.
+The scramble for the remote. That's it. It sounds small. After a few weeks of not having to do it, you notice how often it used to happen, and how the first thing you did when the call ended was find the remote and un-pause, which is not what you want to be thinking about.
 
 The automation runs silently. There's no "TV paused" banner unless it's a Messenger call that needs the manual resume button. Regular calls: it pauses, you talk, it resumes. Nothing to confirm, nothing to tap.

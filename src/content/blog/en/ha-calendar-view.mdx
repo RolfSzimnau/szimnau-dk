@@ -9,9 +9,9 @@ translationKey: "ha-calendar-view"
 heroImage: "/blog-images/kalender-calendar.jpg"
 faqs:
   - question: "How do you show multiple family calendars in one Home Assistant view?"
-    answer: "Each family member's Google Calendar is added via the Google Calendar integration and rendered with per-person colour coding in a shared agenda view — plus the Danish waste collection calendar from the Affaldshaandtering DK integration."
+    answer: "Each family member's Google Calendar is added via the Google Calendar integration and rendered with per-person colour coding in a shared agenda view. The Danish waste collection calendar from the Affaldshaandtering DK integration sits in the same list."
   - question: "Is a month-grid calendar view worth building in Home Assistant?"
-    answer: "Honestly, the agenda list gets used far more — the month grid only gets opened to check specific dates. The home screen shows the next 3 events, the calendar view 15; two zoom levels off the same data."
+    answer: "The agenda list gets used far more. The month grid only gets opened to check specific dates. The home screen shows the next 3 events and the calendar view 15: two zoom levels off the same data."
 ---
 
 <div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
@@ -26,9 +26,9 @@ The HA calendar view didn't replace the habit problem. But it put the same infor
 
 ## The setup
 
-Each family member has a Google Calendar. HA's Google Calendar integration pulls all of them in as separate `calendar.*` entities. Waste collection comes from the `affalddk` integration (HACS) — a Danish municipal waste API that creates its own calendar entity with pickup dates.
+Each family member has a Google Calendar. HA's Google Calendar integration pulls all of them in as separate `calendar.*` entities. Waste collection comes from the `affalddk` integration (HACS), a Danish municipal waste API that creates its own calendar entity with pickup dates.
 
-The calendar view uses `custom:atomic-calendar-revive` (HACS) in agenda mode. Nothing fancy — just a scrollable list of upcoming events, colour-coded by person.
+The calendar view uses `custom:atomic-calendar-revive` (HACS) in agenda mode. Nothing fancy, just a scrollable list of upcoming events, colour-coded by person.
 
 ```yaml
 type: custom:atomic-calendar-revive
@@ -56,7 +56,7 @@ showDescription: false
 
 ## What the waste calendar does
 
-The `affalddk` integration creates calendar events for each pickup type: general waste, recycling, paper, glass. They show up as grey entries in the view. On the home screen the waste card only appears within three days of a pickup — but here in the dedicated calendar view, you see the full schedule months out.
+The `affalddk` integration creates calendar events for each pickup type: general waste, recycling, paper, glass. They show up as grey entries in the view. On the home screen the waste card only appears within three days of a pickup, but here in the dedicated calendar view, you see the full schedule months out.
 
 That sounds minor. It isn't. Knowing cardboard pickup is next Thursday means I actually break down boxes in time instead of cramming them in the bin the night before.
 
@@ -64,7 +64,7 @@ That sounds minor. It isn't. Knowing cardboard pickup is next Thursday means I a
 
 Each person gets one colour, consistently. It's the same colour in every context where their events appear. After a few weeks you stop reading the name column and just read the colour. A glance at Monday tells you whose day it is without your eyes needing to focus on text.
 
-The waste calendar is grey because it's not a person — it's infrastructure. It sits in the list without competing visually with the human events.
+The waste calendar is grey because it's not a person. It's infrastructure. It sits in the list without competing visually with the human events.
 
 ## What I didn't do
 

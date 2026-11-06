@@ -9,7 +9,7 @@ translationKey: "sonos-google-nest-home-assistant"
 heroImage: "/blog-images/szimnau-smart-speaker-automation-ha.jpg"
 faqs:
   - question: "Can Sonos and Google Nest speakers play together via Home Assistant?"
-    answer: "Yes — HA integrates both natively, and three scripts (join, unjoin, transfer) present a Sonos living-room speaker and four Nest Audios as one controllable system without bridges or subscriptions."
+    answer: "Yes. HA integrates both natively, and three scripts (join, unjoin, transfer) present a Sonos living-room speaker and four Nest Audios as one controllable system without bridges or subscriptions."
   - question: "What doesn't work when unifying Sonos and Google speakers?"
     answer: "TTS announcements interrupt playback without resuming on Google speakers (Sonos has an announce workaround), so TTS is best routed only to rooms where music isn't usually playing."
 ---
@@ -34,9 +34,9 @@ Five speakers, two brands, zero native cross-compatibility.
 
 ## How HA Integrates Both
 
-The **Sonos** integration in HA is built-in and excellent. It finds the speaker automatically over the local network — no Sonos cloud dependency for basic playback control, grouping, or volume.
+The **Sonos** integration in HA is built-in and excellent. It finds the speaker automatically over the local network, with no Sonos cloud dependency for basic playback control, grouping, or volume.
 
-Google speakers integrate through the **Google Home** integration (built-in, or the older **Cast** integration if you prefer — both are in HA's integration list). Either way you get `media_player` entities with standard play/pause/volume services.
+Google speakers integrate through the **Google Home** integration (built-in) or, if you prefer, the older **Cast** integration. Both are in HA's integration list. Either way you get `media_player` entities with standard play/pause/volume services.
 
 Because HA maps everything to the same `media_player` domain, you can control a Sonos and a Google speaker with identical service calls:
 
@@ -104,11 +104,11 @@ sequence:
         - media_player.vaerksted
 ```
 
-I call these from automations, dashboard buttons, and voice commands. The volume script is especially useful at night — one voice command drops everything to 15% without hunting for individual speaker controls in three different apps.
+I call these from automations, dashboard buttons, and voice commands. The volume script is especially useful at night: one voice command drops everything to 15% without hunting for individual speaker controls in three different apps.
 
 ## Practical Automations
 
-**Leaving home** — when the last person leaves, pause everything that's playing:
+**Leaving home.** When the last person leaves, pause everything that's playing:
 
 ```yaml
 alias: Leaving — pause all speakers
@@ -124,7 +124,7 @@ action:
   - service: script.alle_hojtalere_pause
 ```
 
-**TV turns on** — automatically lower the kitchen speaker when the TV starts, so they don't compete:
+**TV turns on.** Automatically lower the kitchen speaker when the TV starts, so they don't compete:
 
 ```yaml
 alias: TV on — lower kitchen speaker
@@ -170,7 +170,7 @@ Three chips, all speakers handled. It lives next to the WiZ lighting controls an
 
 ## What HA Doesn't Solve
 
-Native grouping between Sonos and Google is still impossible through HA. You can't send audio from the Sonos to a Google speaker or vice versa — they use different streaming protocols (RAAT vs Cast). HA can control them simultaneously but it cannot synchronize audio playback between the two brands.
+Native grouping between Sonos and Google is still impossible through HA. You can't send audio from the Sonos to a Google speaker or vice versa, because they use different streaming protocols (RAAT vs Cast). HA can control them simultaneously but it cannot synchronize audio playback between the two brands.
 
 For synchronized music across the whole house I still use either Sonos alone (via Sonos grouping) or Google alone (via Cast). The HA scripts handle control, not streaming.
 

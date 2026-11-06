@@ -21,7 +21,7 @@ faqs:
 
 </div>
 
-Wir hatten jahrelang einen Wandkalender in der Küche. Einen dieser großen Papierkalender mit einer Spalte pro Familienmitglied. Jemand schreibt etwas rein, jemand anderes sieht es nicht, und am Ende gibt es eine Kollision bei der Schulabholung oder einen Geburtstag, der erst am Morgen selbst auffällt. Der Kalender funktionierte gut, solange ihn alle pflegten — was sie nicht verlässlich taten.
+Wir hatten jahrelang einen Wandkalender in der Küche. Einen dieser großen Papierkalender mit einer Spalte pro Familienmitglied. Jemand schreibt etwas rein, jemand anderes sieht es nicht, und am Ende gibt es eine Kollision bei der Schulabholung oder einen Geburtstag, der erst am Morgen selbst auffällt. Der Kalender funktionierte gut, solange ihn alle pflegten, und das taten sie nicht verlässlich.
 
 Die HA-Kalenderansicht hat das Gewohnheitsproblem nicht gelöst. Aber sie hat dieselben Informationen an einen Ort gebracht, an den alle sowieso schauen.
 
@@ -29,7 +29,7 @@ Die HA-Kalenderansicht hat das Gewohnheitsproblem nicht gelöst. Aber sie hat di
 
 Jedes Familienmitglied hat einen Google Kalender. Die HA Google Kalender-Integration zieht alle als separate `calendar.*`-Entitäten rein. Die Müllabfuhr kommt von der `affalddk`-Integration (HACS, dänische Gemeindeabfall-API), die eine eigene Kalenderentität mit Abholungsterminen erstellt.
 
-Die Kalenderansicht verwendet `custom:atomic-calendar-revive` (HACS) im Agendamodus. Nichts Aufwändiges — nur eine scrollbare Liste bevorstehender Ereignisse, farbcodiert nach Person.
+Die Kalenderansicht verwendet `custom:atomic-calendar-revive` (HACS) im Agendamodus. Nichts Aufwändiges, nur eine scrollbare Liste bevorstehender Ereignisse, farbcodiert nach Person.
 
 ```yaml
 type: custom:atomic-calendar-revive
@@ -57,7 +57,7 @@ showDescription: false
 
 ## Was der Müllkalender bringt
 
-Die `affalddk`-Integration erstellt Kalendereinträge für jeden Abholungstyp: Restmüll, Wertstoffe, Papier, Glas. Sie erscheinen als graue Einträge in der Ansicht. Auf dem Startbildschirm erscheint die Müllkarte nur innerhalb von drei Tagen vor einer Abholung — aber hier in der dedizierten Kalenderansicht sieht man den vollständigen Zeitplan Monate im Voraus.
+Die `affalddk`-Integration erstellt Kalendereinträge für jeden Abholungstyp: Restmüll, Wertstoffe, Papier, Glas. Sie erscheinen als graue Einträge in der Ansicht. Auf dem Startbildschirm erscheint die Müllkarte nur innerhalb von drei Tagen vor einer Abholung. Hier in der eigenen Kalenderansicht sieht man dagegen den vollständigen Zeitplan Monate im Voraus.
 
 Das klingt marginal. Ist es nicht. Zu wissen, dass die Papierabholung nächsten Donnerstag ist, bedeutet, dass ich Kartons tatsächlich rechtzeitig aufschlage, anstatt sie am Vorabend hineinzustopfen.
 
@@ -65,7 +65,7 @@ Das klingt marginal. Ist es nicht. Zu wissen, dass die Papierabholung nächsten 
 
 Jede Person bekommt eine Farbe, konsistent. Dieselbe Farbe in jedem Kontext, in dem ihre Ereignisse erscheinen. Nach ein paar Wochen hört man auf, die Namensspalte zu lesen, und liest nur noch die Farbe. Ein Blick auf Montag verrät, wessen Tag es ist, ohne dass die Augen auf Text fokussieren müssen.
 
-Der Müllkalender ist grau, weil es keine Person ist — es ist Infrastruktur. Er sitzt in der Liste, ohne visuell mit den menschlichen Einträgen zu konkurrieren.
+Der Müllkalender ist grau, weil er keine Person ist, sondern Infrastruktur. Er sitzt in der Liste, ohne visuell mit den menschlichen Einträgen zu konkurrieren.
 
 ## Was ich nicht gemacht habe
 

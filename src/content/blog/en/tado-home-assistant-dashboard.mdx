@@ -11,10 +11,10 @@ faqs:
   - question: "What does the Tado integration give you in Home Assistant?"
     answer: "It is built into HA (Tado Internet Bridge and account required): every zone appears as a climate entity with sub-5-second state updates, plus binary sensors for Tado's hardware open-window detection."
   - question: "How does the breathing animation for active heating work?"
-    answer: "A card-mod CSS keyframe animation on the mushroom climate card that only runs while hvac_action is heating — five zones in a grid read at a glance because only the active ones pulse."
+    answer: "A card-mod CSS keyframe animation on the mushroom climate card that only runs while hvac_action is heating. Five zones in a grid read at a glance because only the active ones pulse."
 ---
 
-Tado's HA integration is one of the best out of the box — built into HA, no HACS needed. You need the Tado Internet Bridge hardware and a Tado account. Add the integration, sign in, and all your zones appear as `climate.*` entities with full support. State updates come back in under five seconds. It just works.
+Tado's HA integration is one of the best out of the box. It's built into HA, no HACS needed. You need the Tado Internet Bridge hardware and a Tado account. Add the integration, sign in, and all your zones appear as `climate.*` entities with full support. State updates come back in under five seconds. It just works.
 
 So the heating part was easy. The interesting part was making the dashboard tell you something at a glance.
 
@@ -40,7 +40,7 @@ card_mod:
     }
 ```
 
-Active zones pulse with a warm orange glow. Idle zones are static. Across a 5-zone grid it's immediately obvious which rooms are actually consuming energy — something no static dashboard had given me before.
+Active zones pulse with a warm orange glow. Idle zones are static. Across a 5-zone grid it's immediately obvious which rooms are actually consuming energy, something no static dashboard had given me before.
 
 A visitor asked if the house was breathing. That felt right.
 
@@ -131,11 +131,11 @@ action:
             hvac_mode: auto
 ```
 
-I use this instead of Tado's built-in geofencing because my presence detection combines phone GPS, UniFi device tracking, and a `person.*` entity — it's more reliable than Tado's app alone, which occasionally decides I've left when I'm just in the back garden.
+I use this instead of Tado's built-in geofencing because my presence detection combines phone GPS, UniFi device tracking, and a `person.*` entity. It's more reliable than Tado's app alone, which occasionally decides I've left when I'm just in the back garden.
 
 ## Window detection
 
-Tado's open window detection is hardware-based — the TRV measures a sudden temperature drop and pauses heating automatically. HA exposes this as `binary_sensor.zone_*_window`.
+Tado's open window detection is hardware-based: the TRV measures a sudden temperature drop and pauses heating automatically. HA exposes this as `binary_sensor.zone_*_window`.
 
 I added a notification for windows left open more than 20 minutes during active heating. The bathroom window is the usual culprit. The automation has probably saved more in heating costs than anything else I've built around Tado.
 

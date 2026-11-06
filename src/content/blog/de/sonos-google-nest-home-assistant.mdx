@@ -33,9 +33,9 @@ Fünf Lautsprecher, zwei Marken, null native Kompatibilität.
 
 ## Wie HA beide integriert
 
-Die **Sonos**-Integration in HA ist nativ eingebaut und hervorragend. Sie findet den Lautsprecher automatisch über das lokale Netzwerk — keine Sonos-Cloud-Abhängigkeit für grundlegende Wiedergabesteuerung.
+Die **Sonos**-Integration in HA ist nativ eingebaut und hervorragend. Sie findet den Lautsprecher automatisch über das lokale Netzwerk, ohne Sonos-Cloud-Abhängigkeit für die grundlegende Wiedergabesteuerung.
 
-Google-Lautsprecher werden über die **Google Home**-Integration eingebunden (ebenfalls nativ eingebaut, oder die ältere **Cast**-Integration — beide in HAs Integrationsliste). Beide liefern `media_player`-Entitäten mit Standard-Play/Pause/Lautstärke-Services.
+Google-Lautsprecher werden über die **Google Home**-Integration (ebenfalls nativ eingebaut) oder die ältere **Cast**-Integration eingebunden. Beide stehen in HAs Integrationsliste und liefern `media_player`-Entitäten mit Standard-Play/Pause/Lautstärke-Services.
 
 Da HA alles auf dieselbe `media_player`-Domäne mappt, kann man einen Sonos und einen Google-Lautsprecher mit identischen Service-Aufrufen steuern:
 
@@ -103,11 +103,11 @@ sequence:
         - media_player.vaerksted
 ```
 
-Ich rufe diese aus Automationen, Dashboard-Buttons und Sprachbefehlen auf. Das Lautstärke-Script ist besonders nützlich abends — ein Sprachbefehl senkt alles auf 15%, ohne in drei verschiedenen Apps nach einzelnen Lautsprecherreglern zu suchen.
+Ich rufe diese aus Automationen, Dashboard-Buttons und Sprachbefehlen auf. Das Lautstärke-Script ist abends besonders nützlich: Ein Sprachbefehl senkt alles auf 15%, ohne in drei verschiedenen Apps nach einzelnen Lautsprecherreglern zu suchen.
 
 ## Praktische Automationen
 
-**Das Haus verlassen** — wenn die letzte Person geht, alles pausieren was spielt:
+**Das Haus verlassen.** Wenn die letzte Person geht, alles pausieren, was spielt:
 
 ```yaml
 alias: Verlassen — alle Lautsprecher pausieren
@@ -123,7 +123,7 @@ action:
   - service: script.alle_hojtalere_pause
 ```
 
-**TV schaltet ein** — Küchenlautsprecher automatisch leiser stellen, wenn der Fernseher startet:
+**TV schaltet ein.** Küchenlautsprecher automatisch leiser stellen, wenn der Fernseher startet:
 
 ```yaml
 alias: TV an — Küchenlautsprecher leiser
@@ -169,10 +169,10 @@ Drei Chips, alle Lautsprecher abgedeckt. Sie liegt neben den WiZ-Beleuchtungskon
 
 ## Was HA nicht löst
 
-Natives Gruppieren zwischen Sonos und Google ist über HA weiterhin unmöglich. Man kann kein Audio vom Sonos zu einem Google-Lautsprecher senden — sie verwenden unterschiedliche Streaming-Protokolle (RAAT vs Cast). HA kann sie gleichzeitig steuern, aber die Audiowiedergabe nicht synchronisieren.
+Natives Gruppieren zwischen Sonos und Google ist über HA weiterhin unmöglich. Man kann kein Audio vom Sonos zu einem Google-Lautsprecher senden, weil sie unterschiedliche Streaming-Protokolle verwenden (RAAT vs Cast). HA kann sie gleichzeitig steuern, aber die Audiowiedergabe nicht synchronisieren.
 
 Für synchronisierte Musik nutze ich entweder Sonos allein (via Sonos-Gruppierung) oder Google allein (via Cast). Die HA-Scripts sind für Steuerung, nicht für Streaming.
 
 Die andere Lücke ist TTS. HAs TTS-Engine kann an jeden `media_player` senden, aber in der Praxis unterbricht TTS die Wiedergabe und nimmt sie danach nicht wieder auf. Für Sonos gibt es einen Workaround mit `tts.speak` und der `announce`-Option. Für Google-Lautsprecher existiert noch kein sauberes Äquivalent. TTS-Benachrichtigungen schicke ich nur an Räume, in denen normalerweise keine Musik läuft.
 
-Trotz dieser Einschränkungen ist es wirklich nützlich, fünf Lautsprecher von zwei Herstellern unter einer gemeinsamen Steuerungsschicht zu haben. Das tägliche Zwei-Apps-Jonglieren war still und leise nervig — und jetzt ist es einfach weg.
+Trotz dieser Einschränkungen ist es wirklich nützlich, fünf Lautsprecher von zwei Herstellern unter einer gemeinsamen Steuerungsschicht zu haben. Das tägliche Zwei-Apps-Jonglieren war unterschwellig nervig, und jetzt ist es einfach weg.

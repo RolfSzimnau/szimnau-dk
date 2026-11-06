@@ -15,11 +15,11 @@ faqs:
     answer: "Offiziell fragt sie die Cloud etwa alle 5 Sekunden ab. Für lokalen Betrieb müsstest du Schlüssel aus der Firmware des Geräts holen. Zum Starten, für den Akku und für die Räume reicht die Cloud völlig."
 ---
 
-Die Roborock-Integration ist direkt in HA eingebaut — kein HACS nötig. Hinzufügen, mit dem Roborock-Konto einloggen (ein Roborock-Cloud-Konto ist erforderlich), der Staubsauger erscheint. Was einem niemand sagt: das Interessante kommt von einer separaten HACS-Karte, die die Live-Karte rendert.
+Die Roborock-Integration ist direkt in HA eingebaut, kein HACS nötig. Hinzufügen, mit dem Roborock-Konto einloggen (ein Roborock-Cloud-Konto ist erforderlich), der Staubsauger erscheint. Was einem niemand sagt: Das Interessante kommt von einer separaten HACS-Karte, die die Live-Karte rendert.
 
 ## Die Integration
 
-Cloud-Polling mit 5-Sekunden-Aktualisierung. Lokale Kommunikation ist möglich, erfordert aber das Extrahieren von Schlüsseln aus der Geräte-Firmware — das habe ich mir gespart. Für alles Wichtige — Reinigung starten, Akku prüfen, Raumsegmente — ist Cloud-Polling schnell genug.
+Cloud-Polling mit 5-Sekunden-Aktualisierung. Lokale Kommunikation ist möglich, erfordert aber das Extrahieren von Schlüsseln aus der Geräte-Firmware. Das habe ich mir gespart. Für alles Wichtige (Reinigung starten, Akku prüfen, Raumsegmente) ist Cloud-Polling schnell genug.
 
 Entitäten nach der Einrichtung:
 
@@ -63,9 +63,9 @@ map_modes:
   - template: vacuum_goto
 ```
 
-Raum-IDs finden: Entwicklertools → Template, `{{ state_attr('vacuum.roborock_s5_max', 'room_list') }}` auswerten. Die IDs sind ganze Zahlen, die beim Erstellen der Karte in der App vergeben wurden. Meins fangen bei 16 an — die eigenen werden wahrscheinlich anders sein.
+Raum-IDs finden: Entwicklertools → Template, `{{ state_attr('vacuum.roborock_s5_max', 'room_list') }}` auswerten. Die IDs sind ganze Zahlen, die beim Erstellen der Karte in der App vergeben wurden. Meine fangen bei 16 an, deine werden wahrscheinlich anders sein.
 
-Die Kartenkarte lebt in einem Glas-`stack-in-card`. Kartenkarten brauchen `border-radius: 0` auf der inneren Karte, und der äußere Container braucht `overflow: hidden` — sonst stehen die quadratischen Ecken der Karte aus der abgerundeten Glasumhüllung heraus.
+Die Kartenkarte lebt in einem Glas-`stack-in-card`. Kartenkarten brauchen `border-radius: 0` auf der inneren Karte, und der äußere Container braucht `overflow: hidden`. Sonst stehen die quadratischen Ecken der Karte aus der abgerundeten Glasumhüllung heraus.
 
 ```yaml
 type: custom:stack-in-card
@@ -90,7 +90,7 @@ cards:
 
 ## Wartungssensoren
 
-Die Bürsten- und Filtersensoren zählen von 100% auf 0% herunter. Ich ignorierte sie zu lange und bekam dann eine Warnung, dass die Hauptbürste bei 8% war — was sich als *viel* abgenutzter herausstellte, als eine Prozentzahl vermuten ließ.
+Die Bürsten- und Filtersensoren zählen von 100% auf 0% herunter. Ich ignorierte sie zu lange und bekam dann eine Warnung, dass die Hauptbürste bei 8% war. Sie war *viel* abgenutzter, als eine Prozentzahl vermuten ließ.
 
 Farbige Indikatorkarten für jede Komponente mit `custom:mushroom-template-card` (HACS, Mushroom-Suite) und `card_mod` (HACS):
 
@@ -104,7 +104,7 @@ icon_color: >
   {% if pct > 40 %}green{% elif pct > 20 %}orange{% else %}red{% endif %}
 ```
 
-Und eine persistente Benachrichtigung (kein Push — ich brauche mein Telefon nicht für eine Bürste klingeln) wenn etwas unter 20% fällt:
+Und eine persistente Benachrichtigung (kein Push, mein Telefon muss wegen einer Bürste nicht klingeln), wenn etwas unter 20% fällt:
 
 ```yaml
 alias: Roborock — Wartungswarnung

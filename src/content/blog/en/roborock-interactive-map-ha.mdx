@@ -12,14 +12,14 @@ faqs:
   - question: "How do you get a live interactive Roborock map in Home Assistant?"
     answer: "The built-in Roborock integration (cloud account required) provides the vacuum entity, and the Xiaomi Vacuum Map Card from HACS renders the live map with tap-to-clean room segments."
   - question: "Does the Roborock integration work locally?"
-    answer: "Officially it is cloud polling at roughly 5-second refresh. Local communication requires extracting keys from device firmware — for starting cleans, battery and room segments, cloud polling is entirely adequate."
+    answer: "Officially it is cloud polling at roughly 5-second refresh. Local communication requires extracting keys from device firmware. For starting cleans, battery and room segments, cloud polling is entirely adequate."
 ---
 
-The Roborock integration is built into HA — no HACS needed, but you do need a Roborock cloud account to authenticate. Add the integration, sign in, and the vacuum appears. What it doesn't tell you is that the interesting part comes from a separate HACS card that renders the live map.
+The Roborock integration is built into HA. No HACS is needed, but you do need a Roborock cloud account to authenticate. Add the integration, sign in, and the vacuum appears. What it doesn't tell you is that the interesting part comes from a separate HACS card that renders the live map.
 
 ## The integration
 
-Cloud polling, 5-second refresh. Local communication is possible but requires extracting keys from the device firmware, which I didn't bother with. For anything that matters — starting a clean, checking battery, room segments — cloud polling is fast enough.
+Cloud polling, 5-second refresh. Local communication is possible but requires extracting keys from the device firmware, which I didn't bother with. For anything that matters (starting a clean, checking battery, room segments), cloud polling is fast enough.
 
 Entities after setup:
 
@@ -63,9 +63,9 @@ map_modes:
   - template: vacuum_goto
 ```
 
-Finding your room IDs: open Developer Tools → Template, and evaluate `{{ state_attr('vacuum.roborock_s5_max', 'room_list') }}`. The IDs are integers assigned when the map was created in the app. Mine started at 16 — yours will probably be different.
+Finding your room IDs: open Developer Tools → Template, and evaluate `{{ state_attr('vacuum.roborock_s5_max', 'room_list') }}`. The IDs are integers assigned when the map was created in the app. Mine started at 16, and yours will probably be different.
 
-The card lives inside a glass `stack-in-card`. Map cards need `border-radius: 0` on the inner card, and the outer container needs `overflow: hidden` — otherwise the map's corners bleed outside the rounded glass wrapper.
+The card lives inside a glass `stack-in-card`. Map cards need `border-radius: 0` on the inner card, and the outer container needs `overflow: hidden`. Otherwise the map's corners bleed outside the rounded glass wrapper.
 
 ```yaml
 type: custom:stack-in-card
@@ -90,7 +90,7 @@ cards:
 
 ## Maintenance sensors
 
-The brush and filter sensors count down from 100% to 0%. I ignored them for too long and then the main brush warning notification showed up at 8% — which turned out to be *much* more worn than I expected from a percentage.
+The brush and filter sensors count down from 100% to 0%. I ignored them for too long, and then the main brush warning notification showed up at 8%. The brush turned out to be *much* more worn than I expected from a percentage.
 
 Now I have colored indicator cards for each component, using `custom:mushroom-template-card` (HACS, Mushroom suite) with `card_mod` (HACS) for the color logic:
 
@@ -104,7 +104,7 @@ icon_color: >
   {% if pct > 40 %}green{% elif pct > 20 %}orange{% else %}red{% endif %}
 ```
 
-And a persistent notification (not a push — I don't need my phone buzzing about a brush) when anything drops below 20%:
+And a persistent notification (not a push, since I don't need my phone buzzing about a brush) when anything drops below 20%:
 
 ```yaml
 alias: Roborock — Maintenance alert

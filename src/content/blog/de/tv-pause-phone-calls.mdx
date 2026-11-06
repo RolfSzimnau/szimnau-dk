@@ -27,9 +27,9 @@ Die Automatisierung hat eine einzige Bedingung: wenn ein Telefon klingelt und de
 
 ## Der Telefonsensor
 
-Die HA Companion App (kostenlos für iOS und Android) stellt `sensor.pixel_10_phone_state` mit vier Zuständen bereit: `ringing`, `in_call`, `offhook`, `idle`. Sie muss auf dem Telefon installiert sein und HA-Benachrichtigungen zugelassen haben. Der Trigger erfasst alle drei Nicht-Idle-Zustände — der TV soll pausieren sobald das Telefon klingelt, nicht erst nachdem man abgenommen hat.
+Die HA Companion App (kostenlos für iOS und Android) stellt `sensor.pixel_10_phone_state` mit vier Zuständen bereit: `ringing`, `in_call`, `offhook`, `idle`. Sie muss auf dem Telefon installiert sein und HA-Benachrichtigungen zugelassen haben. Der Trigger erfasst alle drei Nicht-Idle-Zustände, denn der TV soll pausieren, sobald das Telefon klingelt, und nicht erst, nachdem man abgenommen hat.
 
-Die Automatisierung prüft zuerst ob die TV-Fernbedienung tatsächlich eingeschaltet ist. `remote.tv_stuen` kommt aus der **Android TV**-Integration (in HA integriert, kein HACS). Es hat keinen Sinn einen Pause-Befehl an einen TV zu schicken der bereits aus oder bereits pausiert ist. `input_boolean.tv_was_playing` übernimmt Letzteres — es wird beim Pausieren auf `on` gesetzt und vor dem Fortsetzen geprüft. Ohne es könnte ein Anruf etwas fortsetzen das absichtlich vor dem Anruf pausiert wurde.
+Die Automatisierung prüft zuerst, ob die TV-Fernbedienung tatsächlich eingeschaltet ist. `remote.tv_stuen` kommt aus der **Android TV**-Integration (in HA integriert, kein HACS). Es hat keinen Sinn, einen Pause-Befehl an einen TV zu schicken, der bereits aus oder bereits pausiert ist. `input_boolean.tv_was_playing` übernimmt Letzteres: Es wird beim Pausieren auf `on` gesetzt und vor dem Fortsetzen geprüft. Ohne es könnte ein Anruf etwas fortsetzen, das absichtlich vor dem Anruf pausiert wurde.
 
 ```yaml
 alias: TV — Pause bei Anruf
@@ -75,7 +75,7 @@ action:
       entity_id: input_boolean.tv_was_playing
 ```
 
-Die 2-Sekunden-Verzögerung vor dem Fortsetzen ist absichtlich. Ohne sie feuert der Play-Befehl während der Anruf technisch noch endet — der Telefonsensor erreicht `idle` eine Millisekunde bevor der Anruf wirklich abbricht, und der Ton kommt mitten ins Auf-Wiedersehen zurück.
+Die 2-Sekunden-Verzögerung vor dem Fortsetzen ist absichtlich. Ohne sie feuert der Play-Befehl, während der Anruf technisch noch endet. Der Telefonsensor erreicht `idle` eine Millisekunde, bevor der Anruf wirklich abbricht, und der Ton kommt mitten ins Auf-Wiedersehen zurück.
 
 Das 2-Stunden-Timeout ist ein Sicherheitsnetz. Falls ein Anruf aus irgendeinem Grund nicht als beendet registriert wird, wartet die Automatisierung nicht ewig. `continue_on_timeout: true` bedeutet dass sie nach zwei Stunden trotzdem fortsetzt.
 
@@ -122,10 +122,10 @@ Die Behandlung ist anders weil das Ende eines Messenger-Anrufs weniger zuverläs
               command: MEDIA_PLAY
 ```
 
-30 Minuten Timeout bei Messenger gegenüber 2 Stunden bei normalen Anrufen spiegelt die Realität wider — Messenger-Videoanrufe dauern selten länger als eine halbe Stunde. Ein normales Telefonat mit den Eltern kann gut anderthalb Stunden gehen.
+30 Minuten Timeout bei Messenger gegenüber 2 Stunden bei normalen Anrufen spiegelt die Realität wider: Messenger-Videoanrufe dauern selten länger als eine halbe Stunde. Ein normales Telefonat mit den Eltern kann gut anderthalb Stunden gehen.
 
 ## Was das wirklich löst
 
-Die Suche nach der Fernbedienung. Das ist alles. Es klingt klein. Nach ein paar Wochen ohne es zu tun merkt man wie oft es früher passiert ist — und dass das Erste was man nach dem Anruf tat war die Fernbedienung zu finden und zu entpausieren, was nicht das ist worüber man nachdenken möchte.
+Die Suche nach der Fernbedienung. Das ist alles. Es klingt klein. Nach ein paar Wochen, in denen man es nicht mehr tun muss, merkt man, wie oft es früher passiert ist. Und dass man nach dem Anruf als Erstes die Fernbedienung gesucht hat, um die Pause aufzuheben. Daran will man in dem Moment nicht denken müssen.
 
 Die Automatisierung läuft still. Es gibt kein "TV pausiert"-Banner außer bei Messenger-Anrufen die den manuellen Fortsetzungsknopf brauchen. Normale Anrufe: sie pausiert, man redet, sie setzt fort. Nichts zu bestätigen, nichts zu tippen.
