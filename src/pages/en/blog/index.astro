@@ -25,7 +25,7 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
       <p class="flex items-center gap-3 font-mono text-blue text-sm mb-3 tracking-wider uppercase"><span class="h-px w-8 bg-blue/60"></span>Blog</p>
       <h1 class="font-heading text-4xl sm:text-5xl font-bold text-text-primary mb-4">{t('blog.page.title')}</h1>
       <p class="text-text-muted max-w-2xl">
-        Real-world Home Assistant guides, hardware reviews, and automation blueprints. No fluff, just what works.
+        Setups from my own house, with YAML you can copy and the parts that went wrong.
       </p>
       <div class="flex flex-wrap gap-x-6 mt-4">
         <a href={`/${lang}/rss/`} class="inline-flex items-center gap-2 py-2 font-mono text-sm text-blue hover:underline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>Follow with RSS</a>
