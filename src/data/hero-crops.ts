@@ -4,7 +4,7 @@ export const heroCrop: Record<string, 'square' | 'tall'> = {
   '/blog-images/fresh-intellivent-sky-ble-proxy.jpg': 'square', // 42 %
   '/blog-images/mailboxguard-installed.jpg': 'square',        // 46 %
   '/blog-images/klima-tado.jpg': 'tall',                      // 55 %
-  '/blog-images/dmi-weather-alert-ticker-2026.jpg': 'tall',   // 57 %
+  '/blog-images/dmi-weather-alert-ticker-2026-11.jpg': 'tall',   // 57 %
   '/blog-images/google-find-my-home-assistant.jpg': 'tall',   // 58 %
 };
 
