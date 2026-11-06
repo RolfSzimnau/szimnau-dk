@@ -14,11 +14,11 @@ faqs:
     answer: "Ein Saugroboter in der Station oder ein abgeschlossenes Auto ist eine Bestätigung, keine Information. Sind die Karten für »alles gut« weg, wird die Länge der Seite selbst zum Signal: Eine kurze Seite heißt, im Haus ist es ruhig."
 ---
 
-Ich hatte mal einen HA-Startbildschirm mit über vierzig Karten. Jeden Morgen scrollte ich an geparkte Roboter, ausgeschaltete Lichter und einen leeren Bewegungssensor vorbei. Das ist keine Information — das ist Bestätigung, dass nichts Ungewöhnliches passiert ist. Lärm in Kartenform.
+Ich hatte mal einen HA-Startbildschirm mit über vierzig Karten. Jeden Morgen scrollte ich an geparkten Robotern, ausgeschalteten Lichtern und einem leeren Bewegungssensor vorbei. Das ist keine Information, sondern nur die Bestätigung, dass nichts Ungewöhnliches passiert ist. Lärm in Kartenform.
 
 Ich fing an, alles zu entfernen, das nur "immer noch in Ordnung" sagte.
 
-Der Screenshot oben ist von heute Morgen. Die Spülmaschine läuft (blaue Karte). Das Ladekabel ist am Auto angeschlossen, also sitzt "Kabel entriegeln" neben "Klima Boost". Home-Status ist leer — keine Lichter an, keine Roboter in Bewegung. Energie zeigt: gerade am günstigsten. Das war's. Vier aktive Dinge, angezeigt. Alles andere, versteckt.
+Der Screenshot oben ist von heute Morgen. Die Spülmaschine läuft (blaue Karte). Das Ladekabel ist am Auto angeschlossen, also sitzt "Kabel entriegeln" neben "Klima Boost". Home-Status ist leer: keine Lichter an, keine Roboter in Bewegung. Energie zeigt: gerade am günstigsten. Das war's. Vier aktive Dinge, angezeigt. Alles andere, versteckt.
 
 ## Der Alert-Ticker oben
 
@@ -53,11 +53,11 @@ Personenerkennung ist Priorität 1. Müll morgen ist Priorität 3. Ein Tipp auf 
 
 Das hat eine Weile gedauert. Die Spülmaschinenkarte hat je nach Zustand drei völlig unterschiedliche Erscheinungsbilder:
 
-**Versteckt** — wenn die Maschine aus oder fertig ist. Keine Karte, kein Bereich.
+**Versteckt:** wenn die Maschine aus oder fertig ist. Keine Karte, kein Bereich.
 
-**Bereit** — wenn `OperationState` `Ready` ist UND Fernstart erlaubt ist. Zeigt eine Kachel mit "Spülmaschine bereit — Endzeit einstellen". Erscheint genau in dem Fenster, in dem man sie befüllt, aber noch nicht gestartet hat.
+**Bereit:** wenn `OperationState` `Ready` ist UND Fernstart erlaubt ist. Zeigt eine Kachel mit "Spülmaschine bereit, Endzeit einstellen". Erscheint genau in dem Fenster, in dem du sie befüllt, aber noch nicht gestartet hast.
 
-**Läuft** — wenn `OperationState` `Run` ist. Andere Karte, blauer Hintergrund, "Spülmaschine läuft". Keine Aktion nötig, nur Bewusstsein.
+**Läuft:** wenn `OperationState` `Run` ist. Andere Karte, blauer Hintergrund, "Spülmaschine läuft". Keine Aktion nötig, nur Bewusstsein.
 
 ```yaml
 - type: conditional
@@ -75,11 +75,11 @@ Das hat eine Weile gedauert. Die Spülmaschinenkarte hat je nach Zustand drei v�
 
 Drei Zustände, drei verschiedene Karten, keine Redundanz.
 
-## Licht — zwei Ebenen, ein Prinzip
+## Licht: zwei Ebenen, ein Prinzip
 
 Licht folgt einem zweistufigen Muster. Beide Ebenen sind davon abhängig, dass etwas eingeschaltet ist.
 
-**Ebene 1 — Schnellaktionen:** Wenn irgendein Licht an ist, erscheint oben eine bernsteinfarbene Karte mit der Anzahl und einem einzigen Tipp zum Ausschalten von allem:
+**Ebene 1 (Schnellaktionen):** Wenn irgendein Licht an ist, erscheint oben eine bernsteinfarbene Karte mit der Anzahl und einem einzigen Tipp zum Ausschalten von allem:
 
 ```yaml
 - type: conditional
@@ -120,7 +120,7 @@ Licht folgt einem zweistufigen Muster. Beide Ebenen sind davon abhängig, dass e
 
 Ein Tipp. Keine Navigation, keine Bestätigung, alles aus. Das ist die Karte, die ich in 90 % der Fälle benutze.
 
-**Ebene 2 — Home-Status:** Wenn Innenlichter speziell eingeschaltet sind, erscheinen die einzelnen Mushroom-Lichtkarten weiter unten — mit vollständigen Helligkeitsschiebern und Farbtemperatursteuerung. Nicht nur Ein/Aus. Wenn man das Licht angelassen hat und im Raum steht und es dimmen möchte, sind die Bedienelemente direkt da, ohne woanders hinzunavigieren.
+**Ebene 2 (Home-Status):** Wenn Innenlichter speziell eingeschaltet sind, erscheinen die einzelnen Mushroom-Lichtkarten weiter unten, mit vollständigen Helligkeitsschiebern und Farbtemperatursteuerung. Nicht nur Ein/Aus. Wenn du das Licht angelassen hast, im Raum stehst und es dimmen möchtest, sind die Bedienelemente direkt da, ohne woanders hinzunavigieren.
 
 Der Außenbereich funktioniert genauso, wird aber bei Sonnenuntergang ODER wenn ein Außenlicht an ist ausgelöst. Mittags: unsichtbar. Um 21:30 Uhr: da mit einzelnen Steuerelementen für Flutlichter, Bodenlichter und Lichterkette.
 
@@ -128,11 +128,11 @@ Die zwei Ebenen decken unterschiedliche Bedürfnisse ab. Schnellaktionen sind f�
 
 ## Der Škoda-Bereich ändert sich je nach Kontext
 
-Das Auto wird immer angezeigt — Schlossstatus, ob es zu Hause ist. Was darunter erscheint, hängt davon ab, ob das Ladekabel angeschlossen ist.
+Das Auto wird immer angezeigt, mit Schlossstatus und ob es zu Hause ist. Was darunter erscheint, hängt davon ab, ob das Ladekabel angeschlossen ist.
 
-**Ladekabel nicht angeschlossen:** eine Karte — "Klima Boost". Auto vorheizen bevor man losfährt, ein Tipp.
+**Ladekabel nicht angeschlossen:** eine Karte, "Klima Boost". Auto vorheizen, bevor du losfährst, ein Tipp.
 
-**Ladekabel angeschlossen:** zwei Karten nebeneinander — "Klima Boost" und "Kabel entriegeln". Die Schaltfläche zum Entriegeln des Ladekabels ergibt nur Sinn, wenn das Kabel physisch eingesteckt ist. Also erscheint sie nur dann.
+**Ladekabel angeschlossen:** zwei Karten nebeneinander, "Klima Boost" und "Kabel entriegeln". Die Schaltfläche zum Entriegeln des Ladekabels ergibt nur Sinn, wenn das Kabel physisch eingesteckt ist. Also erscheint sie nur dann.
 
 ```yaml
 - type: conditional
@@ -152,22 +152,22 @@ Das Auto wird immer angezeigt — Schlossstatus, ob es zu Hause ist. Was darunte
 
 Das ist das Muster, das ich überall verwendet habe: keine Bedienelemente anzeigen, die für den aktuellen Gerätezustand nicht relevant sind.
 
-## Home-Status — der Bereich, der seinen Inhalt verdienen muss
+## Home-Status: der Bereich, der seinen Inhalt verdienen muss
 
 Der Home-Status-Bereich enthält mehrere bedingte Karten. Alle brauchen etwas Aktives:
 
-- **Wohnzimmerlicht** — nur sichtbar wenn mindestens ein Innenlicht an ist. Wenn es erscheint, zeigt es vollständige Mushroom-Lichtkarten mit Dimmerschiebern. Man ist schon dort, weil etwas an ist — also volle Kontrolle.
-- **Außenbereich** — erscheint wenn die Sonne unter dem Horizont ist ODER ein Außenlicht an ist. Mittags an einem sonnigen Tag: weg. Um 21:30 Uhr oder wenn die Flutlichter an sind: da.
-- **Roborock** — nur wenn nicht geparkt und nicht im Leerlauf. Saugt, kehrt zurück, pausiert, Fehler — anzeigen. Sitzt in der Ladestation: irrelevant.
-- **Flora** — gleiche Logik. Mäht oder kehrt zurück: Status anzeigen. Geparkt: nichts.
+- **Wohnzimmerlicht:** nur sichtbar, wenn mindestens ein Innenlicht an ist. Wenn es erscheint, zeigt es vollständige Mushroom-Lichtkarten mit Dimmerschiebern. Du bist schon dort, weil etwas an ist, also gibt es volle Kontrolle.
+- **Außenbereich:** erscheint, wenn die Sonne unter dem Horizont ist ODER ein Außenlicht an ist. Mittags an einem sonnigen Tag: weg. Um 21:30 Uhr oder wenn die Flutlichter an sind: da.
+- **Roborock:** nur, wenn nicht geparkt und nicht im Leerlauf. Saugt, kehrt zurück, pausiert, Fehler: anzeigen. Sitzt in der Ladestation: irrelevant.
+- **Flora:** gleiche Logik. Mäht oder kehrt zurück: Status anzeigen. Geparkt: nichts.
 
 ## Die Bildschirmlänge ist das Signal
 
-Das habe ich nicht sofort bemerkt. Nach ein paar Wochen merkte ich, dass ich die Bildschirmlänge las bevor ich den Inhalt las. Kurzer Bildschirm: ruhiger Tag, nichts braucht Aufmerksamkeit. Langer Bildschirm: irgendetwas ist los — scrollen und herausfinden was.
+Das habe ich nicht sofort bemerkt. Nach ein paar Wochen merkte ich, dass ich die Bildschirmlänge las, bevor ich den Inhalt las. Kurzer Bildschirm: ruhiger Tag, nichts braucht Aufmerksamkeit. Langer Bildschirm: Irgendetwas ist los, also scrollen und herausfinden, was.
 
 Die Mülllkarte erscheint nur innerhalb von 3 Tagen vor der Abholung. Den Großteil des Jahres ist sie nicht da. Die Woche vor der Abholung erscheint sie mit farbkodiertem Countdown: Orange bei 3 Tagen, Dunkelorange bei 2, Rot bei 1. Seitdem habe ich die Tonne nicht mehr vergessen.
 
-Die Energiekarte ist immer da — aktueller Preis und wann das nächste günstige Fenster ist. Die hat ihren Dauerplatz verdient, weil sie tatsächlich ändert was ich tue. Ich plane Spülmaschine und Trockner danach.
+Die Energiekarte ist immer da, mit dem aktuellen Preis und dem nächsten günstigen Fenster. Die hat ihren Dauerplatz verdient, weil sie tatsächlich ändert, was ich tue. Ich plane Spülmaschine und Trockner danach.
 
 ## Was niemals erscheint
 

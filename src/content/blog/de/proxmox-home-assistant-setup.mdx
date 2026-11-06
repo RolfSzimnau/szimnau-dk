@@ -19,13 +19,13 @@ Ich hatte die Migration auf ordentliche Hardware seit Monaten geplant. An diesem
 
 ## Warum Proxmox statt HA direkt installieren
 
-Der naheliegende Schritt wäre, HA OS direkt auf dem OptiPlex zu installieren. Ich entschied mich für Proxmox, weil ich den OptiPlex als vollständigen Heimserver haben wollte, nicht nur als HA-Kiste — mit mehreren VMs und Containern neben Home Assistant.
+Der naheliegende Schritt wäre, HA OS direkt auf dem OptiPlex zu installieren. Ich entschied mich für Proxmox, weil der OptiPlex ein vollständiger Heimserver mit mehreren VMs und Containern neben Home Assistant werden sollte und nicht nur eine HA-Kiste.
 
 Der andere Grund: Snapshots. Vor jedem HA-Update erstelle ich einen Proxmox-Snapshot. Wenn etwas kaputt geht, dauert ein Rollback 10 Sekunden. Auf dem Pi konnte ein schlechtes Update eine Stunde Wiederherstellungsarbeit bedeuten.
 
 ## Hardware: Dell OptiPlex 7060 als Home Assistant-Host
 
-Ich fand einen refurbished OptiPlex 7060 für unter 150€ auf eBay. Er kam mit 16 GB RAM, das ich sofort auf 32 GB aufrüstete — 8-GB-Sticks kosteten je 12€ und der OptiPlex nimmt sie problemlos.
+Ich fand einen refurbished OptiPlex 7060 für unter 150€ auf eBay. Er kam mit 16 GB RAM, die ich sofort auf 32 GB aufrüstete. 8-GB-Sticks kosteten je 12€, und der OptiPlex nimmt sie problemlos.
 
 | Komponente | Spezifikation |
 |------------|---------------|
@@ -34,7 +34,7 @@ Ich fand einen refurbished OptiPlex 7060 für unter 150€ auf eBay. Er kam mit 
 | Speicher | 500 GB NVMe SSD |
 | Netzwerk | Intel I219-LM |
 
-Der i5-8500 ist für Home Assistant allein völlig überdimensioniert. Das ist in Ordnung — es bedeutet, dass die gesamte Maschine bei etwa 12W im Leerlauf läuft und ich trotzdem noch Kapazität für einen Medienserver, einen Ad-Blocker und ein Monitoring-Setup parallel habe.
+Der i5-8500 ist für Home Assistant allein völlig überdimensioniert. Das ist in Ordnung: Die gesamte Maschine läuft bei etwa 12W im Leerlauf, und ich habe trotzdem noch Kapazität für einen Medienserver, einen Ad-Blocker und ein Monitoring-Setup parallel.
 
 ## Proxmox VE installieren
 
@@ -43,10 +43,10 @@ Das Proxmox VE ISO von proxmox.com herunterladen, mit Rufus oder Balena Etcher a
 Das Installationsprogramm ist unkompliziert. Worauf es sich lohnt zu achten:
 
 - **Zieldatenträger**: Die NVMe SSD auswählen, nicht einen eventuell noch eingesteckten USB-Stick
-- **Management-IP**: Jetzt eine statische IP vergeben — ab diesem Moment greift man auf das Web-UI unter `https://DEINE-IP:8006` zu
-- **Hostname**: Ich verwende `proxmox.local` — leicht zu merken, funktioniert mit mDNS
+- **Management-IP**: Jetzt eine statische IP vergeben, denn ab diesem Moment greifst du unter `https://DEINE-IP:8006` auf das Web-UI zu
+- **Hostname**: Ich verwende `proxmox.local`. Leicht zu merken, funktioniert mit mDNS
 
-Als erstes nach der Installation empfiehlt sich der Proxmox Post-Install-Helfer von [community-scripts.github.io/ProxmoxVE](https://community-scripts.github.io/ProxmoxVE/) — eine community-gepflegte Sammlung von Skripten für Proxmox. Das Post-Install-Skript entfernt die Abonnement-Meldung, wechselt zum kostenlosen Repository und nimmt sinnvolle Grundeinstellungen vor:
+Als erstes nach der Installation empfiehlt sich der Proxmox Post-Install-Helfer von [community-scripts.github.io/ProxmoxVE](https://community-scripts.github.io/ProxmoxVE/), einer community-gepflegten Sammlung von Skripten für Proxmox. Das Post-Install-Skript entfernt die Abonnement-Meldung, wechselt zum kostenlosen Repository und nimmt sinnvolle Grundeinstellungen vor:
 
 ```bash
 bash -c "$(wget -qLO - https://github.com/community-scripts/ProxmoxVE/raw/main/misc/post-pve-install.sh)"
@@ -54,7 +54,7 @@ bash -c "$(wget -qLO - https://github.com/community-scripts/ProxmoxVE/raw/main/m
 
 ## Home Assistant VM erstellen
 
-Dieselbe community-scripts-Sammlung enthält ein Skript, das die HA OS VM vollständig automatisiert erstellt — es lädt das neueste Image herunter, richtet die VM mit sinnvollen Standardwerten ein und startet sie:
+Dieselbe community-scripts-Sammlung enthält ein Skript, das die HA OS VM vollständig automatisiert erstellt. Es lädt das neueste Image herunter, richtet die VM mit sinnvollen Standardwerten ein und startet sie:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/haos-vm.sh)"
@@ -69,13 +69,13 @@ Disk:   32 GB (erweiterbar)
 Netz:   VirtIO bridge (vmbr0)
 ```
 
-Ein optionales, aber nützliches Skript aus derselben Sammlung: der CPU Scaling Governor. Er ermöglicht es, die CPU im Performance-Modus zu fixieren, anstatt sie vom Betriebssystem heruntertakten zu lassen — das sorgt für gleichmäßige HA-Reaktionszeiten:
+Ein optionales, aber nützliches Skript aus derselben Sammlung: der CPU Scaling Governor. Er ermöglicht es, die CPU im Performance-Modus zu fixieren, anstatt sie vom Betriebssystem heruntertakten zu lassen. Das sorgt für gleichmäßige HA-Reaktionszeiten:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/scaling-governor.sh)"
 ```
 
-4 GB RAM klingt viel für HA allein, aber Add-ons verbrauchen schnell Arbeitsspeicher. Mit dem vollständigen Stack — HA OS, Matter-Server, Mosquitto Broker, Studio Code Server und einigen weiteren — sehe ich typischerweise 2,5–3 GB im Einsatz.
+4 GB RAM klingt viel für HA allein, aber Add-ons verbrauchen schnell Arbeitsspeicher. Mit dem vollständigen Stack (HA OS, Matter-Server, Mosquitto Broker, Studio Code Server und einigen weiteren) sehe ich typischerweise 2,5–3 GB im Einsatz.
 
 ## USB-Passthrough für Zigbee/Z-Wave Dongles
 
@@ -87,7 +87,7 @@ Im Proxmox Web-UI:
 2. **USB Vendor/Device ID verwenden** auswählen und den Dongle aus der Liste wählen
 3. Die VM neu starten
 
-Das Gerät erscheint in HA's Hardware-Einstellungen, als wäre es direkt angeschlossen. Das übersteht Proxmox-Neustarts — die VM bekommt das Gerät beim Hochfahren automatisch.
+Das Gerät erscheint in HA's Hardware-Einstellungen, als wäre es direkt angeschlossen. Das übersteht Proxmox-Neustarts, denn die VM bekommt das Gerät beim Hochfahren automatisch.
 
 Was mich damals verwirrt hat: Wenn man nach **USB-Port** statt Vendor/Device ID auswählt, bricht die Weiterleitung zusammen, sobald man den Dongle während der Wartung in einen anderen USB-Port steckt. Immer Vendor/Device ID verwenden.
 
@@ -96,9 +96,9 @@ Was mich damals verwirrt hat: Wenn man nach **USB-Port** statt Vendor/Device ID 
 Wenn die HA VM läuft, `http://homeassistant.local:8123` aufrufen und den Onboarding-Assistenten durchlaufen. Vom ersten Start bis zum Dashboard dauert es etwa 2 Minuten.
 
 Meine ersten Integrationen nach der Einrichtung:
-- **WiZ** — sofort im lokalen Netzwerk automatisch erkannt, alle 22 Lampen erschienen ohne jede Konfiguration
-- **UniFi** — für Geräteverfolgung und Netzwerkstatistiken integriert, unverzichtbar um zu wissen, wer zu Hause ist
-- **Tado** — Klimasystem, eine Zone, nach Eingabe der Zugangsdaten erkannt
+- **WiZ**: sofort im lokalen Netzwerk automatisch erkannt, alle 22 Lampen erschienen ohne jede Konfiguration
+- **UniFi**: für Geräteverfolgung und Netzwerkstatistiken integriert, unverzichtbar, um zu wissen, wer zu Hause ist
+- **Tado**: Klimasystem, eine Zone, nach Eingabe der Zugangsdaten erkannt
 
 Die Netzwerk-Autodiscovery in HA 2024 ist wirklich beeindruckend. Die meisten Dinge fanden sich innerhalb der ersten Minuten selbst.
 
@@ -111,12 +111,12 @@ Datacenter → HA VM → Snapshots → Snapshot erstellen
 Name: vor-update-JJJJ-MM-TT
 ```
 
-Der Snapshot dauert unter 30 Sekunden. Funktioniert das Update einwandfrei, lösche ich den Snapshot einen Tag später. Geht etwas kaputt — und mit 30+ Integrationen passiert das gelegentlich — führe ich in 10 Sekunden einen Rollback durch und das Haus ist wieder im vorherigen Zustand.
+Der Snapshot dauert unter 30 Sekunden. Funktioniert das Update einwandfrei, lösche ich den Snapshot einen Tag später. Geht etwas kaputt (und mit 30+ Integrationen passiert das gelegentlich), führe ich in 10 Sekunden einen Rollback durch, und das Haus ist wieder im vorherigen Zustand.
 
 Auf dem Raspberry Pi war ich bei Updates immer leicht nervös, weil die Wiederherstellung langsam und mühsam war. Mit Proxmox-Snapshots spiele ich Updates am Tag ihres Erscheinens ohne jedes Zögern ein.
 
 ## Was der Wechsel zu Proxmox wirklich gelöst hat
 
-Drei Jahre auf dem Pi bedeuteten drei SD-Karten-Auswechslungen und zwei Korruptionsvorfälle. Der OptiPlex läuft seit Ende 2022 ohne einen einzigen Hardware-Zwischenfall. Die NVMe SSD kümmert sich nicht um Stromausfälle. Proxmox schreibt auf journalisierte Dateisysteme. Der Pi war nie das richtige Werkzeug für Infrastruktur, die Heizung, Sicherheitskameras und EV-Laden steuert — er war einfach billig und einfach zu starten.
+Drei Jahre auf dem Pi bedeuteten drei SD-Karten-Auswechslungen und zwei Korruptionsvorfälle. Der OptiPlex läuft seit Ende 2022 ohne einen einzigen Hardware-Zwischenfall. Die NVMe SSD kümmert sich nicht um Stromausfälle. Proxmox schreibt auf journalisierte Dateisysteme. Der Pi war nie das richtige Werkzeug für Infrastruktur, die Heizung, Sicherheitskameras und EV-Laden steuert. Er war einfach billig, und der Einstieg war leicht.
 
 Der OptiPlex gab mir auch Wachstumsraum. Die HA VM sitzt auf demselben Host wie eine Debian-VM mit meinem self-hosted GitHub Actions Runner, ein Home Assistant Supervised Container zum Testen und einige andere leichtgewichtige Dienste. Alles für 150€ Hardware und 12W aus der Steckdose.

@@ -11,32 +11,32 @@ translationKey: "fresh-intellivent-sky-ble-proxy-home-assistant"
 heroImage: "/blog-images/fresh-intellivent-sky-ble-proxy.jpg"
 faqs:
   - question: "Does the Fresh Intellivent Sky Home Assistant integration let you control fan speed?"
-    answer: "It depends which community integration you use. The original angoyd/freshintelliventHacs is read-only — humidity, temperature, current speed, and mode sensors only. Switching to Spit68/Fresh-Intellivent-Sky (also via HACS) adds real control: boost and pause with duration and RPM, a constant-speed override, per-mode RPM, night mode, silent hours, and detection sensitivity. The trade-off: it drops the calibrated humidity percentage its predecessor exposed, leaving only an unscaled humidity_sensor_raw register value with no documented conversion formula in this repo - though the old integration's underlying library (LaStrada/pyfreshintellivent) turns out to read the same register and convert it via humidity = log(raw/10)*10, which can be rebuilt as a template sensor."
+    answer: "It depends which community integration you use. The original angoyd/freshintelliventHacs is read-only, with humidity, temperature, current speed, and mode sensors only. Switching to Spit68/Fresh-Intellivent-Sky (also via HACS) adds real control: boost and pause with duration and RPM, a constant-speed override, per-mode RPM, night mode, silent hours, and detection sensitivity. The trade-off: it drops the calibrated humidity percentage its predecessor exposed, leaving only an unscaled humidity_sensor_raw register value with no documented conversion formula in this repo. The old integration's underlying library (LaStrada/pyfreshintellivent) turns out to read the same register and convert it via humidity = log(raw/10)*10, which can be rebuilt as a template sensor."
   - question: "Why did one of two identical Bluetooth devices show unavailable in Home Assistant?"
-    answer: "A crashed config entry, not a range problem. The integration's own reload handler failed mid-unload and left it in Home Assistant's non-recoverable failed_unload state. Check Settings → Devices & Services → the integration's entry status before assuming a Bluetooth/range issue — only a full Home Assistant restart clears it."
+    answer: "A crashed config entry, not a range problem. The integration's own reload handler failed mid-unload and left it in Home Assistant's non-recoverable failed_unload state. Check Settings → Devices & Services → the integration's entry status before assuming a Bluetooth/range issue. Only a full Home Assistant restart clears it."
 ---
 
-Two Fresh Intellivent Sky bathroom fans, both broadcasting Bluetooth Low Energy, both further from the Home Assistant host than its onboard radio reliably reaches. The fix wasn't a new HA server or a mesh of repeaters — it was a $5 microcontroller and about ten minutes with a browser. This post covers the Bluetooth proxy setup, adding the fans, and a bug that looked exactly like a hardware problem and wasn't.
+Two Fresh Intellivent Sky bathroom fans, both broadcasting Bluetooth Low Energy, both further from the Home Assistant host than its onboard radio reliably reaches. The fix wasn't a new HA server or a mesh of repeaters. It was a $5 microcontroller and about ten minutes with a browser. This post covers the Bluetooth proxy setup, adding the fans, and a bug that looked exactly like a hardware problem and wasn't.
 
 ## The hardware: Seeed Studio XIAO ESP32-C3
 
-The XIAO ESP32-C3 is a thumbnail-sized board — WiFi, Bluetooth 5, and a USB-C port, nothing else you need to think about. I plugged it into a USB power brick in the hallway between the two bathrooms and never touched the wiring again.
+The XIAO ESP32-C3 is a thumbnail-sized board: WiFi, Bluetooth 5, and a USB-C port. Nothing else you need to think about. I plugged it into a USB power brick in the hallway between the two bathrooms and never touched the wiring again.
 
 ![Seeed Studio XIAO ESP32-C3 board close-up, showing the USB-C port and external antenna connector](/blog-images/xiao-esp32-c3-board.jpg)
 
-Flashing it is not a project in the way "flashing firmware" usually implies. [ESPHome's web-based project installer](https://esphome.io/projects/) has a ready-made **Bluetooth Proxy** firmware image — plug the board into your computer over USB, open the installer in Chrome or Edge, pick the board and the Bluetooth Proxy project, and it flashes over WebSerial. No YAML to write, no ESPHome dashboard to run locally. Connect it to WiFi during the guided setup and it shows up in Home Assistant's discovery within a minute.
+Flashing it is not a project in the way "flashing firmware" usually implies. [ESPHome's web-based project installer](https://esphome.io/projects/) has a ready-made **Bluetooth Proxy** firmware image. Plug the board into your computer over USB, open the installer in Chrome or Edge, pick the board and the Bluetooth Proxy project, and it flashes over WebSerial. No YAML to write, no ESPHome dashboard to run locally. Connect it to WiFi during the guided setup and it shows up in Home Assistant's discovery within a minute.
 
 Once it's added as an ESPHome device, it registers itself as a Bluetooth adapter under **Settings → Devices & Services → Bluetooth**. Home Assistant automatically prefers proxies over its own onboard adapter for any device closer to a proxy, with no configuration on your end.
 
 ## Why a proxy instead of just more range
 
-Home Assistant's host Bluetooth radio covers roughly one room, maybe two with clear line of sight. Everything past that is a dead zone for any BLE-only integration — no Zigbee-style mesh, no repeater logic, just "in range" or "not in range." A single $5 ESP32 board fixes an entire dead zone at once, and you can drop more of them anywhere you have USB power; each one just adds coverage, no pairing or per-device configuration required on the proxy side.
+Home Assistant's host Bluetooth radio covers roughly one room, maybe two with clear line of sight. Everything past that is a dead zone for any BLE-only integration. There's no Zigbee-style mesh and no repeater logic, just "in range" or "not in range." A single $5 ESP32 board fixes an entire dead zone at once, and you can drop more of them anywhere you have USB power. Each one just adds coverage, with no pairing or per-device configuration required on the proxy side.
 
-I run this alongside a [Google Find My setup](/en/blog/google-find-my-home-assistant/) that also depends on Bluetooth — the FAQ there specifically calls out an ESP32 BLE proxy as the right tool when you need a reading in seconds rather than "whenever a phone walks past."
+I run this alongside a [Google Find My setup](/en/blog/google-find-my-home-assistant/) that also depends on Bluetooth. The FAQ there specifically calls out an ESP32 BLE proxy as the right tool when you need a reading in seconds rather than "whenever a phone walks past."
 
 ## Adding the Fresh Intellivent Sky fans
 
-Fresh's Intellivent Sky is a humidity-sensing bathroom extractor fan with its own Bluetooth interface, controlled normally through the Fresh SmartLink app. Home Assistant has no official integration for it — the one that works is a community project, [`angoyd/freshintelliventHacs`](https://github.com/angoyd/freshintelliventHacs), installed via HACS as a custom repository.
+Fresh's Intellivent Sky is a humidity-sensing bathroom extractor fan with its own Bluetooth interface, controlled normally through the Fresh SmartLink app. Home Assistant has no official integration for it. The one that works is a community project, [`angoyd/freshintelliventHacs`](https://github.com/angoyd/freshintelliventHacs), installed via HACS as a custom repository.
 
 ![Fresh Intellivent Sky bathroom fan installed in a ceiling diffuser](/blog-images/fresh-intellivent-sky-fan-ceiling.jpg)
 
@@ -45,29 +45,29 @@ With the proxy in place, setup is genuinely just discovery: once the fan's BLE a
 - `sensor.<name>_humidity`
 - `sensor.<name>_temperature`
 - `sensor.<name>_current_speed`
-- `sensor.<name>_mode` (human-readable — Off, Trickle, Boost, etc.)
+- `sensor.<name>_mode` (human-readable: Off, Trickle, Boost, etc.)
 - `sensor.<name>_mode_raw` (the numeric code behind it)
 
-**That's read-only.** There's no `fan.*`, `switch.*`, or `select.*` entity — nothing in Home Assistant can change the fan's speed or trigger a boost. Automations built on this integration can notify you to go boost the fan manually; they can't do it for you. That's a real limitation worth knowing before you plan automations around it.
+**That's read-only.** There's no `fan.*`, `switch.*`, or `select.*` entity, so nothing in Home Assistant can change the fan's speed or trigger a boost. Automations built on this integration can notify you to go boost the fan manually; they can't do it for you. That's a real limitation worth knowing before you plan automations around it.
 
-*Update 2026-08-26: not the whole story anymore — see the update section at the bottom of this post.*
+*Update 2026-08-26: this is not the whole story anymore. See the update section at the bottom of this post.*
 
 ## Humidity automations that actually work with read-only data
 
-Two fans, five sensors each, no control — but humidity and its rate of change are still enough to build something useful. The pattern I landed on:
+Two fans, five sensors each, no control. But humidity and its rate of change are still enough to build something useful. The pattern I landed on:
 
-- A **Derivative** Helper (Settings → Devices & Services → Helpers, no YAML) on each humidity sensor, giving a %/min value — a sustained rise past roughly 3.3%/min flags "someone's in the shower" faster than a fixed humidity threshold ever could.
+- A **Derivative** Helper (Settings → Devices & Services → Helpers, no YAML) on each humidity sensor, giving a %/min value. A sustained rise past roughly 3.3%/min flags "someone's in the shower" faster than a fixed humidity threshold ever could.
 - A sustained-threshold automation for genuine mold risk: humidity above 70% for 45+ minutes, independent of rate.
 
-Both just push a notification — see the read-only limitation above — but the rate-of-change trigger catches a shower starting within a couple of minutes, well before a fixed "humidity above 65%" threshold would fire.
+Both just push a notification (see the read-only limitation above), but the rate-of-change trigger catches a shower starting within a couple of minutes, well before a fixed "humidity above 65%" threshold would fire.
 
 ## The bug that looked like a range problem
 
-A few days after setup, one fan's five sensors all went `unavailable` while the other kept reporting normally. The obvious assumption is signal — proxy placement, BLE range, maybe the fan needs re-pairing. I checked the proxy's coverage first and found nothing wrong with it.
+A few days after setup, one fan's five sensors all went `unavailable` while the other kept reporting normally. The obvious assumption is signal: proxy placement, BLE range, maybe the fan needs re-pairing. I checked the proxy's coverage first and found nothing wrong with it.
 
-The actual cause was in the integration's config entry, not the radio. Home Assistant tracks each integration instance's setup state — one of the possible values is `failed_unload`, which occurs when an integration's own reload/unload handler throws mid-teardown. In practice it doesn't self-recover: only a full restart clears it. The error log showed exactly that: an options-update listener triggered a reload, the unload half failed, and the entry was left dead. The identical, unaffected fan's config entry, by contrast, sat at a normal `loaded` state the entire time.
+The actual cause was in the integration's config entry, not the radio. Home Assistant tracks each integration instance's setup state. One of the possible values is `failed_unload`, which occurs when an integration's own reload/unload handler throws mid-teardown. In practice it doesn't self-recover: only a full restart clears it. The error log showed exactly that: an options-update listener triggered a reload, the unload half failed, and the entry was left dead. The identical, unaffected fan's config entry, by contrast, sat at a normal `loaded` state the entire time.
 
-Nothing about this is diagnosable from entity state alone — `unavailable` looks identical whether the cause is "integration crashed" or "device is out of range." The tell is in **Settings → Devices & Services**, on the integration entry itself, or in the Home Assistant log around the time the entity went stale. A full restart cleared the stuck entry immediately; every sensor was reporting again within two minutes.
+Nothing about this is diagnosable from entity state alone. `unavailable` looks identical whether the cause is "integration crashed" or "device is out of range." The tell is in **Settings → Devices & Services**, on the integration entry itself, or in the Home Assistant log around the time the entity went stale. A full restart cleared the stuck entry immediately, and every sensor was reporting again within two minutes.
 
 ```yaml
 alias: "Bathroom: Fan Sensor Stale Alert"
@@ -94,44 +94,44 @@ action:
             title: "Restart HA"
 ```
 
-The action button fires a second, tiny automation that listens for that specific `mobile_app_notification_action` event and calls `homeassistant.restart` — deliberately not automatic, since a genuinely out-of-range fan would just get a useless restart on a loop instead of the actual fix.
+The action button fires a second, tiny automation that listens for that specific `mobile_app_notification_action` event and calls `homeassistant.restart`. It's deliberately not automatic, since a genuinely out-of-range fan would just get a useless restart on a loop instead of the actual fix.
 
 ## Styling it into the dashboard
 
-Both fans' cards use the same [frosted-glass card_mod constants](/en/blog/ha-glassmorphism-dashboard-design/) as the rest of the dashboard — a humidity trend chart, temperature/mode/speed tiles, and a compact status tile that only renders when the fan is active or humidity is climbing, so an idle bathroom doesn't take up permanent dashboard space. The formerly-broken fan's card also carries a small "Connectivity: Unavailable" fallback tile, driven by the same `mode` sensor going `unavailable` — it's gone the moment the sensors start reporting again, no manual dashboard edit needed either way.
+Both fans' cards use the same [frosted-glass card_mod constants](/en/blog/ha-glassmorphism-dashboard-design/) as the rest of the dashboard: a humidity trend chart, temperature/mode/speed tiles, and a compact status tile that only renders when the fan is active or humidity is climbing, so an idle bathroom doesn't take up permanent dashboard space. The formerly-broken fan's card also carries a small "Connectivity: Unavailable" fallback tile, driven by the same `mode` sensor going `unavailable`. It's gone the moment the sensors start reporting again, no manual dashboard edit needed either way.
 
 ## Update: switching to a repo with write access
 
-Seven weeks later, someone from Spittie.dk — a Danish Home Assistant enthusiast site — reached out and pointed me at a repo I hadn't found myself: [`Spit68/Fresh-Intellivent-Sky`](https://github.com/Spit68/Fresh-Intellivent-Sky). `angoyd/freshintelliventHacs` is still strictly read-only, as described above, no matter how many times you reload it; this one is a different animal entirely, installed the same way through HACS.
+Seven weeks later, someone from Spittie.dk (a Danish Home Assistant enthusiast site) reached out and pointed me at a repo I hadn't found myself: [`Spit68/Fresh-Intellivent-Sky`](https://github.com/Spit68/Fresh-Intellivent-Sky). `angoyd/freshintelliventHacs` is still strictly read-only, as described above, no matter how many times you reload it. This one is a different animal entirely, installed the same way through HACS.
 
-That changes the entity picture substantially. Instead of the five read-only sensors, each fan now gets boost and pause buttons (with duration and RPM), a constant-speed switch, per-mode RPM settings, night mode and silent hours with start/end times, plus sensitivity selects for humidity, VOC, and light detection. That's a real gain — automations can now actually boost the fan instead of just reminding you to.
+That changes the entity picture substantially. Instead of the five read-only sensors, each fan now gets boost and pause buttons (with duration and RPM), a constant-speed switch, per-mode RPM settings, night mode and silent hours with start/end times, plus sensitivity selects for humidity, VOC, and light detection. That's a real gain: automations can now actually boost the fan instead of just reminding you to.
 
-The cost: no calibrated humidity percentage. The new repo exposes a `humidity_sensor_raw` sensor, but it's disabled by default, and I checked the source for a hidden conversion formula — there isn't one. `sky_sensors.py` unpacks the BLE status characteristic directly:
+The cost: no calibrated humidity percentage. The new repo exposes a `humidity_sensor_raw` sensor, but it's disabled by default, and I checked the source for a hidden conversion formula. There isn't one. `sky_sensors.py` unpacks the BLE status characteristic directly:
 
 ```python
 values = unpack("<2B5H3B", data)
 self.humidity_raw = values[2]
 ```
 
-That's a raw, unscaled 16-bit number straight from the device's own register — no division, no reference calibration, nothing translating it to a percentage. The two humidity automations described above couldn't just carry over 1:1 — or so I thought, until I looked one level down. The old `angoyd` integration doesn't parse BLE data itself; it leans on a separate library, [`pyfreshintellivent`](https://github.com/LaStrada/pyfreshintellivent). That library's `sensors.py` reads the exact same characteristic (`528b80e8-…`, literally named "Sensor data" in the protocol docs) at the exact same byte offset as `humidity_raw` above — and converts it:
+That's a raw, unscaled 16-bit number straight from the device's own register, with no division, no reference calibration, nothing translating it to a percentage. The two humidity automations described above couldn't just carry over 1:1. Or so I thought, until I looked one level down. The old `angoyd` integration doesn't parse BLE data itself. It leans on a separate library, [`pyfreshintellivent`](https://github.com/LaStrada/pyfreshintellivent). That library's `sensors.py` reads the exact same characteristic (`528b80e8-…`, literally named "Sensor data" in the protocol docs) at the exact same byte offset as `humidity_raw` above, and converts it:
 
 ```python
 if values[2] != 0:
     self.humidity = round((log(values[2] / 10) * 10), 1)
 ```
 
-A natural log, not a linear scale. Nothing Fresh ever published themselves — just something another developer worked out and has run in production for years. I tested it against the raw numbers I already had: 858 → 41.3%, ~2800-3150 → 39.5-58%. Both land squarely in normal bathroom humidity territory, not the kind of result you get from feeding numbers into an arbitrary formula. Built it as two `template` sensors in Home Assistant, and put both automations back on their original thresholds — 70% for 45 minutes on mold risk, 3.33%/min on the rapid-rise one — just pointed at a different source entity than before.
+A natural log, not a linear scale. Nothing Fresh ever published themselves, just something another developer worked out and has run in production for years. I tested it against the raw numbers I already had: 858 → 41.3%, ~2800-3150 → 39.5-58%. Both land squarely in normal bathroom humidity territory, not the kind of result you get from feeding numbers into an arbitrary formula. Built it as two `template` sensors in Home Assistant, and put both automations back on their original thresholds (70% for 45 minutes on mold risk, 3.33%/min on the rapid-rise one), just pointed at a different source entity than before.
 
-Two more things worth knowing if you swap the repo behind an integration that's already wired into your dashboard and automations: reinstalling the Bluetooth proxy itself triggered a brief, self-healing drop in the ESPHome API connection (around 20 minutes) that looked like yet another permanent outage but wasn't — and both automations and dashboard cards had hardcoded entity IDs from the old integration that needed fixing one at a time. The dashboard cards, in particular, turned up a bug that had been sitting there unnoticed for a while: the two bathroom cards were actually showing each other's data, because the card title and the entity mapping had gotten swapped somewhere along the way.
+Two more things worth knowing if you swap the repo behind an integration that's already wired into your dashboard and automations. First, reinstalling the Bluetooth proxy itself triggered a brief, self-healing drop in the ESPHome API connection (around 20 minutes) that looked like yet another permanent outage but wasn't. Second, both automations and dashboard cards had hardcoded entity IDs from the old integration that needed fixing one at a time. The dashboard cards, in particular, turned up a bug that had been sitting there unnoticed for a while: the two bathroom cards were actually showing each other's data, because the card title and the entity mapping had gotten swapped somewhere along the way.
 
 ## Update: the formula's reliability is still unresolved
 
-After publishing this, I heard from the developer maintaining `Spit68/Fresh-Intellivent-Sky`. Turns out he'd already put serious work into exactly this problem — tried the LaStrada log formula above, several others, opened up a SKY unit to inspect the actual humidity sensor chip, worked from its datasheet, and even fed an AI a pile of raw-value/reference-humidity pairs. None of it produced a formula solid enough to ship as a real percentage sensor, which is exactly why `humidity_sensor_raw` stays disabled by default in his repo instead of a guess dressed up as data — credit for holding that line rather than shipping something that looks right and isn't.
+After publishing this, I heard from the developer maintaining `Spit68/Fresh-Intellivent-Sky`. Turns out he'd already put serious work into exactly this problem. He tried the LaStrada log formula above and several others, opened up a SKY unit to inspect the actual humidity sensor chip, worked from its datasheet, and even fed an AI a pile of raw-value/reference-humidity pairs. None of it produced a formula solid enough to ship as a real percentage sensor, which is exactly why `humidity_sensor_raw` stays disabled by default in his repo instead of a guess dressed up as data. Credit to him for holding that line rather than shipping something that looks right and isn't.
 
-The data point that matters most: two SKY units side by side, in presumably similar humidity, can report raw values as different as 100 vs. 300. That's not a linear offset you calibrate away — it points to the raw register not being on a consistent scale across units at all.
+The data point that matters most: two SKY units side by side, in presumably similar humidity, can report raw values as different as 100 vs. 300. That's not a linear offset you calibrate away. It points to the raw register not being on a consistent scale across units at all.
 
-That reframes what I actually validated above. The log formula produced plausible numbers for my specific fan, and my two automations still work because they threshold consistently against that one fan's own baseline over time — not because the formula is a proven, general raw-to-percentage conversion. If you're replicating this for your own SKY units, treat the resulting number as a relative trend indicator, not a calibrated percentage, until you've checked it against a real hygrometer in your own bathroom. He's not done chasing this either — new comparison sensors are on the way on his end — so if a real formula ever surfaces, I'll update this post.
+That reframes what I actually validated above. The log formula produced plausible numbers for my specific fan, and my two automations still work because they threshold consistently against that one fan's own baseline over time, not because the formula is a proven, general raw-to-percentage conversion. If you're replicating this for your own SKY units, treat the resulting number as a relative trend indicator, not a calibrated percentage, until you've checked it against a real hygrometer in your own bathroom. He's not done chasing this either (new comparison sensors are on the way on his end), so if a real formula ever surfaces, I'll update this post.
 
 ## One thing to know
 
-If you're extending Home Assistant's Bluetooth range for anything other than a single device — Govee sensors, other BLE trackers, more of these fans — the proxy itself doesn't care what it's proxying. One XIAO ESP32-C3 per dead zone covers everything in range, not just the device you set it up for. It's the same logic as [running a LoRa gateway](/en/blog/mailboxguard-lora-home-assistant/) for a mailbox sensor 200 metres out — cheap, purpose-built radio hardware solves range problems that no amount of Home Assistant configuration can.
+If you're extending Home Assistant's Bluetooth range for anything other than a single device (Govee sensors, other BLE trackers, more of these fans), the proxy itself doesn't care what it's proxying. One XIAO ESP32-C3 per dead zone covers everything in range, not just the device you set it up for. It's the same logic as [running a LoRa gateway](/en/blog/mailboxguard-lora-home-assistant/) for a mailbox sensor 200 metres out: cheap, purpose-built radio hardware solves range problems that no amount of Home Assistant configuration can.

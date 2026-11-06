@@ -14,19 +14,19 @@ faqs:
     answer: "Wegen der Wiederverwendung. Der nächste Raum ist nur Blueprint, Sensor wählen, Heizkörper wählen. Das dauert etwa 30 Sekunden und braucht keinen neuen Code. Das gilt für die Mill-Heizkörper, das Wohnzimmer mit Tado braucht eine eigene Logik."
 ---
 
-Der Heizkörper in Louises Zimmer lief auf Hochtouren — bei offenem Fenster. Sie ist fast zwanzig, und daran zu denken das Fenster zu schließen passiert nicht zuverlässig. Ich bemerkte dass das Fenster eine Stunde offen gestanden hatte, Heizung an, Außentemperatur um die 4°C. Kein Drama, aber eine vorhersehbare Verschwendung die sich wiederholen würde — Geld zum Fenster hinauswerfen, buchstäblich.
+Der Heizkörper in Louises Zimmer lief auf Hochtouren, und das bei offenem Fenster. Sie ist fast zwanzig, und daran zu denken, das Fenster zu schließen, passiert nicht zuverlässig. Ich bemerkte, dass das Fenster eine Stunde offen gestanden hatte, Heizung an, Außentemperatur um die 4°C. Kein Drama, aber eine vorhersehbare Verschwendung, die sich wiederholen würde. Geld zum Fenster hinauswerfen, buchstäblich.
 
-Die Lösung war ein Fenstersensor und eine einzige Home Assistant-Automatisierung. Die extra Stunde investierte ich darin sie als Blueprint zu bauen — damit das nächste Zimmer 30 Sekunden braucht, nicht einen weiteren Nachmittag.
+Die Lösung war ein Fenstersensor und eine einzige Home Assistant-Automatisierung. Die extra Stunde investierte ich darin, sie als Blueprint zu bauen, damit das nächste Zimmer 30 Sekunden braucht und nicht einen weiteren Nachmittag.
 
 ## Hardware: IKEA Fenstersensor + Mill-Heizkörper
 
-Ein **IKEA MYGGBETT** Tür-/Fenstersensor an Louises Fenster (`binary_sensor.myggbett_door_window_sensor_door`). Der Heizkörper ist ein Erstgenerations-**Mill**-Gerät — `climate.louise` — das nur zwei Modi unterstützt: `heat` und `off`. Das gleiche Erstgenerationsmodell steht auch in meinem Büro.
+Ein **IKEA MYGGBETT** Tür-/Fenstersensor an Louises Fenster (`binary_sensor.myggbett_door_window_sensor_door`). Der Heizkörper ist ein Erstgenerations-**Mill**-Gerät (`climate.louise`), das nur zwei Modi unterstützt: `heat` und `off`. Das gleiche Erstgenerationsmodell steht auch in meinem Büro.
 
-Das Schlafzimmer und die Küche laufen mit neueren Mill-Heizkörpern mit mehr HVAC-Modi. Das Blueprint behandelt sie alle — es speichert den genauen Zustand vor dem Ausschalten und stellt ihn beim Schließen des Fensters präzise wieder her, unabhängig von Modus oder Temperatur.
+Das Schlafzimmer und die Küche laufen mit neueren Mill-Heizkörpern mit mehr HVAC-Modi. Das Blueprint behandelt sie alle: Es speichert den genauen Zustand vor dem Ausschalten und stellt ihn beim Schließen des Fensters präzise wieder her, unabhängig von Modus oder Temperatur.
 
-Das Wohnzimmer hat eine Daikin-Wärmepumpe die über Tado gesteuert wird — eine andere Integration mit eigenen Modi. Die bekommt ihren eigenen Ansatz.
+Das Wohnzimmer hat eine Daikin-Wärmepumpe, die über Tado gesteuert wird. Das ist eine andere Integration mit eigenen Modi, also bekommt sie ihren eigenen Ansatz.
 
-Mill hat eine eingebaute Offenes-Fenster-Erkennung, die aber über Temperaturabfall funktioniert — langsam und blind für kurze Öffnungen. Der MYGGBETT-Sensor reagiert sofort und präzise.
+Mill hat eine eingebaute Offenes-Fenster-Erkennung, die aber über Temperaturabfall funktioniert. Sie ist langsam und blind für kurze Öffnungen. Der MYGGBETT-Sensor reagiert sofort und präzise.
 
 ![IKEA MYGGBETT Sensor an Louises Fenster montiert](/blog-images/home_MYGGBETT.jpg)
 
@@ -71,7 +71,7 @@ Die Automatisierungsinstanz für Louises Zimmer sind drei Zeilen:
 
 ## Zustand speichern und wiederherstellen
 
-Das Blueprint schaltet den Heizkörper nicht einfach aus — es speichert zuerst den genauen Zustand über eine dynamische Szene:
+Das Blueprint schaltet den Heizkörper nicht einfach aus. Es speichert zuerst den genauen Zustand über eine dynamische Szene:
 
 ```yaml
 - action: scene.create
@@ -86,7 +86,7 @@ Das Blueprint schaltet den Heizkörper nicht einfach aus — es speichert zuerst
     hvac_mode: "off"
 ```
 
-Die Szenen-ID wird aus der eigenen Entity-ID der Automatisierung abgeleitet — eindeutig pro Instanz, keine manuelle Benennung nötig. Wenn das Fenster schließt, stellt das Blueprint genau diese Szene wieder her:
+Die Szenen-ID wird aus der eigenen Entity-ID der Automatisierung abgeleitet. Sie ist eindeutig pro Instanz, eine manuelle Benennung ist nicht nötig. Wenn das Fenster schließt, stellt das Blueprint genau diese Szene wieder her:
 
 ```yaml
 - action: scene.turn_on
@@ -95,13 +95,13 @@ Die Szenen-ID wird aus der eigenen Entity-ID der Automatisierung abgeleitet — 
   continue_on_error: true
 ```
 
-Das bedeutet es stellt wieder her was der Heizkörper gerade tat — 18°C, 22°C, bereits aus — nicht nur einen fest kodierten `heat`-Modus. `continue_on_error: true` behandelt den Fall bei dem das Fenster schließt bevor die Automatisierung jemals ausgelöst wurde (noch kein Snapshot vorhanden).
+Das bedeutet, es stellt wieder her, was der Heizkörper gerade tat (18°C, 22°C, bereits aus), und nicht nur einen fest kodierten `heat`-Modus. `continue_on_error: true` behandelt den Fall, in dem das Fenster schließt, bevor die Automatisierung jemals ausgelöst wurde (noch kein Snapshot vorhanden).
 
 ## Die 1-Minuten-Verzögerung
 
-`for: minutes: !input delay_minutes` am Geöffnet-Trigger macht das praktisch nutzbar. Wenn das Fenster aufgeht startet HA intern einen Countdown. Schließt das Fenster bevor die Minute abgelaufen ist, wird der Trigger abgebrochen — die Automatisierung läuft überhaupt nicht. Ein kurzes Lüften schaltet die Heizung nicht ab.
+`for: minutes: !input delay_minutes` am Geöffnet-Trigger macht das praktisch nutzbar. Wenn das Fenster aufgeht, startet HA intern einen Countdown. Schließt das Fenster, bevor die Minute abgelaufen ist, wird der Trigger abgebrochen, und die Automatisierung läuft überhaupt nicht. Ein kurzes Lüften schaltet die Heizung nicht ab.
 
-`mode: restart` behandelt den Grenzfall in dem ein Schließen-Trigger eintrifft während ein Geöffnet-Trigger noch herunterzählt. Der Schließen-Trigger gewinnt sofort und schaltet die Heizung wieder ein — keine Warteschlange, keine Race Condition.
+`mode: restart` behandelt den Grenzfall, in dem ein Schließen-Trigger eintrifft, während ein Geöffnet-Trigger noch herunterzählt. Der Schließen-Trigger gewinnt sofort und schaltet die Heizung wieder ein. Keine Warteschlange, keine Race Condition.
 
 ## Benachrichtigungen
 
@@ -122,7 +122,7 @@ Wenn die Heizung abschaltet passieren zwei Dinge: eine Push-Benachrichtigung geh
 
 ## Die Dashboard-Karte
 
-Die AlertTicker-Karte (`custom:alert-ticker-card`) erkennt Fenstersensoren automatisch über `device_class: window` — keine manuelle Entity-Liste, deckt also auch später hinzugefügte Sensoren ab:
+Die AlertTicker-Karte (`custom:alert-ticker-card`) erkennt Fenstersensoren automatisch über `device_class: window`. Eine manuelle Entity-Liste braucht es nicht, also deckt sie auch später hinzugefügte Sensoren ab:
 
 ```yaml
 type: custom:alert-ticker-card
@@ -142,4 +142,4 @@ Bei geschlossenen Fenstern zeigt die Karte eine grüne "alles in Ordnung" Folie.
 
 Einstellungen → Automatisierungen → Erstellen → Aus Blueprint → "Fenster → Heizung aus" auswählen → Sensor und Heizkörper wählen → Speichern. Kein neuer Code. Das ist der ganze Punkt daran es von Anfang an als Blueprint zu bauen statt als fest kodierte Automatisierung.
 
-Das Büro bekommt als nächstes einen Sensor — gleicher Erstgenerations-Mill, gleiches Blueprint, identische Konfiguration. Die Mill-Heizkörper im Schlafzimmer und in der Küche funktionieren ebenfalls sobald sie Fenstersensoren haben. Die Daikin im Wohnzimmer ist eine andere Geschichte: Tado verwaltet die und braucht eine eigene Logik wenn die Zeit kommt.
+Das Büro bekommt als nächstes einen Sensor: gleicher Erstgenerations-Mill, gleiches Blueprint, identische Konfiguration. Die Mill-Heizkörper im Schlafzimmer und in der Küche funktionieren ebenfalls, sobald sie Fenstersensoren haben. Die Daikin im Wohnzimmer ist eine andere Geschichte: Tado verwaltet sie, und sie braucht eine eigene Logik, wenn die Zeit kommt.

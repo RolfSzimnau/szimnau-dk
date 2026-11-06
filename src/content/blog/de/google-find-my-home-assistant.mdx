@@ -17,11 +17,11 @@ faqs:
 
 Es gibt zwei grundlegend verschiedene Anwendungsfälle für die Objektverfolgung, und die meisten Menschen lernen den Unterschied auf die harte Tour. **Google Find My** (FMDN) ist für einen davon gebaut: Man hat seine Tasche irgendwo in der Stadt verloren und muss sie auf ein Viertel eingrenzen. Das macht es gut. Das andere macht es nicht gut: Man möchte wissen, ob die Schlüssel am Haken hängen, bevor man die Haustür abschließt.
 
-FMDN in Home Assistant zu integrieren ist unkompliziert. Es auf einem dunklen Glassmorphism-Dashboard gut aussehen zu lassen ist es nicht — die Leaflet-Kartenkacheln werden in einem Shadow DOM gerendert, das weder `card_mod` noch Inline-CSS erreichen kann. Dieser Beitrag behandelt das vollständige Setup, die zwei Fehler, auf die man stoßen wird, und warum man trotzdem einen ESP32 haben möchte.
+FMDN in Home Assistant zu integrieren ist unkompliziert. Es auf einem dunklen Glassmorphism-Dashboard gut aussehen zu lassen, ist es nicht, denn die Leaflet-Kartenkacheln werden in einem Shadow DOM gerendert, das weder `card_mod` noch Inline-CSS erreichen kann. Dieser Beitrag behandelt das vollständige Setup, die zwei Fehler, auf die du stoßen wirst, und warum du vielleicht trotzdem einen ESP32 willst.
 
 ## Was FMDN tatsächlich tut
 
-Googles Find My Device Network funktioniert über crowd-gesourctes Bluetooth. Jedes Android-Telefon mit Google Play Services scannt passiv nach Bluetooth Low Energy-Ankündigungen in der Nähe. Wenn es das FMDN-registrierte Gerät sieht — ein Pebblebee Clip, ein Chipolo, ein Pixel-Telefon — zeichnet es die GPS-Koordinaten auf und meldet sie anonym und verschlüsselt an Google. Das Gerät verbindet sich nie selbst mit dem Internet. Die angezeigte Position ist der letzte Zeitpunkt, als ein Android-Telefon zufällig daran vorbeigegangen ist.
+Googles Find My Device Network funktioniert über crowd-gesourctes Bluetooth. Jedes Android-Telefon mit Google Play Services scannt passiv nach Bluetooth Low Energy-Ankündigungen in der Nähe. Wenn es das FMDN-registrierte Gerät sieht (einen Pebblebee Clip, einen Chipolo, ein Pixel-Telefon), zeichnet es die GPS-Koordinaten auf und meldet sie anonym und verschlüsselt an Google. Das Gerät verbindet sich nie selbst mit dem Internet. Die angezeigte Position ist der letzte Zeitpunkt, als ein Android-Telefon zufällig daran vorbeigegangen ist.
 
 In der Praxis bedeutet das in einer Stadt Positionsaktualisierungen alle paar Minuten. In einem ländlichen Haus um Mitternacht mit dem Telefon bereits in der Tasche bedeutet es zu warten, bis das nächste Auto am Briefkasten vorbeifährt.
 
@@ -30,8 +30,8 @@ Die Home Assistant-Integration, **FMDN** auf HACS, fragt Googles API ab und stel
 ## Installation
 
 Beide Komponenten von HACS installieren:
-- **FMDN** — die Integration (Suche: "Find My Device")
-- **GoogleFindMy-Card** — die Lovelace-Kartenkarte
+- **FMDN**: die Integration (Suche: "Find My Device")
+- **GoogleFindMy-Card**: die Lovelace-Karte
 
 Nach der Installation von FMDN unter **Einstellungen → Geräte & Dienste → Integration hinzufügen → FMDN** konfigurieren. Authentifizierung mit einem Google-Konto, bei dem Find My Device aktiviert ist, ist erforderlich.
 
@@ -39,7 +39,7 @@ Home Assistant neu starten. Die Geräte erscheinen als `device_tracker.*_last_lo
 
 ## Der "unavailable"-Status
 
-Beim ersten Laden — und nach jedem Neustart — werden die Tracker-Entitäten `unavailable` anzeigen. Die Integration ruft beim Start keine historischen Positionen ab. Sie wartet auf den nächsten geplanten Poll.
+Beim ersten Laden und nach jedem Neustart zeigen die Tracker-Entitäten `unavailable` an. Die Integration ruft beim Start keine historischen Positionen ab. Sie wartet auf den nächsten geplanten Poll.
 
 Die sofortige Lösung: unter **Entwicklerwerkzeuge → Dienste** `button.press` für die `button.<gerät>_locate_now`-Entität jedes Trackers aufrufen. Das zwingt FMDN, sofort eine neue Position von Googles Netzwerk anzufordern. Innerhalb von 10–30 Sekunden aktualisiert sich der Entitätsstatus und die Karte füllt sich.
 
@@ -58,7 +58,7 @@ Nach dem ersten erfolgreichen Lokalisieren übernimmt das normale Polling, und `
 
 `googlefindmy-card` bettet eine Leaflet.js-Karte ein, die OpenStreetMap-Kacheln rendert. Auf einem dunklen Dashboard ist das Ergebnis störend: helle weiße und graue Kartenkacheln umgeben von dunklen Glassmorphism-Karten.
 
-Die offensichtliche Lösung — `.leaflet-tile` über `card_mod` ansprechen — funktioniert nicht. Leaflet rendert in seinem eigenen Shadow DOM, verschachtelt im Shadow DOM der Karte. Der `$`-Piercing-Operator in `card_mod` geht nur eine Ebene tief. Von außen injiziertes CSS erreicht die Kacheln nie.
+Die offensichtliche Lösung wäre, `.leaflet-tile` über `card_mod` anzusprechen. Das funktioniert nicht. Leaflet rendert in seinem eigenen Shadow DOM, verschachtelt im Shadow DOM der Karte. Der `$`-Piercing-Operator in `card_mod` geht nur eine Ebene tief. Von außen injiziertes CSS erreicht die Kacheln nie.
 
 Die Lösung ist eine JavaScript-Ressource, die Shadow Roots durchläuft und direkt ein `<style>`-Element einfügt:
 
@@ -100,7 +100,7 @@ Die Lösung ist eine JavaScript-Ressource, die Shadow Roots durchläuft und dire
 })();
 ```
 
-Der Filter `invert(1) hue-rotate(180deg)` kehrt die Kartenfarben um — Weiß wird dunkelgrau, blaues Wasser wird warmbraun. Das zusätzliche `brightness(0.95) contrast(0.85)` dämpft es etwas, damit es nicht wie ein Halloween-Theme aussieht.
+Der Filter `invert(1) hue-rotate(180deg)` kehrt die Kartenfarben um: Weiß wird dunkelgrau, blaues Wasser wird warmbraun. Das zusätzliche `brightness(0.95) contrast(0.85)` dämpft es etwas, damit es nicht wie ein Halloween-Theme aussieht.
 
 Skript als Lovelace-Ressource unter **Einstellungen → Dashboards → Ressourcen → Ressource hinzufügen** registrieren:
 - URL: `/local/findmy-dark.js`
@@ -108,13 +108,13 @@ Skript als Lovelace-Ressource unter **Einstellungen → Dashboards → Ressource
 
 ## Das Avatar-Problem (Galaxy Tab A9)
 
-FMDN setzt `entity_picture` auf jeder Tracker-Entität mit dem Google-Profilbild des Kontos, das das Gerät zuletzt gesehen hat. Beim Tab A9 war das ein dunkles kreisförmiges Porträt — von `mushroom-entity-card` als runder Avatar statt des konfigurierten Tablet-Icons angezeigt.
+FMDN setzt `entity_picture` auf jeder Tracker-Entität mit dem Google-Profilbild des Kontos, das das Gerät zuletzt gesehen hat. Beim Tab A9 war das ein dunkles, kreisförmiges Porträt, das `mushroom-entity-card` als runden Avatar statt des konfigurierten Tablet-Icons anzeigte.
 
-Das Frustrierende: `mushroom-shape-avatar` und `mushroom-shape-icon` existieren nicht gleichzeitig im DOM. Wenn ein `entity_picture` vorhanden ist, rendert Mushroom den Avatar und rendert das Icon-Element gar nicht. Das Avatar mit CSS auszublenden enthüllt nichts — es gibt kein Icon darunter.
+Das Frustrierende: `mushroom-shape-avatar` und `mushroom-shape-icon` existieren nicht gleichzeitig im DOM. Wenn ein `entity_picture` vorhanden ist, rendert Mushroom den Avatar und rendert das Icon-Element gar nicht. Den Avatar mit CSS auszublenden, bringt nichts zum Vorschein, denn darunter liegt kein Icon.
 
 Zwei Fixes sind in Kombination erforderlich:
 
-**1. `entity_picture` aus dem Entitätsstatus entfernen** — zu `configuration.yaml` hinzufügen:
+**1. `entity_picture` aus dem Entitätsstatus entfernen.** Zu `configuration.yaml` hinzufügen:
 
 ```yaml
 homeassistant:
@@ -123,7 +123,7 @@ homeassistant:
       entity_picture: null
 ```
 
-**2. Der Karte sagen, keine Entitätsbilder zu verwenden** — in der Kartenkonfiguration setzen:
+**2. Der Karte sagen, dass sie keine Entitätsbilder verwenden soll.** In der Kartenkonfiguration setzen:
 
 ```yaml
 - type: custom:mushroom-entity-card
@@ -139,7 +139,7 @@ Der erste Fix entfernt das Bild aus dem Entitätsstatus. Der zweite stellt siche
 
 Der Unterschied ist klar zu benennen:
 
-- **Verlorene Gegenstandsverfolgung** (wo habe ich meine Tasche vor drei Stunden gelassen?) — FMDN ist ausgezeichnet. Crowd-gesourcte Abdeckung ist in besiedelten Gebieten gut, und eine 15 Minuten alte Position ist noch nützlich.
-- **Anwesenheitserkennung** (ist dieser spezifisch markierte Gegenstand jetzt gerade innerhalb von 5 Metern meiner Haustür?) — FMDN ist das falsche Werkzeug. Ein ESP32 mit der ESPHome BLE-Proxy-Integration erkennt Bluetooth-Ankündigungen in Echtzeit, typischerweise innerhalb von 5–10 Sekunden nachdem der Tracker in Reichweite kommt.
+- **Verlorene Gegenstände finden** (wo habe ich meine Tasche vor drei Stunden gelassen?): Dafür ist FMDN ausgezeichnet. Crowd-gesourcte Abdeckung ist in besiedelten Gebieten gut, und eine 15 Minuten alte Position ist noch nützlich.
+- **Anwesenheitserkennung** (ist dieser markierte Gegenstand gerade jetzt innerhalb von 5 Metern meiner Haustür?): Dafür ist FMDN das falsche Werkzeug. Ein ESP32 mit der ESPHome BLE-Proxy-Integration erkennt Bluetooth-Ankündigungen in Echtzeit, typischerweise innerhalb von 5–10 Sekunden, nachdem der Tracker in Reichweite kommt.
 
 FMDN und ein BLE-Proxy ergänzen sich, konkurrieren nicht. FMDN sagt einem, wo das Clip ist, wenn man es verloren hat. Der ESP32 an der Tür sagt einem sofort, wenn es zuhause ist. Beide können gleichzeitig in Home Assistant sein.

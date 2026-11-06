@@ -14,19 +14,19 @@ faqs:
     answer: "For at kunne genbruge den. Næste rum er bare blueprint, vælg sensor, vælg radiator. Det tager cirka 30 sekunder og kræver ingen ny kode. Det virker til Mill-radiatorerne, mens stuen, der styres af Tado, kræver sin egen logik."
 ---
 
-Radiatoren i Louises værelse kørte for fuld varme med vinduet åbent. Hun er snart tyve — at huske at lukke vinduet er ikke noget der sker konsekvent. Jeg lagde mærke til at vinduet havde stået åbent i en time, varmen på, udetemperatur på cirka 4°C. Det er penge ud af vinduet — bogstaveligt talt — og det ville blive ved med at ske.
+Radiatoren i Louises værelse kørte for fuld varme med vinduet åbent. Hun er snart tyve, og at huske at lukke vinduet er ikke noget, der sker konsekvent. Jeg lagde mærke til, at vinduet havde stået åbent i en time, varmen på, udetemperatur på cirka 4°C. Det er bogstaveligt talt penge ud af vinduet, og det ville blive ved med at ske.
 
 Løsningen var en vinduessensor og én Home Assistant-automation. Den ekstra time jeg brugte var på at bygge den som et Blueprint, så næste gang det samme mønster dukker op i et andet rum, tager det 30 sekunder, ikke en hel eftermiddag.
 
 ## Hardware: IKEA vinduessensor + Mill-radiator
 
-En **IKEA MYGGBETT** dør/vinduessensor på Louises vindue (`binary_sensor.myggbett_door_window_sensor_door`). Radiatoren er en første-generations **Mill**-enhed — `climate.louise` — som kun understøtter to modes: `heat` og `off`. Jeg har den samme første-gen model på mit kontor.
+En **IKEA MYGGBETT** dør/vinduessensor på Louises vindue (`binary_sensor.myggbett_door_window_sensor_door`). Radiatoren er en første-generations **Mill**-enhed, `climate.louise`, som kun understøtter to modes: `heat` og `off`. Jeg har den samme første-gen model på mit kontor.
 
-Soveværelset og køkkenet kører nyere Mill-radiatorer med flere HVAC-modes. Blueprint'et håndterer dem alle — det gemmer den præcise tilstand før slukning og gendanner den præcist når vinduet lukkes, uanset hvilken mode eller temperatur radiatoren stod på.
+Soveværelset og køkkenet kører nyere Mill-radiatorer med flere HVAC-modes. Blueprint'et håndterer dem alle. Det gemmer den præcise tilstand før slukning og gendanner den, når vinduet lukkes, uanset hvilken mode eller temperatur radiatoren stod på.
 
-Stuen har en Daikin varmepumpe styret af Tado — en anden integration med sine egne modes. Den får sin egen tilgang.
+Stuen har en Daikin varmepumpe, som Tado styrer. Det er en anden integration med sine egne modes, så den får sin egen tilgang.
 
-Mill har en indbygget åbent-vindue-detektion, men den virker ved at registrere temperaturfald — langsom til at reagere og overser korte åbninger fuldstændigt. MYGGBETT-sensoren er øjeblikkelig og præcis.
+Mill har en indbygget åbent-vindue-detektion, men den virker ved at registrere temperaturfald. Den er langsom til at reagere og overser korte åbninger fuldstændigt. MYGGBETT-sensoren er øjeblikkelig og præcis.
 
 ![IKEA MYGGBETT sensor monteret på Louises vindue](/blog-images/home_MYGGBETT.jpg)
 
@@ -71,7 +71,7 @@ Automation-instansen for Louises værelse er tre linjer:
 
 ## Gem og gendan tilstand
 
-Blueprint'et slukker ikke bare radiatoren — det gemmer den præcise tilstand først via en dynamisk scene:
+Blueprint'et slukker ikke bare radiatoren. Det gemmer først den præcise tilstand via en dynamisk scene:
 
 ```yaml
 - action: scene.create
@@ -86,7 +86,7 @@ Blueprint'et slukker ikke bare radiatoren — det gemmer den præcise tilstand f
     hvac_mode: "off"
 ```
 
-Scene-ID'et udledes af automationens eget entity ID — unikt per instans, ingen manuel navngivning nødvendig. Når vinduet lukkes, gendanner Blueprint'et præcis den gemte scene:
+Scene-ID'et udledes af automationens eget entity ID. Det er unikt per instans, så der er ingen manuel navngivning. Når vinduet lukkes, gendanner Blueprint'et præcis den gemte scene:
 
 ```yaml
 - action: scene.turn_on
@@ -95,13 +95,13 @@ Scene-ID'et udledes af automationens eget entity ID — unikt per instans, ingen
   continue_on_error: true
 ```
 
-Det betyder at den gendanner hvad radiatoren lavede — 18°C, 22°C, allerede slukket — ikke bare en hardkodet `heat`-mode. `continue_on_error: true` håndterer det tilfælde hvor vinduet lukkes inden automationen nogensinde er kørt (ingen snapshot eksisterer endnu).
+Det betyder, at den gendanner det, radiatoren lavede (18°C, 22°C eller allerede slukket), og ikke bare en hardkodet `heat`-mode. `continue_on_error: true` håndterer det tilfælde, hvor vinduet lukkes, inden automationen nogensinde er kørt (ingen snapshot eksisterer endnu).
 
 ## 1-minuts forsinkelsen
 
-`for: minutes: !input delay_minutes` på åbnet-triggeren er det der gør det praktisk. Når vinduet åbnes starter HA en intern nedtælling. Hvis vinduet lukkes inden minuttet er gået, annulleres triggeren — automationen kører slet ikke. En hurtig udluftning slukker ikke varmen.
+`for: minutes: !input delay_minutes` på åbnet-triggeren er det, der gør det praktisk. Når vinduet åbnes, starter HA en intern nedtælling. Lukkes vinduet, inden minuttet er gået, annulleres triggeren, og automationen kører slet ikke. En hurtig udluftning slukker ikke varmen.
 
-`mode: restart` håndterer kanttilfældet hvor en lukning-trigger ankommer mens en åbnet-trigger stadig tæller ned. Lukning-triggeren vinder øjeblikkeligt og tænder varmen igen — ingen kø, ingen race condition.
+`mode: restart` håndterer kanttilfældet, hvor en lukning-trigger ankommer, mens en åbnet-trigger stadig tæller ned. Lukning-triggeren vinder med det samme og tænder varmen igen. Ingen kø, ingen race condition.
 
 ## Notifikationer
 
@@ -122,7 +122,7 @@ Når varmen slukker sker to ting: en push-notifikation sendes til alle enheder v
 
 ## Dashboard-kortet
 
-AlertTicker-kortet (`custom:alert-ticker-card`) finder vinduessensorer automatisk via `device_class: window` — ingen manuel entity-liste, så det dækker sensorer der tilføjes senere:
+AlertTicker-kortet (`custom:alert-ticker-card`) finder vinduessensorer automatisk via `device_class: window`. Der er ingen manuel entity-liste, så det dækker også sensorer, der tilføjes senere:
 
 ```yaml
 type: custom:alert-ticker-card
@@ -142,4 +142,4 @@ Når alle vinduer er lukket viser kortet et grønt "alt OK" slide. Når et er å
 
 Indstillinger → Automationer → Opret → Fra Blueprint → vælg "Vindue → Varme slukker" → vælg sensor og radiator → gem. Ingen ny kode. Det er hele pointen med at bygge det som et Blueprint fra starten frem for en hardkodet automation.
 
-Kontoret får sensor næste — samme første-gen Mill, samme Blueprint, identisk konfiguration. Soveværelsets og køkkenets Mill-radiatorer virker også, når de får vinduessensorer. Daikinaggregatet i stuen er en anden sag: Tado styrer den og skal have sin egen logik når den tid kommer.
+Kontoret er det næste, der får en sensor: samme første-gen Mill, samme Blueprint, identisk konfiguration. Soveværelsets og køkkenets Mill-radiatorer virker også, når de får vinduessensorer. Daikinaggregatet i stuen er en anden sag: Tado styrer den og skal have sin egen logik, når den tid kommer.

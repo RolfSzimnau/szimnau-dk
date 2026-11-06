@@ -19,13 +19,13 @@ Jeg havde planlagt at migrere til ordentlig hardware i måneder. Den aften besti
 
 ## Hvorfor Proxmox i Stedet for at Køre HA Direkte
 
-Det oplagte valg ville være at installere HA OS direkte på OptiPlex. Jeg valgte Proxmox fordi jeg ville have OptiPlex som en fuld hjemmeserver, ikke bare en HA-boks — kørende flere VMs og containere side om side med Home Assistant.
+Det oplagte valg ville være at installere HA OS direkte på OptiPlex. Jeg valgte Proxmox, fordi OptiPlex skulle være en rigtig hjemmeserver med flere VM'er og containere ved siden af Home Assistant og ikke bare en HA-boks.
 
 Den anden årsag: snapshots. Inden enhver HA-opdatering tager jeg et Proxmox-snapshot. Hvis noget går i stykker, tager en rollback 10 sekunder. På Pi'en kunne en dårlig opdatering betyde en times genoprettelsesarbejde.
 
 ## Hardware: Dell OptiPlex 7060 som Home Assistant-vært
 
-Jeg fandt en refurbished OptiPlex 7060 for under 1.100 kr. på eBay. Den kom med 16 GB RAM, som jeg straks opgraderede til 32 GB — 8 GB-sticks kostede 90 kr. stykket og OptiPlex tager dem uden problemer.
+Jeg fandt en refurbished OptiPlex 7060 for under 1.100 kr. på eBay. Den kom med 16 GB RAM, som jeg straks opgraderede til 32 GB. 8 GB-sticks kostede 90 kr. stykket, og OptiPlex tager dem uden problemer.
 
 | Komponent | Spec |
 |-----------|------|
@@ -34,7 +34,7 @@ Jeg fandt en refurbished OptiPlex 7060 for under 1.100 kr. på eBay. Den kom med
 | Lager | 500 GB NVMe SSD |
 | Netværk | Intel I219-LM |
 
-i5-8500 er komplet overdreven til Home Assistant alene. Det er fint — det betyder at hele maskinen kører i tomgang ved omkring 12W, og jeg stadig har plads til en medieserver, ad-blocker og et overvågningssetup kørende parallelt.
+i5-8500 er komplet overdreven til Home Assistant alene. Det gør ikke noget. Hele maskinen bruger omkring 12W i tomgang, og der er stadig plads til en medieserver, en ad-blocker og et overvågningssetup ved siden af.
 
 ## Installation af Proxmox VE
 
@@ -43,10 +43,10 @@ Download Proxmox VE ISO fra proxmox.com, flash den til USB med Rufus eller Balen
 Installationsprogrammet er ligetil. Værd at lægge mærke til:
 
 - **Måldisk**: vælg din NVMe SSD, ikke et eventuelt USB-drev der stadig sidder i
-- **Management-IP**: giv den en statisk IP nu — du tilgår web-UI'et på `https://DIN-IP:8006` fra det tidspunkt
-- **Hostname**: jeg bruger `proxmox.local` — let at huske, virker med mDNS
+- **Management-IP**: giv den en statisk IP nu, for fra da af tilgår du web-UI'et på `https://DIN-IP:8006`
+- **Hostname**: jeg bruger `proxmox.local`. Let at huske, virker med mDNS
 
-Det første du bør køre efter installationen er Proxmox post-install-hjælperen fra [community-scripts.github.io/ProxmoxVE](https://community-scripts.github.io/ProxmoxVE/) — en community-vedligeholdt samling af scripts til Proxmox. Post-install-scriptet fjerner abonnements-nag-skærmen, skifter til det gratis repository og anvender fornuftige startindstillinger:
+Det første du bør køre efter installationen er Proxmox post-install-hjælperen fra [community-scripts.github.io/ProxmoxVE](https://community-scripts.github.io/ProxmoxVE/), en samling scripts til Proxmox, som fællesskabet vedligeholder. Post-install-scriptet fjerner abonnements-nag-skærmen, skifter til det gratis repository og anvender fornuftige startindstillinger:
 
 ```bash
 bash -c "$(wget -qLO - https://github.com/community-scripts/ProxmoxVE/raw/main/misc/post-pve-install.sh)"
@@ -54,7 +54,7 @@ bash -c "$(wget -qLO - https://github.com/community-scripts/ProxmoxVE/raw/main/m
 
 ## Oprettelse af Home Assistant VM
 
-Den samme community-scripts-samling indeholder et script der fuldt automatiserer HA OS VM — det downloader det seneste billede, opretter VM'en med fornuftige standardindstillinger og starter den:
+Den samme community-scripts-samling indeholder et script, der automatiserer hele HA OS-VM'en. Det downloader det seneste billede, opretter VM'en med fornuftige standardindstillinger og starter den:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/haos-vm.sh)"
@@ -75,7 +75,7 @@ Et valgfrit men nyttigt script fra samme samling: CPU scaling governor. Det lade
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/scaling-governor.sh)"
 ```
 
-4 GB RAM lyder som meget til HA alene, men add-ons spiser hukommelse hurtigt. Kørende det fulde setup — HA OS, Matter-server, Mosquitto broker, Studio Code Server og et par til — ser jeg typisk 2,5–3 GB i brug.
+4 GB RAM lyder som meget til HA alene, men add-ons spiser hukommelse hurtigt. Med det fulde setup (HA OS, Matter-server, Mosquitto broker, Studio Code Server og et par til) ser jeg typisk 2,5–3 GB i brug.
 
 ## USB-Passthrough til Zigbee/Z-Wave Dongler
 
@@ -87,7 +87,7 @@ I Proxmox web-UI:
 2. Vælg **Brug USB Vendor/Device ID** og vælg din dongle fra listen
 3. Genstart VM'en
 
-Enheden vises i HA's hardwareindstillinger som om den var direkte tilsluttet. Det overlever Proxmox-genstarter — VM'en får enheden automatisk ved opstart.
+Enheden vises i HA's hardwareindstillinger, som om den var direkte tilsluttet. Det overlever Proxmox-genstarter, for VM'en får enheden automatisk ved opstart.
 
 En ting der snublede mig: hvis du vælger via **USB-port** i stedet for vendor/device ID, bryder videresendelsen sammen når du stikker donglen i en anden USB-port under vedligeholdelse. Brug altid vendor/device ID.
 
@@ -96,9 +96,9 @@ En ting der snublede mig: hvis du vælger via **USB-port** i stedet for vendor/d
 Når HA VM kører, gå til `http://homeassistant.local:8123` og gennemfør onboarding-guiden. Det tager cirka 2 minutter fra første boot til dashboardet.
 
 Mine første integrationer efter opsætning:
-- **WiZ** — auto-opdaget på det lokale netværk med det samme, alle 22 pærer dukkede op uden nogen konfiguration
-- **UniFi** — integreret til enhedssporing og netværksstatistik, essentiel til at vide hvem der er hjemme
-- **Tado** — klimaanlæg, én zone, opdaget efter indtastning af legitimationsoplysninger
+- **WiZ**: auto-opdaget på det lokale netværk med det samme, alle 22 pærer dukkede op uden nogen konfiguration
+- **UniFi**: integreret til enhedssporing og netværksstatistik, essentiel til at vide hvem der er hjemme
+- **Tado**: klimaanlæg, én zone, opdaget efter indtastning af legitimationsoplysninger
 
 Netværkets auto-opdagelse i HA 2024 er imponerende. De fleste ting fandt sig selv i løbet af de første minutter.
 
@@ -111,12 +111,12 @@ Datacenter → HA VM → Snapshots → Tag Snapshot
 Navn: pre-opdatering-ÅÅÅÅ-MM-DD
 ```
 
-Snapshots tager under 30 sekunder. Virker opdateringen fint, sletter jeg snapshots et døgn senere. Går noget i stykker — og med 30+ integrationer sker det lejlighedsvist — ruller jeg tilbage på 10 sekunder og huset er tilbage til sin tidligere tilstand.
+Snapshots tager under 30 sekunder. Virker opdateringen fint, sletter jeg snapshots et døgn senere. Går noget i stykker (og med 30+ integrationer sker det af og til), ruller jeg tilbage på 10 sekunder, og huset er tilbage til sin tidligere tilstand.
 
 På Raspberry Pi var jeg altid lidt nervøs ved opdateringer fordi genoprettelse var langsom og besværlig. Med Proxmox-snapshots anvender jeg opdateringer den dag de udkommer uden tøven.
 
 ## Hvad flytningen til Proxmox faktisk løste
 
-Tre år på Pi'en betød tre SD-kortudskiftninger og to korruptionsepisoder. OptiPlex har kørt siden slutningen af 2022 uden en eneste hardwarehændelse. NVMe-SSD'en bekymrer sig ikke om strømafbrud. Proxmox skriver til journalerede filsystemer. Pi'en var aldrig det rigtige redskab til infrastruktur der styrer varme, sikkerhedskameraer og EV-opladning — den var bare billig og nem at starte med.
+Tre år på Pi'en betød tre SD-kortudskiftninger og to korruptionsepisoder. OptiPlex har kørt siden slutningen af 2022 uden en eneste hardwarehændelse. NVMe-SSD'en bekymrer sig ikke om strømafbrud. Proxmox skriver til journalerede filsystemer. Pi'en var aldrig det rigtige redskab til infrastruktur, der styrer varme, sikkerhedskameraer og EV-opladning. Den var bare billig og nem at starte med.
 
 OptiPlex gav mig også plads til at vokse. HA VM'en sidder på samme host som en Debian VM der kører min self-hosted GitHub Actions runner, en Home Assistant Supervised container til testformål og et par andre lette tjenester. Alt for 1.100 kr. hardware og 12W fra stikkontakten.

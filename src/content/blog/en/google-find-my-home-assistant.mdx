@@ -12,16 +12,16 @@ faqs:
   - question: "Why do my Google Find My devices show as unavailable in Home Assistant?"
     answer: "The FMDN integration doesn't cache historical positions. On startup it waits for the next crowd-sourced Bluetooth ping, which can take minutes to hours. Press the 'Locate Now' button entity in Developer Tools to force an immediate position update from Google's network."
   - question: "Can I use Google Find My to remind me when I leave my keys at home?"
-    answer: "Not reliably. FMDN depends on nearby Android phones pinging your tracker via Bluetooth, which can take anywhere from one minute to half an hour. For immediate key detection at the door, an ESP32 with a BLE proxy integration is the correct tool — it reports within seconds."
+    answer: "Not reliably. FMDN depends on nearby Android phones pinging your tracker via Bluetooth, which can take anywhere from one minute to half an hour. For immediate key detection at the door, an ESP32 with a BLE proxy integration is the correct tool. It reports within seconds."
 ---
 
 There are two fundamentally different use cases for item tracking, and most people discover the difference the hard way. **Google Find My** (FMDN) is built for one of them: you lost your bag somewhere in the city and need to narrow it down to a neighbourhood. It does that well. It does not do the other one well: you want to know whether your keys are on the hook before you lock the front door.
 
-Getting FMDN into Home Assistant is straightforward. Getting it looking good on a dark glassmorphism dashboard is not — I run it alongside my [AI security camera](/en/blog/sentinel-ai-camera-ha/) on the same security view, and the bright map tiles clashed badly — the Leaflet map tiles render inside a shadow DOM that neither `card_mod` nor inline CSS can reach. This post covers the full setup, the two bugs you'll hit, and why you may want an ESP32 anyway.
+Getting FMDN into Home Assistant is straightforward. Getting it looking good on a dark glassmorphism dashboard is not. I run it alongside my [AI security camera](/en/blog/sentinel-ai-camera-ha/) on the same security view, and the bright map tiles clashed badly. The Leaflet map tiles render inside a shadow DOM that neither `card_mod` nor inline CSS can reach. This post covers the full setup, the two bugs you'll hit, and why you may want an ESP32 anyway.
 
 ## What FMDN actually does
 
-Google's Find My Device Network works on crowd-sourced Bluetooth. Every Android phone running Google Play Services passively scans for nearby Bluetooth Low Energy advertisements. When it sees your FMDN-registered device — a Pebblebee Clip, a Chipolo, a Pixel phone — it records the GPS coordinates and reports them to Google anonymously and encrypted. Your device never connects to the internet itself. The position you see is the last time any Android phone happened to walk past it.
+Google's Find My Device Network works on crowd-sourced Bluetooth. Every Android phone running Google Play Services passively scans for nearby Bluetooth Low Energy advertisements. When it sees your FMDN-registered device (a Pebblebee Clip, a Chipolo, a Pixel phone), it records the GPS coordinates and reports them to Google anonymously and encrypted. Your device never connects to the internet itself. The position you see is the last time any Android phone happened to walk past it.
 
 In practice, in a city, this means position updates every few minutes. In a rural house at midnight with your phone already in your pocket, it means waiting until the next car drives past your letterbox.
 
@@ -30,8 +30,8 @@ The Home Assistant integration, **FMDN** on HACS, polls Google's API and exposes
 ## Installation
 
 Install both components from HACS:
-- **FMDN** — the integration (search: "Find My Device")
-- **GoogleFindMy-Card** — the Lovelace map card
+- **FMDN**: the integration (search: "Find My Device")
+- **GoogleFindMy-Card**: the Lovelace map card
 
 After installing FMDN, configure it under **Settings → Devices & Services → Add Integration → FMDN**. You'll need to authenticate with a Google account that has Find My Device enabled.
 
@@ -39,7 +39,7 @@ Restart Home Assistant. Your devices appear as `device_tracker.*_last_location` 
 
 ## The "unavailable" state
 
-On first load — and after any restart — your tracker entities will show `unavailable`. The integration doesn't pull historical positions on startup. It sits and waits for the next scheduled poll.
+On first load, and after any restart, your tracker entities will show `unavailable`. The integration doesn't pull historical positions on startup. It sits and waits for the next scheduled poll.
 
 The fix is immediate: go to **Developer Tools → Services**, call `button.press` on the `button.<device>_locate_now` entity for each tracker. This forces FMDN to request a fresh position from Google's network right now. Within 10–30 seconds the entity state updates and the map populates.
 
@@ -58,9 +58,9 @@ After the first successful locate, normal polling takes over and `unavailable` w
 
 `googlefindmy-card` embeds a Leaflet.js map that renders OpenStreetMap tiles. On any dark dashboard the result is jarring: bright white and grey map tiles surrounded by your dark glassmorphism cards.
 
-The obvious fix — targeting `.leaflet-tile` via `card_mod` — doesn't work. Leaflet renders inside its own shadow DOM, nested inside the card's shadow DOM. The `$` piercing operator in `card_mod` only goes one level deep. CSS injected from the outside never reaches the tiles.
+The obvious fix, targeting `.leaflet-tile` via `card_mod`, doesn't work. Leaflet renders inside its own shadow DOM, nested inside the card's shadow DOM. The `$` piercing operator in `card_mod` only goes one level deep. CSS injected from the outside never reaches the tiles.
 
-The solution is a JavaScript resource that traverses shadow roots and injects a `<style>` element directly. The same dark glassmorphism styling principles I use across all my dashboards — documented in [my glassmorphism dashboard design guide](/en/blog/ha-glassmorphism-dashboard-design/) — apply here, but the shadow DOM boundary means CSS alone isn't enough:
+The solution is a JavaScript resource that traverses shadow roots and injects a `<style>` element directly. The same dark glassmorphism styling principles I use across all my dashboards (documented in [my glassmorphism dashboard design guide](/en/blog/ha-glassmorphism-dashboard-design/)) apply here, but the shadow DOM boundary means CSS alone isn't enough:
 
 ```js
 // Save as /config/www/findmy-dark.js
@@ -109,7 +109,7 @@ The solution is a JavaScript resource that traverses shadow roots and injects a 
 })();
 ```
 
-The filter `invert(1) hue-rotate(180deg)` flips the tile colours — white becomes dark grey, blue water becomes warm brown. The additional `brightness(0.95) contrast(0.85)` damps it slightly so it doesn't look like a Halloween theme. OpenStreetMap in dark mode looks actually decent this way.
+The filter `invert(1) hue-rotate(180deg)` flips the tile colours: white becomes dark grey, blue water becomes warm brown. The additional `brightness(0.95) contrast(0.85)` damps it slightly so it doesn't look like a Halloween theme. OpenStreetMap in dark mode looks actually decent this way.
 
 Register the script as a Lovelace resource under **Settings → Dashboards → Resources → Add Resource**:
 - URL: `/local/findmy-dark.js`
@@ -119,13 +119,13 @@ The `data-findmy-dark` attribute on the injected style element prevents duplicat
 
 ## The avatar problem (Galaxy Tab A9)
 
-FMDN sets `entity_picture` on each tracker entity using the Google profile picture of the account that last saw the device. For the Tab A9, this was a dark circular portrait — displayed by `mushroom-entity-card` as a round avatar instead of the tablet icon you configured.
+FMDN sets `entity_picture` on each tracker entity using the Google profile picture of the account that last saw the device. For the Tab A9, this was a dark circular portrait, displayed by `mushroom-entity-card` as a round avatar instead of the tablet icon you configured.
 
-The frustrating part: `mushroom-shape-avatar` and `mushroom-shape-icon` don't coexist in the DOM. When an `entity_picture` is present, Mushroom renders the avatar and never renders the icon element at all. Hiding the avatar with CSS reveals nothing — there's no icon underneath to appear.
+The frustrating part: `mushroom-shape-avatar` and `mushroom-shape-icon` don't coexist in the DOM. When an `entity_picture` is present, Mushroom renders the avatar and never renders the icon element at all. Hiding the avatar with CSS reveals nothing, because there's no icon underneath to appear.
 
 Two fixes are required in combination:
 
-**1. Remove `entity_picture` from the entity state** — add to `configuration.yaml`:
+**1. Remove `entity_picture` from the entity state.** Add to `configuration.yaml`:
 
 ```yaml
 homeassistant:
@@ -134,7 +134,7 @@ homeassistant:
       entity_picture: null
 ```
 
-**2. Tell the card not to use entity pictures** — set in the card config:
+**2. Tell the card not to use entity pictures.** Set in the card config:
 
 ```yaml
 - type: custom:mushroom-entity-card
@@ -144,7 +144,7 @@ homeassistant:
   use_entity_picture: false
 ```
 
-The first fix removes the picture from the entity state so other cards don't accidentally pick it up. The second ensures the Mushroom card never requests a picture even if one appears in future updates. Both are needed — `use_entity_picture: false` alone still renders the avatar if `entity_picture` is present in the state attributes.
+The first fix removes the picture from the entity state so other cards don't accidentally pick it up. The second ensures the Mushroom card never requests a picture even if one appears in future updates. Both are needed: `use_entity_picture: false` alone still renders the avatar if `entity_picture` is present in the state attributes.
 
 ## The dashboard card
 
@@ -322,7 +322,7 @@ If you wanted to automate "remind me if I leave without my keys," you'll find th
 
 The distinction is worth being explicit about:
 
-- **Lost item tracking** (where did I leave my bag three hours ago?) — FMDN is excellent. Crowd-sourced coverage is good in populated areas, and a 15-minute-old position is still useful.
-- **Presence detection** (is this specific tagged object within 5 metres of my front door right now?) — FMDN is the wrong tool. An ESP32 running the ESPHome BLE proxy integration detects Bluetooth advertisements in real time, typically within 5–10 seconds of the tracker entering range.
+- **Lost item tracking** (where did I leave my bag three hours ago?): FMDN is excellent. Crowd-sourced coverage is good in populated areas, and a 15-minute-old position is still useful.
+- **Presence detection** (is this specific tagged object within 5 metres of my front door right now?): FMDN is the wrong tool. An ESP32 running the ESPHome BLE proxy integration detects Bluetooth advertisements in real time, typically within 5–10 seconds of the tracker entering range.
 
-FMDN and a BLE proxy are complementary, not competing. My setup runs Home Assistant on [Proxmox](/en/blog/proxmox-home-assistant-setup/), which also runs the ESPHome BLE proxy as a separate container — both feeding into the same HA instance. FMDN tells you where your Clip is when you've lost it somewhere. The ESP32 at your door tells you immediately when it's home. Both can be in Home Assistant at the same time.
+FMDN and a BLE proxy are complementary, not competing. My setup runs Home Assistant on [Proxmox](/en/blog/proxmox-home-assistant-setup/), which also runs the ESPHome BLE proxy as a separate container, and both feed into the same HA instance. FMDN tells you where your Clip is when you've lost it somewhere. The ESP32 at your door tells you immediately when it's home. Both can be in Home Assistant at the same time.
