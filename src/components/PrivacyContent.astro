@@ -22,7 +22,7 @@ const text = {
     sections: [
       { h: 'What the site itself stores', p: 'Nothing of its own. The code of the site sets no cookies and uses no local storage. The Cloudflare security cookie is described below. Fonts and images are served from the site itself, and there are no embeds from third parties.' },
       { h: 'Visit counting', p: 'I count visits with Cloudflare Web Analytics. According to Cloudflare, it uses no cookies or local storage, does not fingerprint visitors, and does not use personal data to show me the statistics. I see totals such as page views, countries and page speed, not individuals.' },
-      { h: 'Security cookie', p: 'The site runs behind Cloudflare, which delivers it and protects it against bots. Cloudflare bot protection runs a small script in your browser to tell people from automated traffic, and it can set one cookie called cf_clearance on your device. The cookie expires after up to a year. Cloudflare classes it as strictly necessary for security, and I do not use it for tracking. What the script checks is decided by Cloudflare. As with any hosting, Cloudflare also processes your IP address to deliver the pages.', more: true },
+      { h: 'Security cookie', p: 'The site runs behind Cloudflare, which delivers it and protects it against bots. Cloudflare\'s bot protection inserts a small script into the pages, but the site\'s security rules (Content Security Policy) block it, so it does not run in your browser. When I tested in November 2026 with a fresh browser profile, no cookies were set. If a visit looks automated, Cloudflare can ask your browser for a check and set one cookie, cf_clearance, which expires after up to a year. Cloudflare classes it as strictly necessary for security, and I do not use it for tracking. As with any hosting, Cloudflare also processes your IP address to deliver the pages.', more: true },
     ],
     cfPrivacy: 'Cloudflare privacy policy',
     cfCookies: 'Cloudflare cookie list',
@@ -30,7 +30,7 @@ const text = {
     contactPre: 'Questions about this page can go to',
     contactPost: 'If you disagree with how your data is handled, you can complain to the Danish Data Protection Agency, ',
     dt: 'Datatilsynet',
-    updated: 'Last updated 19 September 2026.',
+    updated: 'Last updated 5 November 2026.',
   },
   da: {
     eyebrow: 'Privatliv',
@@ -39,7 +39,7 @@ const text = {
     sections: [
       { h: 'Hvad sitet selv gemmer', p: 'Ingenting fra sitet selv. Sitets egen kode sætter ingen cookies og bruger ikke local storage. Cloudflares sikkerhedscookie beskrives nedenfor. Skrifter og billeder leveres fra sitet selv, og der er ingen indlejret indhold fra tredjeparter.' },
       { h: 'Besøgstælling', p: 'Jeg tæller besøg med Cloudflare Web Analytics. Ifølge Cloudflare bruger den hverken cookies eller local storage, den fingeraftrykker ikke besøgende, og den bruger ikke personoplysninger til at vise mig statistikken. Jeg ser totaler som sidevisninger, lande og sidehastighed, ikke enkeltpersoner.' },
-      { h: 'Sikkerhedscookie', p: 'Sitet kører bag Cloudflare, som leverer det og beskytter det mod bots. Cloudflares botbeskyttelse kører et lille script i din browser for at kende forskel på mennesker og automatisk trafik, og den kan sætte én cookie, cf_clearance, på din enhed. Cookien udløber efter op til et år. Cloudflare betegner den som strengt nødvendig for sikkerheden, og jeg bruger den ikke til sporing. Hvad scriptet tjekker, bestemmer Cloudflare selv. Som ved al hosting behandler Cloudflare også din IP-adresse for at levere siderne.', more: true },
+      { h: 'Sikkerhedscookie', p: 'Sitet kører bag Cloudflare, som leverer det og beskytter det mod bots. Cloudflares botbeskyttelse indsætter et lille script i siderne, men sitets sikkerhedsregler (Content Security Policy) blokerer det, så det kører ikke i din browser. Da jeg testede i november 2026 med en helt ny browserprofil, blev der ikke sat nogen cookies. Ser et besøg automatisk ud, kan Cloudflare bede din browser om et tjek og sætte én cookie, cf_clearance, der udløber efter op til et år. Cloudflare betegner den som strengt nødvendig for sikkerheden, og jeg bruger den ikke til sporing. Som ved al hosting behandler Cloudflare også din IP-adresse for at levere siderne.', more: true },
     ],
     cfPrivacy: 'Cloudflares privatlivspolitik',
     cfCookies: 'Cloudflares cookieliste',
@@ -47,7 +47,7 @@ const text = {
     contactPre: 'Spørgsmål til denne side kan sendes til',
     contactPost: 'Er du uenig i, hvordan dine oplysninger håndteres, kan du klage til ',
     dt: 'Datatilsynet',
-    updated: 'Sidst opdateret 19. september 2026.',
+    updated: 'Sidst opdateret 5. november 2026.',
   },
   de: {
     eyebrow: 'Datenschutz',
@@ -56,7 +56,7 @@ const text = {
     sections: [
       { h: 'Was die Seite selbst speichert', p: 'Nichts von der Seite selbst. Der eigene Code der Seite setzt keine Cookies und nutzt keinen Local Storage. Das Sicherheits-Cookie von Cloudflare wird unten beschrieben. Schriften und Bilder kommen von der Seite selbst, und es gibt keine eingebetteten Inhalte von Dritten.' },
       { h: 'Besuchszählung', p: 'Ich zähle Besuche mit Cloudflare Web Analytics. Laut Cloudflare verwendet der Dienst weder Cookies noch Local Storage, erstellt keine Fingerabdrücke der Besucher und nutzt keine personenbezogenen Daten für die Statistik. Ich sehe Summen wie Seitenaufrufe, Länder und Ladezeiten, keine einzelnen Personen.' },
-      { h: 'Sicherheits-Cookie', p: 'Die Seite läuft hinter Cloudflare, das sie ausliefert und vor Bots schützt. Der Bot-Schutz von Cloudflare führt in Ihrem Browser ein kleines Skript aus, um Menschen von automatisiertem Verkehr zu unterscheiden, und kann ein Cookie namens cf_clearance auf Ihrem Gerät setzen. Es läuft nach bis zu einem Jahr ab. Cloudflare stuft es als unbedingt erforderlich für die Sicherheit ein, und ich nutze es nicht zum Tracking. Was das Skript prüft, entscheidet Cloudflare selbst. Wie bei jedem Hosting verarbeitet Cloudflare außerdem Ihre IP-Adresse, um die Seiten auszuliefern.', more: true },
+      { h: 'Sicherheits-Cookie', p: 'Die Seite läuft hinter Cloudflare, das sie ausliefert und vor Bots schützt. Der Bot-Schutz von Cloudflare fügt ein kleines Skript in die Seiten ein, aber die Sicherheitsregeln der Seite (Content Security Policy) blockieren es, sodass es in Ihrem Browser nicht läuft. Bei meinem Test im November 2026 mit einem frischen Browserprofil wurden keine Cookies gesetzt. Wirkt ein Besuch automatisiert, kann Cloudflare Ihren Browser um eine Prüfung bitten und ein Cookie namens cf_clearance setzen, das nach bis zu einem Jahr abläuft. Cloudflare stuft es als unbedingt erforderlich für die Sicherheit ein, und ich nutze es nicht zum Tracking. Wie bei jedem Hosting verarbeitet Cloudflare außerdem Ihre IP-Adresse, um die Seiten auszuliefern.', more: true },
     ],
     cfPrivacy: 'Datenschutzerklärung von Cloudflare',
     cfCookies: 'Cookie-Liste von Cloudflare',
@@ -64,7 +64,7 @@ const text = {
     contactPre: 'Fragen zu dieser Seite gerne an',
     contactPost: 'Wenn Sie mit dem Umgang mit Ihren Daten nicht einverstanden sind, können Sie sich bei der dänischen Datenschutzbehörde beschweren: ',
     dt: 'Datatilsynet',
-    updated: 'Zuletzt aktualisiert: 19. September 2026.',
+    updated: 'Zuletzt aktualisiert: 5. November 2026.',
   },
 }[lang];
 ---
