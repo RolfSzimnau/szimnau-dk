@@ -95,8 +95,8 @@ Der eigentliche Vorteil ist verhaltensbezogen. Ich befülle den Geschirrspüler 
 
 ## Was nicht funktioniert
 
-Fernstart muss am physischen Bedienfeld der Maschine aktiviert werden. Auf dem Display gibt es ein kleines Symbol dafür. Wenn ich das vergesse, tut der Startbefehl der Integration nichts. Ich habe das oft genug vergessen, dass ich einen Chip zur Karte hinzugefügt habe, der anzeigt ob Fernstart gerade erlaubt ist.
+Fernstart muss am physischen Bedienfeld der Maschine aktiviert werden. Auf dem Display gibt es ein kleines Symbol dafür. Wenn ich das vergesse, tut der Startbefehl der Integration nichts. Ich habe das so oft vergessen, dass ich einen Chip zur Karte hinzugefügt habe, der anzeigt, ob Fernstart gerade erlaubt ist.
 
 Programmänderungen über HA funktionieren nur bevor die Maschine startet. Sobald sie läuft, aktualisieren sich die Zustandsentitäten, aber die Auswahlfelder werden schreibgeschützt. Das ist eine Bosch-Firmware-Einschränkung, nicht HA.
 
-Die `Finished`-Zustandsbenachrichtigung ist die andere Sache. Der Geschirrspüler sendet eine Zustandsaktualisierung, wenn er fertig ist. Ich habe dafür einen Alert-Ticker-Eintrag auf dem Startbildschirm, und "Geschirrspüler fertig, leer mich!" bleibt dort stehen, bis jemand ihn bestätigt. Lowtech, aber ich leere ihn jetzt tatsächlich statt ihn drei Stunden stehen zu lassen.
+Die `Finished`-Zustandsbenachrichtigung ist die andere Sache. Der Geschirrspüler sendet eine Zustandsaktualisierung, wenn er fertig ist. Ich habe dafür einen Alert-Ticker-Eintrag auf dem Startbildschirm, und "Geschirrspüler fertig, räum mich aus!" bleibt dort stehen, bis jemand ihn bestätigt. Lowtech, aber ich leere ihn jetzt tatsächlich aus, statt ihn drei Stunden stehen zu lassen.

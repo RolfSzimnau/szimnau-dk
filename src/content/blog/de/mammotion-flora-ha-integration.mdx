@@ -13,7 +13,7 @@ faqs:
     answer: "Er hängt stark an Cloud und 4G, und die GPS-Grenzen lassen sich nur in der Hersteller-App zeichnen. HA kann das Mähen steuern, aber nie festlegen, wo der Rasen ist. Behalte den Sensor für die Satellitenzahl im Blick: Wenige Satelliten erklären die meisten Stopps, die sonst zufällig wirken."
 ---
 
-Mein Husqvarna 213C lief jahrelang und hatte nie irgendetwas mit Home Assistant zu tun. Ein Aufsitzmäher macht das nicht: Man setzt sich drauf, fährt, und das war's. Wenn es regnete, sagte ich ab. Wenn ich weg war, wartete der Rasen.
+Mein Husqvarna 213C lief jahrelang und hatte nie irgendetwas mit Home Assistant zu tun. Ein Aufsitzmäher macht das nicht: Man setzt sich drauf, fährt, und das war's. Wenn es regnete, fiel das Mähen aus. Wenn ich weg war, wartete der Rasen.
 
 Dramatisch war das nicht. Nur nervig genug, dass ich irgendwann getauscht habe.
 
@@ -21,7 +21,7 @@ Vor etwa einem Jahr ersetzte ich ihn durch einen **Mammotion LUBA mini AWD** (ic
 
 ## Einrichtung
 
-Der Flora nutzt GPS + RTK zur Navigation, ohne Begrenzungsdraht. RTK-Korrekturen kommen von iNav NetRTK über 4G. Ich habe die physische RTK-Basisstation im Garten zugunsten von Network RTK aufgegeben, das Korrekturdaten über das Mobilfunknetz und Mammotions Cloud leitet. Keine Antenne auf dem Dach, kein Kabel in den Garten. Der Kompromiss: Jede Positionskorrektur macht eine Runde über das Internet, und das wirkt sich stärker aus, als man zunächst denkt. Mehr dazu unter Was mühsam ist.
+Flora nutzt GPS + RTK zur Navigation, ohne Begrenzungsdraht. RTK-Korrekturen kommen von iNav NetRTK über 4G. Ich habe die physische RTK-Basisstation im Garten zugunsten von Network RTK aufgegeben, das Korrekturdaten über das Mobilfunknetz und Mammotions Cloud leitet. Keine Antenne auf dem Dach, kein Kabel in den Garten. Der Kompromiss: Jede Positionskorrektur macht eine Runde über das Internet, und das wirkt sich stärker aus, als man zunächst denkt. Mehr dazu unter Was mühsam ist.
 
 Die Grenze wird einmalig in der Mammotion-App gezeichnet, danach hält sich der Mäher innerhalb der Koordinaten. Das Vision Module ist eine kleine Kamera am Gehäuse, die Hindernisse erkennt.
 
@@ -126,7 +126,7 @@ Das Modul kann ausfallen. Winterlagerung und Kondensation sind eine Kombination,
 
 ## Was mühsam ist
 
-Die Integration hat ein Latenzproblem. Befehle brauchen 30-60 Sekunden, um durchzuschlagen. Ich dachte lange, es sei einfach ein träges API. Nach einem vollen Betriebsjahr mit 4G Network RTK glaube ich, die Erklärung ist struktureller Natur: Floras gesamte Navigationsschleife läuft über Mammotions Cloud. Jede RTK-Korrektur reist für jede einzelne Positionsbestimmung über 4G zu deren Servern und zurück. Die Cloud steht bereits unter konstanter Last, nur um sie auf Kurs zu halten. HA-Statusabfragen warten in dieser Schlange. Das ist kein Fehler, das ist die Architektur.
+Die Integration hat ein Latenzproblem. Befehle brauchen 30-60 Sekunden, um durchzuschlagen. Ich dachte lange, es sei einfach eine träge API. Nach einem vollen Betriebsjahr mit 4G Network RTK glaube ich, die Erklärung ist struktureller Natur: Floras gesamte Navigationsschleife läuft über Mammotions Cloud. Jede RTK-Korrektur reist für jede einzelne Positionsbestimmung über 4G zu deren Servern und zurück. Die Cloud steht bereits unter konstanter Last, nur um sie auf Kurs zu halten. HA-Statusabfragen warten in dieser Schlange. Das ist kein Fehler, das ist die Architektur.
 
 Auf dem Dashboard ist das trotzdem nervig. Mein Workaround ist ein kleines Skript, das `start_mow` sendet und fünf Sekunden später ein Entity-Refresh erzwingt. Das ist genug Zeit, damit der Befehl registriert wird, und schnell genug, damit das Dashboard nicht falsch aussieht:
 

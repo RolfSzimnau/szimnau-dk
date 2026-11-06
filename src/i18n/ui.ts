@@ -57,7 +57,7 @@ export const ui = {
     'blog.readtime': 'min. læsning',
     'blog.alltags': 'Alle indlæg',
     'hardware.title': 'Hardware Lab',
-    'hardware.subtitle': 'Det udstyr, der kører hjemme hos mig, og hvordan det hver især er koblet på Home Assistant.',
+    'hardware.subtitle': 'Det udstyr, der kører hjemme hos mig, og hvordan hver enkelt ting er koblet på Home Assistant.',
     'hardware.vendor': '(producentens side, åbner i en ny fane)',
     'about.title': 'Om mig',
     'about.role': 'Specialist i hjemmeautomatisering og it-rådgiver',

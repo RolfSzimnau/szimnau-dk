@@ -46,7 +46,7 @@ Installationsprogrammet er ligetil. Værd at lægge mærke til:
 - **Management-IP**: giv den en statisk IP nu, for fra da af tilgår du web-UI'et på `https://DIN-IP:8006`
 - **Hostname**: jeg bruger `proxmox.local`. Let at huske, virker med mDNS
 
-Det første du bør køre efter installationen er Proxmox post-install-hjælperen fra [community-scripts.github.io/ProxmoxVE](https://community-scripts.github.io/ProxmoxVE/), en samling scripts til Proxmox, som fællesskabet vedligeholder. Post-install-scriptet fjerner abonnements-nag-skærmen, skifter til det gratis repository og anvender fornuftige startindstillinger:
+Det første, du bør køre efter installationen, er Proxmox post-install-hjælperen fra [community-scripts.github.io/ProxmoxVE](https://community-scripts.github.io/ProxmoxVE/), en samling scripts til Proxmox, som fællesskabet vedligeholder. Post-install-scriptet fjerner abonnements-nag-skærmen, skifter til det gratis repository og anvender fornuftige startindstillinger:
 
 ```bash
 bash -c "$(wget -qLO - https://github.com/community-scripts/ProxmoxVE/raw/main/misc/post-pve-install.sh)"

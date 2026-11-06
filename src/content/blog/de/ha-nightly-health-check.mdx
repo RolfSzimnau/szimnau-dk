@@ -119,7 +119,7 @@ Eine Workflow-Datei, Testdateien unter `tests/ha/` und ein gemeinsamer Helper f�
 └── package.json
 ```
 
-`package.json` benötigt nur `"type": "module"`. Eine Test-Framework-Abhängigkeit gibt es nicht, da Node's eingebautes `node:test` alles übernimmt.
+`package.json` benötigt nur `"type": "module"`. Eine Test-Framework-Abhängigkeit gibt es nicht, da das in Node eingebaute `node:test` alles übernimmt.
 
 ## Den nächtlichen Testlauf mit GitHub Actions planen
 
@@ -134,7 +134,7 @@ on:
 
 ## Was die 22 Home Assistant-Tests prüfen
 
-Die Testsuite verwendet Node's eingebauten `node:test`-Runner: kein Jest, kein Mocha, keine zusätzlichen Abhängigkeiten. Jede Testdatei deckt einen Bereich ab.
+Die Testsuite verwendet den in Node eingebauten `node:test`-Runner: kein Jest, kein Mocha, keine zusätzlichen Abhängigkeiten. Jede Testdatei deckt einen Bereich ab.
 
 **Smoke-Test:** Antwortet HA überhaupt?
 
@@ -175,7 +175,7 @@ Es gibt auch spezifische Tests für EV-Ladeautomationen und Mähroboter-Zeitplä
 
 **Integrationsspezifische Prüfungen:** Sieht die Kamera, was sie soll? Sind alle 5 Tado-Klimazonen vorhanden? Ist der Roborock erreichbar? Jede Integration erhält ihren eigenen Test, der verifiziert, dass die richtigen Entitäten existieren und nicht unavailable sind.
 
-## Der Custom-Cards-Test, der clevere
+## Der clevere Test: Custom Cards
 
 Dies ist der nützlichste Test in der Suite und der, über den ich am frohsten bin.
 

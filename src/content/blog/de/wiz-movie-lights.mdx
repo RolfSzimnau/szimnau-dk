@@ -29,7 +29,7 @@ Die Automatisierung macht es stattdessen. Der TV spielt, die Lichter dimmen. Der
 
 Vier WiZ-Lampen im Wohnzimmer:
 
-- Zwei Deckenleuchten (`wiz_tunable_white_601970`, `wiz_tunable_white_60421e`), die wichtigsten Overhead-Leuchten
+- Zwei Deckenleuchten (`wiz_tunable_white_601970`, `wiz_tunable_white_60421e`), das Hauptlicht von oben
 - Zwei Akzent-/Ecklampen (`wiz_rgbw_tunable_414776`, `wiz_rgbw_tunable_44a4a4`) mit RGBW, die bis 2200K heruntergehen können
 
 Der Unterschied zwischen den beiden Typen ist wichtig für das was beim Filmstart passiert.
@@ -51,7 +51,7 @@ condition:
     after: "18:00:00"
 ```
 
-Die Zeitbedingung ist das wichtigste Detail. Es hat keinen Sinn, die Lichter mittags zu dimmen. Die Sonne leistet ohnehin mehr als jede Deckenleuchte, und ein gedimmtes Wohnzimmer am helllichten Tag sieht einfach kaputt aus. Nach 18:00 Uhr fängt es an zu zählen.
+Die Zeitbedingung ist das wichtigste Detail. Es hat keinen Sinn, die Lichter mittags zu dimmen. Die Sonne leistet ohnehin mehr als jede Deckenleuchte, und ein gedimmtes Wohnzimmer am helllichten Tag sieht einfach kaputt aus. Erst ab 18:00 Uhr lohnt es sich.
 
 Der Modus ist `restart`. Wenn man pausiert und sofort wieder Play drückt, wird die Pause-Aktion abgebrochen bevor sie abgeschlossen ist. Ohne Restart-Modus würde man einen kurzen Aufblitz voller Helligkeit zwischen den Wiedergaben bekommen.
 
@@ -74,7 +74,7 @@ sequence:
         - light.wiz_rgbw_tunable_44a4a4
 ```
 
-Die Deckenleuchten gehen komplett aus. Nicht gedimmt, aus. Overhead-Licht während eines Films erzeugt Blendung auf dem Bildschirm, egal wie niedrig man es einstellt. Die Akzentlampen fallen auf 15% bei 2200K, was ein warmes Bernsteinlicht ergibt. Genug, um den Raum zu sehen, nicht genug, um das Bild auszuwaschen.
+Die Deckenleuchten gehen komplett aus. Nicht gedimmt, aus. Deckenlicht während eines Films erzeugt Blendung auf dem Bildschirm, egal wie niedrig man es einstellt. Die Akzentlampen fallen auf 15% bei 2200K, was ein warmes Bernsteinlicht ergibt. Genug, um den Raum zu sehen, nicht genug, um das Bild auszuwaschen.
 
 ## Wenn man pausiert
 

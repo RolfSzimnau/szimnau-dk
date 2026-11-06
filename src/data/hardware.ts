@@ -74,7 +74,7 @@ export const hardwareGroups: HardwareGroup[] = [
         text: {
           en: '4K PoE camera that tells people, vehicles and animals apart. Alerts go to my phone and the TV.',
           da: '4K PoE-kamera, der skelner mellem personer, biler og dyr. Beskederne går til telefonen og tv\'et.',
-          de: '4K-PoE-Kamera, das Personen, Fahrzeuge und Tiere unterscheidet. Meldungen gehen ans Handy und an den Fernseher.',
+          de: '4K-PoE-Kamera, die Personen, Fahrzeuge und Tiere unterscheidet. Meldungen gehen ans Handy und an den Fernseher.',
         },
       },
       {
@@ -93,7 +93,7 @@ export const hardwareGroups: HardwareGroup[] = [
         link: 'https://mammotion.com',
         text: {
           en: 'Mows by GPS and RTK without a boundary wire and takes the weather into account. Stored away for winter.',
-          da: 'Klipper efter GPS og RTK uden kantkabel og tager hensyn til vejret. Vinteropbevares.',
+          da: 'Klipper efter GPS og RTK uden kantkabel og tager hensyn til vejret. Står i vinteropbevaring.',
           de: 'Mäht per GPS und RTK ohne Begrenzungskabel und berücksichtigt das Wetter. Überwintert eingelagert.',
         },
       },
