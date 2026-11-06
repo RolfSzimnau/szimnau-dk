@@ -2,6 +2,7 @@
 import type { Lang } from '../i18n/ui';
 import { useTranslations } from '../i18n/utils';
 import { getEntry } from 'astro:content';
+import { readingMinutes } from '../utils/reading-time';
 
 interface Props {
   lang: Lang;
@@ -26,8 +27,7 @@ const formattedDate = pubDate.toLocaleDateString(
 );
 
 const entry = await getEntry('blog', `${lang}/${slug}`);
-const words = (entry?.body ?? '').split(/\s+/).filter(Boolean).length;
-const readTime = words > 0 ? Math.max(1, Math.round(words / 200)) : null;
+const readTime = readingMinutes(entry?.body);
 ---
 
 <article class={`relative glass-card overflow-hidden group flex flex-col h-full hover:border-blue/20 transition-all duration-300 hover:-translate-y-1 ${featured ? 'md:col-span-full md:grid md:grid-cols-5' : ''}`}>
@@ -52,17 +52,13 @@ const readTime = words > 0 ? Math.max(1, Math.round(words / 200)) : null;
       ))}
     </p>
     <Heading class={`font-heading font-bold text-text-primary leading-snug mb-2 group-hover:text-blue transition-colors ${featured ? 'text-2xl md:text-3xl mb-4' : 'text-lg'}`}>
-      {title}
+      <a href={`/${lang}/blog/${slug}/`} class="after:absolute after:inset-0 after:rounded-[28px] focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-blue">{title}</a>
     </Heading>
     <p class={`text-text-muted text-[15px] leading-relaxed mb-4 ${featured ? 'md:text-base line-clamp-4' : 'line-clamp-3'}`}>{description}</p>
-    <div class="mt-auto flex items-center justify-between">
-      <span class="font-mono text-[13px] text-text-muted">{formattedDate}{readTime && ` · ${readTime} ${t('blog.readtime')}`}</span>
-      <a
-        href={`/${lang}/blog/${slug}/`}
-        class="text-blue text-sm font-medium hover:underline after:absolute after:inset-0"
-      >
-        {t('blog.readmore')}
-      </a>
-    </div>
+    <p class="mt-auto flex flex-wrap gap-x-2 font-mono text-[13px] text-text-muted">
+      <span class="whitespace-nowrap">{formattedDate}</span>
+      {readTime && <span aria-hidden="true">·</span>}
+      {readTime && <span class="whitespace-nowrap">{readTime} {t('blog.readtime')}</span>}
+    </p>
   </div>
 </article>
