@@ -10,7 +10,7 @@ faqs:
   - question: "Why does Home Assistant testing require a self-hosted GitHub Actions runner?"
     answer: "GitHub's cloud runners cannot reach your local Home Assistant instance. A self-hosted runner installed on the same network as your HA server can make direct API calls to test live entities, services, and dashboard resources."
   - question: "What should nightly Home Assistant tests cover?"
-    answer: "Critical automations and scripts, notification services, custom Lovelace card resources, and key entity states. The goal is catching silent breakages — integrations that stop working after a HA update without throwing visible errors."
+    answer: "Critical automations and scripts, notification services, custom Lovelace card resources, and key entity states. The goal is catching silent breakages: integrations that stop working after a HA update without throwing visible errors."
 ---
 
 The dishwasher notification worked perfectly for months. Then one day it didn't. The `notify.android_tv` service had silently disappeared after a Home Assistant restart, and I only found out when I was standing in the kitchen waiting for an alert that never came.
@@ -27,7 +27,7 @@ The whole thing runs on GitHub Actions. The tests are plain Node.js. There are n
 
 GitHub's cloud runners can't reach a Home Assistant instance on a local network. The tests call the HA REST API and WebSocket directly, so the runner has to be on the same network as HA.
 
-The solution: a lightweight Linux container on the [Proxmox host](/en/blog/proxmox-home-assistant-setup/) that already runs HA. One extra LXC container — Debian 12, 1 vCPU, 512 MB RAM — registered as a self-hosted GitHub Actions runner. It starts automatically with Proxmox and costs essentially nothing in resources.
+The solution: a lightweight Linux container on the [Proxmox host](/en/blog/proxmox-home-assistant-setup/) that already runs HA. One extra LXC container (Debian 12, 1 vCPU, 512 MB RAM) registered as a self-hosted GitHub Actions runner. It starts automatically with Proxmox and costs essentially nothing in resources.
 
 The runner gets a label (`home-network`) so the workflow only ever runs on hardware that can actually reach HA:
 
@@ -75,7 +75,7 @@ When the runner is registered and idle, it appears under **Settings → Actions 
 
 ## Credentials: the right way
 
-The tests need a long-lived HA token. The correct approach is to store it as a GitHub Actions secret — never hardcode it in the repository.
+The tests need a long-lived HA token. The correct approach is to store it as a GitHub Actions secret. Never hardcode it in the repository.
 
 In HA: **Profile → Long-Lived Access Tokens → Create token**
 
@@ -118,7 +118,7 @@ One workflow file, test files grouped under `tests/ha/`, and a shared helper for
 └── package.json
 ```
 
-`package.json` only needs `"type": "module"` — no test framework dependency, since Node's built-in `node:test` handles everything.
+`package.json` only needs `"type": "module"`. There's no test framework dependency, since Node's built-in `node:test` handles everything.
 
 ## Scheduling the nightly test run with GitHub Actions
 
@@ -133,9 +133,9 @@ on:
 
 ## What the 22 Home Assistant tests cover
 
-The test suite uses Node's built-in `node:test` runner — no Jest, no Mocha, no extra dependencies. Each test file covers one area.
+The test suite uses Node's built-in `node:test` runner: no Jest, no Mocha, no extra dependencies. Each test file covers one area.
 
-**Smoke test** — is HA even responding?
+**Smoke test:** is HA even responding?
 
 ```js
 test('HA API is reachable and running', async () => {
@@ -146,7 +146,7 @@ test('HA API is reachable and running', async () => {
 
 Simple, but essential. If HA is down or the token expired, everything else fails here first with a clear message.
 
-**Notification services** — do the phone and tablet services actually exist?
+**Notification services:** do the phone and tablet services actually exist?
 
 ```js
 test('notify.mobile_app_pixel_10 service exists', async () => {
@@ -158,7 +158,7 @@ test('notify.mobile_app_pixel_10 service exists', async () => {
 
 This catches the case where the Companion app was reinstalled, the device name changed, or the integration dropped. The service can disappear without any visible error in HA.
 
-**Automations** — are any broken or accidentally disabled?
+**Automations:** are any broken or accidentally disabled?
 
 ```js
 test('no automation is unavailable', async () => {
@@ -170,11 +170,11 @@ test('no automation is unavailable', async () => {
 });
 ```
 
-There are also specific tests for EV charging automations and mower scheduling — checking not just that they exist but that they're enabled. An automation that's been accidentally toggled off is functionally broken even if HA shows it as healthy.
+There are also specific tests for EV charging automations and mower scheduling, checking not just that they exist but that they're enabled. An automation that's been accidentally toggled off is functionally broken even if HA shows it as healthy.
 
-**Integration-specific checks** — does the camera see what it should? Are all 5 Tado climate zones present? Is the Roborock reachable? Each integration gets its own test that verifies the right entities exist and aren't unavailable.
+**Integration-specific checks:** does the camera see what it should? Are all 5 Tado climate zones present? Is the Roborock reachable? Each integration gets its own test that verifies the right entities exist and aren't unavailable.
 
-## The custom-cards test — the clever one
+## The custom-cards test, the clever one
 
 This is the most useful test in the suite, and the one I'm most glad exists.
 
@@ -264,4 +264,4 @@ None of these would have been obvious until I specifically needed the thing that
 
 Twenty-nine years of infrastructure work means I treat home automation the same way I treat production systems: things break silently, at inconvenient times, and the only way to know before it matters is to check continuously. A nightly test run against a live HA instance is the minimum viable monitoring for a setup you actually depend on.
 
-The full test framework is on GitHub. The concepts are straightforward enough to adapt for any HA setup — even starting with just the smoke test and the automation health check gives you something.
+The full test framework is on GitHub. The concepts are straightforward enough to adapt for any HA setup. Even starting with just the smoke test and the automation health check gives you something.

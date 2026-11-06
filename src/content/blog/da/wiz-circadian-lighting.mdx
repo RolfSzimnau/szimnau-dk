@@ -14,17 +14,17 @@ faqs:
     answer: "De kører lokalt i pæren og kan ikke reagere på noget i HA, så der er ingen betingelser og ingen logik pr. rum. Bygget i HA bruger det de rigtige soldata for dit sted, og du kan ændre alt."
 ---
 
-Naturligt dagslys er ikke hvidt. Ved middagstid er det et køligt neutralt — omkring 5500K. Om morgenen og aftenen er det varmt orange. Efter solnedgang er det som stearinlys. Din krop bruger disse skift til at regulere årvågenhed og søvn. De fleste smart-belysningssystemer ignorerer dette fuldstændigt og sidder ved den samme farvetemperatur hele dagen — typisk noget generisk omkring 3000K — uanset hvad solen laver udenfor.
+Naturligt dagslys er ikke hvidt. Ved middagstid er det køligt og neutralt, omkring 5500K. Om morgenen og aftenen er det varmt orange. Efter solnedgang er det som stearinlys. Din krop bruger de skift til at styre, hvornår du er vågen, og hvornår du bliver søvnig. De fleste smart-belysningssystemer ser helt bort fra det og ligger på den samme farvetemperatur hele dagen, typisk noget generisk omkring 3000K, uanset hvad solen laver udenfor.
 
-WiZ-pærerne understøtter farvetemperatur nativt. **WiZ**-integrationen er indbygget i HA — den opdager pærer automatisk på lokalt netværk, ingen HACS nødvendig. Home Assistant kender solens præcise høj over horisonten til enhver tid via den indbyggede `sun.sun`-entitet. At forbinde de to kræver én automation.
+WiZ-pærerne understøtter farvetemperatur nativt. **WiZ**-integrationen er indbygget i HA og finder selv pærerne på det lokale netværk, uden HACS. Home Assistant kender til enhver tid solens præcise højde over horisonten via den indbyggede `sun.sun`-entitet. Der skal kun én automation til at forbinde de to.
 
 ## Hardwaren
 
-Fire WiZ-pærer i stuen: to **WiZ Plafond superslim Ø43cm 22W** loftlamper og to **WiZ Smart E27 13W** i hjørnelamperne. Begge typer understøtter farvetemperatur nativt — Plafonderne er tunable white; E27'erne er RGBW og kan skifte til farve såvel som varm hvid.
+Fire WiZ-pærer i stuen: to **WiZ Plafond superslim Ø43cm 22W** loftlamper og to **WiZ Smart E27 13W** i hjørnelamperne. Begge typer understøtter farvetemperatur nativt. Plafonderne er tunable white, mens E27'erne er RGBW og kan skifte til farve såvel som varm hvid.
 
 ## Sol-entiteten
 
-HA's `sun.sun`-entitet har et `elevation`-attribut — vinklen på solen over (eller under) horisonten i grader. Ved solartidspunktet i Danmark om sommeren når den op på ca. 55°. Om vinteren rammer den knap 15°. Ved solopgang og solnedgang er den 0°. Om natten er den negativ.
+HA's `sun.sun`-entitet har et `elevation`-attribut, som er solens vinkel over (eller under) horisonten i grader. Når solen står højest om sommeren i Danmark, når den op på ca. 55°. Om vinteren kommer den knap over 15°. Ved solopgang og solnedgang er den 0°. Om natten er den negativ.
 
 Det ene tal beskriver kvaliteten af udendørs lys på et givet tidspunkt. Automationen bruger det som input til en farvetemperaturberegning.
 
@@ -46,10 +46,10 @@ Tre zoner, to overgange:
 
 | Solhøjde | Farvetemperatur |
 |---|---|
-| Over 45° | 5000K — klart neutralt dagslys |
+| Over 45° | 5000K, klart neutralt dagslys |
 | 15° – 45° | 3500K → 5000K lineær ramp |
 | 0° – 15° | 2700K → 3500K lineær ramp |
-| Under horisonten | 2200K — varm rav |
+| Under horisonten | 2200K, varm rav |
 
 `max`- og `min`-afgrænsningerne til sidst sikrer at resultatet aldrig går under 2200K eller over 6500K uanset floating point-afvigelser. På en klar sommerdag ved middagstid er output 5000K. På en mørk decemberaften kl. 17 med solen langt under horisonten er det 2200K.
 
@@ -92,14 +92,14 @@ repeat:
             color_temp_kelvin: "{{ color_temp_k }}"
 ```
 
-`if`-betingelsen inde i løkken er det der gør den usynlig. Hvis et lys er slukket, sker der ingenting. Automationen tænder aldrig lys — den justerer kun lys der allerede er tændt. Man kan godt lade halvdelen af lysene være slukket og de man har tændt vil følge solen.
+`if`-betingelsen inde i løkken er det, der gør den diskret. Er et lys slukket, sker der ingenting. Automationen tænder aldrig lys, den justerer kun lys, der allerede er tændt. Du kan godt lade halvdelen af lysene være slukket, og dem, du har tændt, følger solen.
 
 ## Hvad det føles som
 
-Skiftet er langsomt nok til at man ikke bemærker det sker. Hvad man i stedet bemærker er at rummet føles rigtigt — alert og neutralt om dagen, varmere og mere afslappet når aftenen sætter ind, rav-farvet når man er ved at lukke ned. Overgangen fra 2700K til 2200K i den sidste time inden midnat er særligt mærkbar hvis man er opmærksom på det: lyset bliver tydeligt orange, hvilket for de fleste er et signal om at sænke tempoet.
+Skiftet går så langsomt, at du ikke lægger mærke til det. Det, du lægger mærke til, er, at rummet føles rigtigt: friskt og neutralt om dagen, varmere og mere afslappet, når aftenen kommer, og ravfarvet, når du er ved at gå i seng. Overgangen fra 2700K til 2200K i den sidste time før midnat er særligt tydelig, hvis du holder øje med den. Lyset bliver tydeligt orange, og for de fleste er det et signal om at sætte tempoet ned.
 
-Det betyder også at biograflys-automationen (der sætter 2200K til film) nu er konsistent med hvad lysene naturligt ville lande på om aftenen alligevel. De to automationer er ikke i konflikt — filmautomationen overtager midlertidigt og den circadian justerer hvad der er tændt ved næste 30-minutters-tick.
+Det betyder også, at biograflys-automationen (der sætter 2200K til film) nu passer med det, lysene alligevel ville ende på om aftenen. De to automationer kommer ikke i karambolage. Filmautomationen tager over et stykke tid, og døgnrytme-automationen justerer det, der er tændt, ved næste 30-minutters-tick.
 
 ## Hvad WiZ gør nativt
 
-WiZ har sine egne "Dynamisk"-tilstande i appen — solopgangs-simulation, stearinlys osv. Jeg prøvede dem. De kører lokalt på pæren og reagerer ikke på noget i HA. Man kan ikke bruge dem som udgangspunkt og justere baseret på andre betingelser. At bygge det i HA giver fuld kontrol: beregningen bruger ægte soldata for ens præcise placering, 30-minutters-ticket er præcist, og logikken kan modificeres uden at røre WiZ-appen overhovedet.
+WiZ har sine egne "Dynamisk"-tilstande i appen (solopgangs-simulation, stearinlys osv.). Jeg prøvede dem. De kører lokalt på pæren og reagerer ikke på noget i HA. Du kan ikke bruge dem som udgangspunkt og justere ud fra andre betingelser. Bygger du det i HA, har du fuld kontrol: beregningen bruger rigtige soldata for netop din placering, 30-minutters-ticket er præcist, og logikken kan ændres uden at røre WiZ-appen overhovedet.

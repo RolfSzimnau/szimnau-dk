@@ -14,17 +14,17 @@ faqs:
     answer: "Die laufen lokal in der Lampe und können auf nichts in HA reagieren, also keine Bedingungen und keine Logik pro Raum. In HA gebaut nutzt das Licht echte Sonnendaten für deinen Standort, und du kannst alles anpassen."
 ---
 
-Natürliches Tageslicht ist nicht weiß. Mittags ist es ein kühles Neutral — etwa 5500K. Morgens und abends ist es warm orange. Nach Sonnenuntergang wie Kerzenlicht. Der Körper nutzt diese Verschiebungen um Wachheit und Schlaf zu regulieren. Die meisten Smart-Beleuchtungssysteme ignorieren das völlig und sitzen den ganzen Tag bei derselben Farbtemperatur — meistens irgendwas Generisches um 3000K — unabhängig davon was die Sonne draußen gerade macht.
+Natürliches Tageslicht ist nicht weiß. Mittags ist es ein kühles Neutral, etwa 5500K. Morgens und abends ist es warm orange. Nach Sonnenuntergang wie Kerzenlicht. Der Körper nutzt diese Verschiebungen, um Wachheit und Schlaf zu regulieren. Die meisten Smart-Beleuchtungssysteme ignorieren das völlig und bleiben den ganzen Tag bei derselben Farbtemperatur, meistens irgendwas Generisches um 3000K, unabhängig davon, was die Sonne draußen gerade macht.
 
-Die WiZ-Lampen unterstützen Farbtemperatur nativ. Die **WiZ**-Integration ist in HA eingebaut — sie erkennt Lampen automatisch im lokalen Netzwerk, kein HACS nötig. Home Assistant kennt den genauen Elevationswinkel der Sonne zu jedem Zeitpunkt über die eingebaute `sun.sun`-Entität. Die beiden zu verbinden erfordert eine einzige Automatisierung.
+Die WiZ-Lampen unterstützen Farbtemperatur nativ. Die **WiZ**-Integration ist in HA eingebaut und erkennt Lampen automatisch im lokalen Netzwerk, ganz ohne HACS. Home Assistant kennt den genauen Elevationswinkel der Sonne zu jedem Zeitpunkt über die eingebaute `sun.sun`-Entität. Die beiden zu verbinden erfordert eine einzige Automatisierung.
 
 ## Die Hardware
 
-Vier WiZ-Lampen im Wohnzimmer: zwei **WiZ Plafond superslim Ø43cm 22W** Deckenleuchten und zwei **WiZ Smart E27 13W** in den Ecklampen. Beide Typen unterstützen Farbtemperatur nativ — die Plafonds sind Tunable White; die E27s sind RGBW und können sowohl Farbe als auch Warmweiß darstellen.
+Vier WiZ-Lampen im Wohnzimmer: zwei **WiZ Plafond superslim Ø43cm 22W** Deckenleuchten und zwei **WiZ Smart E27 13W** in den Ecklampen. Beide Typen unterstützen Farbtemperatur nativ. Die Plafonds sind Tunable White, die E27s sind RGBW und können sowohl Farbe als auch Warmweiß darstellen.
 
 ## Die Sonnen-Entität
 
-HA's `sun.sun`-Entität hat ein `elevation`-Attribut — den Winkel der Sonne über (oder unter) dem Horizont in Grad. Beim Sonnenhöchststand in Dänemark im Sommer erreicht er etwa 55°. Im Winter schafft er kaum 15°. Bei Sonnenauf- und -untergang ist er 0°. Nachts ist er negativ.
+HA's `sun.sun`-Entität hat ein `elevation`-Attribut, also den Winkel der Sonne über (oder unter) dem Horizont in Grad. Beim Sonnenhöchststand in Dänemark im Sommer erreicht er etwa 55°. Im Winter schafft er kaum 15°. Bei Sonnenauf- und -untergang ist er 0°. Nachts ist er negativ.
 
 Diese eine Zahl beschreibt die Qualität des Außenlichts zu jedem gegebenen Moment. Die Automatisierung verwendet sie als Eingabe für eine Farbtemperaturberechnung.
 
@@ -46,10 +46,10 @@ Drei Zonen, zwei Übergänge:
 
 | Sonnenhöhe | Farbtemperatur |
 |---|---|
-| Über 45° | 5000K — helles neutrales Tageslicht |
+| Über 45° | 5000K, helles neutrales Tageslicht |
 | 15° – 45° | 3500K → 5000K linearer Übergang |
 | 0° – 15° | 2700K → 3500K linearer Übergang |
-| Unter dem Horizont | 2200K — warmes Bernstein |
+| Unter dem Horizont | 2200K, warmes Bernstein |
 
 Die `max`- und `min`-Klammern am Ende stellen sicher dass das Ergebnis unabhängig von Fließkomma-Abweichungen nie unter 2200K oder über 6500K geht. An einem klaren Sommermittag ist der Ausgabewert 5000K. An einem dunklen Dezemberabend um 17 Uhr mit der Sonne weit unter dem Horizont sind es 2200K.
 
@@ -92,14 +92,14 @@ repeat:
             color_temp_kelvin: "{{ color_temp_k }}"
 ```
 
-Das `if` innerhalb der Schleife macht sie unauffällig. Wenn eine Lampe aus ist passiert nichts. Die Automatisierung schaltet niemals Lampen ein — sie passt nur Lampen an die bereits eingeschaltet sind. Man kann die Hälfte der Lampen ausgelassen haben und die eingeschalteten folgen trotzdem der Sonne.
+Das `if` innerhalb der Schleife macht sie unauffällig. Wenn eine Lampe aus ist, passiert nichts. Die Automatisierung schaltet niemals Lampen ein, sondern passt nur Lampen an, die bereits eingeschaltet sind. Du kannst die Hälfte der Lampen auslassen, und die eingeschalteten folgen trotzdem der Sonne.
 
 ## Wie es sich anfühlt
 
-Die Verschiebung ist langsam genug dass man nicht bemerkt wie sie passiert. Was man stattdessen bemerkt ist dass der Raum sich richtig anfühlt — wach und neutral tagsüber, wärmer und entspannter wenn der Abend kommt, bernsteinfarben wenn man zur Ruhe geht. Der Übergang von 2700K zu 2200K in der letzten Stunde vor Mitternacht ist besonders spürbar wenn man darauf achtet: das Licht wird deutlich orange, was für die meisten Menschen ein Signal zum Entschleunigen ist.
+Die Verschiebung ist langsam genug, dass du nicht bemerkst, wie sie passiert. Was du stattdessen bemerkst: Der Raum fühlt sich richtig an. Wach und neutral tagsüber, wärmer und entspannter, wenn der Abend kommt, bernsteinfarben, wenn du zur Ruhe kommst. Der Übergang von 2700K zu 2200K in der letzten Stunde vor Mitternacht ist besonders spürbar, wenn du darauf achtest. Das Licht wird deutlich orange, was für die meisten Menschen ein Signal zum Entschleunigen ist.
 
-Es bedeutet auch dass die Kinomodus-Automatisierung (die für Filme 2200K setzt) jetzt konsistent ist mit dem was die Lampen am Abend ohnehin natürlich erreichen würden. Die beiden Automatisierungen stehen nicht in Konflikt — die Film-Automatisierung übernimmt vorübergehend und die zirkadiane passt was eingeschaltet ist beim nächsten 30-Minuten-Tick an.
+Es bedeutet auch, dass die Kinomodus-Automatisierung (die für Filme 2200K setzt) jetzt zu dem passt, was die Lampen am Abend ohnehin erreichen würden. Die beiden Automatisierungen kommen sich nicht in die Quere. Die Film-Automatisierung übernimmt vorübergehend, und die zirkadiane passt beim nächsten 30-Minuten-Tick an, was eingeschaltet ist.
 
 ## Was WiZ nativ kann
 
-WiZ hat eigene "Dynamisch"-Modi in ihrer App — Sonnenaufgangs-Simulation, Kerzenlicht usw. Ich habe sie ausprobiert. Sie laufen lokal auf der Lampe und reagieren auf nichts in HA. Man kann sie nicht als Ausgangspunkt nehmen und basierend auf anderen Bedingungen anpassen. Es in HA zu bauen gibt volle Kontrolle: die Berechnung verwendet echte Solardaten für den eigenen genauen Standort, der 30-Minuten-Takt ist präzise, und die Logik kann angepasst werden ohne die WiZ-App überhaupt anzufassen.
+WiZ hat eigene "Dynamisch"-Modi in der App (Sonnenaufgangs-Simulation, Kerzenlicht usw.). Ich habe sie ausprobiert. Sie laufen lokal auf der Lampe und reagieren auf nichts in HA. Du kannst sie nicht als Ausgangspunkt nehmen und anhand anderer Bedingungen anpassen. Baust du es in HA, hast du volle Kontrolle: Die Berechnung verwendet echte Solardaten für deinen genauen Standort, der 30-Minuten-Takt ist präzise, und die Logik lässt sich anpassen, ohne die WiZ-App überhaupt anzufassen.

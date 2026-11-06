@@ -19,15 +19,15 @@ faqs:
 
 <div style="background:rgba(185,28,28,0.15);border:1px solid rgba(239,68,68,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-**API-Einschränkungen — Mai 2026**
+**API-Einschränkungen (Mai 2026)**
 
 VW Group hat App-Attestierungsanforderungen eingeführt, die den Drittanbieterzugang schrittweise einschränken. Die Integration funktioniert teilweise, aber nicht vollständig:
 
-- **Datenabruf (Batterie, Reichweite, Ladestatus)** — funktioniert noch via Polling
-- **Echtzeit-Befehle (Vorkonditionierung, Laden starten/stoppen)** — seit ~7. Mai über MQTT defekt
-- **Push-Updates vom Fahrzeug** — defekt
+- **Datenabruf (Batterie, Reichweite, Ladestatus):** funktioniert noch via Polling
+- **Echtzeit-Befehle (Vorkonditionierung, Laden starten/stoppen):** seit ~7. Mai über MQTT defekt
+- **Push-Updates vom Fahrzeug:** defekt
 
-Automationen, die auf Befehlen basieren — z. B. kalenderbasierte Vorkonditionierung — sind unzuverlässig. VW hat angekündigt, dass Apps ohne formelle Vereinbarung mit VW Group Info Services künftig keinen Zugang mehr erhalten. Der EU Data Act (12. Sept. 2026) könnte dies rechtlich ändern.
+Automationen, die auf Befehlen basieren (z. B. kalenderbasierte Vorkonditionierung), sind unzuverlässig. VW hat angekündigt, dass Apps ohne formelle Vereinbarung mit VW Group Info Services künftig keinen Zugang mehr erhalten. Der EU Data Act (12. Sept. 2026) könnte dies rechtlich ändern.
 
 Aktueller Stand: [GitHub-Issues](https://github.com/skodaconnect/homeassistant-myskoda/issues).
 
@@ -39,7 +39,7 @@ Aktueller Stand: [GitHub-Issues](https://github.com/skodaconnect/homeassistant-m
 
 Im September hat das MySkoda-Projekt angekündigt, dass die Integration im Oktober 2026 aufhört zu funktionieren, wenn Škodas alte API für Drittanbieter schließt. Ich habe sie am 9. Oktober entfernt. Home Assistant 2026.11 hat danach eine [offizielle Škoda-Integration](https://www.home-assistant.io/integrations/skoda/) bekommen, die ich nicht getestet habe.
 
-Ich habe meine eigenen Elroq-Automationen bereits auf [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha) umgestellt, eine gepflegte Alternative, die Škoda über mehrere Kanäle unterstützt. Wer noch MySkoda nutzt, sollte jetzt wechseln, zu VW Group Connect oder zur offiziellen Integration. Beide laufen problemlos parallel. Eine 1:1-Umbenennung ist es aber nicht: Die Entity-Namen unterscheiden sich (`garage_<autoname>_*`, nicht `skoda_elroq_*`), und mindestens ein Enum-Sensor ändert komplett die Groß-/Kleinschreibung — MySkodas `charging_state` ist kleingeschrieben (`ready_for_charging`), das VW-Group-Connect-Pendant ist großgeschrieben (`READY_FOR_CHARGING`). Prüfe die State-Vergleiche jeder Automation von Hand; verlass dich nicht auf Gleichheit.
+Ich habe meine eigenen Elroq-Automationen bereits auf [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha) umgestellt, eine gepflegte Alternative, die Škoda über mehrere Kanäle unterstützt. Wer noch MySkoda nutzt, sollte jetzt wechseln, zu VW Group Connect oder zur offiziellen Integration. Beide laufen problemlos parallel. Eine 1:1-Umbenennung ist es aber nicht: Die Entity-Namen unterscheiden sich (`garage_<autoname>_*`, nicht `skoda_elroq_*`), und mindestens ein Enum-Sensor ändert komplett die Groß-/Kleinschreibung. MySkodas `charging_state` ist kleingeschrieben (`ready_for_charging`), das VW-Group-Connect-Pendant ist großgeschrieben (`READY_FOR_CHARGING`). Prüfe die State-Vergleiche jeder Automation von Hand, und verlass dich nicht auf Gleichheit.
 
 </div>
 
@@ -70,9 +70,9 @@ MySkoda ist jetzt vollständig aus meinen Dashboards und Automationen verschwund
 
 Stand nach einem Monat: **Preis pro Fahrt** funktioniert. Der Oktober kam auf 2.830 km, 447 kWh und etwa 843 kr. laut Schätzung von Home Assistant. **Laden auf 100 %** ist gelaufen, aber ich hatte noch keine lange Fahrt, bei der ich das Auto 100 % erreichen sah. **Die Vorklimatisierung vor Morgenterminen** ist noch nicht gelaufen. **Die Meldung bei unverschlossenem Auto** und der «Jetzt verriegeln»-Knopf sind noch nicht bewiesen. Ich aktualisiere den Beitrag, wenn diese drei im Alltag getestet sind.
 
-Das Škoda ist das einzige im Haus, das nicht automatisch mit Home Assistant spricht. Alle anderen Geräte sind entweder nativ oder über HACS eingebunden. Das Auto lebte in seiner eigenen App — und das nagte an mir. Nicht dramatisch. Nur ein konstantes kleines Unbehagen.
+Das Škoda ist das einzige im Haus, das nicht automatisch mit Home Assistant spricht. Alle anderen Geräte sind entweder nativ oder über HACS eingebunden. Das Auto lebte in seiner eigenen App, und das nagte an mir. Nicht dramatisch. Nur ein konstantes kleines Unbehagen.
 
-Die [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-Integration löst das. HACS, mit dem Škoda Connect-Konto authentifizieren, und das Auto taucht als Gerät auf. API-Polling mit 15-60 Sekunden Latenz bei Befehlen — das ist eine Cloud-Einschränkung, nicht HA.
+Die [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-Integration löst das. HACS, mit dem Škoda Connect-Konto authentifizieren, und das Auto taucht als Gerät auf. API-Polling mit 15-60 Sekunden Latenz bei Befehlen: Das ist eine Cloud-Einschränkung, nicht HA.
 
 ## Was die MySkoda-Integration in Home Assistant bietet
 
@@ -88,11 +88,11 @@ climate.skoda_elroq_air_conditioning   — Fernklimatisierung
 switch.skoda_elroq_charging            — starten/stoppen
 ```
 
-Die `climate`-Entität nutze ich am meisten. Temperatur einstellen, `climate.turn_on` aufrufen, und das Auto beginnt zu heizen oder zu kühlen — je nach verfügbarer Stromquelle. Ist es angeschlossen, läuft es über das Netz. Wenn nicht, über den Akku. Deshalb überspringe ich die Vorwärmung, wenn der Akku unter 30% liegt.
+Die `climate`-Entität nutze ich am meisten. Temperatur einstellen, `climate.turn_on` aufrufen, und das Auto beginnt zu heizen oder zu kühlen, je nach verfügbarer Stromquelle. Ist es angeschlossen, läuft es über das Netz. Wenn nicht, über den Akku. Deshalb überspringe ich die Vorwärmung, wenn der Akku unter 30% liegt.
 
 ## Das EV-Dashboard aufbauen
 
-Ich wollte den Ladestand sofort sichtbar haben ohne viel Platz einzunehmen. Die Lösung ist ein grüner Verlauf hinter dem Karteninhalt über `ha-card::after` — er füllt die Karte proportional zum Ladestand. Die Karte verwendet `custom:stack-in-card` und `custom:mushroom-template-card` (beide HACS, Mushroom-Suite), mit `card_mod` (HACS) für das CSS:
+Ich wollte den Ladestand sofort sichtbar haben, ohne viel Platz einzunehmen. Die Lösung ist ein grüner Verlauf hinter dem Karteninhalt über `ha-card::after`, der die Karte proportional zum Ladestand füllt. Die Karte verwendet `custom:stack-in-card` und `custom:mushroom-template-card` (beide HACS, Mushroom-Suite), mit `card_mod` (HACS) für das CSS:
 
 ```yaml
 type: custom:stack-in-card
@@ -127,9 +127,9 @@ cards:
       {% if soc > 60 %}green{% elif soc > 30 %}orange{% else %}red{% endif %}
 ```
 
-Der Verlauf ist subtil — man nimmt ihn nicht als Fortschrittsbalken wahr, die Karte fühlt sich bei 20% einfach anders an als bei 80%. Es dauerte ein paar Iterationen, die Deckkraft richtig hinzubekommen.
+Der Verlauf ist subtil. Du nimmst ihn nicht als Fortschrittsbalken wahr, die Karte fühlt sich bei 20% einfach anders an als bei 80%. Es dauerte ein paar Iterationen, die Deckkraft richtig hinzubekommen.
 
-Das Auto-Icon bekommt eine weitere Ebene, wenn `sensor.skoda_elroq_charging_state` `charging` ist: ein leuchtender Ring, der durch Cyan und Grün pulsiert — dieselben Farben wie der LED-Ring am Stoßfänger des Elroq während des Ladens. `card_mod`-Block direkt auf der Mushroom-Karte innerhalb des Stacks hinzufügen:
+Das Auto-Icon bekommt eine weitere Ebene, wenn `sensor.skoda_elroq_charging_state` `charging` ist: ein leuchtender Ring, der durch Cyan und Grün pulsiert, in denselben Farben wie der LED-Ring am Stoßfänger des Elroq während des Ladens. `card_mod`-Block direkt auf der Mushroom-Karte innerhalb des Stacks hinzufügen:
 
 ```yaml
     card_mod:
@@ -199,19 +199,19 @@ alerts:
     time_to: "06:00"
 ```
 
-Das Zeitfenster ist wichtig — tagsüber ist das Auto ständig vom Ladegerät getrennt. Die Warnung ist nur nachts relevant wenn es laden sollte. Außerhalb dieses Fensters ist sie still unabhängig vom Kabelstatus.
+Das Zeitfenster ist wichtig. Tagsüber ist das Auto ständig vom Ladegerät getrennt. Die Warnung ist nur nachts relevant, wenn es laden sollte. Außerhalb dieses Fensters bleibt sie still, unabhängig vom Kabelstatus.
 
 ## Was der MySkoda-Integration noch fehlt
 
-Die Integration zeigt keine Ladesitzungsdaten — keine kWh in der aktuellen Sitzung, keine Ladehistorie. Man sieht die aktuelle Leistungsaufnahme, aber nicht wie lange sie läuft oder was es kostet. Für die Smart-Charging-Automatisierung ist das in Ordnung; um die tatsächlichen Ladekosten zu überwachen, fehlt das.
+Die Integration zeigt keine Ladesitzungsdaten: keine kWh in der aktuellen Sitzung, keine Ladehistorie. Du siehst die aktuelle Leistungsaufnahme, aber nicht, wie lange sie läuft oder was es kostet. Für die Smart-Charging-Automatisierung ist das in Ordnung. Um die tatsächlichen Ladekosten zu überwachen, fehlt es.
 
 Für das Latenz-Problem konkret: steht man neben dem Auto und drückt "Laden starten" im HA-Dashboard, muss man eine Minute warten bis der Schalter seinen Zustand aktualisiert. Für alles Interaktive lieber die App verwenden.
 
 ## Batterie und Reichweite über Zeit verfolgen
 
-Nach einer Weile wollte ich nicht den aktuellen Zustand sehen — sondern den Trend. Verliert der Akku über Nacht Ladung? Wie verändert sich die Reichweite wenn die Temperatur fällt?
+Nach einer Weile wollte ich nicht mehr den aktuellen Zustand sehen, sondern den Trend. Verliert der Akku über Nacht Ladung? Wie verändert sich die Reichweite, wenn die Temperatur fällt?
 
-`custom:apexcharts-card` (HACS) beantwortet beides. Batteriestand in Prozent über 5 Tage — Ladevorgänge zeigen sich als steile Aufwärtsspitzen, nächtlicher Drain als sanfte Steigung:
+`custom:apexcharts-card` (HACS) beantwortet beides. Batteriestand in Prozent über 5 Tage. Ladevorgänge zeigen sich als steile Aufwärtsspitzen, nächtlicher Drain als sanftes Gefälle:
 
 ```yaml
 type: custom:apexcharts-card
@@ -289,7 +289,7 @@ series:
     unit: °C
 ```
 
-Etwas zu beachten: die MySkoda-Integration erstellt 56 Entitäten. Alles aufzuzeichnen summiert sich schnell — Fensterzustände, Türzustände, Softwareversion, Inspektionstermine. Die meisten ändern sich selten und haben keinen Diagrammwert. Den Großteil ausschließen und nur behalten was man historisch verfolgen möchte:
+Etwas zu beachten: Die MySkoda-Integration erstellt 56 Entitäten. Alles aufzuzeichnen summiert sich schnell: Fensterzustände, Türzustände, Softwareversion, Inspektionstermine. Die meisten ändern sich selten und haben keinen Diagrammwert. Den Großteil ausschließen und nur behalten, was du historisch verfolgen möchtest:
 
 ```yaml
 recorder:

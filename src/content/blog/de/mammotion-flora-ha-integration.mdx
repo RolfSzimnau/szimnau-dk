@@ -14,23 +14,23 @@ faqs:
     answer: "Er hängt stark an Cloud und 4G, und die GPS-Grenzen lassen sich nur in der Hersteller-App zeichnen. HA kann das Mähen steuern, aber nie festlegen, wo der Rasen ist. Behalte den Sensor für die Satellitenzahl im Blick: Wenige Satelliten erklären die meisten Stopps, die sonst zufällig wirken."
 ---
 
-Mein Husqvarna 213C lief jahrelang und hatte nie irgendetwas mit Home Assistant zu tun. Ein Aufsitzmäher macht das nicht — man setzt sich drauf, fährt, und das war's. Wenn es regnete, sagte ich ab. Wenn ich weg war, wartete der Rasen.
+Mein Husqvarna 213C lief jahrelang und hatte nie irgendetwas mit Home Assistant zu tun. Ein Aufsitzmäher macht das nicht: Man setzt sich drauf, fährt, und das war's. Wenn es regnete, sagte ich ab. Wenn ich weg war, wartete der Rasen.
 
 Dramatisch war das nicht. Nur nervig genug, dass ich irgendwann getauscht habe.
 
-Ich ersetzte ihn durch einen **Mammotion LUBA mini AWD** (ich nannte ihn Flora) vor etwa einem Jahr — hauptsächlich wegen der echten HA-Integration. Hier ist, was ich nach einem Jahr Betrieb herausgefunden habe.
+Vor etwa einem Jahr ersetzte ich ihn durch einen **Mammotion LUBA mini AWD** (ich nannte ihn Flora), vor allem wegen der echten HA-Integration. Hier ist, was ich nach einem Jahr Betrieb herausgefunden habe.
 
 ## Einrichtung
 
-Der Flora nutzt GPS + RTK zur Navigation — kein Begrenzungsdraht. RTK-Korrekturen kommen von iNav NetRTK über 4G. Ich habe die physische RTK-Basisstation im Garten zugunsten von Network RTK aufgegeben, das Korrekturdaten über das Mobilfunknetz und Mammotions Cloud leitet. Keine Antenne auf dem Dach, kein Kabel in den Garten. Der Kompromiss: Jede Positionskorrektur macht eine Runde über das Internet — und das hat größere Auswirkungen als man zunächst denkt. Mehr dazu unter Was mühsam ist.
+Der Flora nutzt GPS + RTK zur Navigation, ohne Begrenzungsdraht. RTK-Korrekturen kommen von iNav NetRTK über 4G. Ich habe die physische RTK-Basisstation im Garten zugunsten von Network RTK aufgegeben, das Korrekturdaten über das Mobilfunknetz und Mammotions Cloud leitet. Keine Antenne auf dem Dach, kein Kabel in den Garten. Der Kompromiss: Jede Positionskorrektur macht eine Runde über das Internet, und das wirkt sich stärker aus, als man zunächst denkt. Mehr dazu unter Was mühsam ist.
 
 Die Grenze wird einmalig in der Mammotion-App gezeichnet, danach hält sich der Mäher innerhalb der Koordinaten. Das Vision Module ist eine kleine Kamera am Gehäuse, die Hindernisse erkennt.
 
 ![Flora nach einer Runde im Garten](/blog-images/Hjem_Luba.jpg)
 
-Flora schafft die vollen 1.000 m² allein. Kein verlegtes Kabel, kein Markierungsband, keine Plastikpfähle für verbotene Zonen. Die Grenze wird einmal in der App gezeichnet — den Rest erledigt sie bei jedem Durchgang selbst, arbeitet sich um Bäume, den Teich und was auch immer auf dem Rasen liegt.
+Flora schafft die vollen 1.000 m² allein. Kein verlegtes Kabel, kein Markierungsband, keine Plastikpfähle für verbotene Zonen. Die Grenze wird einmal in der App gezeichnet. Den Rest erledigt sie bei jedem Durchgang selbst und arbeitet sich um Bäume, den Teich und was auch immer auf dem Rasen liegt.
 
-Installation: HACS → Mammotion suchen → mit Konto authentifizieren. Ein Mammotion-Cloud-Konto ist Pflicht — die Integration kommuniziert über die Mammotion-Cloud, nicht lokal. Danach erscheinen:
+Installation: HACS → Mammotion suchen → mit Konto authentifizieren. Ein Mammotion-Cloud-Konto ist Pflicht, denn die Integration kommuniziert über die Mammotion-Cloud, nicht lokal. Danach erscheinen:
 
 ```
 lawn_mower.flora
@@ -43,7 +43,7 @@ sensor.flora_wifi_rssi
 
 `sensor.flora_satellites_robot` ist die nützlichste Entität, die die Integration bereitstellt. Und die, über die niemand spricht.
 
-Unter etwa 10 aktiven Satelliten wird die GPS-Positionierung unzuverlässig. Der Mäher stoppt nicht — er zögert nur an den Grenzrändern und schleicht manchmal leicht in die Hecke. Ich entdeckte das, weil er sich an bewölkten Morgen seltsam verhielt, und verknüpfte es schließlich mit niedrigen Satellitanzahlen.
+Unter etwa 10 aktiven Satelliten wird die GPS-Positionierung unzuverlässig. Der Mäher stoppt nicht, er zögert nur an den Grenzrändern und schleicht manchmal leicht in die Hecke. Ich entdeckte das, weil er sich an bewölkten Morgen seltsam verhielt, und verknüpfte es schließlich mit niedrigen Satellitenzahlen.
 
 Ich habe über `card_mod` einen Farbschwellenwert auf den Chip gesetzt: Grün über 12, Orange 8-12, Rot unter 8. Jetzt sehe ich auf einen Blick, ob die Bedingungen vor dem geplanten Start gut sind.
 
@@ -51,7 +51,7 @@ Ich habe über `card_mod` einen Farbschwellenwert auf den Chip gesetzt: Grün ü
 
 Der Zeitplaner der Mammotion-App macht eine Sache: Mäher zu festen Zeiten an festen Tagen laufen lassen. Keine Wetterberücksichtigung.
 
-Ich ersetzte ihn vollständig mit HA-Helfern — ein `input_boolean` pro Wochentag, ein `input_number` für die Stunde:
+Ich ersetzte ihn vollständig durch HA-Helfer: ein `input_boolean` pro Wochentag, ein `input_number` für die Stunde:
 
 ```
 input_boolean.flora_montag ... flora_sonntag
@@ -109,27 +109,27 @@ Das Dashboard ist eine Reihe von Umschaltern, einer pro Tag. Man sieht genau, wa
 
 ## Das Vision Module
 
-Igel. In Dänemark ist das die erste Frage, die jeder stellt — und die Antwort ist ja, das Vision Module hält dafür an.
+Igel. In Dänemark ist das die erste Frage, die jeder stellt, und die Antwort ist ja: Das Vision Module hält dafür an.
 
 Es hält auch für einen vergessenen Gartenschlauch, Gartenmöbel und einmal für den Schatten eines Fahnenmastes zu einer bestimmten Tageszeit. Diese letzte Sache dauerte eine Weile herauszufinden. Der Mäher hielt jeden sonnigen Nachmittag um 16:30 Uhr an, meldete kein Hindernis und fuhr nach einer Minute weiter. Es war der Schattenwinkel. Das Modul reagiert auf Kontrastmuster, nicht nur auf physische Objekte.
 
 Mammotion hat das in Firmware-Updates verbessert. Es ist jetzt meistens in Ordnung.
 
-Es gibt keinen HA-Sensor für Vision-Module-Ereignisse — ich kann keine Automatisierungen darauf aufbauen. Das ist eine echte Lücke.
+Es gibt keinen HA-Sensor für Vision-Module-Ereignisse, also kann ich keine Automatisierungen darauf aufbauen. Das ist eine echte Lücke.
 
 ![Floras Vision Module nach dem Hardwareausfall](/blog-images/Hjem_Luba_Defekt.png)
 
-Diesen Frühling, als ich Flora nach ihrem ersten Winter aus der Werkstatt holte, war das Vision Module ausgefallen. Keine schleichende Verschlechterung — über den Winter hatte sich Feuchtigkeit in einem der Kameraobjektive gebildet, wie man auf dem Foto sehen kann. Es hörte einfach auf, etwas zu erkennen.
+Diesen Frühling, als ich Flora nach ihrem ersten Winter aus der Werkstatt holte, war das Vision Module ausgefallen. Keine schleichende Verschlechterung: Über den Winter hatte sich Feuchtigkeit in einem der Kameraobjektive gebildet, wie man auf dem Foto sehen kann. Es hörte einfach auf, etwas zu erkennen.
 
-Ich kontaktierte den Mammotion-Support und erwartete die übliche Troubleshooting-Schleife — Ticket einreichen, Fotos schicken, warten, dieselben Fotos nochmal schicken. So lief es nicht. Sie diagnostizierten das Problem klar und schnell, kommunizierten professionell bei jedem Schritt und schickten ein Ersatzmodul innerhalb weniger Tage, ohne Diskussion. Was besonders auffiel: Sie meldeten sich nach der Lieferung des Ersatzmoduls zurück, um zu fragen ob alles korrekt funktioniert. Diese Art von Nachbetreuung ist bei Hardwareherstellern selten und hat einen echten Unterschied gemacht.
+Ich kontaktierte den Mammotion-Support und erwartete die übliche Troubleshooting-Schleife: Ticket einreichen, Fotos schicken, warten, dieselben Fotos nochmal schicken. So lief es nicht. Sie diagnostizierten das Problem klar und schnell, kommunizierten professionell bei jedem Schritt und schickten ein Ersatzmodul innerhalb weniger Tage, ohne Diskussion. Was besonders auffiel: Sie meldeten sich nach der Lieferung des Ersatzmoduls zurück, um zu fragen, ob alles korrekt funktioniert. Diese Art von Nachbetreuung ist bei Hardwareherstellern selten und hat einen echten Unterschied gemacht.
 
 Das Modul kann ausfallen. Winterlagerung und Kondensation sind eine Kombination, die man im Blick behalten sollte. Aber wenn es passiert, ist man in guten Händen.
 
 ## Was mühsam ist
 
-Die Integration hat ein Latenzproblem. Befehle brauchen 30-60 Sekunden um durchzuschlagen. Ich dachte lange, es sei einfach ein träges API. Nach einem vollen Betriebsjahr mit 4G Network RTK glaube ich, die Erklärung ist struktureller Natur: Floras gesamte Navigationsschleife läuft über Mammotions Cloud. Jede RTK-Korrektur reist über 4G zu deren Servern und zurück — für jede einzelne Positionsbestimmung. Die Cloud ist bereits unter konstantem Last, nur um sie auf Kurs zu halten. HA-Statusabfragen warten in dieser Schlange. Das ist kein Fehler, das ist die Architektur.
+Die Integration hat ein Latenzproblem. Befehle brauchen 30-60 Sekunden, um durchzuschlagen. Ich dachte lange, es sei einfach ein träges API. Nach einem vollen Betriebsjahr mit 4G Network RTK glaube ich, die Erklärung ist struktureller Natur: Floras gesamte Navigationsschleife läuft über Mammotions Cloud. Jede RTK-Korrektur reist für jede einzelne Positionsbestimmung über 4G zu deren Servern und zurück. Die Cloud steht bereits unter konstanter Last, nur um sie auf Kurs zu halten. HA-Statusabfragen warten in dieser Schlange. Das ist kein Fehler, das ist die Architektur.
 
-Auf dem Dashboard ist das trotzdem nervig. Mein Workaround ist ein kleines Skript, das `start_mow` sendet und fünf Sekunden später ein Entity-Refresh erzwingt — genug Zeit damit der Befehl registriert wird, schnell genug damit das Dashboard nicht falsch aussieht:
+Auf dem Dashboard ist das trotzdem nervig. Mein Workaround ist ein kleines Skript, das `start_mow` sendet und fünf Sekunden später ein Entity-Refresh erzwingt. Das ist genug Zeit, damit der Befehl registriert wird, und schnell genug, damit das Dashboard nicht falsch aussieht:
 
 ```yaml
 alias: Flora — Start und Aktualisierung
@@ -144,9 +144,9 @@ sequence:
       entity_id: lawn_mower.flora
 ```
 
-Der "Robot out of task area"-Fehler tritt weiterhin periodisch auf, immer in der Nähe der No-Go-Zonen rund um die Blumenbeete. Meine ursprüngliche Theorie war Mehrwegeausbreitung — GPS-Signale, die an den Hochbeeten reflektiert werden. Nach einer ganzen Saison Beobachtung glaube ich, es ist eine Kombination: Mehrwegeausbreitung erzeugt eine momentane Positionsunsicherheit, und 4G-Latenz verhindert, dass die RTK-Korrektur rechtzeitig ankommt. Wenn das Signal an einem Hochbeet reflektiert wird, braucht Flora sofort eine Korrektur um zu bestätigen, dass sie noch innerhalb der Grenze ist. Hat das Mobilnetz genau in diesem Moment einen Mikro-Einbruch beim Ping, kommt die Korrektur nicht rechtzeitig an und sie stoppt. Zwei Probleme, die gleichzeitig auftreten und sich gegenseitig verstärken.
+Der "Robot out of task area"-Fehler tritt weiterhin periodisch auf, immer in der Nähe der No-Go-Zonen rund um die Blumenbeete. Meine ursprüngliche Theorie war Mehrwegeausbreitung, also GPS-Signale, die an den Hochbeeten reflektiert werden. Nach einer ganzen Saison Beobachtung glaube ich, es ist eine Kombination: Mehrwegeausbreitung erzeugt eine momentane Positionsunsicherheit, und 4G-Latenz verhindert, dass die RTK-Korrektur rechtzeitig ankommt. Wenn das Signal an einem Hochbeet reflektiert wird, braucht Flora sofort eine Korrektur, um zu bestätigen, dass sie noch innerhalb der Grenze ist. Hat das Mobilnetz genau in diesem Moment einen Mikro-Einbruch beim Ping, kommt die Korrektur nicht rechtzeitig an, und sie stoppt. Zwei Probleme, die gleichzeitig auftreten und sich gegenseitig verstärken.
 
-Die eigentliche Lücke ist das Fehlen eines Fehlercode-Sensors in der Integration. Keine Push-Benachrichtigung, wenn sie 20 Minuten lang im Garten feststeht — ich muss die Mammotion-App öffnen, um überhaupt zu merken, dass etwas schiefgelaufen ist. Bis es diesen Sensor gibt, läuft bei mir diese Automatisierung:
+Die eigentliche Lücke ist das Fehlen eines Fehlercode-Sensors in der Integration. Es gibt keine Push-Benachrichtigung, wenn sie 20 Minuten lang im Garten feststeht. Ich muss die Mammotion-App öffnen, um überhaupt zu merken, dass etwas schiefgelaufen ist. Bis es diesen Sensor gibt, läuft bei mir diese Automatisierung:
 
 ```yaml
 alias: Flora — Warnung bei Pause
@@ -163,8 +163,8 @@ action:
       message: "Flora steht seit 10 Minuten auf Pause — bitte Garten prüfen."
 ```
 
-Grob, aber es funktioniert. Sie ist entweder festgefahren oder früher fertig als geplant — beides möchte ich wissen.
+Grob, aber es funktioniert. Sie ist entweder festgefahren oder früher fertig als geplant, und beides möchte ich wissen.
 
-Die anfängliche Grenzeinrichtung erfordert die App — kein Weg daran vorbei. Ist das einmal erledigt, braucht man die App nie wieder. Aber man braucht sie dieses eine Mal.
+Die anfängliche Grenzeinrichtung erfordert die App, daran führt kein Weg vorbei. Ist das einmal erledigt, brauchst du die App nie wieder. Aber dieses eine Mal brauchst du sie.
 
-Insgesamt: mehr als der richtige Entscheid. Flora ist internet-abhängiger als jedes Gartengerät, das ich je besessen habe — die 4G-Abhängigkeit geht tiefer als man anfangs denkt — aber ich bin wirklich begeistert von ihr. Sie ist jetzt Teil des Smart Homes, und das möchte man nicht mehr missen, wenn man es einmal erlebt hat.
+Insgesamt: mehr als die richtige Entscheidung. Flora ist internet-abhängiger als jedes Gartengerät, das ich je besessen habe (die 4G-Abhängigkeit geht tiefer, als man anfangs denkt), aber ich bin wirklich begeistert von ihr. Sie ist jetzt Teil des Smart Homes, und das möchte man nicht mehr missen, wenn man es einmal erlebt hat.

@@ -28,7 +28,7 @@ Das Ganze läuft auf GitHub Actions. Die Tests sind normales Node.js. Keine Drit
 
 GitHubs Cloud-Runner können eine Home-Assistant-Instanz im lokalen Netzwerk nicht erreichen. Die Tests rufen die HA-REST-API und WebSocket direkt auf, daher muss der Runner im gleichen Netzwerk wie HA laufen.
 
-Die Lösung: ein leichtgewichtiger Linux-Container auf dem Proxmox-Host, der bereits HA betreibt. Ein zusätzlicher LXC-Container — Debian 12, 1 vCPU, 512 MB RAM — als self-hosted GitHub-Actions-Runner registriert. Er startet automatisch mit Proxmox und kostet kaum Ressourcen.
+Die Lösung: ein leichtgewichtiger Linux-Container auf dem Proxmox-Host, der bereits HA betreibt. Ein zusätzlicher LXC-Container (Debian 12, 1 vCPU, 512 MB RAM), als self-hosted GitHub-Actions-Runner registriert. Er startet automatisch mit Proxmox und kostet kaum Ressourcen.
 
 Der Runner erhält ein Label (`home-network`), damit der Workflow nur auf Hardware läuft, die HA tatsächlich erreichen kann:
 
@@ -76,7 +76,7 @@ Wenn der Runner registriert und im Leerlauf ist, erscheint er unter **Settings �
 
 ## Zugangsdaten: der richtige Weg
 
-Die Tests benötigen ein langlebiges HA-Token. Der richtige Ansatz ist, es als GitHub-Actions-Secret zu speichern — niemals im Repository hardcoden.
+Die Tests benötigen ein langlebiges HA-Token. Der richtige Ansatz ist, es als GitHub-Actions-Secret zu speichern. Niemals im Repository hardcoden.
 
 In HA: **Profil → Langlebige Zugriffstoken → Token erstellen**
 
@@ -119,7 +119,7 @@ Eine Workflow-Datei, Testdateien unter `tests/ha/` und ein gemeinsamer Helper f�
 └── package.json
 ```
 
-`package.json` benötigt nur `"type": "module"` — keine Test-Framework-Abhängigkeit, da Node's eingebautes `node:test` alles übernimmt.
+`package.json` benötigt nur `"type": "module"`. Eine Test-Framework-Abhängigkeit gibt es nicht, da Node's eingebautes `node:test` alles übernimmt.
 
 ## Den nächtlichen Testlauf mit GitHub Actions planen
 
@@ -134,9 +134,9 @@ on:
 
 ## Was die 22 Home Assistant-Tests prüfen
 
-Die Testsuite verwendet Node's eingebauten `node:test`-Runner — kein Jest, kein Mocha, keine zusätzlichen Abhängigkeiten. Jede Testdatei deckt einen Bereich ab.
+Die Testsuite verwendet Node's eingebauten `node:test`-Runner: kein Jest, kein Mocha, keine zusätzlichen Abhängigkeiten. Jede Testdatei deckt einen Bereich ab.
 
-**Smoke-Test** — antwortet HA überhaupt?
+**Smoke-Test:** Antwortet HA überhaupt?
 
 ```js
 test('HA API ist erreichbar und läuft', async () => {
@@ -147,7 +147,7 @@ test('HA API ist erreichbar und läuft', async () => {
 
 Einfach, aber entscheidend. Wenn HA ausgefallen ist oder das Token abgelaufen ist, schlägt alles andere hier zuerst mit einer klaren Meldung fehl.
 
-**Benachrichtigungsdienste** — existieren die Telefon- und Tablet-Dienste wirklich?
+**Benachrichtigungsdienste:** Existieren die Telefon- und Tablet-Dienste wirklich?
 
 ```js
 test('notify.mobile_app_pixel_10 Dienst existiert', async () => {
@@ -159,7 +159,7 @@ test('notify.mobile_app_pixel_10 Dienst existiert', async () => {
 
 Dies fängt den Fall ab, wo die Companion-App neu installiert wurde, der Gerätename geändert wurde oder die Integration ausgefallen ist. Der Dienst kann ohne sichtbaren Fehler in HA verschwinden.
 
-**Automationen** — sind welche defekt oder versehentlich deaktiviert?
+**Automationen:** Sind welche defekt oder versehentlich deaktiviert?
 
 ```js
 test('keine Automation ist unavailable', async () => {
@@ -171,11 +171,11 @@ test('keine Automation ist unavailable', async () => {
 });
 ```
 
-Es gibt auch spezifische Tests für EV-Ladeautomationen und Mähroboter-Zeitpläne — nicht nur ob sie existieren, sondern ob sie aktiviert sind. Eine versehentlich deaktivierte Automation ist funktional defekt, auch wenn HA sie als gesund anzeigt.
+Es gibt auch spezifische Tests für EV-Ladeautomationen und Mähroboter-Zeitpläne. Sie prüfen nicht nur, ob sie existieren, sondern auch, ob sie aktiviert sind. Eine versehentlich deaktivierte Automation ist funktional defekt, auch wenn HA sie als gesund anzeigt.
 
-**Integrationsspezifische Prüfungen** — sieht die Kamera, was sie soll? Sind alle 5 Tado-Klimazonen vorhanden? Ist der Roborock erreichbar? Jede Integration erhält ihren eigenen Test, der verifiziert, dass die richtigen Entitäten existieren und nicht unavailable sind.
+**Integrationsspezifische Prüfungen:** Sieht die Kamera, was sie soll? Sind alle 5 Tado-Klimazonen vorhanden? Ist der Roborock erreichbar? Jede Integration erhält ihren eigenen Test, der verifiziert, dass die richtigen Entitäten existieren und nicht unavailable sind.
 
-## Der Custom-Cards-Test — der clevere
+## Der Custom-Cards-Test, der clevere
 
 Dies ist der nützlichste Test in der Suite und der, über den ich am frohsten bin.
 
@@ -265,4 +265,4 @@ Keine dieser Situationen wäre offensichtlich geworden, bevor ich genau das brau
 
 Neunundzwanzig Jahre Infrastrukturarbeit bedeuten, dass ich Heimautomatisierung genauso behandle wie Produktionssysteme: Dinge gehen still kaputt, zu ungünstigen Zeiten, und der einzige Weg, es zu wissen bevor es wichtig wird, ist kontinuierliches Prüfen. Ein nächtlicher Testlauf gegen eine Live-HA-Instanz ist das Minimum lebensfähiger Überwachung für ein Setup, von dem man wirklich abhängig ist.
 
-Die Konzepte sind einfach genug, um sie für jedes HA-Setup anzupassen — selbst nur mit dem Smoke-Test und dem Automations-Gesundheitscheck anzufangen, gibt einem etwas Wertvolles.
+Die Konzepte sind einfach genug, um sie für jedes HA-Setup anzupassen. Schon der Smoke-Test und der Automations-Gesundheitscheck allein bringen dir etwas.

@@ -19,15 +19,15 @@ faqs:
 
 <div style="background:rgba(185,28,28,0.15);border:1px solid rgba(239,68,68,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-**API restrictions — May 2026**
+**API restrictions (May 2026)**
 
 VW Group has introduced app attestation requirements, gradually restricting third-party access. The integration partially works, but not fully:
 
-- **Reading data (battery, range, charge status)** — still works via polling
-- **Real-time commands (pre-conditioning, start/stop charging)** — broken since ~7 May via MQTT
-- **Push updates from the car** — broken
+- **Reading data (battery, range, charge status):** still works via polling
+- **Real-time commands (pre-conditioning, start/stop charging):** broken since ~7 May via MQTT
+- **Push updates from the car:** broken
 
-Automations that rely on commands — such as calendar-triggered pre-conditioning — are unreliable. VW has stated that apps without a formal agreement with VW Group Info Services will lose access going forward. The EU Data Act (12 Sept. 2026) may change this legally.
+Automations that rely on commands, such as calendar-triggered pre-conditioning, are unreliable. VW has stated that apps without a formal agreement with VW Group Info Services will lose access going forward. The EU Data Act (12 Sept. 2026) may change this legally.
 
 See [GitHub issues](https://github.com/skodaconnect/homeassistant-myskoda/issues) for the latest status.
 
@@ -39,7 +39,7 @@ See [GitHub issues](https://github.com/skodaconnect/homeassistant-myskoda/issues
 
 In September the MySkoda project announced that the integration stops working in October 2026, when Škoda's old API closes to third-party clients. I removed it on 9 October. Home Assistant 2026.11 then added an [official Škoda integration](https://www.home-assistant.io/integrations/skoda/), which I have not tried.
 
-I've now moved my own Elroq automations to [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), a maintained alternative that already supports Škoda over several channels. If you still run MySkoda, switch now, either to VW Group Connect or to the official integration. The two run side by side fine. Don't expect a drop-in rename, though: entity names differ (`garage_<car_name>_*`, not `skoda_elroq_*`), and at least one enum sensor changes case entirely — MySkoda's `charging_state` is lowercase (`ready_for_charging`), VW Group Connect's equivalent is uppercase (`READY_FOR_CHARGING`). Check every automation's state comparisons by hand; don't assume parity.
+I've now moved my own Elroq automations to [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), a maintained alternative that already supports Škoda over several channels. If you still run MySkoda, switch now, either to VW Group Connect or to the official integration. The two run side by side fine. Don't expect a drop-in rename, though: entity names differ (`garage_<car_name>_*`, not `skoda_elroq_*`), and at least one enum sensor changes case entirely. MySkoda's `charging_state` is lowercase (`ready_for_charging`), VW Group Connect's equivalent is uppercase (`READY_FOR_CHARGING`). Check every automation's state comparisons by hand, and don't assume parity.
 
 </div>
 
@@ -72,7 +72,7 @@ Status after a month: **price per trip** works. October came to 2,830 km, 447 kW
 
 The My Škoda app is fine. It does everything it's supposed to do. But it's one more app that knows something my Home Assistant doesn't, and that bothered me more than it probably should.
 
-The [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) integration (HACS) fixes that. It authenticates with your Škoda Connect account and polls the cloud API. The polling latency is real — commands take 15–60 seconds to reflect — but for most use cases that's fine.
+The [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) integration (HACS) fixes that. It authenticates with your Škoda Connect account and polls the cloud API. The polling latency is real (commands take 15–60 seconds to reflect), but for most use cases that's fine.
 
 ## What the MySkoda integration gives you in Home Assistant
 
@@ -90,11 +90,11 @@ climate.skoda_elroq_air_conditioning   — remote HVAC
 switch.skoda_elroq_charging            — start/stop
 ```
 
-The `climate` entity is the one I use most. Set it to a temperature, call `climate.turn_on`, and the car starts heating or cooling from whatever power source it's connected to. If it's plugged in, it draws from the grid. If not, from the battery — which is why I skip pre-conditioning if the battery is below 30%.
+The `climate` entity is the one I use most. Set it to a temperature, call `climate.turn_on`, and the car starts heating or cooling from whatever power source it's connected to. If it's plugged in, it draws from the grid. If not, it draws from the battery, which is why I skip pre-conditioning if the battery is below 30%.
 
 ## Building the EV dashboard card
 
-I wanted the battery level visible at a glance without taking up much space. The solution is a green gradient behind the card content via `ha-card::after` — it fills the card proportionally to the charge level. The card uses `custom:stack-in-card` and `custom:mushroom-template-card` (both HACS, part of the Mushroom suite), with `card_mod` (HACS) for the CSS:
+I wanted the battery level visible at a glance without taking up much space. The solution is a green gradient behind the card content via `ha-card::after`, which fills the card proportionally to the charge level. The card uses `custom:stack-in-card` and `custom:mushroom-template-card` (both HACS, part of the Mushroom suite), with `card_mod` (HACS) for the CSS:
 
 ```yaml
 type: custom:stack-in-card
@@ -129,9 +129,9 @@ cards:
       {% if soc > 60 %}green{% elif soc > 30 %}orange{% else %}red{% endif %}
 ```
 
-The gradient is subtle — you don't really notice it as a progress bar, it just makes the card feel different at 20% versus 80%. Took a few iterations to get the opacity right so it reads as information without dominating the card.
+The gradient is subtle. You don't really notice it as a progress bar, it just makes the card feel different at 20% versus 80%. Took a few iterations to get the opacity right so it reads as information without dominating the card.
 
-The car icon gets one more layer when `sensor.skoda_elroq_charging_state` is `charging`: a glowing ring that cycles through cyan and green — the same colors as the LED ring on the Elroq's front bumper while it charges. Add a `card_mod` block directly on the mushroom card inside the stack:
+The car icon gets one more layer when `sensor.skoda_elroq_charging_state` is `charging`: a glowing ring that cycles through cyan and green, the same colors as the LED ring on the Elroq's front bumper while it charges. Add a `card_mod` block directly on the mushroom card inside the stack:
 
 ```yaml
     card_mod:
@@ -179,7 +179,7 @@ action:
       temperature: 21
 ```
 
-This works well in winter. In practice it means the car is warm when I leave — genuinely pleasant on cold mornings — and the battery hit is small enough to not matter.
+This works well in winter. In practice it means the car is warm when I leave, which is genuinely pleasant on cold mornings, and the battery hit is small enough to not matter.
 
 One problem: the calendar trigger fires based on the event summary matching exactly. If I rename the event or add something to the title, the condition fails silently and the car doesn't pre-condition. I've had that happen twice. It's a fragile string match and I haven't found a better approach yet.
 
@@ -201,13 +201,13 @@ alerts:
     time_to: "06:00"
 ```
 
-The time window matters — during the day it's off the charger constantly. The alert is only relevant at night when it should be charging. Outside that window it's silent regardless of plug state.
+The time window matters. During the day it's off the charger constantly. The alert is only relevant at night when it should be charging. Outside that window it's silent regardless of plug state.
 
 For automating *when* to charge based on hourly spot prices, [I've written a full guide for Danish EV owners](/en/blog/danish-electricity-prices-ev-charging/).
 
 ## What the MySkoda integration still lacks
 
-The integration doesn't expose charging session data — no kWh added in the current session, no charge history. You can see the current power draw but not how long it's been running or how much it's added. For smart charging automation this is fine; for monitoring your actual charging costs it's a gap.
+The integration doesn't expose charging session data: no kWh added in the current session, no charge history. You can see the current power draw but not how long it's been running or how much it's added. For smart charging automation this is fine. For monitoring your actual charging costs it's a gap.
 
 Door and window state is aggregate. You know if *any* door is unlocked, but not which one. Useful for "did I lock the car" but useless for "which window did I leave open."
 
@@ -215,9 +215,9 @@ For the latency problem specifically: if you're standing next to the car and pre
 
 ## Tracking battery and range over time
 
-After a while, the data I actually wanted wasn't the current state — it was the trend. Is the battery draining overnight? How does range change as the temperature drops?
+After a while, the data I actually wanted wasn't the current state. It was the trend. Is the battery draining overnight? How does range change as the temperature drops?
 
-`custom:apexcharts-card` (HACS) answers both. Battery percentage over 5 days — charging sessions show up as sharp upward spikes, overnight drain as gentle slopes:
+`custom:apexcharts-card` (HACS) answers both. Battery percentage over 5 days, where charging sessions show up as sharp upward spikes and overnight drain as gentle slopes:
 
 ```yaml
 type: custom:apexcharts-card
@@ -295,7 +295,7 @@ series:
     unit: °C
 ```
 
-One thing to watch: the MySkoda integration creates 56 entities. Recording all of them adds up fast — window states, door states, software version, inspection dates. Most change rarely and have no graphing value. Exclude the bulk and keep only what you want to track historically:
+One thing to watch: the MySkoda integration creates 56 entities. Recording all of them adds up fast: window states, door states, software version, inspection dates. Most change rarely and have no graphing value. Exclude the bulk and keep only what you want to track historically:
 
 ```yaml
 recorder:
@@ -310,4 +310,4 @@ recorder:
       - sensor.skoda_elroq_charging_state
 ```
 
-My HA instance runs on [Proxmox VE on a Dell OptiPlex 7060](/en/blog/proxmox-home-assistant-setup/), where snapshot-before-update is a one-click habit — worth reading if you're still on a Pi and wondering whether the move is worth it.
+My HA instance runs on [Proxmox VE on a Dell OptiPlex 7060](/en/blog/proxmox-home-assistant-setup/), where snapshot-before-update is a one-click habit. That post is worth reading if you're still on a Pi and wondering whether the move is worth it.

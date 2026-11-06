@@ -17,7 +17,7 @@ faqs:
 
 **Update, November 2026:** Home Assistant 2026.11 hat die alte Aktion `notify.android_tv_*` als veraltet markiert, ab Version 2027.5 funktioniert sie nicht mehr. Deshalb nutzen die TV-Beispiele jetzt `nfandroidtv.send_message`. HA holt das Bild selbst von der Kamera und schickt es an den TV, die URL mit dem Zeitstempel entfällt also, und `interactive: true` ersetzt `interrupt: 1`. Auch der Satz über die Telefone ist korrigiert, das hat aber nichts mit der neuen Version zu tun. Der Fehler weiter unten trat noch mit der alten Aktion auf, deshalb steht dort weiterhin `notify.android_tv`.
 
-Eine Türklingel mit Kamera haben wir nie installiert. Die Reolink CX810, die auf die Auffahrt zeigt, leistet am Ende mehr als jede Türklingel es getan hätte — ohne Abo, ohne App, und mit dem TV als Benachrichtigungsbildschirm statt einem Handy, auf das man vielleicht gerade nicht schaut.
+Eine Türklingel mit Kamera haben wir nie installiert. Die Reolink CX810, die auf die Auffahrt zeigt, leistet am Ende mehr, als jede Türklingel es getan hätte: ohne Abo, ohne App, und mit dem TV als Benachrichtigungsbildschirm statt einem Handy, auf das man vielleicht gerade nicht schaut.
 
 ## Die Kamera
 
@@ -29,11 +29,11 @@ binary_sensor.sentinel_person
 binary_sensor.sentinel_motion
 ```
 
-Fahrzeug- und Personenerkennung vom eigenen Chip der Kamera sind gut genug, um die offensichtlichen Fehlalarme herauszufiltern — Vögel, Schatten, die Katze. Nicht perfekt, aber der richtige Ausgangspunkt.
+Fahrzeug- und Personenerkennung vom eigenen Chip der Kamera sind gut genug, um die offensichtlichen Fehlalarme herauszufiltern (Vögel, Schatten, die Katze). Nicht perfekt, aber der richtige Ausgangspunkt.
 
 ## Kennzeichenerkennung
 
-Wenn ein Fahrzeug den Sensor auslöst, wartet die Automatisierung 2 Sekunden — lang genug damit das Auto eingefahren und ein Kennzeichen sichtbar ist — nimmt dann einen Snapshot und sendet ihn an `llmvision.image_analyzer` mit einem sehr kurzen, spezifischen Prompt:
+Wenn ein Fahrzeug den Sensor auslöst, wartet die Automatisierung 2 Sekunden, lang genug, damit das Auto eingefahren und ein Kennzeichen sichtbar ist. Dann nimmt sie einen Snapshot und sendet ihn mit einem sehr kurzen, spezifischen Prompt an `llmvision.image_analyzer`:
 
 ```yaml
 message: >
@@ -46,13 +46,13 @@ temperature: 0.1
 
 15 Token. Niedrige Temperatur. Kein Platz zum Schwadronieren. Entweder gibt es ein Kennzeichen zurück oder "none".
 
-Wenn der erste Versuch leer zurückkommt, wartet die Automatisierung weitere 3 Sekunden und versucht es erneut mit einem neuen Snapshot. Zwei Versuche reichen — wenn das Kennzeichen nach zwei Versuchen nicht lesbar ist, liegt es am schlechten Winkel oder Dunkelheit, nicht daran dass das Modell mehr Zeit brauchte.
+Wenn der erste Versuch leer zurückkommt, wartet die Automatisierung weitere 3 Sekunden und versucht es erneut mit einem neuen Snapshot. Zwei Versuche reichen. Wenn das Kennzeichen nach zwei Versuchen nicht lesbar ist, liegt es am schlechten Winkel oder an der Dunkelheit, nicht daran, dass das Modell mehr Zeit brauchte.
 
-Das beste Ergebnis aus einem der beiden Versuche gewinnt. Es wird in `input_text.last_5_plates` als rollende JSON-Liste gespeichert — ein einfaches Protokoll der letzten fünf Kennzeichen, die in die Auffahrt eingefahren sind, mit Zeitstempeln.
+Das beste Ergebnis aus einem der beiden Versuche gewinnt. Es wird in `input_text.last_5_plates` als rollende JSON-Liste gespeichert, also als einfaches Protokoll der letzten fünf Kennzeichen, die in die Auffahrt eingefahren sind, mit Zeitstempeln.
 
 ## Was auf dem TV landet
 
-Eine App macht das auf der TV-Seite möglich: **[Notifications for Android TV](https://play.google.com/store/apps/details?id=de.cyberdream.androidtv.notifications.phone)** (kostenlos, Google Play). Sie betreibt einen kleinen HTTP-Server auf Port 7676, an den die HA-Integration "Notifications for Android TV / Fire TV" postet. Kein Konto, keine Cloud — die Benachrichtigung geht direkt von HA über das lokale Netzwerk zum TV. App installieren, TV-IP notieren, Integration in HA unter Einstellungen → Geräte & Dienste hinzufügen, und man bekommt eine `notify.android_tv_*`-Entität.
+Eine App macht das auf der TV-Seite möglich: **[Notifications for Android TV](https://play.google.com/store/apps/details?id=de.cyberdream.androidtv.notifications.phone)** (kostenlos, Google Play). Sie betreibt einen kleinen HTTP-Server auf Port 7676, an den die HA-Integration "Notifications for Android TV / Fire TV" postet. Kein Konto, keine Cloud: Die Benachrichtigung geht direkt von HA über das lokale Netzwerk zum TV. App installieren, TV-IP notieren, Integration in HA unter Einstellungen → Geräte & Dienste hinzufügen, und du bekommst eine `notify.android_tv_*`-Entität.
 
 `nfandroidtv.send_message` sendet direkt an den TV, mit dieser Entität als Ziel:
 
@@ -68,7 +68,7 @@ data:
   interactive: true
 ```
 
-`interactive: true` zwingt die Benachrichtigung dazu, auch dann zu erscheinen, wenn der TV beschäftigt ist. Das Bild erscheint in der Ecke mit dem Kennzeichentext darunter. Man schaut etwas an, ein Auto fährt ein, ein Miniaturbild erscheint in der Ecke mit dem Kennzeichen — man wirft einen Blick drauf und ignoriert es entweder oder greift zum Handy. Kein Handy in die Hand nehmen zum Nachschauen, keine App öffnen.
+`interactive: true` zwingt die Benachrichtigung dazu, auch dann zu erscheinen, wenn der TV beschäftigt ist. Das Bild erscheint in der Ecke mit dem Kennzeichentext darunter. Du schaust etwas, ein Auto fährt ein, und in der Ecke erscheint ein Miniaturbild mit dem Kennzeichen. Du wirfst einen Blick darauf und ignorierst es entweder oder greifst zum Handy. Kein Handy in die Hand nehmen zum Nachschauen, keine App öffnen.
 
 Die Telefone bekommen ihr eigenes Bild über `notify.mobile_app_*`, mit einem Aufruf pro Gerät.
 
@@ -76,21 +76,21 @@ Personenerkennung bekommt eine einfachere Version: kein ALPR-Versuch, nur eine S
 
 ## Was ich weggelassen habe
 
-Ich habe eine Version ausprobiert die das Kennzeichen per Text-zu-Sprache über den TV-Lautsprecher ansagte. Es funktionierte aber fühlte sich wie eine Abflugtafel am Flughafen an. Die visuelle Benachrichtigung ist diskreter — man sieht sie wenn man hinschaut, übersieht sie wenn nicht, und der TV unterbricht sich nicht selbst um eine Nummer vorzulesen.
+Ich habe eine Version ausprobiert, die das Kennzeichen per Text-zu-Sprache über den TV-Lautsprecher ansagte. Es funktionierte, fühlte sich aber wie eine Abflugtafel am Flughafen an. Die visuelle Benachrichtigung ist diskreter. Du siehst sie, wenn du hinschaust, übersiehst sie, wenn nicht, und der TV unterbricht sich nicht selbst, um eine Nummer vorzulesen.
 
 ## Was zuerst tatsächlich kaputtging
 
-In der ersten Woche lief die TV-Benachrichtigung und hörte dann auf zu funktionieren. Nicht sichtbar — die Automatisierung lief durch, keine Fehler in der Trace, aber der TV zeigte nur Text ohne Bild, und die Telefone bekamen überhaupt nichts.
+In der ersten Woche lief die TV-Benachrichtigung und hörte dann auf zu funktionieren. Nicht sichtbar: Die Automatisierung lief durch, keine Fehler in der Trace, aber der TV zeigte nur Text ohne Bild, und die Telefone bekamen überhaupt nichts.
 
-Das Problem war die Bildgröße. Die nfandroidtv-Integration schickt einen Snapshot an die TV-App via HTTP POST auf Port 7676. Ich verwendete `camera.sentinel_clear` — den Full-Resolution-Feed — der Frames von etwa 1,9 MB produziert. Die TV-App brauchte mehr als 5 Sekunden um das zu verarbeiten. HA traf einen ReadTimeout, brach den Script-Schritt mitten in der Ausführung ab, und die Telefonbenachrichtigungen wurden nie gesendet.
+Das Problem war die Bildgröße. Die nfandroidtv-Integration schickt einen Snapshot an die TV-App via HTTP POST auf Port 7676. Ich verwendete `camera.sentinel_clear`, den Full-Resolution-Feed, der Frames von etwa 1,9 MB produziert. Die TV-App brauchte mehr als 5 Sekunden, um das zu verarbeiten. HA lief in einen ReadTimeout, brach den Script-Schritt mitten in der Ausführung ab, und die Telefonbenachrichtigungen wurden nie gesendet.
 
-Obendrauf war die Integration in einen `failed_unload`-Zustand geraten — wahrscheinlich durch einen HA-Neustart während eines dieser Timeouts. Das Symptom: `notify.android_tv` verschwand zeitweise aus den verfügbaren Services und tauchte dann wieder auf. Die Integration stand als geladen, aber HA hatte ihre Services nicht sauber registriert.
+Obendrauf war die Integration in einen `failed_unload`-Zustand geraten, wahrscheinlich durch einen HA-Neustart während eines dieser Timeouts. Das Symptom: `notify.android_tv` verschwand zeitweise aus den verfügbaren Services und tauchte dann wieder auf. Die Integration stand als geladen, aber HA hatte ihre Services nicht sauber registriert.
 
 Drei Korrekturen der Reihe nach:
 
 **1. Integration löschen und neu erstellen.** Einstellungen → Geräte & Dienste → "Notifications for Android TV / Fire TV" finden → löschen → neu hinzufügen. Das bereinigt den failed_unload-Zustand und registriert `notify.android_tv` sauber neu.
 
-**2. Snapshot-Quelle wechseln.** Beide Snapshot-Schritte in der Automatisierung von `camera.sentinel_clear` auf `camera.sentinel_fluent` umgestellt. Der Fluent-Stream produziert 50–200 KB Frames statt 1,9 MB — klein genug damit die TV-App es in deutlich unter einer Sekunde verarbeitet. Die Bildqualität reicht noch mehr als aus um eine Person zu identifizieren oder ein Kennzeichen bei gutem Licht zu lesen.
+**2. Snapshot-Quelle wechseln.** Beide Snapshot-Schritte in der Automatisierung von `camera.sentinel_clear` auf `camera.sentinel_fluent` umgestellt. Der Fluent-Stream produziert 50–200 KB Frames statt 1,9 MB, klein genug, damit die TV-App sie in deutlich unter einer Sekunde verarbeitet. Die Bildqualität reicht noch mehr als aus, um eine Person zu identifizieren oder ein Kennzeichen bei gutem Licht zu lesen.
 
 **3. `continue_on_error: true` beim TV-Notify-Schritt hinzufügen:**
 
@@ -111,4 +111,4 @@ Wenn der TV einen Timeout hat oder die Integration wieder ausfällt, kommen die 
 
 Diese drei Dinge zusammen haben es gelöst. Der TV zeigt den Snapshot jetzt innerhalb von etwa einer Sekunde, und in den Fällen wo der TV aus ist oder die Integration hakt, bekommen die Telefone immer eine Benachrichtigung, egal was passiert.
 
-**Update, Mai 2026:** Die Kennzeichenerkennung ist rausgeflogen. Die Genauigkeit bei Nacht war nicht zuverlässig genug — Kennzeichen bei ungünstigem Winkel oder bei starkem Regen gaben häufiger "none" zurück als ein echtes Ergebnis, und zwei LLM-Vision-Aufrufe pro Fahrzeugereignis addierten eine Latenz die die Benachrichtigung langsam wirken ließ. Das aktuelle Setup überspringt ALPR komplett: Fahrzeug- oder Personenerkennung → Fluent-Snapshot → TV und Telefone. Die rollende Kennzeichenliste ist weg. Die Kamera, die TV-Integration und der `continue_on_error`-Ansatz sind geblieben. Der KI-Layer nicht.
+**Update, Mai 2026:** Die Kennzeichenerkennung ist rausgeflogen. Die Genauigkeit bei Nacht war nicht zuverlässig genug. Kennzeichen bei ungünstigem Winkel oder bei starkem Regen gaben häufiger "none" zurück als ein echtes Ergebnis, und zwei LLM-Vision-Aufrufe pro Fahrzeugereignis brachten eine Latenz, die die Benachrichtigung langsam wirken ließ. Das aktuelle Setup überspringt ALPR komplett: Fahrzeug- oder Personenerkennung → Fluent-Snapshot → TV und Telefone. Die rollende Kennzeichenliste ist weg. Die Kamera, die TV-Integration und der `continue_on_error`-Ansatz sind geblieben. Der KI-Layer nicht.

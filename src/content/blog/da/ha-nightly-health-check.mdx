@@ -27,7 +27,7 @@ Det hele kører på GitHub Actions. Testene er almindeligt Node.js. Ingen tredje
 
 GitHubs cloud-runnere kan ikke nå en Home Assistant-instans på et lokalt netværk. Testene kalder HA REST API og WebSocket direkte, så runneren skal befinde sig på samme netværk som HA.
 
-Løsningen: en letvægts Linux-container på den Proxmox-vært der allerede kører HA. Én ekstra LXC-container — Debian 12, 1 vCPU, 512 MB RAM — registreret som self-hosted GitHub Actions runner. Den starter automatisk med Proxmox og koster næsten ingen ressourcer.
+Løsningen: en letvægts Linux-container på den Proxmox-vært, der allerede kører HA. Én ekstra LXC-container (Debian 12, 1 vCPU, 512 MB RAM), registreret som self-hosted GitHub Actions runner. Den starter automatisk med Proxmox og koster næsten ingen ressourcer.
 
 Runneren får et label (`home-network`) så workflowet kun nogensinde kører på hardware der faktisk kan nå HA:
 
@@ -75,7 +75,7 @@ Når runneren er registreret og idle, vises den under **Settings → Actions →
 
 ## Legitimationsoplysninger: den rigtige måde
 
-Testene skal bruge et long-lived HA-token. Den korrekte tilgang er at gemme det som en GitHub Actions-hemmelighed — aldrig hardkode det i repositoryet.
+Testene skal bruge et long-lived HA-token. Den korrekte tilgang er at gemme det som en GitHub Actions-hemmelighed. Hardkod det aldrig i repositoryet.
 
 I HA: **Profil → Long-Lived Access Tokens → Opret token**
 
@@ -118,7 +118,7 @@ if (!HA_URL || !HA_TOKEN) throw new Error('HA_URL and HA_TOKEN env vars required
 └── package.json
 ```
 
-`package.json` behøver kun `"type": "module"` — ingen test-framework-afhængighed, da Node's indbyggede `node:test` håndterer det hele.
+`package.json` behøver kun `"type": "module"`. Der er ingen afhængighed af et test-framework, da Node's indbyggede `node:test` håndterer det hele.
 
 ## Planlæg den natlige testkørsel med GitHub Actions
 
@@ -133,9 +133,9 @@ on:
 
 ## Hvad de 22 Home Assistant-tests dækker
 
-Testsuiten bruger Node's indbyggede `node:test`-runner — ingen Jest, ingen Mocha, ingen ekstra afhængigheder. Hver testfil dækker ét område.
+Testsuiten bruger Node's indbyggede `node:test`-runner, så der er ingen Jest, ingen Mocha og ingen ekstra afhængigheder. Hver testfil dækker ét område.
 
-**Smoke-test** — svarer HA overhovedet?
+**Smoke-test:** svarer HA overhovedet?
 
 ```js
 test('HA API er tilgængelig og kører', async () => {
@@ -146,7 +146,7 @@ test('HA API er tilgængelig og kører', async () => {
 
 Simpelt, men afgørende. Hvis HA er nede eller tokenet er udløbet, fejler alt andet her først med en tydelig besked.
 
-**Notifikationstjenester** — eksisterer telefon- og tablet-servicene faktisk?
+**Notifikationstjenester:** eksisterer telefon- og tablet-servicene faktisk?
 
 ```js
 test('notify.mobile_app_pixel_10 service eksisterer', async () => {
@@ -158,7 +158,7 @@ test('notify.mobile_app_pixel_10 service eksisterer', async () => {
 
 Dette fanger tilfældet hvor Companion-appen er geninstalleret, enhedsnavnet er ændret, eller integrationen er droppet. Servicen kan forsvinde uden nogen synlig fejl i HA.
 
-**Automationer** — er nogen ødelagte eller ved et uheld deaktiveret?
+**Automationer:** er nogen ødelagte eller ved et uheld deaktiveret?
 
 ```js
 test('ingen automation er unavailable', async () => {
@@ -170,11 +170,11 @@ test('ingen automation er unavailable', async () => {
 });
 ```
 
-Der er også specifikke tests for EV-opladningsautomationer og plæneklipper-tidsplaner — ikke kun at de eksisterer, men at de er aktiverede. En automation der ved et uheld er slået fra er funktionelt ødelagt selvom HA viser den som sund.
+Der er også specifikke tests for EV-opladningsautomationer og plæneklipper-tidsplaner. De tjekker ikke kun, at de eksisterer, men også at de er aktiverede. En automation, der ved et uheld er slået fra, er funktionelt ødelagt, selvom HA viser den som sund.
 
-**Integrationsspecifikke tjek** — ser kameraet hvad det skal? Er alle 5 Tado-klimazoner til stede? Er Roborock tilgængelig? Hver integration får sin egen test der verificerer at de rigtige entiteter eksisterer og ikke er unavailable.
+**Integrationsspecifikke tjek:** ser kameraet, hvad det skal? Er alle 5 Tado-klimazoner til stede? Er Roborock tilgængelig? Hver integration får sin egen test, der verificerer, at de rigtige entiteter eksisterer og ikke er unavailable.
 
-## Custom-cards-testen — den smarte én
+## Custom-cards-testen er den smarte
 
 Dette er den mest nyttige test i suiten, og den jeg er mest glad for eksisterer.
 
@@ -264,4 +264,4 @@ Ingen af disse ville have været åbenlyse inden jeg specifikt havde brug for de
 
 Ni-og-tyve år med infrastruktur betyder at jeg behandler hjemmeautomatisering på samme måde som produktionssystemer: ting går i stykker stille og roligt, på ubelejlige tidspunkter, og den eneste måde at vide det inden det betyder noget er at tjekke løbende. En nightly testkørsel mod en live HA-instans er minimum levedygtig overvågning for et setup man faktisk er afhængig af.
 
-Koncepterne er enkle nok til at tilpasse til ethvert HA-setup — selv bare at starte med smoke-testen og automationssundhedstjekket giver dig noget værdifuldt.
+Koncepterne er enkle nok til at tilpasse til ethvert HA-setup. Bare det at starte med smoke-testen og automationssundhedstjekket giver dig noget at bygge videre på.
