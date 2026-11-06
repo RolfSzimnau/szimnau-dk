@@ -98,7 +98,7 @@ template:
           {% endif %}
 ```
 
-Wird als `02:00` oder `14:00` auf dem Dashboard angezeigt. Nicht direkt in der Ladeautomatisierung verwendet — die läuft stündlich und entscheidet anhand des aktuellen Preises — aber nützlich zur Überprüfung, ob das Auto zu einer vernünftigen Zeit lädt.
+Wird als `02:00` oder `14:00` auf dem Dashboard angezeigt. Die Ladeautomatisierung hat ihn nie direkt genutzt, weil sie stündlich lief und nach dem aktuellen Preis entschied. Nützlich ist er trotzdem, um zu prüfen, ob das Auto zu einer vernünftigen Zeit lädt.
 
 Die beiden Trigger haben einen Grund. Ein anderer Template-Sensor von mir ging die Preisliste auf dieselbe Weise durch und hörte auf zu aktualisieren, ohne eine einzige Zeile im Log. Über zwei Stunden blieb er auf seinem ersten Wert stehen, während sich die Preise änderten. Ohne Trigger muss Home Assistant selbst erkennen, von welchen Entitäten ein Template abhängt, und bei einer Schleife über die Preisliste ging das schief. Mit Triggern wird der Sensor bei jeder Änderung des Preissensors neu berechnet und sonst alle 15 Minuten.
 

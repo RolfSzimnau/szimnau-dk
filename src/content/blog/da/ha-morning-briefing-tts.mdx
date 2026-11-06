@@ -122,7 +122,7 @@ action:
         {% set maal = states('number.garage_el_rey_charge_target') | int(80) %}
         {% set lader = states('sensor.garage_el_rey_charging_status') %}
         {% set ac = states('climate.garage_el_rey_climate_control') %}
-        {% set rejsetid = states('sensor.rejsetid_arbejde_travel_time') | float(0) | round(0) | int %}
+        {% set rejsetid = states('sensor.rejsetid_arbejde') | float(0) | round(0) | int %}
         {% set normal = states('sensor.rejsetid_arbejde_normal') | float(0) | round(0) | int %}
         God morgen! I dag er det {{ dag }}.
         Temperaturen ude er {{ temp }} grader.

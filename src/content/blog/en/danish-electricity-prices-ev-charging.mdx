@@ -98,7 +98,7 @@ template:
           {% endif %}
 ```
 
-This shows up as `02:00` or `14:00` on the dashboard. Not used directly in the charging automation (that runs every hour and decides based on the current price), but useful for sanity-checking whether the car is charging at a reasonable time.
+This shows up as `02:00` or `14:00` on the dashboard. The charging automation never used it directly, because it ran every hour and decided on the current price. It is still useful for checking that the car charges at a sensible time.
 
 The two triggers are there for a reason. Another template sensor of mine looped over the price list the same way, and it stopped updating without a single line in the log: it kept its first value for more than two hours while the prices moved on. Without triggers, Home Assistant has to work out by itself which entities a template depends on, and with a loop over the price list that went wrong. With triggers the sensor is recalculated every time the price sensor changes, and every 15 minutes regardless.
 
