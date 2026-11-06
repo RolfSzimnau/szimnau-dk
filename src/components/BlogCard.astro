@@ -3,6 +3,7 @@ import type { Lang } from '../i18n/ui';
 import { useTranslations } from '../i18n/utils';
 import { getEntry } from 'astro:content';
 import { readingMinutes } from '../utils/reading-time';
+import { heroSrcset } from '../utils/image-variants';
 
 interface Props {
   lang: Lang;
@@ -28,6 +29,8 @@ const formattedDate = pubDate.toLocaleDateString(
 
 const entry = await getEntry('blog', `${lang}/${slug}`);
 const readTime = readingMinutes(entry?.body);
+const imgSet = await heroSrcset(heroImage);
+const imgSizes = featured ? '(min-width: 768px) 60vw, 100vw' : '(min-width: 1024px) 352px, (min-width: 768px) 50vw, 100vw';
 ---
 
 <article class={`relative glass-card overflow-hidden group flex flex-col h-full hover:border-blue/20 transition-all duration-300 hover:-translate-y-1 ${featured ? 'md:col-span-full md:grid md:grid-cols-5' : ''}`}>
@@ -35,6 +38,8 @@ const readTime = readingMinutes(entry?.body);
     <div class={`w-full overflow-hidden bg-navy-card ${featured ? 'aspect-video md:aspect-auto md:h-full md:min-h-72 md:col-span-3' : 'aspect-video'}`}>
       <img
         src={heroImage}
+        srcset={imgSet}
+        sizes={imgSet ? imgSizes : undefined}
         alt=""
         width={featured ? 800 : 400}
         height={featured ? 450 : 225}

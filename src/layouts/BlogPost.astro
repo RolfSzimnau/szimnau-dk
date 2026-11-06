@@ -6,6 +6,7 @@ import { getCollection, getEntry } from 'astro:content';
 import { useTranslations } from '../i18n/utils';
 import { readingMinutes } from '../utils/reading-time';
 import { heroAspectClass } from '../data/hero-crops';
+import { heroSrcset } from '../utils/image-variants';
 
 interface Props {
   title: string;
@@ -44,6 +45,7 @@ const renderToc = showToc && splitAt >= 0;
 
 const entry = await getEntry('blog', `${lang}/${translationKey}`);
 const minutes = readingMinutes(entry?.body ?? body);
+const heroSet = await heroSrcset(heroImage);
 
 const sameLangPosts = await getCollection('blog', p => p.data.lang === lang && p.data.translationKey !== translationKey);
 const related = sameLangPosts
@@ -122,6 +124,8 @@ const breadcrumbJsonLd = {
     {heroImage && (
       <img
         src={heroImage}
+        srcset={heroSet}
+        sizes={heroSet ? '(min-width: 768px) 720px, 100vw' : undefined}
         alt={title}
         width="768"
         height="432"
