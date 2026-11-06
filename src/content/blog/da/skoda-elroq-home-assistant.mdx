@@ -14,7 +14,7 @@ faqs:
   - question: "Hvad manglede MySkoda-integrationen?"
     answer: "Den kunne ikke styre ladegrænsen og havde ingen live-data og ingen push-notifikationer. Alt foregik ved at spørge skyen med jævne mellemrum. Planlægning af opladning skulle laves med automationer i Home Assistant, ikke i integrationen."
   - question: "Virker MySkoda-integrationen i Home Assistant stadig?"
-    answer: "MySkoda-projektet meddelte, at integrationen holder op med at virke i oktober 2026. Jeg fjernede den fra min Home Assistant 9. oktober 2026 og kører Elroq-automationerne på VW Group Connect. Home Assistant 2026.11 har desuden fået en officiel Škoda-integration, som jeg ikke har afprøvet. Skifter du, så får entiteterne nye navne (garage_<bilnavn>_* i VW Group Connect), og nogle tilstande skrives med store bogstaver, så gennemgå hver automation bagefter."
+    answer: "MySkoda-projektet meddelte, at integrationen ville holde op med at virke i oktober 2026. Jeg fjernede den fra min Home Assistant 9. oktober 2026 og kører Elroq-automationerne på VW Group Connect. Home Assistant 2026.11 har desuden fået en officiel Škoda-integration, som jeg ikke har afprøvet. Skifter du, så får entiteterne nye navne (garage_<bilnavn>_* i VW Group Connect), og nogle tilstande skrives med store bogstaver, så gennemgå hver automation bagefter."
 ---
 
 <div style="background:rgba(185,28,28,0.15);border:1px solid rgba(239,68,68,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
@@ -37,9 +37,9 @@ Se [GitHub-issues](https://github.com/skodaconnect/homeassistant-myskoda/issues)
 
 **Opdatering, november 2026: MySkoda er fjernet**
 
-MySkoda-projektet meddelte i september, at integrationen holder op med at virke, når Škodas gamle API lukker for tredjepartsklienter i oktober 2026. Jeg fjernede den 9. oktober. Home Assistant 2026.11 fik derefter en [officiel Škoda-integration](https://www.home-assistant.io/integrations/skoda/), som jeg ikke har afprøvet.
+MySkoda-projektet meddelte i september, at integrationen ville holde op med at virke, når Škodas gamle API lukkede for tredjepartsklienter i oktober 2026. Jeg fjernede den 9. oktober. Home Assistant 2026.11 fik derefter en [officiel Škoda-integration](https://www.home-assistant.io/integrations/skoda/), som jeg ikke har afprøvet.
 
-Jeg har flyttet mine Elroq-automationer til [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), som bliver vedligeholdt og allerede understøtter Škoda via flere kanaler. Kører du stadig MySkoda, så skift nu, enten til VW Group Connect eller til den officielle integration. De to kan sagtens køre side om side. Regn bare ikke med, at det er en simpel omdøbning. Entiteterne hedder noget andet (`garage_<bilnavn>_*` i stedet for `skoda_elroq_*`), og mindst én sensor skriver sine tilstande på en ny måde: MySkodas `charging_state` bruger små bogstaver (`ready_for_charging`), mens VW Group Connects tilsvarende sensor bruger store (`READY_FOR_CHARGING`). Gå alle sammenligninger i dine automationer igennem i hånden, og gå ikke ud fra, at de passer.
+Jeg har flyttet mine Elroq-automationer til [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), som bliver vedligeholdt og allerede understøtter Škoda via flere kanaler. Kører du stadig MySkoda, så skift nu, enten til VW Group Connect eller til den officielle integration. MySkoda og VW Group Connect kunne sagtens køre side om side, mens jeg skiftede. Regn bare ikke med, at det er en simpel omdøbning. Entiteterne hedder noget andet (`garage_<bilnavn>_*` i stedet for `skoda_elroq_*`), og mindst én sensor skriver sine tilstande på en ny måde: MySkodas `charging_state` bruger små bogstaver (`ready_for_charging`), mens VW Group Connects tilsvarende sensor bruger store (`READY_FOR_CHARGING`). Gå alle sammenligninger i dine automationer igennem i hånden, og gå ikke ud fra, at de passer.
 
 </div>
 
@@ -68,7 +68,7 @@ MySkoda er helt ude af mine dashboards og automationer. Tre ting overraskede mig
 - **Forvarmning før morgenaftaler**, når det er under 5 °C. Under 1 °C tændes rudevarmen også, og under −2 °C sædevarmen.
 - **Besked, hvis bilen står ulåst** i 10 minutter et andet sted end hjemme, med adressen og en «Lås nu»-knap.
 
-Status efter en måned: **Pris pr. tur** virker. Oktober blev til 2.830 km, 447 kWh og cirka 843 kr. efter Home Assistants overslag. **Opladning til 100 %** har kørt, men jeg har endnu ikke haft en lang tur, hvor jeg kunne se bilen nå 100 %. **Forvarmningen før morgenaftaler** har ikke kørt endnu. **Beskeden ved en ulåst bil** og «Lås nu»-knappen er ikke bevist endnu. Jeg opdaterer indlægget, når de tre har været afprøvet i praksis.
+Status efter en måned: **Pris pr. tur** virker. Oktober blev til 2.830 km, 447 kWh og cirka 843 kr. efter Home Assistants overslag. **Opladning til 100 %** har kørt, men jeg har endnu ikke haft en lang tur, hvor jeg kunne se bilen nå 100 %. **Forvarmningen før morgenaftaler** har ikke kørt endnu. **Beskeden ved en ulåst bil** og «Lås nu»-knappen er ikke afprøvet endnu. Jeg opdaterer indlægget, når de tre har været afprøvet i praksis.
 
 Min Škoda var det eneste i huset, der ikke talte med Home Assistant. Alt andet er integreret, enten direkte eller via HACS. Bilen levede sit eget liv i Škodas app, og det irriterede mig. Ikke voldsomt, men nok til at nage.
 

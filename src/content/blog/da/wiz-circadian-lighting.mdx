@@ -24,7 +24,7 @@ Fire WiZ-pærer i stuen: to **WiZ Plafond superslim Ø43cm 22W** loftlamper og t
 
 ## Sol-entiteten
 
-HA's `sun.sun`-entitet har et `elevation`-attribut, som er solens vinkel over (eller under) horisonten i grader. Når solen står højest om sommeren i Danmark, når den op på ca. 55°. Om vinteren kommer den knap over 15°. Ved solopgang og solnedgang er den 0°. Om natten er den negativ.
+HA's `sun.sun`-entitet har et `elevation`-attribut, som er solens vinkel over (eller under) horisonten i grader. Når solen står højest om sommeren i Danmark, når den op på ca. 58°. Om vinteren når den kun cirka 11° op. Ved solopgang og solnedgang er den 0°. Om natten er den negativ.
 
 Det ene tal beskriver kvaliteten af udendørs lys på et givet tidspunkt. Automationen bruger det som input til en farvetemperaturberegning.
 
@@ -98,7 +98,7 @@ repeat:
 
 Skiftet går så langsomt, at du ikke lægger mærke til det. Det, du lægger mærke til, er, at rummet føles rigtigt: friskt og neutralt om dagen, varmere og mere afslappet, når aftenen kommer, og ravfarvet, når du er ved at gå i seng. Overgangen fra 2700K til 2200K i den sidste time før midnat er særligt tydelig, hvis du holder øje med den. Lyset bliver tydeligt orange, og for de fleste er det et signal om at sætte tempoet ned.
 
-Det betyder også, at biograflys-automationen (der sætter 2200K til film) nu passer med det, lysene alligevel ville ende på om aftenen. De to automationer kommer ikke i karambolage. Filmautomationen tager over et stykke tid, og døgnrytme-automationen justerer det, der er tændt, ved næste 30-minutters-tick.
+Det betyder også, at biograflys-automationen (der sætter 2200K til film) nu passer med det, lysene alligevel ville ende på om aftenen. De to automationer konflikter ikke. Filmautomationen tager midlertidigt over, og døgnrytme-automationen justerer det, der er tændt, ved næste 30-minutters-tick.
 
 ## Hvad WiZ gør nativt
 

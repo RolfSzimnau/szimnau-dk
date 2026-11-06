@@ -19,7 +19,7 @@ faqs:
 
 **Opdatering, november 2026**
 
-Automationen i afsnittet om opladning kører ikke længere hos mig. Nu bestemmer min elleverandørs smarte opladning, hvornår bilen lader, for to systemer, der styrer det samme, kommer i vejen for hinanden. Home Assistant bestemmer kun, hvor meget der lades. MySkoda-integrationen er også fjernet, så koden herunder bruger entiteterne fra VW Group Connect. Prisdiagrammet og det billigste vindue bruger jeg stadig hver dag.
+Automationen i afsnittet om opladning kører ikke længere hos mig. Nu bestemmer min elleverandørs smarte opladning, hvornår bilen lader, for to systemer, der styrer det samme, spænder ben for hinanden. Home Assistant bestemmer kun, hvor meget der lades. MySkoda-integrationen er også fjernet, så koden herunder bruger entiteterne fra VW Group Connect. Prisdiagrammet og det billigste vindue bruger jeg stadig hver dag.
 
 </div>
 
@@ -142,7 +142,7 @@ content: >
 
 Logikken: find dagens laveste pris, og udvid tidsrummet med alle tilstødende timer, der ligger højst 25 % over den. Kortet opdaterer sig selv, når sensoren ændrer sig, så der skal ingen separat automation til.
 
-## Automationen, der styrer opladningen
+## Automationen, der styrede opladningen
 
 Automationen brugte `switch.garage_el_rey_charging` fra [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha) til at starte og stoppe opladningen. Udskift `el_rey` med navnet på din egen bil.
 

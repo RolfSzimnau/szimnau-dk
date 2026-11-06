@@ -14,7 +14,7 @@ faqs:
   - question: "What was missing from the MySkoda Home Assistant integration?"
     answer: "The integration could not control charging limits, did not support real-time streaming, and had no push notifications. It relied entirely on polling. Charge scheduling had to be done via Home Assistant automations, not the integration itself."
   - question: "Does the MySkoda Home Assistant integration still work?"
-    answer: "The MySkoda project announced that the integration stops working in October 2026. I removed it from my Home Assistant on 9 October 2026 and run the Elroq automations on VW Group Connect. Home Assistant 2026.11 also added an official Škoda integration, which I have not tried. If you switch, entity names change (garage_<car_name>_* in VW Group Connect) and some states are upper case, so check every automation afterwards."
+    answer: "The MySkoda project announced that the integration would stop working in October 2026. I removed it from my Home Assistant on 9 October 2026 and run the Elroq automations on VW Group Connect. Home Assistant 2026.11 also added an official Škoda integration, which I have not tried. If you switch, entity names change (garage_<car_name>_* in VW Group Connect) and some states are upper case, so check every automation afterwards."
 ---
 
 <div style="background:rgba(185,28,28,0.15);border:1px solid rgba(239,68,68,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
@@ -37,9 +37,9 @@ See [GitHub issues](https://github.com/skodaconnect/homeassistant-myskoda/issues
 
 **Update, November 2026: MySkoda is gone**
 
-In September the MySkoda project announced that the integration stops working in October 2026, when Škoda's old API closes to third-party clients. I removed it on 9 October. Home Assistant 2026.11 then added an [official Škoda integration](https://www.home-assistant.io/integrations/skoda/), which I have not tried.
+In September the MySkoda project announced that the integration would stop working in October 2026, when Škoda's old API closed to third-party clients. I removed it on 9 October. Home Assistant 2026.11 then added an [official Škoda integration](https://www.home-assistant.io/integrations/skoda/), which I have not tried.
 
-I've now moved my own Elroq automations to [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), a maintained alternative that already supports Škoda over several channels. If you still run MySkoda, switch now, either to VW Group Connect or to the official integration. The two run side by side fine. Don't expect a drop-in rename, though: entity names differ (`garage_<car_name>_*`, not `skoda_elroq_*`), and at least one enum sensor changes case entirely. MySkoda's `charging_state` is lowercase (`ready_for_charging`), VW Group Connect's equivalent is uppercase (`READY_FOR_CHARGING`). Check every automation's state comparisons by hand, and don't assume parity.
+I've now moved my own Elroq automations to [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), a maintained alternative that already supports Škoda over several channels. If you still run MySkoda, switch now, either to VW Group Connect or to the official integration. MySkoda and VW Group Connect ran side by side fine while I switched. Don't expect a drop-in rename, though: entity names differ (`garage_<car_name>_*`, not `skoda_elroq_*`), and at least one enum sensor changes case entirely. MySkoda's `charging_state` is lowercase (`ready_for_charging`), VW Group Connect's equivalent is uppercase (`READY_FOR_CHARGING`). Check every automation's state comparisons by hand, and don't assume parity.
 
 </div>
 
@@ -68,7 +68,7 @@ MySkoda is now completely gone from my dashboards and automations. Three things 
 - **Pre-heating before morning appointments** below 5 °C, with window heating below 1 °C and seat heating below −2 °C.
 - **A notification if the car is left unlocked** for 10 minutes away from home, with the address and a Lock now button.
 
-Status after a month: **price per trip** works. October came to 2,830 km, 447 kWh and about 843 kr. by Home Assistant's estimate. **Charging to 100 %** has run, but I have not yet had a long trip where I could see the car reach 100 %. **Pre-heating before morning appointments** has not run yet. **The unlocked-car alert** and its «Lock now» button are not proven yet. I will update the post once those three have been tested for real.
+Status after a month: **price per trip** works. October came to 2,830 km, 447 kWh and about 843 kr. by Home Assistant's estimate. **Charging to 100 %** has run, but I have not yet had a long trip where I could see the car reach 100 %. **Pre-heating before morning appointments** has not run yet. **The unlocked-car alert** and its «Lock now» button have not been tested yet. I will update the post once those three have been tested for real.
 
 The My Škoda app is fine. It does everything it's supposed to do. But it's one more app that knows something my Home Assistant doesn't, and that bothered me more than it probably should.
 
