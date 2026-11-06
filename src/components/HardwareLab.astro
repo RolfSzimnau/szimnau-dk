@@ -1,192 +1,20 @@
 ---
+import fs from 'node:fs';
 import type { Lang } from '../i18n/ui';
 import { useTranslations } from '../i18n/utils';
+import { hardwareGroups } from '../data/hardware';
 
 interface Props {
   lang: Lang;
 }
 
-import fs from 'node:fs';
 const { lang } = Astro.props;
-const iconSvg = (name: string) =>
-  fs.readFileSync(`node_modules/@phosphor-icons/core/assets/regular/${name}.svg`, 'utf-8')
-    .replace('<svg ', '<svg width="24" height="24" aria-hidden="true" focusable="false" ');
 const t = useTranslations(lang);
 
-const hardware = [
-  {
-    name: 'Dell OptiPlex 7060',
-    category: 'Proxmox Host',
-    description: 'Intel i5-8500, 32GB RAM, 500GB NVMe SSD. Runs Proxmox VE as the home server backbone.',
-    status: 'running' as const,
-    icon: 'hard-drives',
-    link: null,
-  },
-  {
-    name: 'Home Assistant OS',
-    category: 'Smart Home Hub',
-    description: 'Running as a Proxmox VM with 4 vCPU and 4GB RAM. The brain of the entire smart home.',
-    status: 'running' as const,
-    icon: 'house-line',
-    link: 'https://www.home-assistant.io',
-  },
-  {
-    name: 'Home Assistant Connect ZBT-2',
-    category: 'Thread & Zigbee Radio',
-    description: 'Dual-radio USB stick running as an OpenThread Border Router. Alongside the Google TV Streamer it forms a redundant Thread mesh. IKEA and other Thread sensors pair directly with HA without a third-party hub.',
-    status: 'running' as const,
-    icon: 'broadcast',
-    link: 'https://www.home-assistant.io/connectzbt2',
-  },
-  {
-    name: 'UniFi Network',
-    category: 'Networking',
-    description: 'UniFi Ultra gateway, 8-port PoE switch, and two APs covering the house, with rock-solid IoT VLAN isolation.',
-    status: 'running' as const,
-    icon: 'network',
-    link: 'https://ui.com',
-  },
-  {
-    name: 'Reolink CX810',
-    category: 'Security Camera',
-    description: '4K PoE camera with AI detection for person, vehicle, and animal. Binary sensors feed HA automations for smart alerts.',
-    status: 'active' as const,
-    icon: 'security-camera',
-    link: 'https://reolink.com',
-  },
-  {
-    name: 'Roborock S5 Max',
-    category: 'Robot Vacuum',
-    description: 'Interactive floor map with room-by-room cleaning control. Custom xiaomi-vacuum-map-card in Lovelace.',
-    status: 'active' as const,
-    icon: 'robot',
-    link: 'https://www.roborock.com',
-  },
-  {
-    name: 'Mammotion Luba Mini 2',
-    category: 'Robotic Lawn Mower',
-    description: 'GPS + RTK boundary mowing without perimeter wire. RTK corrections via iNav NetRTK. Native HA integration with weather-aware scheduling and satellite count monitoring.',
-    status: 'active' as const,
-    icon: 'plant',
-    link: 'https://mammotion.com',
-  },
-  {
-    name: 'Škoda Elroq',
-    category: 'Electric Vehicle',
-    description: 'Integrated via VW Group Connect after moving off MyŠkoda ahead of its October 2026 shutdown: battery state, charging status and range in Home Assistant.',
-    status: 'active' as const,
-    icon: 'car-profile',
-    link: null,
-  },
-  {
-    name: 'Tado Smart Heating',
-    category: 'Climate',
-    description: 'A single zone, auto-discovered in HA, with API quota managed through Tado Hijack. Animated breathing cards on the dashboard.',
-    status: 'running' as const,
-    icon: 'thermometer-simple',
-    link: 'https://www.tado.com',
-  },
-  {
-    name: 'Fresh Intellivent Sky',
-    category: 'Bathroom Ventilation',
-    description: 'Humidity-sensing extractor fan with its own Bluetooth interface. No official HA integration, so it is bridged via a community BLE proxy project, with a staleness-alert automation to catch when the BLE link drops.',
-    status: 'active' as const,
-    icon: 'fan',
-    link: 'https://www.fresh.dk',
-  },
-  {
-    name: 'Sonos',
-    category: 'Audio',
-    description: 'Living room speaker unified with Google Nest Audio via HA scripts and controlled as one multi-room system.',
-    status: 'active' as const,
-    icon: 'speaker-high',
-    link: 'https://www.sonos.com',
-  },
-  {
-    name: 'WiZ Smart Lighting',
-    category: 'Lighting',
-    description: 'Wi-Fi bulbs integrated natively. Used for circadian lighting schedules and TV movie-mode scene automation.',
-    status: 'active' as const,
-    icon: 'lightbulb',
-    link: 'https://www.wizconnected.com',
-  },
-  {
-    name: 'LEDVANCE SMART+',
-    category: 'Lighting',
-    description: 'Matter-compatible bulbs bridged to HA without a separate hub. Solid local control with no cloud dependency.',
-    status: 'active' as const,
-    icon: 'lightbulb-filament',
-    link: 'https://www.ledvance.com',
-  },
-  {
-    name: 'Govee',
-    category: 'LED Lighting',
-    description: 'Bias lighting and LED strips via the Govee Home integration. Scene-synced with media playback.',
-    status: 'active' as const,
-    icon: 'sparkle',
-    link: 'https://www.govee.com',
-  },
-  {
-    name: 'IKEA Home Smart',
-    category: 'Smart Devices',
-    description: 'IKEA Thread sensors running on the shared Thread mesh. Two border routers (HA ZBT-2 and Google TV Streamer) provide redundant routing, so devices pair directly into HA without a separate hub.',
-    status: 'active' as const,
-    icon: 'armchair',
-    link: 'https://www.ikea.com',
-  },
-  {
-    name: 'Bosch Home Connect',
-    category: 'Appliances',
-    description: 'Dishwasher visible in HA via Home Connect. Push notification, plus a button that schedules the cycle for the cheapest electricity hour.',
-    status: 'active' as const,
-    icon: 'drop',
-    link: 'https://www.home-connect.com',
-  },
-  {
-    name: 'Miele',
-    category: 'Appliances',
-    description: 'Washing machine on the core `miele` integration, no HACS. Voice and push alerts when a cycle finishes, plus a homemade scheduling workaround for the delayed-start register Miele doesn\'t expose.',
-    status: 'active' as const,
-    icon: 'washing-machine',
-    link: 'https://www.miele.com',
-  },
-  {
-    name: 'Mill Norway',
-    category: 'Smart Heating',
-    description: 'Wi-Fi panel radiators with native HA integration. Per-room temperature control without a gateway.',
-    status: 'active' as const,
-    icon: 'fire-simple',
-    link: 'https://www.millnorway.com',
-  },
-  {
-    name: 'ESPHome Sensors',
-    category: 'DIY Sensors',
-    description: 'Custom ESP32/ESP8266 sensors for temperature, humidity, and more. Full local control, no cloud.',
-    status: 'active' as const,
-    icon: 'cpu',
-    link: 'https://esphome.io',
-  },
-  {
-    name: 'MailBoxGuard',
-    category: 'LoRa IoT',
-    description: 'PricelessToolkit sensor 200m away via LoRa. Instant push when mail arrives. Running 1+ year on a single battery.',
-    status: 'active' as const,
-    icon: 'envelope-simple',
-    link: 'https://github.com/PricelessToolkit/MailBoxGuard',
-  },
-];
-
-const statusColors = {
-  running: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-  active: 'text-blue bg-blue-glow border-blue/20',
-  testing: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
-};
-
-const statusLabels = {
-  running: t('hardware.status.running'),
-  active: t('hardware.status.active'),
-  testing: t('hardware.status.testing'),
-};
+// Phosphor icons inlined at build time. Never emoji or hand-drawn paths.
+const iconSvg = (name: string, size = 20) =>
+  fs.readFileSync(`node_modules/@phosphor-icons/core/assets/regular/${name}.svg`, 'utf-8')
+    .replace('<svg ', `<svg width="${size}" height="${size}" aria-hidden="true" focusable="false" `);
 ---
 
 <section id="hardware-lab" class="py-24 px-6">
@@ -196,32 +24,39 @@ const statusLabels = {
       <p class="text-text-muted max-w-2xl">{t('hardware.subtitle')}</p>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {hardware.map(device => (
-        <div class="glass-card p-6 group hover:border-blue/20 transition-all duration-300 hover:blue-glow">
-          <div class="flex items-start justify-between mb-4">
-            <span class="flex h-11 w-11 items-center justify-center rounded-xl border border-blue/20 bg-blue-glow text-blue" set:html={iconSvg(device.icon)} />
-            <span class={`font-mono text-[13px] px-2.5 py-1 rounded-full border ${statusColors[device.status]}`}>
-              {statusLabels[device.status]}
-            </span>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {hardwareGroups.map((group, i) => {
+        const wide = i === hardwareGroups.length - 1;
+        return (
+          <div class:list={['glass-card p-6', wide && 'lg:col-span-2']}>
+            <h3 class="font-heading text-lg font-bold text-text-primary mb-1">{group.title[lang]}</h3>
+            <ul class:list={[wide && 'lg:grid lg:grid-cols-2 lg:gap-x-8']}>
+              {group.items.map(item => (
+                <li class:list={['flex gap-3 py-3 border-b border-white/[0.06] last:border-0', wide && 'lg:[&:nth-last-child(2)]:border-0']}>
+                  <span class="text-blue shrink-0 mt-1" aria-hidden="true" set:html={iconSvg(item.icon)} />
+                  <div class="min-w-0">
+                    <h4 class="font-heading font-semibold text-text-primary text-[15px] leading-snug">
+                      {item.link ? (
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="inline-block py-1 hover:text-blue focus-visible:text-blue transition-colors"
+                        >
+                          {item.name}<span class="sr-only"> {t('hardware.vendor')}</span>
+                        </a>
+                      ) : (
+                        <span class="inline-block py-1">{item.name}</span>
+                      )}
+                    </h4>
+                    <p class="text-text-muted text-[15px] leading-relaxed">{item.text[lang]}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
-          <h3 class="font-heading font-bold text-text-primary mb-0.5 group-hover:text-blue transition-colors">
-            {device.name}
-          </h3>
-          <p class="font-mono text-[13px] text-blue mb-3">{device.category}</p>
-          <p class="text-text-muted text-[15px] leading-relaxed">{device.description}</p>
-          {device.link && (
-            <a
-              href={device.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-flex items-center gap-1 mt-2 py-2 text-[13px] text-text-muted hover:text-blue transition-colors font-mono"
-            >
-              vendor site →
-            </a>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   </div>
 </section>
