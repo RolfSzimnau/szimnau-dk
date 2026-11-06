@@ -9,7 +9,7 @@ translationKey: "danish-electricity-prices-ev-charging"
 heroImage: "/blog-images/energi-elpriser.jpg"
 faqs:
   - question: "How do you get hourly electricity spot prices into Home Assistant?"
-    answer: "Through the Energi Data Service integration (HACS) — a free Danish public API with no key required. It exposes sensor.energi_data_service with raw_today and raw_tomorrow attributes; tomorrow's prices appear around 13:00 when the Nord Pool auction settles."
+    answer: "Through the Energi Data Service integration (HACS), a free Danish public API with no key required. It exposes sensor.energi_data_service with raw_today and raw_tomorrow attributes. Tomorrow's prices appear around 13:00 when the Nord Pool auction settles."
   - question: "Does automated spot-price EV charging actually save money?"
     answer: "It did, but only on nights with a large price spread. Some Danish weeks the spread was tiny and the automation made no difference. The bigger saving came from behavioural change: timing the dishwasher and washing machine to the cheapest window. I have since handed the timing to my electricity supplier's smart charging."
 ---
@@ -28,7 +28,7 @@ Home Assistant can see the hourly prices. The rest follows.
 
 ## Energi Data Service
 
-[Energi Data Service](https://www.energidataservice.dk/) is a Danish public utility API — free, no key required. The HA integration pulls today's and tomorrow's hourly spot prices for your price area (DK1 or DK2).
+[Energi Data Service](https://www.energidataservice.dk/) is a Danish public utility API. It's free, and no key is required. The HA integration pulls today's and tomorrow's hourly spot prices for your price area (DK1 or DK2).
 
 Install from HACS, add via Integrations, pick your area. You get:
 
@@ -40,7 +40,7 @@ The `raw_today` and `raw_tomorrow` attributes contain the full 24-hour price arr
 
 ## The chart
 
-`custom:apexcharts-card` (HACS) with a column type is the right call here — each bar holds for a full hour, then steps. I use color thresholds to make the expensive hours obvious at a glance:
+`custom:apexcharts-card` (HACS) with a column type is the right call here: each bar holds for a full hour, then steps. I use color thresholds to make the expensive hours obvious at a glance:
 
 ```yaml
 type: custom:apexcharts-card
@@ -64,7 +64,7 @@ series:
         color: '#f44336'
 ```
 
-Green below 1 DKK, orange up to 1.50, red above. The `concat` handles the case where tomorrow's prices haven't arrived yet — without it the chart breaks silently in the morning.
+Green below 1 DKK, orange up to 1.50, red above. The `concat` handles the case where tomorrow's prices haven't arrived yet. Without it the chart breaks silently in the morning.
 
 ## Finding the cheapest window
 
@@ -104,7 +104,7 @@ The two triggers are there for a reason. Another template sensor of mine looped 
 
 ### As a dashboard card
 
-If you'd rather skip the template sensor entirely, this markdown card computes and shows the cheapest window directly — including both today and tomorrow once tomorrow's prices are live:
+If you'd rather skip the template sensor entirely, this markdown card computes and shows the cheapest window directly, including both today and tomorrow once tomorrow's prices are live:
 
 ```yaml
 type: markdown
@@ -139,7 +139,7 @@ content: >
   💡 Run dishwasher or washing machine midday to save the most
 ```
 
-The logic: find the minimum price for the day, then expand the window to include all adjacent hours within 25% of that minimum. The card re-renders automatically whenever the sensor updates — no separate automation needed.
+The logic: find the minimum price for the day, then expand the window to include all adjacent hours within 25% of that minimum. The card re-renders automatically whenever the sensor updates, so no separate automation is needed.
 
 ## The charging automation
 
@@ -177,7 +177,7 @@ action:
               entity_id: switch.garage_el_rey_charging
 ```
 
-Below 1.00 DKK — charge. Above 1.50 — stop. Between those two numbers — leave it alone. The dead zone between 1.00 and 1.50 is deliberate: without it the switch would toggle on and off every hour when prices hover around the threshold, which isn't good for the charger or the car.
+Below 1.00 DKK: charge. Above 1.50: stop. Between those two numbers: leave it alone. The dead zone between 1.00 and 1.50 is deliberate. Without it the switch would toggle on and off every hour when prices hover around the threshold, which isn't good for the charger or the car.
 
 I also had an `input_boolean` override for mornings when I needed a full charge regardless of price.
 
@@ -185,4 +185,4 @@ I also had an `input_boolean` override for mornings when I needed a full charge 
 
 After the first full month: roughly 28% lower charging cost compared to always-on overnight charging. The savings came almost entirely from the nights with large price spreads. There were weeks where the spread was tiny and the automation made no difference at all.
 
-The thing I didn't expect: it changed how I think about running other appliances. The electricity price chart is now one of the most-checked cards in my dashboard — and I've since added the cheapest window card above, which automatically shows the best time to run the dishwasher or washing machine too. That behavioral change probably adds more savings than the automated EV charging does.
+The thing I didn't expect: it changed how I think about running other appliances. The electricity price chart is now one of the most-checked cards in my dashboard, and I've since added the cheapest window card above, which automatically shows the best time to run the dishwasher or washing machine too. That behavioral change probably adds more savings than the automated EV charging does.

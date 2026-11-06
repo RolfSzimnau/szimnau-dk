@@ -13,10 +13,10 @@ faqs:
   - question: "What does the core Miele integration expose in Home Assistant?"
     answer: "The built-in `miele` integration (HA 2025.5+, no HACS required) exposes program state, program phase, elapsed and remaining time, energy and water consumption forecasts, TwinDos detergent levels, and three buttons: start, stop, and pause."
   - question: "Can Home Assistant schedule a Miele washing machine to start at the cheapest electricity hour?"
-    answer: "Not natively — unlike Bosch's Home Connect, Miele exposes no delayed-start register. The workaround is an input_datetime helper holding the computed start time plus a time-trigger automation that presses the start button when it arrives."
+    answer: "Not natively. Unlike Bosch's Home Connect, Miele exposes no delayed-start register. The workaround is an input_datetime helper holding the computed start time plus a time-trigger automation that presses the start button when it arrives."
 ---
 
-Our washing machine died on a Sunday, which is exactly when appliances die. I didn't shop around much. I picked a Miele partly because ours was actually broken and partly because Miele has had a core Home Assistant integration since HA 2025.5 — no HACS, no third-party maintainer who might disappear. After the [dishwasher](/en/blog/ha-appliances-dashboard/), I assumed I knew what I was getting into.
+Our washing machine died on a Sunday, which is exactly when appliances die. I didn't shop around much. I picked a Miele partly because ours was actually broken and partly because Miele has had a core Home Assistant integration since HA 2025.5: no HACS, no third-party maintainer who might disappear. After the [dishwasher](/en/blog/ha-appliances-dashboard/), I assumed I knew what I was getting into.
 
 I didn't, quite.
 
@@ -43,7 +43,7 @@ That main status sensor has nineteen possible values, which surprised me until I
 
 ## The button that wasn't there
 
-I wanted the same trick as the dishwasher: load a program, tap one button, and let it start whenever [electricity is cheapest](/en/blog/danish-electricity-prices-ev-charging/). On the Bosch side that's a single `select.dishwasher_finish_at` entity — set a time, the machine counts backwards itself.
+I wanted the same trick as the dishwasher: load a program, tap one button, and let it start whenever [electricity is cheapest](/en/blog/danish-electricity-prices-ev-charging/). On the Bosch side that's a single `select.dishwasher_finish_at` entity. Set a time, and the machine counts backwards itself.
 
 Miele has no equivalent. No delay select, no relative-start number. Just three buttons: start, stop, pause. If you want a delayed start, you provide the delay.
 
@@ -77,13 +77,13 @@ actions:
       entity_id: button.washing_machine_start
 ```
 
-A `time` trigger pointed at an `input_datetime` re-reads the helper on every reload, so a restart between now and the scheduled hour doesn't lose the plan — a plain `delay:` step inside a script would.
+A `time` trigger pointed at an `input_datetime` re-reads the helper on every reload, so a restart between now and the scheduled hour doesn't lose the plan. A plain `delay:` step inside a script would.
 
 ![Miele washing machine running card in Home Assistant showing spin phase, remaining time and a stop button](/blog-images/miele-washing-machine-home-assistant.jpg)
 
 ## Buttons that don't exist until you ask nicely
 
-Here's the part that actually stopped me for twenty minutes: `button.washing_machine_start` wasn't in the state machine at all. Not unavailable — genuinely absent, 404 on lookup. It turned out Miele ships all three control buttons **disabled by default** in the entity registry. Someone at Miele decided that letting an automation remotely start a washing machine, unattended, deserves an opt-in, and I think that's a reasonable position for a machine that fills itself with water. I enabled all three and reloaded the config entry, and they appeared — showing `unavailable` until a program is actually loaded, same as the dishwasher's buttons do when idle.
+Here's the part that actually stopped me for twenty minutes: `button.washing_machine_start` wasn't in the state machine at all. Not unavailable, but genuinely absent, 404 on lookup. It turned out Miele ships all three control buttons **disabled by default** in the entity registry. Someone at Miele decided that letting an automation remotely start a washing machine, unattended, deserves an opt-in, and I think that's a reasonable position for a machine that fills itself with water. I enabled all three and reloaded the config entry, and they appeared. They show `unavailable` until a program is actually loaded, same as the dishwasher's buttons do when idle.
 
 ## Two machines, one speaker
 
@@ -93,8 +93,8 @@ Both appliances announce themselves on the [kitchen speaker](/en/blog/ha-morning
 
 There's no percentage-complete sensor. The dishwasher (Bosch/Home Connect) exposes a clean 0–100 progress value; Miele only gives elapsed and remaining minutes. I could compute a percentage myself, but a derived number that isn't actually reported by the machine felt like the wrong thing to put on a dashboard, so the card just shows the phase and the minutes left.
 
-The `binary_sensor.washing_machine_problem` sensor is also frustratingly vague — it flips to `on`, and that's it. No error code, no description. I have a ticker entry for it, and it says "check it," which is honest but not exactly actionable.
+The `binary_sensor.washing_machine_problem` sensor is also frustratingly vague. It flips to `on`, and that's it. No error code, no description. I have a ticker entry for it, and it says "check it," which is honest but not exactly actionable.
 
 I copied the cheapest-hour price lookup from the dishwasher's script almost exactly, including a bug I hadn't noticed until this week: the sensor's `hour` field is a real Python datetime, but once it passes through a script's `variables:` field it becomes a plain string, so a later `selectattr(..., 'eq', best_hour)` against fresh sensor data never matches anything and the notification silently fails. Both scripts store the price separately now instead of re-searching for it.
 
-The newest one is worse than the others. The washing machine powers itself off after about fifteen minutes if it's just sitting there with a program loaded but not started — I found out when a "start at tomorrow's cheapest hour" plan simply vanished from the dashboard the next day, no error, nothing. I went looking for a setting for it in the Miele app. Doesn't exist, as far as I can tell — probably an EU standby-power requirement, not something Miele made configurable. Which means the whole "schedule the cheapest hour a day out" trick dies quietly if that hour is more than about fifteen minutes away. I patched it with an automation that reminds me fifteen minutes beforehand, so I can reload the program before the machine gives up. A workaround, not a fix. If you know a way around this one, I'd genuinely like to hear it.
+The newest one is worse than the others. The washing machine powers itself off after about fifteen minutes if it's just sitting there with a program loaded but not started. I found out when a "start at tomorrow's cheapest hour" plan simply vanished from the dashboard the next day, no error, nothing. I went looking for a setting for it in the Miele app. Doesn't exist, as far as I can tell. It's probably an EU standby-power requirement, not something Miele made configurable. Which means the whole "schedule the cheapest hour a day out" trick dies quietly if that hour is more than about fifteen minutes away. I patched it with an automation that reminds me fifteen minutes beforehand, so I can reload the program before the machine gives up. A workaround, not a fix. If you know a way around this one, I'd genuinely like to hear it.

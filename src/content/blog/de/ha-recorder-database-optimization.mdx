@@ -16,18 +16,18 @@ faqs:
     answer: "Nein. Der Recorder ist nur für den Verlauf im History-Panel und im Energie-Dashboard zuständig. Automatisierungen, Skripte und die aktuellen Zustände auf Lovelace-Karten merken davon nichts, denn sie lesen aus der State Machine und nicht aus der Datenbank."
 ---
 
-Meine Home Assistant SQLite-Datenbank erreichte 963 MB in nur sechs Tagen — etwa 160 MB pro Tag bei einer 5-Tage-Aufbewahrungszeit. Das ist mehr als das Dreifache dessen, was ein gut konfiguriertes Setup erzeugen sollte.
+Meine Home Assistant SQLite-Datenbank erreichte 963 MB in nur sechs Tagen, also etwa 160 MB pro Tag bei einer 5-Tage-Aufbewahrungszeit. Das ist mehr als das Dreifache dessen, was ein gut konfiguriertes Setup erzeugen sollte.
 
 Das Problem war nicht eine einzelne Ursache. Es waren ein Dutzend Home Assistant-Integrationen, die still und leise Zustandsänderungen protokollierten, die niemand jemals im History-Panel nachschlägt. Hier ist die genaue Konfiguration, die das Wachstum auf unter 50 MB pro Tag reduziert hat.
 
 ## Warum die Home Assistant Recorder-Datenbank unbemerkt wächst
 
-Home Assistants Recorder protokolliert standardmäßig jede Zustandsänderung für jede Entität. Das ist das richtige Verhalten für Sensoren, die tatsächlich historisch relevant sind — Temperatur, Energieverbrauch, Anwesenheit. Die meisten Installationen häufen jedoch hunderte von Entitäten an, die keinen historischen Wert haben:
+Home Assistants Recorder protokolliert standardmäßig jede Zustandsänderung für jede Entität. Das ist das richtige Verhalten für Sensoren, die tatsächlich historisch relevant sind: Temperatur, Energieverbrauch, Anwesenheit. Die meisten Installationen häufen jedoch hunderte von Entitäten an, die keinen historischen Wert haben:
 
-- **Interne Integrationsdiagnostik** — Tado exponiert 22 Sensoren, die eigene API-Quoten, Polling-Intervalle und Rate-Limit-Schwellenwerte verfolgen.
-- **Dauerhaft nicht verfügbare Entitäten** — FlightRadar24-Flughafensensoren, die nie online kamen, protokollieren weiterhin Zustandsänderungen.
-- **Update-Entitäten** — 59 Update-Entitäten für Firmware und HACS. Das sind Momentaufnahmen, keine Zeitreihen.
-- **Gerätestatistiken** — UniFi Access Points protokollieren jede Minute CPU- und Speicherauslastung.
+- **Interne Integrationsdiagnostik:** Tado exponiert 22 Sensoren, die eigene API-Quoten, Polling-Intervalle und Rate-Limit-Schwellenwerte verfolgen.
+- **Dauerhaft nicht verfügbare Entitäten:** FlightRadar24-Flughafensensoren, die nie online kamen, protokollieren weiterhin Zustandsänderungen.
+- **Update-Entitäten:** 59 Update-Entitäten für Firmware und HACS. Das sind Momentaufnahmen, keine Zeitreihen.
+- **Gerätestatistiken:** UniFi Access Points protokollieren jede Minute CPU- und Speicherauslastung.
 
 ## Die vollständige Recorder-Konfiguration
 
@@ -78,7 +78,7 @@ Der `include:`-Block überschreibt den `sensor.skoda_elroq_*`-Glob für die drei
 
 **`domains: update`** ist der einfachste Gewinn. Alle Firmware- und HACS-Update-Tracker gehören nicht in die Zeitreihenspeicherung.
 
-**`sensor.tado_szimnau_*`** ist der wirkungsvollste Glob. Die Tado-Integration exponiert detaillierte interne Diagnosesensoren, die sich bei jedem API-Aufruf aktualisieren — mehrmals pro Stunde über mehrere Zonen hinweg.
+**`sensor.tado_szimnau_*`** ist der wirkungsvollste Glob. Die Tado-Integration exponiert detaillierte interne Diagnosesensoren, die sich bei jedem API-Aufruf aktualisieren, mehrmals pro Stunde über mehrere Zonen hinweg.
 
 **`sensor.u6_lite_*` und `sensor.uap_ac_pro_*`** erfassen UniFi Access Point-Diagnostik. CPU- und Speicherauslastung ändern sich jede Minute und erzeugen tausende Datenpunkte pro Woche ohne praktischen Wert.
 
@@ -98,4 +98,4 @@ Die neuen Ausschlüsse treten sofort nach dem Neuladen in Kraft. Historische Dat
 
 ## Was in der Historie behalten werden sollte
 
-Klimasensoren, Energiesensoren, EV-Akku und Reichweite sowie Sicherheitszustände gehören alle in die Historie. Das Ziel ist keine möglichst kleine Datenbank — sondern eine Datenbank, in der jede Zeile ihren Platz verdient.
+Klimasensoren, Energiesensoren, EV-Akku und Reichweite sowie Sicherheitszustände gehören alle in die Historie. Das Ziel ist keine möglichst kleine Datenbank, sondern eine, in der jede Zeile ihren Platz verdient.

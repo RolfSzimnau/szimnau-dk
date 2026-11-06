@@ -10,12 +10,12 @@ translationKey: "ha-glassmorphism-dashboard-design"
 heroImage: "/blog-images/ha-glass-dashboard-cards-2026.jpg"
 faqs:
   - question: "What CSS makes the glassmorphism look work on Home Assistant cards?"
-    answer: "Six card-mod constants on every outer card: 28px border-radius, rgba(255,255,255,0.05) background, blur(15px) backdrop-filter, a 1px rgba(255,255,255,0.10) border and a soft shadow — plus suppressing the Frosted Glass Dark theme's ::before overlay."
+    answer: "Six card-mod constants on every outer card: 28px border-radius, rgba(255,255,255,0.05) background, blur(15px) backdrop-filter, a 1px rgba(255,255,255,0.10) border and a soft shadow. On top of that, suppress the Frosted Glass Dark theme's ::before overlay."
   - question: "Can the glass style be defined once instead of repeated per card?"
-    answer: "Not cleanly without maintaining a custom theme — card-mod styles don't cascade into nested cards reliably, so a snippets.yaml template is pasted per card. CSS custom properties in a theme YAML would be the proper fix."
+    answer: "Not cleanly without maintaining a custom theme. Card-mod styles don't cascade into nested cards reliably, so a snippets.yaml template is pasted per card. CSS custom properties in a theme YAML would be the proper fix."
 ---
 
-I rebuilt my Home Assistant dashboards three times before they looked like they belonged together. The first version was Tailwind-ish flat cards. Fine. The second was too many colors. The third landed on glassmorphism — translucent frosted cards on a deep navy background — and I've left it alone since.
+I rebuilt my Home Assistant dashboards three times before they looked like they belonged together. The first version was Tailwind-ish flat cards. Fine. The second was too many colors. The third landed on glassmorphism (translucent frosted cards on a deep navy background), and I've left it alone since.
 
 What follows is the exact CSS, with the things that tripped me up explained.
 
@@ -40,7 +40,7 @@ And the one you'll miss if nobody tells you:
 ha-card::before { display: none !important; }
 ```
 
-The **Frosted Glass Dark** theme (available in HACS under Themes, and several similar themes) injects a `::before` overlay onto every `ha-card`. If you don't suppress it, your custom background gets a semi-transparent overlay on top. The symptom is that your cards look slightly wrong — slightly too opaque, slightly off-color — and you can't figure out why.
+The **Frosted Glass Dark** theme (available in HACS under Themes, and several similar themes) injects a `::before` overlay onto every `ha-card`. If you don't suppress it, your custom background gets a semi-transparent overlay on top. The symptom is that your cards look slightly wrong (slightly too opaque, slightly off-color), and you can't figure out why.
 
 ## The outer card template
 
@@ -63,7 +63,7 @@ cards:
 
 `custom:stack-in-card` (HACS) is the wrapper. All visual styling lives here. Inner cards get none of it. `card_mod` (also HACS) is what makes the CSS injection possible.
 
-## Inner cards — transparent only
+## Inner cards: transparent only
 
 Cards nested inside the glass wrapper should disappear visually:
 
@@ -113,7 +113,7 @@ card_mod:
     }
 ```
 
-The gradient fades right, so a card at 30% looks different from one at 80% in a way that reads intuitively. I use this for EV battery level, vacuum battery, and mower battery. For maintenance sensors I invert the color logic — near 0% means warning, so I use a red gradient.
+The gradient fades right, so a card at 30% looks different from one at 80% in a way that reads intuitively. I use this for EV battery level, vacuum battery, and mower battery. For maintenance sensors I invert the color logic: near 0% means warning, so I use a red gradient.
 
 ## Map cards
 
@@ -144,7 +144,7 @@ cards:
 
 ## Badge suppression
 
-Mushroom cards show colored badges on certain states — the orange "unavailable" badge when a device is offline is the main offender. It clashes with everything.
+Mushroom cards show colored badges on certain states, and the orange "unavailable" badge when a device is offline is the main offender. It clashes with everything.
 
 ```yaml
 card_mod:
@@ -155,7 +155,7 @@ card_mod:
       }
 ```
 
-The `"."` key is the correct one for mushroom cards in HA 2024+. Not `ha-card`, not the component name — `"."`. I spent longer than I'd like to admit testing other selectors before this one worked.
+The `"."` key is the correct one for mushroom cards in HA 2024+. Not `ha-card`, not the component name, but `"."`. I spent longer than I'd like to admit testing other selectors before this one worked.
 
 ## Achieving visual consistency across HA dashboards
 
@@ -163,6 +163,6 @@ YAML doesn't have variables. Every card that uses the glass treatment gets its o
 
 My workaround: a `snippets.yaml` file sitting in my config folder with the full outer card template as a comment. Paste from there when creating new cards. It's not elegant but it's maintainable.
 
-The right solution is custom CSS properties in the theme — `var(--glass-bg)` defined once, referenced everywhere. This works if you maintain a custom theme YAML. I haven't made that leap yet.
+The right solution is custom CSS properties in the theme: `var(--glass-bg)` defined once, referenced everywhere. This works if you maintain a custom theme YAML. I haven't made that leap yet.
 
-For a full working example of these patterns applied to a real dashboard — glass cards, badge suppression, section dividers — see the [Tado climate dashboard post](/en/blog/tado-home-assistant-dashboard/).
+For a full working example of these patterns applied to a real dashboard (glass cards, badge suppression, section dividers), see the [Tado climate dashboard post](/en/blog/tado-home-assistant-dashboard/).

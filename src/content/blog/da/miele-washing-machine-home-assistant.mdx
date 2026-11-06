@@ -15,7 +15,7 @@ faqs:
     answer: "Ikke direkte. I modsætning til Boschs Home Connect har Miele intet register til udskudt start. Løsningen er en input_datetime-hjælper med det beregnede starttidspunkt og en automation med tidstrigger, der trykker på startknappen, når tiden er inde."
 ---
 
-Den gamle vaskemaskine gav op en søndag. Jeg havde hverken tid eller lyst til at researche i to uger, så det blev en Miele — dels fordi den skulle skiftes akut, dels fordi Miele har haft en officiel core-integration i Home Assistant siden 2025.5. Ingen HACS, ingen tredjeparts-vedligeholder der en dag stopper med at svare på GitHub issues. Efter opvaskemaskinen tænkte jeg at jeg vidste hvad jeg gik ind til.
+Den gamle vaskemaskine gav op en søndag. Jeg havde hverken tid eller lyst til at researche i to uger, så det blev en Miele. Dels skulle den skiftes akut, dels har Miele haft en officiel core-integration i Home Assistant siden 2025.5. Ingen HACS, ingen tredjeparts-vedligeholder, der en dag stopper med at svare på GitHub issues. Efter opvaskemaskinen tænkte jeg, at jeg vidste, hvad jeg gik ind til.
 
 Det gjorde jeg ikke helt.
 
@@ -42,7 +42,7 @@ Hovedsensoren har nitten mulige værdier, hvilket undrede mig indtil jeg fandt u
 
 ## Knappen der ikke var der
 
-Jeg ville have samme trick som på opvaskemaskinen: læg tøj i, vælg program, tryk én knap, og lad den selv finde ud af hvornår strømmen er billigst. På Bosch-siden er det én enkelt `select.dishwasher_finish_at`-entitet — sæt et tidspunkt, og maskinen tæller baglæns selv.
+Jeg ville have samme trick som på opvaskemaskinen: læg tøj i, vælg program, tryk én knap, og lad den selv finde ud af, hvornår strømmen er billigst. På Bosch-siden er det én enkelt `select.dishwasher_finish_at`-entitet. Du sætter et tidspunkt, og maskinen tæller selv baglæns.
 
 Miele har intet tilsvarende. Ingen forsinkelses-select, intet relativt starttidspunkt. Kun tre knapper: start, stop, pause. Vil man have en forsinket start, må man selv levere forsinkelsen.
 
@@ -76,13 +76,13 @@ actions:
       entity_id: button.washing_machine_start
 ```
 
-En `time`-trigger der peger på en `input_datetime` genindlæser helperens værdi ved hver reload — så en genstart mellem nu og det planlagte tidspunkt ødelægger ikke planen. Det ville et almindeligt `delay:`-trin i et script derimod gøre.
+En `time`-trigger, der peger på en `input_datetime`, genindlæser helperens værdi ved hver reload. En genstart mellem nu og det planlagte tidspunkt ødelægger altså ikke planen. Det ville et almindeligt `delay:`-trin i et script derimod gøre.
 
 ![Miele vaskemaskine kort i Home Assistant der viser centrifugeringsfase, resterende tid og en stop-knap](/blog-images/miele-washing-machine-home-assistant.jpg)
 
 ## Knapper der ikke findes, før man beder pænt
 
-Her er det der faktisk stoppede mig i tyve minutter: `button.washing_machine_start` fandtes slet ikke i state machine. Ikke "unavailable" — reelt fraværende, 404 ved opslag. Det viste sig at Miele leverer alle tre kontrolknapper **deaktiveret som standard** i entity-registret. Nogen hos Miele har besluttet at fjernstart af en ubemandet vaskemaskine fortjener et aktivt tilvalg, og det giver egentlig god mening for en maskine der fylder sig selv med vand. Jeg aktiverede alle tre og genindlæste config-entry'en, hvorefter de dukkede op — og viste "unavailable" indtil der reelt lå et program klar, præcis som opvaskemaskinens knapper gør når den er ledig.
+Her er det, der faktisk stoppede mig i tyve minutter: `button.washing_machine_start` fandtes slet ikke i state machine. Ikke "unavailable", men reelt fraværende, 404 ved opslag. Det viste sig, at Miele leverer alle tre kontrolknapper **deaktiveret som standard** i entity-registret. Nogen hos Miele har besluttet, at fjernstart af en ubemandet vaskemaskine fortjener et aktivt tilvalg, og det giver egentlig god mening for en maskine, der fylder sig selv med vand. Jeg aktiverede alle tre og genindlæste config-entry'en, hvorefter de dukkede op. De viste "unavailable", indtil der reelt lå et program klar, præcis som opvaskemaskinens knapper gør, når den er ledig.
 
 ## To maskiner, én højttaler
 
@@ -92,8 +92,8 @@ Begge apparater melder sig på køkkenhøjttaleren når de er færdige. Jeg kopi
 
 Der er ingen procent-færdig-sensor. Opvaskemaskinen (Bosch/Home Connect) giver et pænt tal fra 0 til 100; Miele giver kun forløbne og resterende minutter. Jeg kunne selv udregne en procentsats, men et udledt tal som maskinen faktisk ikke rapporterer selv føltes forkert at sætte på et dashboard, så kortet viser bare fasen og minutterne tilbage.
 
-`binary_sensor.washing_machine_problem` er også frustrerende vag — den går bare til `on`, og det er det. Ingen fejlkode, ingen beskrivelse. Jeg har en ticker-post til den, og den siger "tjek den", hvilket er ærligt men ikke ligefrem handlingsanvisende.
+`binary_sensor.washing_machine_problem` er også frustrerende vag. Den går bare til `on`, og det er det. Ingen fejlkode, ingen beskrivelse. Jeg har en ticker-post til den, og den siger "tjek den", hvilket er ærligt, men ikke ligefrem handlingsanvisende.
 
-Jeg kopierede prisopslaget til billigste time næsten ordret fra opvaskemaskinens script, inklusive en fejl jeg først opdagede i denne uge: sensorens `hour`-felt er reelt et Python-datetime-objekt, men når det passerer gennem et scripts `variables:`-felt bliver det til en almindelig streng — så et senere `selectattr(..., 'eq', best_hour)` mod frisk sensor-data rammer aldrig noget, og notifikationen fejler bare i det stille. Begge scripts gemmer nu prisen separat i stedet for at genfinde den.
+Jeg kopierede prisopslaget til billigste time næsten ordret fra opvaskemaskinens script, inklusive en fejl, jeg først opdagede i denne uge. Sensorens `hour`-felt er reelt et Python-datetime-objekt, men når det passerer gennem et scripts `variables:`-felt, bliver det til en almindelig streng. Så rammer et senere `selectattr(..., 'eq', best_hour)` mod frisk sensor-data aldrig noget, og notifikationen fejler bare i det stille. Begge scripts gemmer nu prisen separat i stedet for at genfinde den.
 
-Den nyeste er værre end de andre. Vaskemaskinen slukker sig selv efter et kvarters tid, hvis den bare står og venter med et valgt program uden at blive startet — jeg opdagede det først da et "start på billigste tidspunkt i morgen" bare var væk fra dashboardet næste dag, uden en eneste fejlmeddelelse undervejs. Jeg har ledt efter en indstilling for det i Miele-appen. Findes ikke, så vidt jeg kan se — formentlig et EU-krav om standby-forbrug, ikke noget Miele har gjort konfigurerbart. Det betyder at hele "planlæg billigste time et døgn frem"-tricket dør stille, hvis det billigste tidspunkt ligger mere end et kvarter væk. Jeg har lappet det med en automation der minder mig femten minutter før, så jeg selv når at vælge programmet igen inden maskinen giver op. En nødløsning, ikke en løsning. Ved du et trick til at komme udenom, hører jeg meget gerne om det.
+Den nyeste er værre end de andre. Vaskemaskinen slukker sig selv efter et kvarters tid, hvis den bare står og venter med et valgt program uden at blive startet. Jeg opdagede det først, da et "start på billigste tidspunkt i morgen" bare var væk fra dashboardet næste dag, uden en eneste fejlmeddelelse undervejs. Jeg har ledt efter en indstilling for det i Miele-appen. Den findes ikke, så vidt jeg kan se. Formentlig er det et EU-krav om standby-forbrug og ikke noget, Miele har gjort konfigurerbart. Det betyder, at hele "planlæg billigste time et døgn frem"-tricket dør stille, hvis det billigste tidspunkt ligger mere end et kvarter væk. Jeg har lappet det med en automation, der minder mig om det femten minutter før, så jeg selv når at vælge programmet igen, inden maskinen giver op. En nødløsning, ikke en løsning. Ved du et trick til at komme udenom, hører jeg meget gerne om det.

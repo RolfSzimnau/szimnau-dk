@@ -15,7 +15,7 @@ faqs:
     answer: "Nicht sauber, ohne ein eigenes Theme zu pflegen. card-mod-Stile werden nicht zuverlässig an verschachtelte Karten vererbt, also wird eine Vorlage aus snippets.yaml in jede Karte kopiert. Richtig wäre es mit CSS-Variablen in einem Theme in YAML."
 ---
 
-Ich habe meine Home Assistant-Dashboards dreimal neu gebaut, bevor sie so aussahen, als würden sie zusammengehören. Die erste Version waren flache Karten. Okay. Die zweite hatte zu viele Farben. Die dritte landete bei Glassmorphism — halbtransparente Karten auf tiefem Marineblau — und die habe ich seitdem nicht mehr angetastet.
+Ich habe meine Home Assistant-Dashboards dreimal neu gebaut, bevor sie so aussahen, als würden sie zusammengehören. Die erste Version waren flache Karten. Okay. Die zweite hatte zu viele Farben. Die dritte landete bei Glassmorphism, also halbtransparenten Karten auf tiefem Marineblau, und die habe ich seitdem nicht mehr angetastet.
 
 Was folgt ist das genaue CSS, mit Erklärungen zu den Stellen, die mich stolpern ließen.
 
@@ -40,7 +40,7 @@ Und die Zeile, die man verpasst, wenn niemand es einem sagt:
 ha-card::before { display: none !important; }
 ```
 
-Das **Frosted Glass Dark** Theme (im HACS unter Themes verfügbar, und mehrere ähnliche) injiziert ein `::before`-Overlay auf jede `ha-card`. Unterdrückt man es nicht, liegt ein halbtransparentes Layer über dem eigenen Hintergrund. Das Symptom: die Karten sehen leicht falsch aus — leicht zu undurchsichtig, leicht in der Farbe verändert — und man findet nicht heraus warum. Ich suchte eine Weile an der falschen Stelle, bevor ich darauf kam.
+Das **Frosted Glass Dark** Theme (im HACS unter Themes verfügbar, und mehrere ähnliche) injiziert ein `::before`-Overlay auf jede `ha-card`. Unterdrückst du es nicht, liegt ein halbtransparenter Layer über dem eigenen Hintergrund. Das Symptom: Die Karten sehen leicht falsch aus, etwas zu undurchsichtig, etwas farbverschoben, und du findest nicht heraus, warum. Ich suchte eine Weile an der falschen Stelle, bevor ich darauf kam.
 
 ## Die äußere Karten-Vorlage
 
@@ -61,9 +61,9 @@ cards:
   # Inhalt hier
 ```
 
-`custom:stack-in-card` (HACS) ist die Umhüllung — `card_mod` (HACS) liefert die CSS-Injektion. Alle visuellen Styles leben hier. Innere Karten bekommen nichts davon.
+`custom:stack-in-card` (HACS) ist die Umhüllung, `card_mod` (HACS) liefert die CSS-Injektion. Alle visuellen Styles leben hier. Innere Karten bekommen nichts davon.
 
-## Innere Karten — nur Transparenz
+## Innere Karten: nur Transparenz
 
 In die Glasumhüllung verschachtelte Karten sollen visuell verschwinden:
 
@@ -113,7 +113,7 @@ card_mod:
     }
 ```
 
-Der Verlauf verblasst nach rechts, sodass eine Karte bei 30% anders aussieht als eine bei 80% — auf eine Weise, die intuitiv lesbar ist. Ich verwende das für EV-Akku, Staubsauger-Akku und Mäher-Akku. Bei Wartungssensoren invertiere ich die Farblogik — nahe 0% bedeutet Warnung, also roter Verlauf.
+Der Verlauf verblasst nach rechts, sodass eine Karte bei 30% anders aussieht als eine bei 80%, und das ist intuitiv lesbar. Ich verwende das für EV-Akku, Staubsauger-Akku und Mäher-Akku. Bei Wartungssensoren invertiere ich die Farblogik: Nahe 0% bedeutet Warnung, also roter Verlauf.
 
 ## Kartenkarten
 
@@ -144,7 +144,7 @@ cards:
 
 ## Badge-Unterdrückung
 
-Mushroom-Karten zeigen farbige Badges bei bestimmten Zuständen — das orange "nicht verfügbar" Badge bei einem offline Gerät ist der häufigste Störenfried.
+Mushroom-Karten zeigen farbige Badges bei bestimmten Zuständen. Das orange "nicht verfügbar"-Badge bei einem Gerät, das offline ist, ist der häufigste Störenfried.
 
 ```yaml
 card_mod:
@@ -155,7 +155,7 @@ card_mod:
       }
 ```
 
-Der `"."`-Schlüssel ist der richtige für Mushroom-Karten in HA 2024+. Nicht `ha-card`, nicht der Komponentenname — `"."`. Ich testete deutlich zu viele andere Selektoren, bevor dieser funktionierte.
+Der `"."`-Schlüssel ist der richtige für Mushroom-Karten in HA 2024+. Nicht `ha-card`, nicht der Komponentenname, sondern `"."`. Ich testete deutlich zu viele andere Selektoren, bevor dieser funktionierte.
 
 ## Visuelle Konsistenz in HA-Dashboards erreichen
 
@@ -163,4 +163,4 @@ YAML hat keine Variablen. Jede Karte mit Glasbehandlung bekommt ihre eigene Kopi
 
 Mein Workaround: eine lokale `snippets.yaml`-Datei mit der vollständigen äußeren Karten-Vorlage als Kommentarblock. Beim Erstellen neuer Karten von dort einfügen. Nicht elegant, aber wartbar.
 
-Die richtige Lösung wären CSS Custom Properties im Theme — `var(--glass-bg)` einmal definiert, überall referenziert. Das funktioniert heute, wenn das Theme sie definiert. Diesen Schritt habe ich noch nicht gemacht.
+Die richtige Lösung wären CSS Custom Properties im Theme: `var(--glass-bg)` einmal definiert, überall referenziert. Das funktioniert heute, wenn das Theme sie definiert. Diesen Schritt habe ich noch nicht gemacht.

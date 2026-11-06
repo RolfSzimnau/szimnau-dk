@@ -28,7 +28,7 @@ Home Assistant kann die Stundenpreise sehen. Der Rest ergibt sich von selbst.
 
 ## Energi Data Service
 
-[Energi Data Service](https://www.energidataservice.dk/) ist eine kostenlose dänische Behörden-API — kein Schlüssel erforderlich. Die HA-Integration holt die heutigen und morgigen Stundenpreise für das eigene Preisgebiet (DK1 oder DK2).
+[Energi Data Service](https://www.energidataservice.dk/) ist eine kostenlose dänische Behörden-API, für die du keinen Schlüssel brauchst. Die HA-Integration holt die heutigen und morgigen Stundenpreise für das eigene Preisgebiet (DK1 oder DK2).
 
 HACS installieren, über Integrationen hinzufügen, Gebiet auswählen. Man bekommt:
 
@@ -40,7 +40,7 @@ Die Attribute `raw_today` und `raw_tomorrow` enthalten die vollständigen 24-Stu
 
 ## Das Diagramm
 
-`custom:apexcharts-card` (HACS) mit Column-Typ ist hier das Richtige — jede Spalte hält für eine volle Stunde, dann springt sie. Farbschwellenwerte machen die teuren Stunden sofort erkennbar:
+`custom:apexcharts-card` (HACS) mit Column-Typ ist hier das Richtige: Jede Spalte hält für eine volle Stunde, dann springt sie. Farbschwellenwerte machen die teuren Stunden sofort erkennbar:
 
 ```yaml
 type: custom:apexcharts-card
@@ -64,7 +64,7 @@ series:
         color: '#f44336'
 ```
 
-Grün unter 1 DKK, Orange bis 1,50, Rot darüber. Das `concat` behandelt den Fall, dass die morgigen Preise noch nicht verfügbar sind — ohne es scheitert das Diagramm lautlos am Vormittag.
+Grün unter 1 DKK, Orange bis 1,50, Rot darüber. Das `concat` behandelt den Fall, dass die morgigen Preise noch nicht verfügbar sind. Ohne es scheitert das Diagramm am Vormittag lautlos.
 
 ## Das günstigste Fenster finden
 
@@ -139,7 +139,7 @@ content: >
   💡 Spülmaschine oder Waschmaschine mittags starten, um am meisten zu sparen
 ```
 
-Die Logik: Minimumspreis für den Tag finden, dann das Fenster auf alle benachbarten Stunden innerhalb von 25% dieses Minimums ausweiten. Die Karte wird automatisch aktualisiert, sobald sich der Sensor ändert — keine separate Automatisierung nötig.
+Die Logik: Minimumspreis für den Tag finden, dann das Fenster auf alle benachbarten Stunden innerhalb von 25% dieses Minimums ausweiten. Die Karte wird automatisch aktualisiert, sobald sich der Sensor ändert. Eine separate Automatisierung ist nicht nötig.
 
 ## Die Ladeautomatisierung
 
@@ -177,7 +177,7 @@ action:
               entity_id: switch.garage_el_rey_charging
 ```
 
-Unter 1,00 DKK — laden. Über 1,50 DKK — stoppen. Dazwischen — nichts ändern. Die Todeszone ist absichtlich: ohne sie würde der Schalter jede Stunde hin und her schalten, wenn die Preise um den Schwellenwert schweben.
+Unter 1,00 DKK: laden. Über 1,50 DKK: stoppen. Dazwischen: nichts ändern. Die Totzone ist Absicht. Ohne sie würde der Schalter jede Stunde hin und her schalten, wenn die Preise um den Schwellenwert schweben.
 
 Dazu gab es damals einen `input_boolean`, mit dem ich an Morgen, an denen ich unabhängig vom Preis einen vollen Akku brauchte, das Laden erzwingen konnte.
 
@@ -185,4 +185,4 @@ Dazu gab es damals einen `input_boolean`, mit dem ich an Morgen, an denen ich un
 
 Erster vollständiger Monat: ca. 28% niedrigere Ladekosten im Vergleich zu dauerhaftem Nachtladen. Die Einsparungen kamen fast ausschließlich aus den Nächten mit großen Preisspreads. In manchen Wochen war der Spread gering, und die Automatisierung machte keinen Unterschied.
 
-Was ich nicht erwartet hatte: Es veränderte, wie ich über andere Geräte nachdenke. Das Strompreisdiagramm ist jetzt eine der meistgeprüften Karten auf meinem Dashboard — und ich habe seitdem die Fenster-Karte oben hinzugefügt, die automatisch die beste Zeit zum Betrieb von Spülmaschine oder Waschmaschine anzeigt. Diese Verhaltensänderung spart wahrscheinlich mehr als das automatisierte Laden selbst.
+Was ich nicht erwartet hatte: Es veränderte, wie ich über andere Geräte nachdenke. Das Strompreisdiagramm ist jetzt eine der meistgeprüften Karten auf meinem Dashboard, und ich habe seitdem die Fenster-Karte oben hinzugefügt, die automatisch die beste Zeit zum Betrieb von Spülmaschine oder Waschmaschine anzeigt. Diese Verhaltensänderung spart wahrscheinlich mehr als das automatisierte Laden selbst.

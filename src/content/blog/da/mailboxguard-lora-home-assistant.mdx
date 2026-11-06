@@ -13,7 +13,7 @@ faqs:
     answer: "Nej, den er udgået og afløst af PirBOX-LITE og PirBOX-MAX, som bygger på samme idé med bedre hardware. Har du allerede en MailBoxGuard, virker den præcis som beskrevet."
 ---
 
-Min postkasse er 200 meter fra huset, for enden af indkørslen. Det er ikke det store problem at gå ud og tjekke — men at gøre det i regnen og finde ingenting, er det.
+Min postkasse er 200 meter fra huset, for enden af indkørslen. Det er ikke så slemt at gå derud og tjekke. Det er værre at gøre det i regnvejr og finde en tom postkasse.
 
 Dansk postlevering er uregelmæssig nok til, at jeg aldrig kan forudsige, hvornår der er noget. Jeg havde brug for en sensor. Problemet er, at 200 meter er for langt til Zigbee, Z-Wave, Bluetooth og de fleste Wi-Fi-løsninger. Ingen af dem rækker pålideligt på den afstand igennem træer og en havemur.
 
@@ -21,23 +21,23 @@ LoRa gør.
 
 ## Hardwaret
 
-**MailBoxGuard** er en komplet, selvstændig enhed fra PricelessToolkit — ikke et bart PCB, men en færdig vejrbestandig kapsel designet til at leve inde i en postkasse. Elektronikken er bygget op om en ATtiny1616 med en integreret reedkontakt til dørdetektering, en valgfri AM312 PIR-sensor til bevægelse (jeg deaktiverede den — for mange falske positiver fra biler på vejen) og USB-C-opladning på et enkelt 14500 Li-Ion-batteri.
+**MailBoxGuard** er en komplet, selvstændig enhed fra PricelessToolkit. Det er ikke et bart printkort, men en færdig, vejrbestandig kapsel, der er lavet til at sidde inde i en postkasse. Elektronikken er bygget op om en ATtiny1616 med en integreret reedkontakt til dørdetektering, en valgfri AM312 PIR-sensor til bevægelse (jeg slog den fra, fordi biler på vejen gav for mange falske alarmer) og USB-C-opladning på et enkelt 14500 Li-Ion-batteri.
 
 ![MailBoxGuard systemdiagram med sensordelen, LoRa-node og Meshtastic gateway-muligheder](/blog-images/mailboxguard-product.jpg)
 
 Formfaktoren er vigtig. Den trådfriheds-formede kapsel er designet specifikt til ikke at hænge fast i breve og pakker. Den monteres plant mod postkassens inderside og antennen er integreret i kapslen, så den ikke stikker ud i postspalten.
 
-Til gatewayen købte jeg et LilyGo TTGO LoRa32-board på AliExpress — under 200 kr., kører på 868 MHz i Danmark. Jeg programmerede det med Arduino IDE ved hjælp af firmware fra PricelessToolkits dokumentation. Opsætningen tog en eftermiddag. Siden da har jeg ikke rørt det.
+Til gatewayen købte jeg et LilyGo TTGO LoRa32-board på AliExpress til under 200 kr. Det kører på 868 MHz i Danmark. Jeg programmerede det med Arduino IDE ved hjælp af firmware fra PricelessToolkits dokumentation. Opsætningen tog en eftermiddag. Siden da har jeg ikke rørt det.
 
 ## Hvorfor LoRa på 200 meter
 
 Jeg forsøgte mig med Zigbee først. En Sonoff Zigbee-dongle ved huset, en netstromsforsynet repeater halvvejs ned ad indkørslen. Modtagelsen var ustabil, og repeateren krævede sin egen stikkontakt. Det er for meget infrastruktur til én sensor, der bare skal sige "døren er åbnet."
 
-LoRa på 868 MHz går igennem træer, hæk og havemur med god margin. TTGO LoRa32 viser RSSI-værdier på ca. -90 til -100 dBm fra postkassen — stabilt nok til, at jeg ikke har haft én manglende notifikation på over et år.
+LoRa på 868 MHz går igennem træer, hæk og havemur med god margin. TTGO LoRa32 viser RSSI-værdier på ca. -90 til -100 dBm fra postkassen. Det er stabilt nok til, at jeg ikke har mistet én eneste notifikation på over et år.
 
 ## Firmware og MQTT
 
-Den firmwarevariant jeg brugte sender MQTT-beskeder med Home Assistant autodiscovery-payloads. Du skal bruge en MQTT-broker — **Mosquitto broker**-add-on'en håndterer det: installer den fra HA's Add-on Store (Indstillinger → Add-ons → søg Mosquitto), tilføj derefter MQTT-integrationen under Integrationer. Når postkassedøren åbnes:
+Den firmwarevariant, jeg brugte, sender MQTT-beskeder med Home Assistant autodiscovery-payloads. Du skal bruge en MQTT-broker, og det klarer **Mosquitto broker**-add-on'en: installer den fra HA's Add-on Store (Indstillinger → Add-ons → søg Mosquitto), og tilføj derefter MQTT-integrationen under Integrationer. Når postkassedøren åbnes:
 
 ```
 homeassistant/binary_sensor/mailboxguard/state → ON
@@ -45,7 +45,7 @@ homeassistant/binary_sensor/mailboxguard/state → ON
 
 HA opfanger dette automatisk og opretter en `binary_sensor.mailboxguard`-entitet. Ingen manuel YAML-konfiguration på HA-siden.
 
-ATtiny1616 sidder i dyb dvale. Når reedkontakten udløses, vågner den, sender LoRa-pakken og falder til søvn igen på under et sekund. Det enkelt sendetrin på 65 mikroampere er det eneste meningsfulde strømforbrug. Standbyforbrug i reedkontakt-only tilstand er 280 nanoampere — og dermed det årelange batteriliv.
+ATtiny1616 sidder i dyb dvale. Når reedkontakten udløses, vågner den, sender LoRa-pakken og falder til søvn igen på under et sekund. Den ene sending på 65 mikroampere er det eneste strømforbrug, der betyder noget. I standby med kun reedkontakten aktiv bruger den 280 nanoampere, og derfor holder batteriet i over et år.
 
 ## Home Assistant-automation
 
@@ -65,7 +65,7 @@ action:
       message: "Der er kommet post."
 ```
 
-`notify.alle_enheder` er min notifikationsgruppe, der rammer begge telefoner simultant. Notifikationen har aldrig udløst et falskt positiv. En reedkontakt er binær — der er ingen tvetydighed om, hvorvidt døren er åben eller lukket.
+`notify.alle_enheder` er min notifikationsgruppe, der rammer begge telefoner på samme tid. Notifikationen har aldrig givet en falsk alarm. En reedkontakt er binær, så der er ingen tvivl om, hvorvidt døren er åben eller lukket.
 
 ## Installation
 
@@ -75,6 +75,6 @@ TTGO LoRa32 ved huset sidder kastet ind i et IKEA-skab, hvor jeg har alt mit uds
 
 ## Én ting at vide
 
-PricelessToolkit har udgået MailBoxGuard til fordel for de nyere PirBOX-LITE og PirBOX-MAX. Det er dem, der er aktuelle hvis du køber nyt — samme koncept, forbedret hardware, flere konfigurationsmuligheder. Finder du en MailBoxGuard på lager, virker den præcis som beskrevet her.
+PricelessToolkit er holdt op med at lave MailBoxGuard og satser i stedet på de nyere PirBOX-LITE og PirBOX-MAX. Det er dem, der er aktuelle, hvis du køber nyt: samme koncept, forbedret hardware, flere konfigurationsmuligheder. Finder du en MailBoxGuard på lager, virker den præcis som beskrevet her.
 
 Mit eksemplar har kørt siden før udgangen. Urokkelig stabilt.
