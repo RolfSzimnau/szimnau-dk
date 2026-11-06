@@ -3,6 +3,7 @@ title: "Home Assistant Recorder: Datenbankwachstum von 160 MB/Tag auf unter 50 M
 seoTitle: "Home Assistant Recorder: von 160 MB/Tag auf unter 50 MB"
 description: "Meine HA SQLite-Datenbank: 963 MB in sechs Tagen. Die exakte Recorder-Konfiguration, die das tägliche Wachstum um über 70 % senkt, mit YAML."
 pubDate: 2026-05-31
+updatedDate: 2026-11-05
 verifiedOn: "HA 2026.7"
 tags: ["wartung"]
 lang: "de"
@@ -71,7 +72,7 @@ recorder:
       - sensor.skoda_elroq_charging_state
 ```
 
-Der `include:`-Block überschreibt den `sensor.skoda_elroq_*`-Glob für die drei Entitäten, die ich tatsächlich im History-Panel verfolge.
+Der `include:`-Block überschreibt den `sensor.skoda_elroq_*`-Glob für die drei Entitäten, die ich tatsächlich im History-Panel verfolge. Die Entitätsnamen stammen von MySkoda, das ich inzwischen entfernt habe. Mit VW Group Connect heißen sie `sensor.garage_<autoname>_*`, das Muster bleibt gleich.
 
 ## Begründung der Ausschlüsse
 

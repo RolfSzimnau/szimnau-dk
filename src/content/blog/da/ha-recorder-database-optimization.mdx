@@ -3,6 +3,7 @@ title: "Home Assistant Recorder: Sådan reducerede jeg databasevæksten fra 160 
 seoTitle: "Home Assistant Recorder: fra 160 MB/dag til under 50 MB"
 description: "Min SQLite-database i HA nåede 963 MB på seks dage. Den præcise recorder-konfiguration, der skar den daglige vækst med over 70 %, med komplet YAML."
 pubDate: 2026-05-31
+updatedDate: 2026-11-05
 verifiedOn: "HA 2026.7"
 tags: ["vedligehold"]
 lang: "da"
@@ -71,7 +72,7 @@ recorder:
       - sensor.skoda_elroq_charging_state
 ```
 
-`include:`-blokken laver en undtagelse fra mønsteret `sensor.skoda_elroq_*` for de tre entiteter, jeg faktisk bruger i historikken.
+`include:`-blokken laver en undtagelse fra mønsteret `sensor.skoda_elroq_*` for de tre entiteter, jeg faktisk bruger i historikken. Entitetsnavnene er fra MySkoda, som jeg har fjernet siden. Med VW Group Connect hedder de `sensor.garage_<bilnavn>_*`, og mønsteret er det samme.
 
 ## Begrundelsen for udeladelserne
 

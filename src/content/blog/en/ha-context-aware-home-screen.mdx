@@ -2,6 +2,7 @@
 title: "The Home Assistant Home Screen That Only Shows What Matters"
 description: "An HA home screen where every card earns its place: conditional cards, a priority alert ticker, and a Škoda section that follows the charger state."
 pubDate: 2025-06-27
+updatedDate: 2026-11-05
 tags: ["dashboard", "automation"]
 lang: "en"
 translationKey: "ha-context-aware-home-screen"
@@ -145,7 +146,7 @@ The car is always shown — lock status, whether it's home. But what sits below 
 - type: conditional
   conditions:
     - condition: state
-      entity: binary_sensor.skoda_elroq_charger_connected
+      entity: binary_sensor.garage_el_rey_charging_cable_connected
       state: "on"
   card:
     type: horizontal-stack

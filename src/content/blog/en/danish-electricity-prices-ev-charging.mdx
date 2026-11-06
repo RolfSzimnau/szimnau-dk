@@ -2,7 +2,7 @@
 title: "How I Charge the Car on Cheap Danish Spot Prices"
 description: "Energi Data Service in Home Assistant: track hourly spot prices, find the cheapest charging window, and automate Škoda Elroq charging hands-free."
 pubDate: 2025-05-02
-updatedDate: 2026-10-24
+updatedDate: 2026-11-05
 tags: ["energy", "ev", "automation"]
 lang: "en"
 translationKey: "danish-electricity-prices-ev-charging"
@@ -11,8 +11,16 @@ faqs:
   - question: "How do you get hourly electricity spot prices into Home Assistant?"
     answer: "Through the Energi Data Service integration (HACS) — a free Danish public API with no key required. It exposes sensor.energi_data_service with raw_today and raw_tomorrow attributes; tomorrow's prices appear around 13:00 when the Nord Pool auction settles."
   - question: "Does automated spot-price EV charging actually save money?"
-    answer: "Only on nights with a large price spread — some Danish weeks the spread is tiny and the automation makes no difference. The bigger saving came from behavioural change: timing the dishwasher and washing machine to the cheapest window."
+    answer: "It did, but only on nights with a large price spread. Some Danish weeks the spread was tiny and the automation made no difference. The bigger saving came from behavioural change: timing the dishwasher and washing machine to the cheapest window. I have since handed the timing to my electricity supplier's smart charging."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, November 2026**
+
+I no longer run the automation in the charging section. My electricity supplier's smart charging now decides when the car charges, because two systems steering the same thing get in each other's way. Home Assistant only decides how much. The MySkoda integration is gone too, so the code below uses the VW Group Connect entities. I still use the price chart and the cheapest window every day.
+
+</div>
 
 Last February there was a day where electricity cost 0.18 DKK/kWh at 3am and 3.40 DKK/kWh at 8am. That's a 19x difference in one night. If your car charges on a fixed overnight schedule, you're basically rolling dice on which end of that spread you land on.
 
@@ -135,6 +143,8 @@ The logic: find the minimum price for the day, then expand the window to include
 
 ## The charging automation
 
+The automation used `switch.garage_el_rey_charging` from [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha) to start and stop charging. Replace `el_rey` with your own car's name.
+
 ```yaml
 alias: Elroq — Smart charge
 trigger:
@@ -142,10 +152,10 @@ trigger:
     minutes: "0"
 condition:
   - condition: state
-    entity_id: binary_sensor.skoda_elroq_charger_connected
+    entity_id: binary_sensor.garage_el_rey_charging_cable_connected
     state: "on"
   - condition: numeric_state
-    entity_id: sensor.skoda_elroq_battery_level
+    entity_id: sensor.garage_el_rey_battery_level
     below: 90
 action:
   - choose:
@@ -156,7 +166,7 @@ action:
         sequence:
           - service: switch.turn_on
             target:
-              entity_id: switch.skoda_elroq_charging
+              entity_id: switch.garage_el_rey_charging
       - conditions:
           - condition: numeric_state
             entity_id: sensor.energi_data_service
@@ -164,15 +174,15 @@ action:
         sequence:
           - service: switch.turn_off
             target:
-              entity_id: switch.skoda_elroq_charging
+              entity_id: switch.garage_el_rey_charging
 ```
 
 Below 1.00 DKK — charge. Above 1.50 — stop. Between those two numbers — leave it alone. The dead zone between 1.00 and 1.50 is deliberate: without it the switch would toggle on and off every hour when prices hover around the threshold, which isn't good for the charger or the car.
 
-There's a `input_boolean.elroq_force_charge` override for mornings when I need a full charge regardless of price. The EV entities (`switch.skoda_elroq_charging`, `binary_sensor.skoda_elroq_charger_connected`) come from the [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) integration (HACS) — authenticate with your Škoda Connect account to get them.
+I also had an `input_boolean` override for mornings when I needed a full charge regardless of price.
 
 ## Does it actually save money?
 
-After the first full month: roughly 28% lower charging cost compared to always-on overnight charging. The savings come almost entirely from the nights with large price spreads — there are weeks in Denmark where the spread is tiny and the automation makes no difference at all.
+After the first full month: roughly 28% lower charging cost compared to always-on overnight charging. The savings came almost entirely from the nights with large price spreads. There were weeks where the spread was tiny and the automation made no difference at all.
 
 The thing I didn't expect: it changed how I think about running other appliances. The electricity price chart is now one of the most-checked cards in my dashboard — and I've since added the cheapest window card above, which automatically shows the best time to run the dishwasher or washing machine too. That behavioral change probably adds more savings than the automated EV charging does.

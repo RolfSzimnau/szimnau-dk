@@ -2,7 +2,7 @@
 title: "Auto laden nach dänischen Spotpreisen mit Home Assistant"
 description: "Energi Data Service in Home Assistant für Echtzeit-Spotpreise, günstigstes Ladefenster finden und Škoda Elroq automatisch laden ohne die App anzufassen."
 pubDate: 2025-05-02
-updatedDate: 2026-10-24
+updatedDate: 2026-11-05
 tags: ["energie", "ev", "automatisierung"]
 lang: "de"
 translationKey: "danish-electricity-prices-ev-charging"
@@ -11,8 +11,16 @@ faqs:
   - question: "Wie bekommt man stündliche Strompreise in Home Assistant?"
     answer: "Über die Integration Energi Data Service aus HACS. Sie nutzt eine kostenlose, öffentliche dänische API ohne Schlüssel und liefert sensor.energi_data_service mit den Attributen raw_today und raw_tomorrow. Die Preise für morgen kommen gegen 13 Uhr, sobald die Nord-Pool-Auktion abgeschlossen ist."
   - question: "Spart das Laden nach Börsenstrompreis wirklich Geld?"
-    answer: "Nur in Nächten, in denen teure und billige Stunden weit auseinanderliegen. In manchen Wochen ist der Unterschied so klein, dass die Automatisierung nichts bringt. Gespart hat vor allem die neue Gewohnheit: Spülmaschine und Waschmaschine laufen jetzt in den günstigsten Stunden."
+    answer: "Nur in Nächten, in denen teure und billige Stunden weit auseinanderlagen. In manchen Wochen war der Unterschied so klein, dass die Automatisierung nichts brachte. Gespart hat vor allem die neue Gewohnheit: Spülmaschine und Waschmaschine laufen jetzt in den günstigsten Stunden. Inzwischen überlasse ich den Zeitpunkt dem Smart Charging meines Stromanbieters."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, November 2026**
+
+Die Automatisierung im Abschnitt zum Laden läuft bei mir nicht mehr. Jetzt entscheidet das Smart Charging meines Stromanbieters, wann das Auto lädt, denn zwei Systeme, die dasselbe steuern, kommen sich in die Quere. Home Assistant entscheidet nur noch, wie viel geladen wird. Die MySkoda-Integration ist ebenfalls entfernt, deshalb nutzt der Code unten die Entitäten von VW Group Connect. Preisdiagramm und günstigstes Zeitfenster nutze ich weiterhin jeden Tag.
+
+</div>
 
 Im Februar gab es eine Nacht, in der Strom um 3 Uhr 0,18 DKK/kWh kostete und um 8 Uhr 3,40 DKK/kWh. Fast das 20-Fache innerhalb von fünf Stunden. Wer das Auto nach einem festen Nachtplan lädt, würfelt im Grunde, auf welche Seite dieses Spreads er fällt.
 
@@ -135,7 +143,7 @@ Die Logik: Minimumspreis für den Tag finden, dann das Fenster auf alle benachba
 
 ## Die Ladeautomatisierung
 
-Die Automatisierung verwendet `switch.skoda_elroq_charging` aus der [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-Integration (HACS) zum Starten und Stoppen des Ladevorgangs.
+Die Automatisierung nutzte `switch.garage_el_rey_charging` aus [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), um das Laden zu starten und zu stoppen. Ersetze `el_rey` durch den Namen deines Autos.
 
 ```yaml
 alias: Elroq — Smart laden
@@ -144,10 +152,10 @@ trigger:
     minutes: "0"
 condition:
   - condition: state
-    entity_id: binary_sensor.skoda_elroq_charger_connected
+    entity_id: binary_sensor.garage_el_rey_charging_cable_connected
     state: "on"
   - condition: numeric_state
-    entity_id: sensor.skoda_elroq_battery_level
+    entity_id: sensor.garage_el_rey_battery_level
     below: 90
 action:
   - choose:
@@ -158,7 +166,7 @@ action:
         sequence:
           - service: switch.turn_on
             target:
-              entity_id: switch.skoda_elroq_charging
+              entity_id: switch.garage_el_rey_charging
       - conditions:
           - condition: numeric_state
             entity_id: sensor.energi_data_service
@@ -166,15 +174,15 @@ action:
         sequence:
           - service: switch.turn_off
             target:
-              entity_id: switch.skoda_elroq_charging
+              entity_id: switch.garage_el_rey_charging
 ```
 
 Unter 1,00 DKK — laden. Über 1,50 DKK — stoppen. Dazwischen — nichts ändern. Die Todeszone ist absichtlich: ohne sie würde der Schalter jede Stunde hin und her schalten, wenn die Preise um den Schwellenwert schweben.
 
-Es gibt einen `input_boolean.elroq_force_charge`-Override für Morgen, an denen man unabhängig vom Preis eine volle Ladung braucht.
+Dazu gab es damals einen `input_boolean`, mit dem ich an Morgen, an denen ich unabhängig vom Preis einen vollen Akku brauchte, das Laden erzwingen konnte.
 
 ## Spart es wirklich?
 
-Erster vollständiger Monat: ca. 28% niedrigere Ladekosten im Vergleich zu dauerhaftem Nachtladen. Die Einsparungen kommen fast ausschließlich von den Nächten mit großen Preisspreads — es gibt Wochen in Dänemark, in denen der Spread gering ist und die Automatisierung keinen Unterschied macht.
+Erster vollständiger Monat: ca. 28% niedrigere Ladekosten im Vergleich zu dauerhaftem Nachtladen. Die Einsparungen kamen fast ausschließlich aus den Nächten mit großen Preisspreads. In manchen Wochen war der Spread gering, und die Automatisierung machte keinen Unterschied.
 
 Was ich nicht erwartet hatte: Es veränderte, wie ich über andere Geräte nachdenke. Das Strompreisdiagramm ist jetzt eine der meistgeprüften Karten auf meinem Dashboard — und ich habe seitdem die Fenster-Karte oben hinzugefügt, die automatisch die beste Zeit zum Betrieb von Spülmaschine oder Waschmaschine anzeigt. Diese Verhaltensänderung spart wahrscheinlich mehr als das automatisierte Laden selbst.

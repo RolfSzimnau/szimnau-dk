@@ -3,7 +3,7 @@ title: "A Spoken Morning Briefing in Home Assistant: Calendar, Weather, and Elec
 seoTitle: "Spoken Morning Briefing in Home Assistant with TTS"
 description: "A daily 06:00 spoken briefing in Home Assistant: Google AI TTS, three family calendars, EV charge status, Waze traffic, power price and waste day."
 pubDate: 2026-05-31
-updatedDate: 2026-10-24
+updatedDate: 2026-11-05
 tags: ["voice", "calendar", "energy", "automation"]
 lang: "en"
 translationKey: "ha-morning-briefing-tts"
@@ -131,11 +131,11 @@ action:
         {% set temp = state_attr('weather.forecast_home', 'temperature') %}
         {% set affald = states('sensor.affalddk_bytoften_1_naeste_afhentning') | int(99) %}
         {% set elpris = states('sensor.energi_data_service') | float(0) | round(2) %}
-        {% set km = states('sensor.skoda_elroq_range') | int(0) %}
-        {% set bat = states('sensor.skoda_elroq_battery_percentage') | int(0) %}
-        {% set maal = states('sensor.skoda_elroq_target_battery_percentage') | int(80) %}
-        {% set lader = states('sensor.skoda_elroq_charging_state') %}
-        {% set ac = states('climate.skoda_elroq_air_conditioning') %}
+        {% set km = states('sensor.garage_el_rey_range') | int(0) %}
+        {% set bat = states('sensor.garage_el_rey_battery_level') | int(0) %}
+        {% set maal = states('number.garage_el_rey_charge_target') | int(80) %}
+        {% set lader = states('sensor.garage_el_rey_charging_status') %}
+        {% set ac = states('climate.garage_el_rey_climate_control') %}
         {% set rejsetid = states('sensor.rejsetid_vejle_travel_time') | float(0) | round(0) | int %}
         {% set normal = states('sensor.rejsetid_vejle_normal') | float(0) | round(0) | int %}
         God morgen! I dag er det {{ dag }}.
@@ -150,7 +150,7 @@ action:
         {% endif %}
         {% if km > 0 and km < 100 %}Elroq har kun {{ km }} kilometer tilbage.
         {% endif %}
-        {% if lader == 'charging' %}Elroq lader: {{ bat }}% ud af {{ maal }}%.
+        {% if lader | lower == 'charging' %}Elroq lader: {{ bat }}% ud af {{ maal }}%.
         {% elif bat < maal %}Elroq er {{ bat }}% – har ikke nået målet på {{ maal }}%.
         {% endif %}
         {% if ac != 'off' %}Elroq varmer op.
@@ -187,30 +187,30 @@ condition:
 
 ## Adding EV charge status and preconditioning
 
-Two sensors from the MyŠkoda integration (or any EV integration that exposes charge state) make the briefing aware of whether the car is ready for the day.
+Two sensors from VW Group Connect (or any EV integration that exposes charge state) make the briefing aware of whether the car is ready for the day.
 
 **Charge status** — the briefing only speaks when something needs attention. If the car hit its target overnight, nothing is said.
 
 ```jinja
-{% set bat = states('sensor.skoda_elroq_battery_percentage') | int(0) %}
-{% set maal = states('sensor.skoda_elroq_target_battery_percentage') | int(80) %}
-{% set lader = states('sensor.skoda_elroq_charging_state') %}
-{% if lader == 'charging' %}Elroq lader: {{ bat }}% ud af {{ maal }}%.
+{% set bat = states('sensor.garage_el_rey_battery_level') | int(0) %}
+{% set maal = states('number.garage_el_rey_charge_target') | int(80) %}
+{% set lader = states('sensor.garage_el_rey_charging_status') %}
+{% if lader | lower == 'charging' %}Elroq lader: {{ bat }}% ud af {{ maal }}%.
 {% elif bat < maal %}Elroq er {{ bat }}% – har ikke nået målet på {{ maal }}%.
 {% endif %}
 ```
 
-`sensor.skoda_elroq_target_battery_percentage` is set in the MyŠkoda app and exposed directly as a HA sensor. If your EV integration doesn't expose the charge target, replace `maal` with a hardcoded number like `80`.
+`number.garage_el_rey_charge_target` is the car's charge target, and you can also set it from Home Assistant. If your EV integration doesn't expose a charge target, replace `maal` with a fixed number like `80`.
 
 **Preconditioning confirmation** — if a morning warmup automation runs a few minutes before 06:00, the briefing can confirm it actually started:
 
 ```jinja
-{% set ac = states('climate.skoda_elroq_air_conditioning') %}
+{% set ac = states('climate.garage_el_rey_climate_control') %}
 {% if ac != 'off' %}Elroq varmer op.
 {% endif %}
 ```
 
-This works because the warmup automation runs at 05:55 — five minutes before the briefing. By 06:00, `climate.skoda_elroq_air_conditioning` is either active (one short confirmation line) or still `off` (silent — the warmup automation handles its own failure alert separately).
+This needs the warm-up to start before the briefing. If it starts at 05:55, say, `climate.garage_el_rey_climate_control` is either running at 06:00, which gives one short confirmation line, or still `off`, which keeps the briefing silent about it.
 
 ## Adding a traffic report
 

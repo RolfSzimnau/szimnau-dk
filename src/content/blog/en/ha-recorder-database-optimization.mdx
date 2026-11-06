@@ -3,6 +3,7 @@ title: "Home Assistant Recorder: Cut Database Growth from 160 MB/day to Under 50
 seoTitle: "Home Assistant Recorder: 160 MB/day Down to Under 50"
 description: "My HA SQLite database hit 963 MB in six days. The exact recorder config that cut daily growth by over 70%: full YAML and the reasoning."
 pubDate: 2026-05-31
+updatedDate: 2026-11-05
 verifiedOn: "HA 2026.7"
 tags: ["maintenance"]
 lang: "en"
@@ -71,7 +72,7 @@ recorder:
       - sensor.skoda_elroq_charging_state
 ```
 
-The `include:` block overrides the `sensor.skoda_elroq_*` glob for the three entities I actually track in the History panel — battery percentage, range, and charging state.
+The `include:` block overrides the `sensor.skoda_elroq_*` glob for the three entities I actually track in the History panel — battery percentage, range, and charging state. The entity names come from MySkoda, which I have since removed. With VW Group Connect they are `sensor.garage_<car_name>_*`, and the pattern is the same.
 
 ## Breaking down the exclusions
 

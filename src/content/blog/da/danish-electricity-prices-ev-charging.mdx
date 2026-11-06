@@ -3,7 +3,7 @@ title: "Elspotpriser i Home Assistant: sådan lader bilen i de billige timer"
 seoTitle: "Elspotpriser i Home Assistant: lad bilen i de billige timer"
 description: "Energi Data Service til spotpriser i realtid, et trappediagram i ApexCharts og automatisk opladning af Škoda Elroq uden at røre appen."
 pubDate: 2025-05-02
-updatedDate: 2026-10-24
+updatedDate: 2026-11-05
 tags: ["energi", "ev", "automatisering"]
 lang: "da"
 translationKey: "danish-electricity-prices-ev-charging"
@@ -12,8 +12,16 @@ faqs:
   - question: "Hvordan får man timepriser på strøm ind i Home Assistant?"
     answer: "Med Energi Data Service-integrationen fra HACS. Den bruger en gratis, offentlig dansk API uden nøgle og giver sensor.energi_data_service med attributterne raw_today og raw_tomorrow. Morgendagens priser kommer omkring kl. 13, når Nord Pool-auktionen er afgjort."
   - question: "Sparer det reelt penge at lade elbilen efter spotprisen?"
-    answer: "Kun de nætter, hvor der er stor forskel på dyre og billige timer. Nogle uger er forskellen så lille, at automationen ikke gør nogen forskel. Den store besparelse kom fra vanerne: opvaskeren og vaskemaskinen kører nu i de billigste timer."
+    answer: "Kun de nætter, hvor der var stor forskel på dyre og billige timer. Nogle uger var forskellen så lille, at automationen ikke gjorde nogen forskel. Den store besparelse kom fra vanerne: opvaskeren og vaskemaskinen kører nu i de billigste timer. Siden har jeg overladt tidspunktet til min elleverandørs smarte opladning."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Opdatering, november 2026**
+
+Automationen i afsnittet om opladning kører ikke længere hos mig. Nu bestemmer min elleverandørs smarte opladning, hvornår bilen lader, for to systemer, der styrer det samme, kommer i vejen for hinanden. Home Assistant bestemmer kun, hvor meget der lades. MySkoda-integrationen er også fjernet, så koden herunder bruger entiteterne fra VW Group Connect. Prisdiagrammet og det billigste vindue bruger jeg stadig hver dag.
+
+</div>
 
 En nat i februar kostede strømmen 0,18 kr./kWh kl. 3 og 3,40 kr./kWh kl. 8. Næsten 20 gange så dyrt på fem timer. Lader bilen efter en fast natplan, er det rent held, hvilken ende af det spænd du rammer.
 
@@ -136,7 +144,7 @@ Logikken: find dagens laveste pris, og udvid tidsrummet med alle tilstødende ti
 
 ## Automationen, der styrer opladningen
 
-Automationen bruger `switch.skoda_elroq_charging` fra [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda)-integrationen (HACS) til at starte og stoppe opladningen.
+Automationen brugte `switch.garage_el_rey_charging` fra [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha) til at starte og stoppe opladningen. Udskift `el_rey` med navnet på din egen bil.
 
 ```yaml
 alias: Elroq — Smart opladning
@@ -145,10 +153,10 @@ trigger:
     minutes: "0"
 condition:
   - condition: state
-    entity_id: binary_sensor.skoda_elroq_charger_connected
+    entity_id: binary_sensor.garage_el_rey_charging_cable_connected
     state: "on"
   - condition: numeric_state
-    entity_id: sensor.skoda_elroq_battery_level
+    entity_id: sensor.garage_el_rey_battery_level
     below: 90
 action:
   - choose:
@@ -159,7 +167,7 @@ action:
         sequence:
           - service: switch.turn_on
             target:
-              entity_id: switch.skoda_elroq_charging
+              entity_id: switch.garage_el_rey_charging
       - conditions:
           - condition: numeric_state
             entity_id: sensor.energi_data_service
@@ -167,15 +175,15 @@ action:
         sequence:
           - service: switch.turn_off
             target:
-              entity_id: switch.skoda_elroq_charging
+              entity_id: switch.garage_el_rey_charging
 ```
 
 Under 1,00 kr.: lad. Over 1,50 kr.: stop. Midt imellem: rør den ikke. Det tomme interval er med vilje. Uden det ville kontakten skifte frem og tilbage hver time, når prisen ligger lige omkring grænsen.
 
-Med `input_boolean.elroq_force_charge` kan jeg tvinge opladningen igennem de morgener, hvor jeg har brug for fuldt batteri, uanset prisen.
+Dengang havde jeg også en `input_boolean`, så jeg kunne tvinge opladningen igennem de morgener, hvor jeg skulle bruge fuldt batteri, uanset prisen.
 
 ## Virker det?
 
-Første hele måned: cirka 28 % lavere udgift til opladning end ved opladning hele natten. Besparelsen kommer næsten kun fra de nætter, hvor priserne svinger meget. Der er uger i Danmark, hvor forskellen er lille, og automationen ikke gør nogen forskel.
+Første hele måned: cirka 28 % lavere udgift til opladning end ved opladning hele natten. Besparelsen kommer næsten kun fra de nætter, hvor priserne svinger meget. Der var uger, hvor forskellen var lille, og automationen gjorde ingen forskel.
 
 Det, jeg ikke havde forventet, var, at det ændrede, hvordan jeg tænker på de andre apparater. Elprisdiagrammet er nu et af de kort, jeg kigger mest på, og siden har jeg tilføjet kortet ovenfor, der selv viser det bedste tidspunkt at starte opvaskemaskinen eller vaskemaskinen. Den ændrede vane sparer sandsynligvis mere end den automatiske opladning af bilen.
