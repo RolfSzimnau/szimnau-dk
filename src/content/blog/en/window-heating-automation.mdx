@@ -14,13 +14,13 @@ faqs:
     answer: "Reuse. Adding the next room means picking the Blueprint, a sensor and a radiator: about 30 seconds with no new code. It works for the Mill radiators. The Tado-managed living room needs separate logic."
 ---
 
-The radiator in Louise's room was running at full heat with the window wide open. She's almost twenty, and keeping her window shut isn't something that happens reliably. I noticed the window had been open for an hour, heat on, outside temperature around 4°C. Not a disaster, but a predictable waste that would keep repeating.
+The radiator in my daughter's room was running at full heat with the window wide open. She's almost twenty, and keeping her window shut isn't something that happens reliably. I noticed the window had been open for an hour, heat on, outside temperature around 4°C. Not a disaster, but a predictable waste that would keep repeating.
 
 The fix was a window sensor and one Home Assistant automation. The part I spent an extra hour on was building it as a Blueprint so when the same pattern comes up in another room, it takes 30 seconds, not another afternoon.
 
 ## Hardware needed: IKEA window sensor + Mill radiator
 
-An **IKEA MYGGBETT** door/window sensor on Louise's window (`binary_sensor.myggbett_door_window_sensor_door`). The radiator is a first-generation **Mill** unit, `climate.louise`, which only supports two modes: `heat` and `off`. I have the same first-gen model in my office.
+An **IKEA MYGGBETT** door/window sensor on my daughter's window (`binary_sensor.myggbett_door_window_sensor_door`). The radiator is a first-generation **Mill** unit, `climate.louise`, which only supports two modes: `heat` and `off`. I have the same first-gen model in my office.
 
 The master bedroom and kitchen run newer-gen Mill radiators with more HVAC modes. The Blueprint handles all of them. It snapshots the exact state before turning off and restores it precisely when the window closes, regardless of which mode or temperature the radiator was at.
 
@@ -28,11 +28,11 @@ The living room is a Daikin heat pump controlled by [Tado](/en/blog/tado-home-as
 
 The Mill has a built-in open window detection feature, but it works by sensing temperature drops. It's slow to react, and it misses short openings completely. The MYGGBETT sensor is instant and precise.
 
-![IKEA MYGGBETT sensor mounted on Louise's window](/blog-images/home_MYGGBETT.jpg)
+![IKEA MYGGBETT sensor mounted on my daughter's window](/blog-images/home_MYGGBETT.jpg)
 
 ## Building the Home Assistant Blueprint
 
-Rather than hardcoding Louise's entities, I built the logic as a Blueprint at `/config/blueprints/automation/homeassistant/window_heating_control.yaml`. The inputs are a window sensor, a climate entity, and a configurable delay:
+Rather than hardcoding my daughter's entities, I built the logic as a Blueprint at `/config/blueprints/automation/homeassistant/window_heating_control.yaml`. The inputs are a window sensor, a climate entity, and a configurable delay:
 
 ```yaml
 blueprint:
@@ -57,10 +57,10 @@ blueprint:
           unit_of_measurement: min
 ```
 
-The automation instance for Louise's room is three lines:
+The automation instance for my daughter's room is three lines:
 
 ```yaml
-- alias: "Window → Heating: Louise's room"
+- alias: "Window → Heating: Daughter's room"
   use_blueprint:
     path: homeassistant/window_heating_control.yaml
     input:
@@ -111,12 +111,12 @@ When the heating switches off, two things happen: a push notification goes to al
 - action: notify.alle_enheder
   data:
     title: "Window open"
-    message: "Louise's window has been open for 1 minute — heating is off"
+    message: "Daughter's window has been open for 1 minute — heating is off"
 - action: tts.cloud_say
   target:
     entity_id: media_player.hojtaler_kokken
   data:
-    message: "Louise's window is open. Heating is off."
+    message: "Daughter's window is open. Heating is off."
     language: da-DK
 ```
 

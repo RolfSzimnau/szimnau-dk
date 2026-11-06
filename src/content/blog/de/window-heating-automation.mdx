@@ -14,13 +14,13 @@ faqs:
     answer: "Wegen der Wiederverwendung. Der nächste Raum ist nur Blueprint, Sensor wählen, Heizkörper wählen. Das dauert etwa 30 Sekunden und braucht keinen neuen Code. Das gilt für die Mill-Heizkörper, das Wohnzimmer mit Tado braucht eine eigene Logik."
 ---
 
-Der Heizkörper in Louises Zimmer lief auf Hochtouren, und das bei offenem Fenster. Sie ist fast zwanzig, und daran zu denken, das Fenster zu schließen, passiert nicht zuverlässig. Ich bemerkte, dass das Fenster eine Stunde offen gestanden hatte, Heizung an, Außentemperatur um die 4°C. Kein Drama, aber eine vorhersehbare Verschwendung, die sich wiederholen würde. Geld zum Fenster hinauswerfen, buchstäblich.
+Der Heizkörper im Zimmer meiner Tochter lief auf Hochtouren, und das bei offenem Fenster. Sie ist fast zwanzig, und daran zu denken, das Fenster zu schließen, passiert nicht zuverlässig. Ich bemerkte, dass das Fenster eine Stunde offen gestanden hatte, Heizung an, Außentemperatur um die 4°C. Kein Drama, aber eine vorhersehbare Verschwendung, die sich wiederholen würde. Geld zum Fenster hinauswerfen, buchstäblich.
 
 Die Lösung war ein Fenstersensor und eine einzige Home Assistant-Automatisierung. Die extra Stunde investierte ich darin, sie als Blueprint zu bauen, damit das nächste Zimmer 30 Sekunden braucht und nicht einen weiteren Nachmittag.
 
 ## Hardware: IKEA Fenstersensor + Mill-Heizkörper
 
-Ein **IKEA MYGGBETT** Tür-/Fenstersensor an Louises Fenster (`binary_sensor.myggbett_door_window_sensor_door`). Der Heizkörper ist ein Erstgenerations-**Mill**-Gerät (`climate.louise`), das nur zwei Modi unterstützt: `heat` und `off`. Das gleiche Erstgenerationsmodell steht auch in meinem Büro.
+Ein **IKEA MYGGBETT** Tür-/Fenstersensor am Fenster meiner Tochter (`binary_sensor.myggbett_door_window_sensor_door`). Der Heizkörper ist ein Erstgenerations-**Mill**-Gerät (`climate.louise`), das nur zwei Modi unterstützt: `heat` und `off`. Das gleiche Erstgenerationsmodell steht auch in meinem Büro.
 
 Das Schlafzimmer und die Küche laufen mit neueren Mill-Heizkörpern mit mehr HVAC-Modi. Das Blueprint behandelt sie alle: Es speichert den genauen Zustand vor dem Ausschalten und stellt ihn beim Schließen des Fensters präzise wieder her, unabhängig von Modus oder Temperatur.
 
@@ -28,11 +28,11 @@ Das Wohnzimmer hat eine Daikin-Wärmepumpe, die über Tado gesteuert wird. Das i
 
 Mill hat eine eingebaute Offenes-Fenster-Erkennung, die aber über Temperaturabfall funktioniert. Sie ist langsam und blind für kurze Öffnungen. Der MYGGBETT-Sensor reagiert sofort und präzise.
 
-![IKEA MYGGBETT Sensor an Louises Fenster montiert](/blog-images/home_MYGGBETT.jpg)
+![IKEA MYGGBETT Sensor am Fenster meiner Tochter montiert](/blog-images/home_MYGGBETT.jpg)
 
 ## Das Home Assistant Blueprint aufbauen
 
-Anstatt Louises Entities fest zu kodieren habe ich die Logik als Blueprint unter `/config/blueprints/automation/homeassistant/window_heating_control.yaml` gebaut. Die Eingabefelder nehmen einen Fenstersensor, eine Climate-Entity und eine konfigurierbare Verzögerung:
+Anstatt die Entities meiner Tochter fest zu kodieren habe ich die Logik als Blueprint unter `/config/blueprints/automation/homeassistant/window_heating_control.yaml` gebaut. Die Eingabefelder nehmen einen Fenstersensor, eine Climate-Entity und eine konfigurierbare Verzögerung:
 
 ```yaml
 blueprint:
@@ -57,10 +57,10 @@ blueprint:
           unit_of_measurement: min
 ```
 
-Die Automatisierungsinstanz für Louises Zimmer sind drei Zeilen:
+Die Automatisierungsinstanz für das Zimmer meiner Tochter sind drei Zeilen:
 
 ```yaml
-- alias: "Fenster → Heizung: Louises Zimmer"
+- alias: "Fenster → Heizung: Zimmer der Tochter"
   use_blueprint:
     path: homeassistant/window_heating_control.yaml
     input:
@@ -111,12 +111,12 @@ Wenn die Heizung abschaltet passieren zwei Dinge: eine Push-Benachrichtigung geh
 - action: notify.alle_enheder
   data:
     title: "Fenster offen 🪟"
-    message: "Louises Fenster steht seit 1 Minute offen — Heizung ist aus"
+    message: "Das Fenster der Tochter steht seit 1 Minute offen — Heizung ist aus"
 - action: tts.cloud_say
   target:
     entity_id: media_player.hojtaler_kokken
   data:
-    message: "Louises Fenster ist offen. Die Heizung ist aus."
+    message: "Das Fenster der Tochter ist offen. Die Heizung ist aus."
     language: da-DK
 ```
 

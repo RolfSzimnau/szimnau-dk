@@ -1,7 +1,7 @@
 ---
 title: "Et Home Assistant-blueprint der stopper varmen når vinduet åbnes"
 seoTitle: "Home Assistant-blueprint: stop varmen når vinduet åbnes"
-description: "Radiatoren i Louises værelse slukker når vinduet åbnes og tænder igen når det lukkes. Bygget som Blueprint, så næste rum tager 30 sekunder."
+description: "Radiatoren i min datters værelse slukker når vinduet åbnes og tænder igen når det lukkes. Bygget som Blueprint, så næste rum tager 30 sekunder."
 pubDate: 2026-05-17
 tags: ["varme", "sensorer", "automatisering"]
 lang: "da"
@@ -14,13 +14,13 @@ faqs:
     answer: "For at kunne genbruge den. Næste rum er bare blueprint, vælg sensor, vælg radiator. Det tager cirka 30 sekunder og kræver ingen ny kode. Det virker til Mill-radiatorerne, mens stuen, der styres af Tado, kræver sin egen logik."
 ---
 
-Radiatoren i Louises værelse kørte for fuld varme med vinduet åbent. Hun er snart tyve, og at huske at lukke vinduet er ikke noget, der sker konsekvent. Jeg lagde mærke til, at vinduet havde stået åbent i en time, varmen på, udetemperatur på cirka 4°C. Det er bogstaveligt talt penge ud af vinduet, og det ville blive ved med at ske.
+Radiatoren i min datters værelse kørte for fuld varme med vinduet åbent. Hun er snart tyve, og at huske at lukke vinduet er ikke noget, der sker konsekvent. Jeg lagde mærke til, at vinduet havde stået åbent i en time, varmen på, udetemperatur på cirka 4°C. Det er bogstaveligt talt penge ud af vinduet, og det ville blive ved med at ske.
 
 Løsningen var en vinduessensor og én Home Assistant-automation. Den ekstra time jeg brugte var på at bygge den som et Blueprint, så næste gang det samme mønster dukker op i et andet rum, tager det 30 sekunder, ikke en hel eftermiddag.
 
 ## Hardware: IKEA vinduessensor + Mill-radiator
 
-En **IKEA MYGGBETT** dør/vinduessensor på Louises vindue (`binary_sensor.myggbett_door_window_sensor_door`). Radiatoren er en første-generations **Mill**-enhed, `climate.louise`, som kun understøtter to modes: `heat` og `off`. Jeg har den samme første-gen model på mit kontor.
+En **IKEA MYGGBETT** dør/vinduessensor på min datters vindue (`binary_sensor.myggbett_door_window_sensor_door`). Radiatoren er en første-generations **Mill**-enhed, `climate.louise`, som kun understøtter to modes: `heat` og `off`. Jeg har den samme første-gen model på mit kontor.
 
 Soveværelset og køkkenet kører nyere Mill-radiatorer med flere HVAC-modes. Blueprint'et håndterer dem alle. Det gemmer den præcise tilstand før slukning og gendanner den, når vinduet lukkes, uanset hvilken mode eller temperatur radiatoren stod på.
 
@@ -28,11 +28,11 @@ Stuen har en Daikin varmepumpe, som Tado styrer. Det er en anden integration med
 
 Mill har en indbygget åbent-vindue-detektion, men den virker ved at registrere temperaturfald. Den er langsom til at reagere og overser korte åbninger fuldstændigt. MYGGBETT-sensoren er øjeblikkelig og præcis.
 
-![IKEA MYGGBETT sensor monteret på Louises vindue](/blog-images/home_MYGGBETT.jpg)
+![IKEA MYGGBETT sensor monteret på min datters vindue](/blog-images/home_MYGGBETT.jpg)
 
 ## Byg Home Assistant Blueprint'et
 
-I stedet for at hardkode Louises entities byggede jeg logikken som et Blueprint på `/config/blueprints/automation/homeassistant/window_heating_control.yaml`. Inputfelterne tager en vinduessensor, en climate-entity og en konfigurerbar forsinkelse:
+I stedet for at hardkode entiteterne til min datters værelse byggede jeg logikken som et Blueprint på `/config/blueprints/automation/homeassistant/window_heating_control.yaml`. Inputfelterne tager en vinduessensor, en climate-entity og en konfigurerbar forsinkelse:
 
 ```yaml
 blueprint:
@@ -57,10 +57,10 @@ blueprint:
           unit_of_measurement: min
 ```
 
-Automation-instansen for Louises værelse er tre linjer:
+Automation-instansen for min datters værelse er tre linjer:
 
 ```yaml
-- alias: "Vindue → Varme: Louises værelse"
+- alias: "Vindue → Varme: Datterens værelse"
   use_blueprint:
     path: homeassistant/window_heating_control.yaml
     input:
@@ -111,12 +111,12 @@ Når varmen slukker sker to ting: en push-notifikation sendes til alle enheder v
 - action: notify.alle_enheder
   data:
     title: "Vindue åbent 🪟"
-    message: "Louises vindue har stået åbent i 1 minut — varmen er slukket"
+    message: "Datterens vindue har stået åbent i 1 minut — varmen er slukket"
 - action: tts.cloud_say
   target:
     entity_id: media_player.hojtaler_kokken
   data:
-    message: "Louises vindue er åbent. Varmen er slukket."
+    message: "Datterens vindue er åbent. Varmen er slukket."
     language: da-DK
 ```
 
