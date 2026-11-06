@@ -12,7 +12,7 @@ faqs:
   - question: "What does the eTilbudsavis integration add to a Home Assistant shopping list?"
     answer: "The CagosDk HACS integration creates a todo list where items carry the store name and current offer price in the description, sorted by store, so the list groups itself by where each offer is valid."
   - question: "How do the store proximity notifications work?"
-    answer: "HA zones are defined around each store, and an automation matches the zone name against item descriptions on arrival — walking into Bilka pushes a notification listing only the items on offer there. It requires maintaining a zone per store you shop in."
+    answer: "HA zones are defined around each store, and an automation matches the zone name against item descriptions on arrival. Walking into Bilka pushes a notification listing only the items on offer there. It requires maintaining a zone per store you shop in."
 ---
 
 Eight items. Four stores. I was standing in Bilka with no idea which of them belonged there. I opened the eTilbudsavis app, scrolled through the full list, picked out the two that said Bilka, and put the phone away. The whole thing took longer than finding the actual items.
@@ -21,15 +21,15 @@ A week earlier, someone in a Danish Facebook group had mentioned you could set u
 
 ## The integration: CagosDk on GitHub
 
-The starting point is a HACS custom integration by [CagosDk](https://github.com/CagosDk/hacs-etilbudsavis). Add it via HACS → Integrations → Custom Repositories, paste the GitHub URL, and add the integration. It creates a `todo` entity for each of your eTilbudsavis shopping lists — mine is `todo.min_indkobsliste`. From there it shows up as a native HA todo card and in the iOS/Android companion app.
+The starting point is a HACS custom integration by [CagosDk](https://github.com/CagosDk/hacs-etilbudsavis). Add it via HACS → Integrations → Custom Repositories, paste the GitHub URL, and add the integration. It creates a `todo` entity for each of your eTilbudsavis shopping lists (mine is `todo.min_indkobsliste`). From there it shows up as a native HA todo card and in the iOS/Android companion app.
 
 <img src="/blog-images/etilbudsavis-shopping-Chip.jpg" alt="Home Assistant dashboard showing a shopping cart chip with the number of pending items" style="max-width: 480px; display: block; margin: 2rem auto; border-radius: 12px;" />
 
-That alone solved the two-app problem. But the default view shows only item names — no store, no price, no date. With fifteen items from four different stores, the list isn't useful when you're in a hurry.
+That alone solved the two-app problem. But the default view shows only item names: no store, no price, no date. With fifteen items from four different stores, the list isn't useful when you're in a hurry.
 
 ## Modifying todo.py: description and sort order
 
-The integration stores all item data from the eTilbudsavis API in the coordinator — including `business.name` (store), `offer.price`, and `offer.validUntil`. By default `todo.py` only puts the store name in the `description` field. To get price and date in there, I added two helper functions and changed the sort key.
+The integration stores all item data from the eTilbudsavis API in the coordinator, including `business.name` (store), `offer.price`, and `offer.validUntil`. By default `todo.py` only puts the store name in the `description` field. To get price and date in there, I added two helper functions and changed the sort key.
 
 The description builder:
 
@@ -54,7 +54,7 @@ def _build_description(store: str, offer: dict | None, now: datetime) -> str | N
     return desc
 ```
 
-Both `price` and `validUntil` use `.get()` — if the API doesn't return them for shopping list items, they're simply skipped. The result is always valid: at minimum just the store name.
+Both `price` and `validUntil` use `.get()`, so if the API doesn't return them for shopping list items, they're simply skipped. The result is always valid: at minimum just the store name.
 
 There's a second helper for expired offers. If `validUntil` is in the past, the item's summary gets a prefix so it stands out:
 
@@ -95,11 +95,11 @@ The result: incomplete items before complete, then alphabetical by store, then a
 
 <img src="/blog-images/etilbudsavis-shopping-list.webp" alt="eTilbudsavis shopping list in the Home Assistant companion app, sorted by store with price and date visible" style="max-width: 360px; display: block; margin: 2rem auto; border-radius: 16px;" />
 
-Two things worth knowing before you edit the file. First, `todo.py` lives at `/config/custom_components/etilbudsavis/todo.py` on your HA machine — HACS updates will overwrite it. The changes are small enough that reapplying them takes a few minutes. Second, after editing any Python file in a custom component, a **full HA restart** is required. `reload_config_entry` doesn't flush Python's module cache — only a restart does.
+Two things worth knowing before you edit the file. First, `todo.py` lives at `/config/custom_components/etilbudsavis/todo.py` on your HA machine, and HACS updates will overwrite it. The changes are small enough that reapplying them takes a few minutes. Second, after editing any Python file in a custom component, a **full HA restart** is required. `reload_config_entry` doesn't flush Python's module cache. Only a restart does.
 
 ## Zones and proximity notifications
 
-This is the part from the Facebook post. Home Assistant has a `zone` entity type — you place a circle around a location and the companion app on your phone tracks when you enter or leave it. I created zones for each store I actually shop at: Min Kobmand, ABC Lavpris, Bilka, Lidl, Føtex, and two Netto locations.
+This is the part from the Facebook post. Home Assistant has a `zone` entity type: you place a circle around a location, and the companion app on your phone tracks when you enter or leave it. I created zones for each store I actually shop at: Min Kobmand, ABC Lavpris, Bilka, Lidl, Føtex, and two Netto locations.
 
 An automation triggers when either my Pixel 10 or my wife's Pixel 9a enters any of those zones:
 
@@ -114,7 +114,7 @@ trigger:
   # ... repeated for each store zone
 ```
 
-The automation maps each zone entity to a store name in a `variables` block. Two Netto locations point to the same name — they produce the same notification either way:
+The automation maps each zone entity to a store name in a `variables` block. Two Netto locations point to the same name, so they produce the same notification either way:
 
 ```yaml
 variables:
@@ -157,6 +157,6 @@ The action then calls `todo.get_items`, filters items whose `description` starts
   action: notify.alle_enheder
 ```
 
-`regex_match` matches from the start of the string, so "Netto" matches "Netto – 12,95 kr. · til 12/6" without needing a contains check. Replace `notify.alle_enheder` with your own notify service — that's just the group I use to reach both phones at once.
+`regex_match` matches from the start of the string, so "Netto" matches "Netto - 12,95 kr. til 12/6" without needing a contains check. Replace `notify.alle_enheder` with your own notify service. That's just the group I use to reach both phones at once.
 
-The first time it fired I was walking into Bilka. Phone buzzed — two items on the list. I already knew that. I'd written the list myself. But having it appear on the screen at the exact moment I walked through the door is a different thing than remembering to open an app.
+The first time it fired I was walking into Bilka. Phone buzzed: two items on the list. I already knew that. I'd written the list myself. But having it appear on the screen at the exact moment I walked through the door is a different thing than remembering to open an app.

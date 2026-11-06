@@ -15,19 +15,19 @@ faqs:
     answer: "input_text ist hart auf 255 Zeichen begrenzt. Mit einem knappen Format wie »HH:MM Text« und einem Trennzeichen reicht das für ungefähr die letzten 10 Ereignisse. Für eine längere Historie mit Datum brauchst du einen triggerbasierten Template-Sensor mit einer Liste im Attribut, und der geht nur per YAML."
 ---
 
-Mein Überwachungs-View in Home Assistant hat eine „Recent events"-Liste unter dem Kamerabild — gespeist von den vier Binärsensoren meiner KI-Kamera: Person, Bewegung, Tier und Fahrzeug. Das Problem: Die Logbook-Karte zeigt **jede einzelne Zustandsänderung**. Auf jedes „Person Detected" folgt dreißig Sekunden später ein „Person Cleared" — die halbe Liste ist Rauschen, und die Historie deckt nur die halbe Zeitspanne ab.
+Mein Überwachungs-View in Home Assistant hat eine „Recent events"-Liste unter dem Kamerabild, gespeist von den vier Binärsensoren meiner KI-Kamera: Person, Bewegung, Tier und Fahrzeug. Das Problem: Die Logbook-Karte zeigt **jede einzelne Zustandsänderung**. Auf jedes „Person Detected" folgt dreißig Sekunden später ein „Person Cleared". Die halbe Liste ist Rauschen, und die Historie deckt nur die halbe Zeitspanne ab.
 
-Und nein — die Logbook-Karte kann nicht nach Zustand filtern. Sie nimmt eine Entitätenliste und ein Zeitfenster. Das war's.
+Und nein, die Logbook-Karte kann nicht nach Zustand filtern. Sie nimmt eine Entitätenliste und ein Zeitfenster. Das war's.
 
 ## Die Optionen, und warum ich sie verworfen habe
 
-Ein **trigger-basierter Template-Sensor** mit Listen-Attribut ist die „richtige" Lösung — lässt sich aber nicht im UI anlegen und braucht YAML in der `configuration.yaml`. Eine **Todo-Liste** als Event-Log funktioniert, rendert aber klobig und braucht eine zweite Automation zum Aufräumen. Ich wollte etwas, das sich in fünf Minuten komplett über UI/API bauen lässt und Neustarts überlebt.
+Ein **trigger-basierter Template-Sensor** mit Listen-Attribut ist die „richtige" Lösung, lässt sich aber nicht im UI anlegen und braucht YAML in der `configuration.yaml`. Eine **Todo-Liste** als Event-Log funktioniert, rendert aber klobig und braucht eine zweite Automation zum Aufräumen. Ich wollte etwas, das sich in fünf Minuten komplett über UI/API bauen lässt und Neustarts überlebt.
 
 ## Die Lösung: input_text als rollendes Log
 
-Ein `input_text`-Helfer ist persistent, UI-freundlich und per Automation beschreibbar. Das 255-Zeichen-Limit ist real — aber im Format `HH:MM Label` mit Trennzeichen sind das etwa die 10 letzten Ereignisse. Für eine „Recent events"-Liste reicht das genau.
+Ein `input_text`-Helfer ist persistent, UI-freundlich und per Automation beschreibbar. Das 255-Zeichen-Limit ist real, aber im Format `HH:MM Label` mit Trennzeichen sind das etwa die 10 letzten Ereignisse. Für eine „Recent events"-Liste reicht das genau.
 
-Die Automation triggert nur auf `on` — „Cleared" fasst sie nie an:
+Die Automation triggert nur auf `on`. „Cleared" fasst sie nie an:
 
 ```yaml
 alias: Sentinel event log
@@ -64,7 +64,7 @@ actions:
         {{ (items | join(' · '))[:255] }}
 ```
 
-Drei Details tragen das Ganze: **Trigger-IDs** dienen über die Lookup-Tabelle gleichzeitig als Labels, eine Action deckt also alle vier Sensoren ab. **`mode: queued`** verhindert, dass zwei schnelle Detektionen einander überschreiben. Und der **`[:10]`-Zuschnitt** passiert auf Ereignis-Ebene vor dem Zusammenfügen — ein Eintrag wird nie mittendrin abgeschnitten.
+Drei Details tragen das Ganze: **Trigger-IDs** dienen über die Lookup-Tabelle gleichzeitig als Labels, eine Action deckt also alle vier Sensoren ab. **`mode: queued`** verhindert, dass zwei schnelle Detektionen einander überschreiben. Und der **`[:10]`-Zuschnitt** passiert auf Ereignis-Ebene vor dem Zusammenfügen, sodass ein Eintrag nie mittendrin abgeschnitten wird.
 
 ## Die Markdown-Karte
 
@@ -84,4 +84,4 @@ Das Ergebnis ist die Liste im Bild oben: nur Detektionen, doppelt so viel Histor
 
 ## Die Grenzen, ehrlich
 
-255 Zeichen sind etwa 10 Ereignisse, und es gibt nur Uhrzeiten — kein Datum. Rollt ein Ereignis aus dem Log, ist es dort weg (die volle Historie liegt weiter im Logbook/Recorder). Wer längere Historie mit Datum braucht, greift zum trigger-basierten Template-Sensor mit Listen-Attribut — der Preis ist YAML-Konfiguration und ein Neustart.
+255 Zeichen sind etwa 10 Ereignisse, und es gibt nur Uhrzeiten, kein Datum. Rollt ein Ereignis aus dem Log, ist es dort weg (die volle Historie liegt weiter im Logbook/Recorder). Wer längere Historie mit Datum braucht, greift zum trigger-basierten Template-Sensor mit Listen-Attribut. Der Preis ist YAML-Konfiguration und ein Neustart.

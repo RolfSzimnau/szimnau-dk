@@ -9,7 +9,7 @@ translationKey: "wiz-movie-lights"
 heroImage: "/blog-images/wiz-home-assistant-cinema-mode.jpg"
 faqs:
   - question: "What triggers the movie lighting automation?"
-    answer: "The TV media player state: playing dims the living-room WiZ lights, paused brightens them, off restores them fully — no scene button or voice command involved."
+    answer: "The TV media player state: playing dims the living-room WiZ lights, paused brightens them, off restores them fully. No scene button or voice command is involved."
   - question: "Why is there no sunset trigger?"
     answer: "An earlier version dimmed at sunset regardless of the TV and left the room dark when nobody was watching. TV state reflects what is happening in the room; an 18:00 time condition handles dark winter afternoons."
 ---
@@ -20,7 +20,7 @@ faqs:
 
 </div>
 
-Every TV remote has a button you never use. On mine it was the "scene" button that was supposed to dim the lights for movie mode. The problem wasn't the button — it was remembering to press it, and then remembering to press it again when you paused to get a drink, and again when the film ended.
+Every TV remote has a button you never use. On mine it was the "scene" button that was supposed to dim the lights for movie mode. The problem wasn't the button. It was remembering to press it, and then remembering to press it again when you paused to get a drink, and again when the film ended.
 
 The automation does it instead. The TV plays, the lights dim. The TV pauses, the lights come back up. The TV turns off, the lights restore. Nothing to remember, nothing to press.
 
@@ -28,14 +28,14 @@ The automation does it instead. The TV plays, the lights dim. The TV pauses, the
 
 Four WiZ lights in the living room:
 
-- Two ceiling lights (`wiz_tunable_white_601970`, `wiz_tunable_white_60421e`) — the main overhead lights
-- Two accent/corner lights (`wiz_rgbw_tunable_414776`, `wiz_rgbw_tunable_44a4a4`) — RGBW, can go down to 2200K
+- Two ceiling lights (`wiz_tunable_white_601970`, `wiz_tunable_white_60421e`), the main overhead lights
+- Two accent/corner lights (`wiz_rgbw_tunable_414776`, `wiz_rgbw_tunable_44a4a4`), RGBW and able to go down to 2200K
 
 The distinction between the two types matters for what happens when the film starts.
 
 ## What triggers it
 
-The TV entity (`media_player.tv_stuen`) comes from the **Android TV** integration — built into HA, add it under Integrations with the TV's IP address.
+The TV entity (`media_player.tv_stuen`) comes from the **Android TV** integration. It's built into HA: add it under Integrations with the TV's IP address.
 
 ```yaml
 trigger:
@@ -50,7 +50,7 @@ condition:
     after: "18:00:00"
 ```
 
-The time condition is the key detail. There's no point dimming the lights at noon — the sun is doing more than any ceiling lamp anyway, and a dim living room in the middle of the day just looks broken. After 18:00 it starts to matter.
+The time condition is the key detail. There's no point dimming the lights at noon. The sun is doing more than any ceiling lamp anyway, and a dim living room in the middle of the day just looks broken. After 18:00 it starts to matter.
 
 Mode is `restart`. If you pause and immediately press play again, the pause action is cancelled before it finishes. Without restart mode you'd get a flash of full brightness between plays.
 
@@ -73,7 +73,7 @@ sequence:
         - light.wiz_rgbw_tunable_44a4a4
 ```
 
-The ceiling lights go off entirely — not dimmed, off. Overhead light during a film creates glare on the screen regardless of how low you set it. The accent lights drop to 15% at 2200K, which is a warm amber. Enough to see the room, not enough to wash out the picture.
+The ceiling lights go off entirely. Not dimmed, off. Overhead light during a film creates glare on the screen regardless of how low you set it. The accent lights drop to 15% at 2200K, which is a warm amber. Enough to see the room, not enough to wash out the picture.
 
 ## When you pause
 
@@ -91,7 +91,7 @@ sequence:
         - light.wiz_rgbw_tunable_44a4a4
 ```
 
-All four lights to 100%, 4000K. Not the warm 2700K I'd use normally — 4000K is slightly cooler and more neutral, which reads as "you can see properly again" rather than cosy evening light. The transition happens the moment you press pause, which is when you actually need the light — not five seconds later.
+All four lights to 100%, 4000K. Not the warm 2700K I'd use normally. 4000K is slightly cooler and more neutral, which reads as "you can see properly again" rather than cosy evening light. The transition happens the moment you press pause, which is when you actually need the light, not five seconds later.
 
 The same sequence runs when the TV turns off completely. Whether you paused for a moment or finished watching, the room comes back to normal.
 

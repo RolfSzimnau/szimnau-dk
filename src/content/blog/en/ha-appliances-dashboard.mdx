@@ -10,9 +10,9 @@ translationKey: "ha-appliances-dashboard"
 heroImage: "/blog-images/hvidevarer-appliances.jpg"
 faqs:
   - question: "Can Home Assistant start a Bosch dishwasher at a specific time?"
-    answer: "Yes — the built-in Home Connect integration exposes programme selects and remote start, so an automation can delay the start to the cheapest electricity hour. The door must be closed and remote start enabled on the machine first."
+    answer: "Yes. The built-in Home Connect integration exposes programme selects and remote start, so an automation can delay the start to the cheapest electricity hour. The door must be closed and remote start enabled on the machine first."
   - question: "What are the limitations of controlling a dishwasher via Home Connect?"
-    answer: "Programme changes only work before the machine starts — once running, the select entities become read-only. That is a Bosch firmware restriction, not a Home Assistant one."
+    answer: "Programme changes only work before the machine starts. Once it is running, the select entities become read-only. That is a Bosch firmware restriction, not a Home Assistant one."
 ---
 
 <div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
@@ -21,7 +21,7 @@ faqs:
 
 </div>
 
-The dishwasher was the appliance I expected least from. It's a Bosch. It connects to the Bosch Home Connect app, which is fine but just another app. I added the **Home Connect** integration (built into HA, no HACS needed — requires a Home Connect account) mostly out of completeness.
+The dishwasher was the appliance I expected least from. It's a Bosch. It connects to the Bosch Home Connect app, which is fine but just another app. I added the **Home Connect** integration (built into HA, no HACS needed, but it requires a Home Connect account) mostly out of completeness.
 
 Then I realised it exposes enough control to do something actually useful: schedule the wash to start at the cheapest electricity hour.
 
@@ -41,7 +41,7 @@ switch.dishwasher_speed_perfect
 button.dishwasher_start
 ```
 
-The key one is `select.dishwasher_finish_at`. Bosch's own delayed start lets you tell the machine what time you want it to finish — it works backwards from there. That's the lever.
+The key one is `select.dishwasher_finish_at`. Bosch's own delayed start lets you tell the machine what time you want it to finish, and it works backwards from there. That's the lever.
 
 ## The dashboard card
 
@@ -85,7 +85,7 @@ sequence:
 
 ![Bosch dishwasher energy optimization in Home Assistant showing cheapest hour scheduling and spot price](/blog-images/bosch-dishwasher-home-assistant-energy-optimization.jpg)
 
-The card shows the result: "Schedule cheapest — 16:30 · 0.27 kr". You see both the time and the price before you commit.
+The card then reads "Schedule cheapest: 16:30 · 0.27 kr". You see both the time and the price before you commit.
 
 ## Why this is worth the effort
 
@@ -95,8 +95,8 @@ The real benefit is behavioural. I load the dishwasher when it's full, tap one b
 
 ## What doesn't work
 
-Remote start has to be enabled on the machine's physical panel — there's a small icon on the display. If I forget to enable it, the integration's start command does nothing. I've forgotten this enough times that I added a chip to the card showing whether remote start is currently allowed.
+Remote start has to be enabled on the machine's physical panel. There's a small icon for it on the display. If I forget to enable it, the integration's start command does nothing. I've forgotten this enough times that I added a chip to the card showing whether remote start is currently allowed.
 
 Programme changes via HA only work before the machine starts. Once running, the state entities update but the selects become read-only. That's a Bosch firmware limitation, not HA.
 
-The `Finished` state notification is the other thing. The dishwasher sends a state update when done. I have an alert ticker entry for it on the home screen — "Dishwasher done — empty me!" — that appears until someone acknowledges it. Low-tech, but I actually empty it now instead of leaving it sitting there for three hours.
+The `Finished` state notification is the other thing. The dishwasher sends a state update when done. I have an alert ticker entry for it on the home screen, and "Dishwasher done, empty me!" stays there until someone acknowledges it. Low-tech, but I actually empty it now instead of leaving it sitting there for three hours.

@@ -15,21 +15,21 @@ faqs:
     answer: "Um jeden Laden liegt eine Zone in HA. Beim Ankommen vergleicht eine Automatisierung den Zonennamen mit den Beschreibungen der Artikel. Wer zu Bilka kommt, bekommt nur die Artikel angezeigt, die genau dort im Angebot sind. Dafür musst du für jeden Laden, in dem du einkaufst, eine Zone pflegen."
 ---
 
-Acht Artikel. Vier Geschäfte. Vor dem Eingang zum Bilka — ich wusste nicht mehr, welche davon von hier waren. Ich öffnete die eTilbudsavis-App, scrollte durch die gesamte Liste, suchte die zwei Bilka-Artikel heraus. Der ganze Vorgang dauerte länger als das Einkaufen selbst.
+Acht Artikel. Vier Geschäfte. Ich stand vor dem Eingang zum Bilka und wusste nicht mehr, welche davon von hier waren. Ich öffnete die eTilbudsavis-App, scrollte durch die gesamte Liste, suchte die zwei Bilka-Artikel heraus. Der ganze Vorgang dauerte länger als das Einkaufen selbst.
 
 Einige Tage zuvor hatte jemand in einer dänischen Facebook-Gruppe erwähnt, dass Home Assistant eine Push-Benachrichtigung senden kann, wenn man ein Geschäft betritt, in dem Artikel auf der Einkaufsliste angeboten werden. Das hatte ich nicht gewusst. Jetzt schon.
 
-## Die Integration — CagosDk auf GitHub
+## Die Integration: CagosDk auf GitHub
 
-Der Ausgangspunkt ist eine HACS-Integration von [CagosDk](https://github.com/CagosDk/hacs-etilbudsavis). Sie wird über HACS → Integrationen → Benutzerdefinierte Repositories hinzugefügt. Die Integration erzeugt eine `todo`-Entität für jede eTilbudsavis-Einkaufsliste — bei mir `todo.min_indkobsliste`. Sie erscheint dann als natives HA-Todo-Karte und in der Companion-App.
+Der Ausgangspunkt ist eine HACS-Integration von [CagosDk](https://github.com/CagosDk/hacs-etilbudsavis). Sie wird über HACS → Integrationen → Benutzerdefinierte Repositories hinzugefügt. Die Integration erzeugt eine `todo`-Entität für jede eTilbudsavis-Einkaufsliste (bei mir `todo.min_indkobsliste`). Sie erscheint dann als native HA-Todo-Karte und in der Companion-App.
 
 <img src="/blog-images/etilbudsavis-shopping-Chip.jpg" alt="Home Assistant Dashboard mit einem Einkaufswagen-Chip, der die Anzahl der ausstehenden Artikel anzeigt" style="max-width: 480px; display: block; margin: 2rem auto; border-radius: 12px;" />
 
-Das Zwei-App-Problem war damit gelöst. Die Standardansicht zeigt aber nur Artikelnamen — kein Geschäft, kein Preis, kein Datum. Bei fünfzehn Artikeln aus vier verschiedenen Geschäften hilft das wenig, wenn es schnell gehen muss.
+Das Zwei-App-Problem war damit gelöst. Die Standardansicht zeigt aber nur Artikelnamen: kein Geschäft, kein Preis, kein Datum. Bei fünfzehn Artikeln aus vier verschiedenen Geschäften hilft das wenig, wenn es schnell gehen muss.
 
 ## Anpassungen in todo.py: Beschreibung und Sortierung
 
-Die Integration speichert alle API-Daten im Coordinator — darunter `business.name` (Geschäft), `offer.price` und `offer.validUntil`. Standardmäßig schreibt `todo.py` nur den Geschäftsnamen ins `description`-Feld. Um Preis und Datum hinzuzubekommen, habe ich zwei Hilfsfunktionen ergänzt und den Sortierschlüssel geändert.
+Die Integration speichert alle API-Daten im Coordinator, darunter `business.name` (Geschäft), `offer.price` und `offer.validUntil`. Standardmäßig schreibt `todo.py` nur den Geschäftsnamen ins `description`-Feld. Um Preis und Datum hinzuzubekommen, habe ich zwei Hilfsfunktionen ergänzt und den Sortierschlüssel geändert.
 
 Der Description-Builder:
 
@@ -54,7 +54,7 @@ def _build_description(store: str, offer: dict | None, now: datetime) -> str | N
     return desc
 ```
 
-Sowohl `price` als auch `validUntil` werden per `.get()` abgerufen — fehlen sie in der API-Antwort, werden sie einfach übersprungen. Das Ergebnis ist immer gültig: mindestens der Geschäftsname.
+Sowohl `price` als auch `validUntil` werden per `.get()` abgerufen. Fehlen sie in der API-Antwort, werden sie einfach übersprungen. Das Ergebnis ist immer gültig: mindestens der Geschäftsname.
 
 Die zweite Hilfsfunktion behandelt abgelaufene Angebote. Liegt `validUntil` in der Vergangenheit, bekommt die Artikelzusammenfassung ein Präfix:
 
@@ -95,11 +95,11 @@ Das Ergebnis: unerledigte Artikel vor erledigten, dann alphabetisch nach Geschä
 
 <img src="/blog-images/etilbudsavis-shopping-list.webp" alt="eTilbudsavis Einkaufsliste in der Home Assistant Companion-App, nach Geschäft sortiert mit Preis und Datum" style="max-width: 360px; display: block; margin: 2rem auto; border-radius: 16px;" />
 
-Zwei Dinge sind vor der Bearbeitung wichtig. Erstens liegt `todo.py` unter `/config/custom_components/etilbudsavis/todo.py` auf der HA-Maschine — HACS-Updates überschreiben die Datei. Die Änderungen sind klein genug, um sie in wenigen Minuten erneut einzupflegen. Zweitens erfordert jede Änderung an Python-Dateien in Custom Components einen **vollständigen HA-Neustart** — `reload_config_entry` leert den Python-Modulcache nicht.
+Zwei Dinge sind vor der Bearbeitung wichtig. Erstens liegt `todo.py` unter `/config/custom_components/etilbudsavis/todo.py` auf der HA-Maschine, und HACS-Updates überschreiben die Datei. Die Änderungen sind klein genug, um sie in wenigen Minuten erneut einzupflegen. Zweitens erfordert jede Änderung an Python-Dateien in Custom Components einen **vollständigen HA-Neustart**, denn `reload_config_entry` leert den Python-Modulcache nicht.
 
 ## Zonen und Proximity-Benachrichtigungen
 
-Das ist der Teil aus dem Facebook-Kommentar. Home Assistant hat einen `zone`-Entitätstyp — man legt einen Radius um eine Adresse fest und die Companion-App trackt, wann das Telefon diese Zone betritt oder verlässt. Ich habe Zonen für die Geschäfte angelegt, in denen wir tatsächlich einkaufen: Min Kobmand, ABC Lavpris, Bilka, Lidl, Føtex und zwei Netto-Filialen.
+Das ist der Teil aus dem Facebook-Kommentar. Home Assistant hat einen `zone`-Entitätstyp: Man legt einen Radius um eine Adresse fest, und die Companion-App trackt, wann das Telefon diese Zone betritt oder verlässt. Ich habe Zonen für die Geschäfte angelegt, in denen wir tatsächlich einkaufen: Min Kobmand, ABC Lavpris, Bilka, Lidl, Føtex und zwei Netto-Filialen.
 
 Eine Automation löst aus, wenn mein Pixel 10 oder das Pixel 9a meiner Frau eine dieser Zonen betritt:
 
@@ -114,7 +114,7 @@ trigger:
   # ... für jede weitere Geschäftszone wiederholen
 ```
 
-Die Automation ordnet jede Zone einem Geschäftsnamen in einem `variables`-Block zu. Zwei Netto-Standorte zeigen auf denselben Namen — sie lösen dieselbe Benachrichtigung aus:
+Die Automation ordnet jede Zone einem Geschäftsnamen in einem `variables`-Block zu. Zwei Netto-Standorte zeigen auf denselben Namen und lösen dieselbe Benachrichtigung aus:
 
 ```yaml
 variables:
@@ -157,6 +157,6 @@ Die Aktion ruft dann `todo.get_items` ab, filtert Artikel deren `description` mi
   action: notify.alle_enheder
 ```
 
-`regex_match` matcht vom Anfang des Strings, sodass „Netto" auf „Netto – 12,95 kr. · til 12/6" passt, ohne einen contains-Check zu brauchen. `notify.alle_enheder` durch den eigenen Notify-Service ersetzen — das ist die Gruppe, die bei mir beide Telefone gleichzeitig erreicht.
+`regex_match` matcht vom Anfang des Strings, sodass „Netto“ auf „Netto - 12,95 kr. til 12/6“ passt, ohne einen contains-Check zu brauchen. Ersetze `notify.alle_enheder` durch deinen eigenen Notify-Service. Das ist die Gruppe, die bei mir beide Telefone gleichzeitig erreicht.
 
-Das erste Mal funktionierte es vor dem Netto. Telefon vibriert. Zwei Artikel auf der Liste. Ich wusste es eigentlich — ich hatte die Liste selbst geschrieben. Aber es auf dem Display zu sehen genau in dem Moment, in dem man das Geschäft betritt, ist etwas anderes als daran zu denken, die App zu öffnen.
+Das erste Mal funktionierte es vor dem Netto. Telefon vibriert. Zwei Artikel auf der Liste. Ich wusste es eigentlich, ich hatte die Liste ja selbst geschrieben. Aber es auf dem Display zu sehen genau in dem Moment, in dem man das Geschäft betritt, ist etwas anderes als daran zu denken, die App zu öffnen.

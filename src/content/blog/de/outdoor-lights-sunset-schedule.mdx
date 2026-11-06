@@ -14,15 +14,15 @@ faqs:
     answer: "In Dänemark verschiebt sich der Sonnenuntergang zwischen Juni und Dezember um rund sechs Stunden. Feste Zeiten liegen jedes Frühjahr und jeden Herbst wochenlang sichtbar daneben. Die Sonnen-Entität geht von selbst mit."
 ---
 
-Zweimal im Jahr änderte ich den Timer für die Außenlichter. Einmal im Frühling, wenn 21:00 Uhr noch helles Abendlicht war. Einmal im Herbst, wenn es um 17:00 Uhr dunkel war und die Lichter nicht vor 20:00 Uhr angingen. Ich traf es nie ganz richtig — in den Übergangswochen war der Timer immer falsch, Lichter die im Tageslicht aufflackerten oder den Garten eine Stunde nach Sonnenuntergang noch dunkel ließen.
+Zweimal im Jahr änderte ich den Timer für die Außenlichter. Einmal im Frühling, wenn 21:00 Uhr noch helles Abendlicht war. Einmal im Herbst, wenn es um 17:00 Uhr dunkel war und die Lichter nicht vor 20:00 Uhr angingen. Ich traf es nie ganz richtig. In den Übergangswochen war der Timer immer falsch: Lichter, die im Tageslicht aufflackerten oder den Garten eine Stunde nach Sonnenuntergang noch dunkel ließen.
 
 Die Lösung ist im Nachhinein offensichtlich: keine Uhrzeiten verwenden, sondern die Sonne.
 
 ## Die Einrichtung
 
-Zwei Arten von Außenbeleuchtung: **Govee**-Lichter auf der Terrasse und warm-goldene Lichterketten von Bauhaus, gesteuert über **LEDVANCE SMART+**. Beide sind in HA integriert — Govee über HACS, LEDVANCE SMART+ ist eingebaut und erkennt Geräte automatisch im lokalen Netzwerk.
+Zwei Arten von Außenbeleuchtung: **Govee**-Lichter auf der Terrasse und warm-goldene Lichterketten von Bauhaus, gesteuert über **LEDVANCE SMART+**. Beide sind in HA integriert. Govee läuft über HACS, LEDVANCE SMART+ ist eingebaut und erkennt Geräte automatisch im lokalen Netzwerk.
 
-Die Lichterketten sind von Natur aus warm-golden — etwa 2200K. Sie brauchen keine Szene oder Farbtemperatur-Befehl. Sie müssen einfach nur eingeschaltet werden.
+Die Lichterketten sind von Natur aus warm-golden, etwa 2200K. Sie brauchen keine Szene und keinen Farbtemperatur-Befehl. Sie müssen einfach nur eingeschaltet werden.
 
 ## Die Automatisierung
 
@@ -44,7 +44,7 @@ action:
       brightness_pct: 100
 ```
 
-Der 15-Minuten-Offset bedeutet dass die Lichter angehen wenn es tatsächlich dunkel ist — nicht in dem Moment wenn die Sonne technisch gesehen untergeht, wenn noch genug Restlicht vorhanden ist.
+Der 15-Minuten-Offset bedeutet, dass die Lichter angehen, wenn es tatsächlich dunkel ist, und nicht in dem Moment, in dem die Sonne technisch gesehen untergeht und noch genug Restlicht da ist.
 
 Der Ausschalt-Trigger ist eine feste Uhrzeit:
 
@@ -78,10 +78,10 @@ Ein Paar Mushroom Template Chips die die nächste Auslösezeit anzeigen. Die Son
       content: "Aus: 00:00"
 ```
 
-![Beleuchtungsplan in Home Assistant — Außenlichter ein bei Sonnenuntergang +15 Min, aus um Mitternacht](/blog-images/hjem_Ourdoor_Schedule.jpg.png)
+![Beleuchtungsplan in Home Assistant: Außenlichter ein bei Sonnenuntergang +15 Min, aus um Mitternacht](/blog-images/hjem_Ourdoor_Schedule.jpg.png)
 
-In Dänemark verlagert sich der Sonnenuntergang zwischen Juni und Dezember um mehr als sechs Stunden. Die Lichter folgen dem automatisch — frühestens um etwa 15:30 Uhr im Dezember, spätestens um etwa 22:00 Uhr im Juni.
+In Dänemark verlagert sich der Sonnenuntergang zwischen Juni und Dezember um mehr als sechs Stunden. Die Lichter folgen dem automatisch: frühestens um etwa 15:30 Uhr im Dezember, spätestens um etwa 22:00 Uhr im Juni.
 
 ## Was sich geändert hat
 
-Die Übergangswochen im März und Oktober, in denen der Timer immer falsch war, sind weg. Zwei Trigger, zwei Aktionen — aber eine dieser Automatisierungen die das Haus so wirken lässt als würde es wissen, welche Jahreszeit gerade ist.
+Die Übergangswochen im März und Oktober, in denen der Timer immer falsch war, sind weg. Zwei Trigger, zwei Aktionen. Aber es ist eine dieser Automationen, die das Haus so wirken lassen, als wüsste es, welche Jahreszeit gerade ist.

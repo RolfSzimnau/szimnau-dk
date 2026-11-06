@@ -9,24 +9,24 @@ translationKey: "detection-event-log-home-assistant"
 heroImage: "/blog-images/detection-event-log-home-assistant.jpg"
 faqs:
   - question: "Can the Home Assistant logbook card filter out state changes like 'Cleared'?"
-    answer: "No. The built-in logbook card only accepts an entity list and a time window — there is no state filter, so every on/off transition is shown. To get a detections-only list you have to build your own log, for example an input_text helper fed by an automation."
+    answer: "No. The built-in logbook card only accepts an entity list and a time window. There is no state filter, so every on/off transition is shown. To get a detections-only list you have to build your own log, for example an input_text helper fed by an automation."
   - question: "How many events fit in an input_text helper?"
     answer: "input_text is hard-capped at 255 characters. With a compact 'HH:MM label' format and a separator, that is roughly the 10 most recent events. For longer history with dates you need a trigger-based template sensor storing a list attribute, which requires YAML configuration."
 ---
 
-My security view in Home Assistant has a "Recent events" list below the camera feed — driven by the four binary sensors my [AI camera](/en/blog/sentinel-ai-camera-ha/) exposes: person, motion, animal and vehicle. The problem: the logbook card shows **every state transition**. Each "Person Detected" is followed by a "Person Cleared" thirty seconds later, so half the list is noise and the history covers half the time span it could.
+My security view in Home Assistant has a "Recent events" list below the camera feed, driven by the four binary sensors my [AI camera](/en/blog/sentinel-ai-camera-ha/) exposes: person, motion, animal and vehicle. The problem: the logbook card shows **every state transition**. Each "Person Detected" is followed by a "Person Cleared" thirty seconds later, so half the list is noise and the history covers half the time span it could.
 
-And no — the logbook card cannot filter by state. It takes an entity list and a time window. That's it.
+And no, the logbook card cannot filter by state. It takes an entity list and a time window. That's it.
 
 ## The options, and why I rejected them
 
-A **trigger-based template sensor** with a list attribute is the "proper" solution — but it can't be created from the UI and requires YAML in `configuration.yaml`. A **todo list** as an event log works, but renders clumsily and needs a second automation to prune it. I wanted something that could be built entirely through the UI/API in five minutes and survive restarts.
+A **trigger-based template sensor** with a list attribute is the "proper" solution, but it can't be created from the UI and requires YAML in `configuration.yaml`. A **todo list** as an event log works, but renders clumsily and needs a second automation to prune it. I wanted something that could be built entirely through the UI/API in five minutes and survive restarts.
 
 ## The fix: input_text as a rolling log
 
-An `input_text` helper is persistent, UI-friendly and writable from an automation. The 255-character cap is real — but with an `HH:MM label` format and a separator that's roughly the 10 most recent events. For a "Recent events" list, that's exactly enough.
+An `input_text` helper is persistent, UI-friendly and writable from an automation. The 255-character cap is real, but with an `HH:MM label` format and a separator that's roughly the 10 most recent events. For a "Recent events" list, that's exactly enough.
 
-The automation triggers only on `on` — it never touches "Cleared":
+The automation triggers only on `on`. It never touches "Cleared":
 
 ```yaml
 alias: Sentinel event log
@@ -79,8 +79,8 @@ content: >-
   {% endfor %}{% endif %}
 ```
 
-The result is the list in the hero image: detections only, twice the history in the same space, zero "Cleared" lines. It sits in the same glass container style as the rest of the view — the [ANPR/license-plate version of this camera setup](/en/blog/sentinel-reolink-alpr-tv/) uses the same visual recipe.
+The result is the list in the hero image: detections only, twice the history in the same space, zero "Cleared" lines. It sits in the same glass container style as the rest of the view. The [ANPR/license-plate version of this camera setup](/en/blog/sentinel-reolink-alpr-tv/) uses the same visual recipe.
 
 ## The limitations, honestly
 
-255 characters is about 10 events, and there's only a time — no date. Once an event rolls off the log it's gone (the full history still lives in the logbook/recorder). If you need longer history with dates, a trigger-based template sensor with a list attribute is the right tool — the price is YAML configuration and a restart. The same "small helper + automation" pattern shows up all over my [context-aware home screen](/en/blog/ha-context-aware-home-screen/), and it has yet to let me down.
+255 characters is about 10 events, and there's only a time, no date. Once an event rolls off the log it's gone (the full history still lives in the logbook/recorder). If you need longer history with dates, a trigger-based template sensor with a list attribute is the right tool. The price is YAML configuration and a restart. The same "small helper + automation" pattern shows up all over my [context-aware home screen](/en/blog/ha-context-aware-home-screen/), and it has yet to let me down.

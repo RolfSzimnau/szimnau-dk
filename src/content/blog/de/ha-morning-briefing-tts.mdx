@@ -128,7 +128,7 @@ action:
 
 ## Anpassung
 
-**Nur Werktage** — Bedingung über den Aktionen hinzufügen:
+**Nur Werktage.** Bedingung über den Aktionen hinzufügen:
 
 ```yaml
 condition:
@@ -136,15 +136,15 @@ condition:
     weekday: [mon, tue, wed, thu, fri]
 ```
 
-**Anderer Lautsprecher** — `media_player.hojtaler_kokken` durch eine beliebige HA Media Player-Entität ersetzen.
+**Anderer Lautsprecher.** `media_player.hojtaler_kokken` durch eine beliebige HA Media Player-Entität ersetzen.
 
-**Andere TTS-Engine** — `tts.google_ai_tts` durch `tts.google_translate_en_com` für die kostenlose Option ersetzen.
+**Andere TTS-Engine.** `tts.google_ai_tts` durch `tts.google_translate_en_com` für die kostenlose Option ersetzen.
 
 ## EV-Ladestatus und Vorklimatisierung hinzufügen
 
 Zwei Sensoren aus VW Group Connect (oder einer anderen E-Auto-Integration mit Ladestatus) sagen dem Briefing, ob das Auto für den Tag bereit ist.
 
-**Ladestatus** — das Briefing spricht nur, wenn Handlungsbedarf besteht. Hat das Auto sein Ziel über Nacht erreicht, wird nichts gesagt.
+**Ladestatus.** Das Briefing spricht nur, wenn Handlungsbedarf besteht. Hat das Auto sein Ziel über Nacht erreicht, wird nichts gesagt.
 
 ```jinja
 {% set bat = states('sensor.garage_el_rey_battery_level') | int(0) %}
@@ -157,7 +157,7 @@ Zwei Sensoren aus VW Group Connect (oder einer anderen E-Auto-Integration mit La
 
 `number.garage_el_rey_charge_target` ist das Ladeziel des Autos und lässt sich auch aus Home Assistant setzen. Kennt deine E-Auto-Integration kein Ladeziel, ersetze `maal` durch eine feste Zahl wie `80`.
 
-**Vorklimatisierungsbestätigung** — wenn eine Morgenaufwärmautomation wenige Minuten vor 06:00 Uhr läuft, kann das Briefing bestätigen, dass sie tatsächlich gestartet ist:
+**Vorklimatisierungsbestätigung.** Läuft eine Morgenaufwärmautomation wenige Minuten vor 06:00 Uhr, kann das Briefing bestätigen, dass sie tatsächlich gestartet ist:
 
 ```jinja
 {% set ac = states('climate.garage_el_rey_climate_control') %}
@@ -259,6 +259,6 @@ Das Briefing liest den Sensor dann vor, sobald er etwas anderes als `Keine` enth
 
 ## Warum `tts.speak` und nicht der alte Service
 
-Home Assistant 2024+ verwendet `tts.speak` auf der TTS-Engine-Entität, mit `media_player_entity_id` als Datenfeld. Der alte `tts.google_translate_say`-Service funktioniert noch, ist aber veraltet. Das neue Muster trennt Engine und Abspielgerät — beide können unabhängig voneinander ausgetauscht werden.
+Home Assistant 2024+ verwendet `tts.speak` auf der TTS-Engine-Entität, mit `media_player_entity_id` als Datenfeld. Der alte `tts.google_translate_say`-Service funktioniert noch, ist aber veraltet. Das neue Muster trennt Engine und Abspielgerät, sodass beide unabhängig voneinander ausgetauscht werden können.
 
-`tts.google_ai_tts` wird von der **Google Generative AI**-Integration bereitgestellt — derselben Integration, die auch den Gemini-Konversationsagenten in Home Assistant antreibt. Sie erfordert einen Google AI Studio API-Schlüssel, erzeugt aber natürlich klingende Sprache im Vergleich zur roboterhaften Ausgabe der kostenlosen Google Translate TTS-Option.
+`tts.google_ai_tts` wird von der **Google Generative AI**-Integration bereitgestellt, derselben Integration, die auch den Gemini-Konversationsagenten in Home Assistant antreibt. Sie erfordert einen Google AI Studio API-Schlüssel, erzeugt aber natürlich klingende Sprache im Vergleich zur roboterhaften Ausgabe der kostenlosen Google Translate TTS-Option.
