@@ -36,6 +36,12 @@ export async function rssResponse(lang: Lang, site: URL | undefined): Promise<Re
     })
     .join('\n');
 
+  const latest = posts.reduce(
+    (max, p) => Math.max(max, p.data.pubDate.getTime(), p.data.updatedDate?.getTime() ?? 0),
+    0
+  );
+  const lastBuild = latest ? new Date(latest).toUTCString() : new Date().toUTCString();
+
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
@@ -44,6 +50,8 @@ export async function rssResponse(lang: Lang, site: URL | undefined): Promise<Re
     <atom:link href="${origin}${feedPath(lang)}" rel="self" type="application/rss+xml" />
     <description>${esc(channelDescription[lang] ?? t('hero.subheadline'))}</description>
     <language>${lang}</language>
+    <lastBuildDate>${lastBuild}</lastBuildDate>
+    <ttl>60</ttl>
 ${items}
   </channel>
 </rss>`;

@@ -10,3 +10,12 @@
 
 /blog-images/*
   Cache-Control: public, max-age=86400
+
+/rss.xml
+  Content-Type: application/rss+xml; charset=utf-8
+
+/da/rss.xml
+  Content-Type: application/rss+xml; charset=utf-8
+
+/de/rss.xml
+  Content-Type: application/rss+xml; charset=utf-8
