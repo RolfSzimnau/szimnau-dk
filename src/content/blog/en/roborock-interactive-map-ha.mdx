@@ -3,18 +3,63 @@ title: "What's Actually Useful About the Roborock Map in Home Assistant"
 seoTitle: "Roborock Custom Map Card in Home Assistant (HACS)"
 description: "Roborock Q5 Pro in Home Assistant: set up the interactive map card from HACS, clean single rooms by segment and track brush and filter wear."
 pubDate: 2025-04-04
+updatedDate: 2026-11-08
 tags: ["vacuum", "dashboard"]
 lang: "en"
 translationKey: "roborock-interactive-map-ha"
-heroImage: "/blog-images/roborock-map-dashboard-2026.jpg"
+heroImage: "/blog-images/roborock-tablet-view.jpg"
 faqs:
   - question: "How do you get a live interactive Roborock map in Home Assistant?"
     answer: "The built-in Roborock integration (cloud account required) provides the vacuum entity, and the Xiaomi Vacuum Map Card from HACS renders the live map with tap-to-clean room segments."
   - question: "Does the Roborock integration work locally?"
     answer: "Officially it is cloud polling at roughly 5-second refresh. Local communication requires extracting keys from device firmware. For starting cleans, battery and room segments, cloud polling is entirely adequate."
+  - question: "How do you show brush and filter wear in Home Assistant?"
+    answer: "If the Roborock integration reports hours left (sensor.*_filter_time_left and similar), divide by the part's rated life in a template and show both the percentage and the hours, for example 91% of 150 h for the filter. Clamp the result between 0 and 100."
 ---
 
 The Roborock integration is built into HA. No HACS is needed, but you do need a Roborock cloud account to authenticate. Add the integration, sign in, and the vacuum appears. What it doesn't tell you is that the interesting part comes from a separate HACS card that renders the live map.
+
+## The Robot page on the wall tablet
+
+On the wall tablet the map takes the left half and everything else sits in one column on the right. The map is blurred in the pictures because it is my floor plan. The code further down is from the first version of this setup, so its entity names and the percentage sensors are old.
+
+### Map: zones and go-to
+
+The map card draws a zone cleanup or sends the robot to a spot. Zone cleanup is a rectangle you draw on the map, go-to is a tap. The padlock in the corner locks panning and zooming, so a bump doesn't move the map. The calibration comes from the map image itself, so there are no points to set by hand, and `two_finger_pan` makes a one-finger swipe scroll the page instead of the map.
+
+```yaml
+type: custom:xiaomi-vacuum-map-card
+entity: vacuum.robo
+vacuum_platform: Roborock
+map_source:
+  camera: image.robo_map
+calibration_source:
+  camera: true
+map_modes:
+  - template: vacuum_clean_zone
+  - template: vacuum_goto
+two_finger_pan: true
+```
+
+### Room buttons and suction
+
+The four buttons (Full, Living, Bedroom, Kitchen) press button entities that the Roborock integration creates from the routines saved in the Roborock app. A press is one `button.press` call, so there are no room ids to look up, and the Kitchen button runs a routine I named "After meals". The chips below set the suction: Quiet, Balanced, Turbo or Max, and the active one is coloured.
+
+![The right-hand column of the Robot page: status with battery and area chips, room buttons, suction chips, maintenance with hours left and the mop mode](/blog-images/roborock-tablet-cards.webp)
+
+### Maintenance as percent and hours
+
+The filter, side brush, main brush and sensors each show a percentage and the hours left, like "91% - 137h of 150h". My version of the integration reports only hours left, so the template divides by the part's rated life: 150 h for the filter, 200 h for the side brush, 300 h for the main brush and 30 h for the sensors.
+
+```yaml
+secondary: >
+  {% set left = states('sensor.robo_filter_time_left') | float(0) %}
+  {{ ([[left / 150 * 100, 0] | max, 100] | min) | round(0) | int }}% - {{ left | round(0) | int }}h of 150h
+```
+
+### Mop
+
+Mop mode is a select entity. The intensity row only shows when the robot reports a value, and hides itself while the state is unknown, so the page has no row that says "Unknown".
 
 ## The integration
 

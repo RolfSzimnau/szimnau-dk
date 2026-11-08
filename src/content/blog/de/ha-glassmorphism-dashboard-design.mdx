@@ -3,11 +3,12 @@ title: "Das Glassmorphism-CSS hinter all meinen Home-Assistant-Dashboards"
 seoTitle: "Glassmorphism-CSS für Home-Assistant-Dashboards"
 description: "Die sechs CSS-Konstanten für alle Karten in drei HA-Dashboards, plus Muster für Fortschrittsbalken, Map-Karten und das ::before-Overlay."
 pubDate: 2024-12-13
+updatedDate: 2026-11-08
 verifiedOn: "HA 2026.7"
 tags: ["dashboard"]
 lang: "de"
 translationKey: "ha-glassmorphism-dashboard-design"
-heroImage: "/blog-images/ha-glass-dashboard-cards-2026.jpg"
+heroImage: "/blog-images/glass-lights-tablet-view.jpg"
 faqs:
   - question: "Welches CSS sorgt für den Glas-Look der Karten in Home Assistant?"
     answer: "Sechs card-mod-Werte auf jeder äußeren Karte: 28px border-radius, Hintergrund rgba(255,255,255,0.05), backdrop-filter mit blur(15px), ein 1px-Rand in rgba(255,255,255,0.10) und ein weicher Schatten. Dazu muss die ::before-Ebene des Themes Frosted Glass Dark abgeschaltet werden."
@@ -156,6 +157,18 @@ card_mod:
 ```
 
 Der `"."`-Schlüssel ist der richtige für Mushroom-Karten in HA 2024+. Nicht `ha-card`, nicht der Komponentenname, sondern `"."`. Ich testete deutlich zu viele andere Selektoren, bevor dieser funktionierte.
+
+## Dieselben Regeln in einer echten Ansicht
+
+Die Lights-Ansicht auf meinem Wandtablet verwendet nichts als die Konstanten von oben. Zu mehr als einem Anstrich wird sie dadurch, dass die Kacheln den echten Zustand lesen.
+
+![Der Bereich Schedule der Lights-Ansicht: drei Zeilen mit dem nächsten Einschalten, dem nächsten Ausschalten und dem Morgenstart der Außenbeleuchtung, eine aktive Zeile leuchtet](/blog-images/glass-lights-schedule.webp)
+
+- **Szenenkacheln lesen die Lampen, keinen Schalter.** Movie zeigt nur dann On, wenn der Filmmodus an ist, keine der beiden Lampen mit einstellbarem Weiß brennt und mindestens eine der beiden RGBW-Lampen an ist. Schaltet jemand eine Lampe von Hand, behauptet die Kachel die Szene nicht mehr.
+- **Night zählt.** Die Kachel zeigt, wie viele Lampen in Wohnzimmer und Garten an sind („5 on“), und führt beim Antippen das Gute-Nacht-Skript aus.
+- **Garden zeigt, wann Schluss ist.** Wurde Garden über die Schaltfläche eingeschaltet, steht darauf „Off 23:30“.
+- **Bright zählt runter.** Die Kachel zeigt die verbleibenden Minuten der insgesamt 60.
+- **Die Zeilen unter Schedule lesen den Scheduler.** Jede Zeile liest `next_trigger` am zugehörigen Scheduler-Schalter aus und zeigt „Active · lights on“, „Turns off in 12 min“, „Next: 23:00 · night off“ oder „Out of season (Nov–Jan)“. Ein deaktivierter Zeitplan zeigt „Disabled“, damit eine Zeile nie verschweigt, warum nichts passiert.
 
 ## Visuelle Konsistenz in HA-Dashboards erreichen
 

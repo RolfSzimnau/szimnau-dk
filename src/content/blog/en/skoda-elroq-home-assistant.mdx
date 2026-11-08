@@ -2,12 +2,12 @@
 title: "Škoda Elroq and Home Assistant, Six Months Later"
 description: "From MyŠkoda to VW Group Connect in Home Assistant: what the integration gives you, what is missing, and an EV dashboard with battery status and pre-heating."
 pubDate: 2026-04-13
-updatedDate: 2026-11-05
+updatedDate: 2026-11-08
 verifiedOn: "HA 2026.11"
 tags: ["ev", "dashboard"]
 lang: "en"
 translationKey: "skoda-elroq-home-assistant"
-heroImage: "/blog-images/skoda-elroq-dashboard-2026.jpg"
+heroImage: "/blog-images/skoda-elroq-tablet-view.jpg"
 faqs:
   - question: "What data did the MySkoda Home Assistant integration provide?"
     answer: "The MySkoda integration (HACS) provided battery level, charging state, range, mileage, GPS location, and climate pre-conditioning status. It polled the Škoda Connect cloud API with a 15 to 60 second latency."
@@ -15,6 +15,8 @@ faqs:
     answer: "The integration could not control charging limits, did not support real-time streaming, and had no push notifications. It relied entirely on polling. Charge scheduling had to be done via Home Assistant automations, not the integration itself."
   - question: "Does the MySkoda Home Assistant integration still work?"
     answer: "The MySkoda project announced that the integration would stop working in October 2026. I removed it from my Home Assistant on 9 October 2026 and run the Elroq automations on VW Group Connect. Home Assistant 2026.11 also added an official Škoda integration, which I have not tried. If you switch, entity names change (garage_<car_name>_* in VW Group Connect) and some states are upper case, so check every automation afterwards."
+  - question: "How do you show the charging state of an electric car on a Home Assistant dashboard?"
+    answer: "Put the car picture in conditional cards, one per charging status, and give each a card_mod border and glow: green for CHARGING and CONSERVING, orange for CHARGING_INTERRUPTED and READY_FOR_CHARGING, none when the cable is out. In VW Group Connect the status is upper case, so compare it exactly."
 ---
 
 <div style="background:rgba(185,28,28,0.15);border:1px solid rgba(239,68,68,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
@@ -42,6 +44,55 @@ In September the MySkoda project announced that the integration would stop worki
 I've now moved my own Elroq automations to [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha), a maintained alternative that already supports Škoda over several channels. If you still run MySkoda, switch now, either to VW Group Connect or to the official integration. MySkoda and VW Group Connect ran side by side fine while I switched. Don't expect a drop-in rename, though: entity names differ (`garage_<car_name>_*`, not `skoda_elroq_*`), and at least one enum sensor changes case entirely. MySkoda's `charging_state` is lowercase (`ready_for_charging`), VW Group Connect's equivalent is uppercase (`READY_FOR_CHARGING`). Check every automation's state comparisons by hand, and don't assume parity.
 
 </div>
+
+## The Elroq page on the wall tablet
+
+The tablet in the hallway has one page for the car, built to answer a single question from the door: is the Elroq ready to drive? The code samples further down are from my MySkoda setup, so their entity names are old. This section uses the current VW Group Connect ones.
+
+### The ring around the car
+
+The picture of the car has a coloured edge that follows the charging status. A green glow means `CHARGING` or `CONSERVING`, which is battery care topping the car up. An orange glow means `CHARGING_INTERRUPTED` or `READY_FOR_CHARGING`: the cable is in and nothing is flowing. With the cable out there is no ring at all. The screenshot at the top shows the car idle, so you don't see one there.
+
+Each state is its own conditional card around the same picture, and only one of them matches at a time. This is the green one:
+
+```yaml
+type: conditional
+conditions:
+  - condition: state
+    entity: sensor.garage_el_rey_charging_status
+    state: CHARGING
+card:
+  type: picture-entity
+  entity: image.garage_el_rey_vehicle_render
+  show_state: false
+  show_name: false
+  card_mod:
+    style: |
+      ha-card {
+        border-radius: 24px !important;
+        overflow: hidden !important;
+        border: 2px solid rgba(0,200,80,0.6) !important;
+        box-shadow: 0 0 35px rgba(0,200,80,0.7), 0 6px 30px rgba(0,0,0,0.5) !important;
+      }
+```
+
+The status is upper case in VW Group Connect, and a state condition compares it exactly as written. `charging` never matches `CHARGING`.
+
+### What the battery card says
+
+Under the percentage and the charge target sits a second row. While the car charges it shows the power in kilowatts and when it will be done ("Done at 06:40"), and it pulses slowly. When the car isn't charging, the row says why: No cable, Waiting to charge, Conserving or Interrupted. You never have to guess whether a flat number means "full" or "not plugged in".
+
+![The right-hand side of the Škoda page on the wall tablet: five status chips, battery with charge target, climate controls and efficiency figures](/blog-images/skoda-elroq-tablet-cards.webp)
+
+### A parked car sleeps
+
+A parked Elroq reports only now and then. When the charging status turns unavailable or unknown, a card appears that says "Not reporting live data" and how long ago the car last reported ("Last update 25 minutes ago"). That's better than showing old numbers as if they were live.
+
+### Climate, cable and cost
+
+Five chips along the top show lock state, whether the car is home, the air conditioning, the range and the charging status. Below them are the air conditioning, a window defrost switch and an Unlock Cable row that runs the script from the October section. The bottom card shows the estimated cost per kilometre, this month's kilometres and kroner, the last trip and the current electricity price. The trip figures are logged by an automation once the odometer has been still for 10 minutes.
+
+The map under the car is a normal Home Assistant map card. It is blurred in the picture because it shows my village and street names.
 
 ## October 2026: the switch is done
 

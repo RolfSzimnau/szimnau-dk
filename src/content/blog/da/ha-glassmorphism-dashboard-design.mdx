@@ -2,11 +2,12 @@
 title: "CSS'en bag mine glassmorphism-dashboards i Home Assistant"
 description: "De seks CSS-konstanter for alle kort i mine HA-dashboards, plus mønstre til statusbjælker, kortvisninger og til at fjerne Frosted Glass Darks ::before."
 pubDate: 2024-12-13
+updatedDate: 2026-11-08
 verifiedOn: "HA 2026.7"
 tags: ["dashboard"]
 lang: "da"
 translationKey: "ha-glassmorphism-dashboard-design"
-heroImage: "/blog-images/ha-glass-dashboard-cards-2026.jpg"
+heroImage: "/blog-images/glass-lights-tablet-view.jpg"
 faqs:
   - question: "Hvilken CSS giver glaseffekten på kortene i Home Assistant?"
     answer: "Seks card-mod-værdier på hvert ydre kort: 28px border-radius, baggrunden rgba(255,255,255,0.05), backdrop-filter med blur(15px), en kant på 1px i rgba(255,255,255,0.10) og en blød skygge. Derudover skal Frosted Glass Dark-temaets ::before-lag slås fra."
@@ -155,6 +156,18 @@ card_mod:
 ```
 
 Nøglen `"."` er den rigtige for Mushroom-kort fra HA 2024. Ikke `ha-card` og ikke komponentens navn, men `"."`. Jeg prøvede alt for mange andre selektorer, før den virkede.
+
+## De samme regler på en side i daglig brug
+
+Lights-siden på min vægtablet bruger ikke andet end konstanterne ovenfor. Det, der gør den til mere end et lag maling, er at fliserne læser den rigtige tilstand.
+
+![Afsnittet Schedule på Lights-siden: tre rækker med udendørslysenes næste tænding, slukning og morgenstart, hvor den aktive række lyser](/blog-images/glass-lights-schedule.webp)
+
+- **Scene-fliserne læser lamperne, ikke en kontakt.** Movie siger kun «On», når filmtilstanden er slået til, ingen af de to pærer med justerbart hvidt lys er tændt, og mindst én af de to RGBW-pærer er det. Hvis nogen tænder eller slukker en lampe manuelt, holder flisen op med at påstå, at scenen kører.
+- **Night tæller.** Den viser, hvor mange lys der er tændt i stuen og haven («5 on»), og kører godnat-scriptet, når man trykker på den.
+- **Garden viser, hvornår den slukker.** Er den tændt med knappen, står der «Off 23:30» på flisen.
+- **Bright tæller ned.** Den viser de minutter, der er tilbage af de 60.
+- **Rækkerne i Schedule læser planlæggeren.** Hver række henter `next_trigger` fra sin Scheduler-kontakt og skriver «Active · lights on», «Turns off in 12 min», «Next: 23:00 · night off» eller «Out of season (Nov–Jan)». En deaktiveret plan siger «Disabled», så man aldrig må gætte på, hvorfor der ikke sker noget.
 
 ## Samme udtryk i alle HA-dashboards
 

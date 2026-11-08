@@ -3,11 +3,12 @@ title: "The Glassmorphism CSS Behind All My Home Assistant Dashboards"
 seoTitle: "Glassmorphism CSS for Home Assistant Dashboards"
 description: "The six CSS constants I use on every card across three HA dashboards, plus patterns for progress bars, map cards and the ::before overlay."
 pubDate: 2024-12-13
+updatedDate: 2026-11-08
 verifiedOn: "HA 2026.7"
 tags: ["dashboard"]
 lang: "en"
 translationKey: "ha-glassmorphism-dashboard-design"
-heroImage: "/blog-images/ha-glass-dashboard-cards-2026.jpg"
+heroImage: "/blog-images/glass-lights-tablet-view.jpg"
 faqs:
   - question: "What CSS makes the glassmorphism look work on Home Assistant cards?"
     answer: "Six card-mod constants on every outer card: 28px border-radius, rgba(255,255,255,0.05) background, blur(15px) backdrop-filter, a 1px rgba(255,255,255,0.10) border and a soft shadow. On top of that, suppress the Frosted Glass Dark theme's ::before overlay."
@@ -156,6 +157,18 @@ card_mod:
 ```
 
 The `"."` key is the correct one for mushroom cards in HA 2024+. Not `ha-card`, not the component name, but `"."`. I spent longer than I'd like to admit testing other selectors before this one worked.
+
+## The same rules on a working page
+
+The Lights page on my wall tablet uses nothing but the constants above. What makes it more than a coat of paint is that the tiles read the real state.
+
+![The Schedule section of the Lights page: three rows showing the outdoor lights' next turn-on, turn-off and morning start, with an active row glowing](/blog-images/glass-lights-schedule.webp)
+
+- **Scene tiles read the lights, not a switch.** Movie only says On when film mode is on, neither of the two tunable white bulbs is on and at least one of the two RGBW bulbs is. If someone switches a light by hand, the tile stops claiming the scene.
+- **Night counts.** It shows how many lights are on across the living room and the garden ("5 on") and runs the good-night script when tapped.
+- **Garden shows when it will end.** When it was switched on with the button, the tile says "Off 23:30".
+- **Bright counts down.** It shows the minutes left of its 60.
+- **The Schedule rows read the scheduler.** Each row takes `next_trigger` from its Scheduler switch and writes "Active · lights on", "Turns off in 12 min", "Next: 23:00 · night off" or "Out of season (Nov–Jan)". A disabled schedule says "Disabled", so a row is never silent about why nothing will happen.
 
 ## Achieving visual consistency across HA dashboards
 

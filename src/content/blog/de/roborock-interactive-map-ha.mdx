@@ -3,18 +3,63 @@ title: "Was an der Roborock-Karte in Home Assistant wirklich nützlich ist"
 seoTitle: "Roborock-Karte in Home Assistant: was wirklich hilft"
 description: "Roborock Q5 Pro in Home Assistant: interaktive Karte per HACS, Raumreinigung nach Segment und Wartungssensoren, die vor leeren Bürsten warnen."
 pubDate: 2025-04-04
+updatedDate: 2026-11-08
 tags: ["staubsauger", "dashboard"]
 lang: "de"
 translationKey: "roborock-interactive-map-ha"
-heroImage: "/blog-images/roborock-map-dashboard-2026.jpg"
+heroImage: "/blog-images/roborock-tablet-view.jpg"
 faqs:
   - question: "Wie bekommt man eine interaktive Live-Karte des Roborock in Home Assistant?"
     answer: "Die eingebaute Roborock-Integration (braucht ein Cloud-Konto) liefert die Saugroboter-Entität, und die Xiaomi Vacuum Map Card aus HACS zeichnet die Karte live. Ein Tipp auf einen Raum startet die Reinigung dort."
   - question: "Läuft die Roborock-Integration lokal?"
     answer: "Offiziell fragt sie die Cloud etwa alle 5 Sekunden ab. Für lokalen Betrieb müsstest du Schlüssel aus der Firmware des Geräts holen. Zum Starten, für den Akku und für die Räume reicht die Cloud völlig."
+  - question: "Wie zeigt man den Verschleiß von Bürsten und Filtern in Home Assistant an?"
+    answer: "Meldet die Roborock-Integration die verbleibenden Stunden (`sensor.*_filter_time_left` und ähnliche), teilst du in einem Template durch die Nennlebensdauer des Teils und zeigst Prozent und Stunden an, beim Filter zum Beispiel 91 % von 150 h. Begrenze das Ergebnis auf 0 bis 100."
 ---
 
 Die Roborock-Integration ist direkt in HA eingebaut, kein HACS nötig. Hinzufügen, mit dem Roborock-Konto einloggen (ein Roborock-Cloud-Konto ist erforderlich), der Staubsauger erscheint. Was einem niemand sagt: Das Interessante kommt von einer separaten HACS-Karte, die die Live-Karte rendert.
+
+## Die Roboter-Ansicht auf dem Wandtablet
+
+Auf dem Wandtablet nimmt die Karte die linke Hälfte ein, alles andere steht in einer Spalte rechts. In den Bildern ist die Karte unscharf, weil sie meinen Grundriss zeigt. Der Code weiter unten stammt aus der ersten Version dieses Aufbaus, seine Entitätsnamen und die Prozent-Sensoren sind also veraltet.
+
+### Karte: Zonen und Ziel anfahren
+
+Auf der Karte lässt sich eine Zonenreinigung zeichnen oder der Roboter an eine bestimmte Stelle schicken. Die Zonenreinigung ist ein Rechteck, das du auf die Karte ziehst, das Anfahren eines Ziels ein einzelnes Antippen. Das Schloss in der Ecke sperrt Verschieben und Zoomen, damit ein versehentliches Anstoßen die Karte nicht verschiebt. Die Kalibrierung kommt aus dem Kartenbild selbst, du setzt also keine Punkte von Hand, und `two_finger_pan` sorgt dafür, dass ein Wischen mit einem Finger die Seite scrollt statt der Karte.
+
+```yaml
+type: custom:xiaomi-vacuum-map-card
+entity: vacuum.robo
+vacuum_platform: Roborock
+map_source:
+  camera: image.robo_map
+calibration_source:
+  camera: true
+map_modes:
+  - template: vacuum_clean_zone
+  - template: vacuum_goto
+two_finger_pan: true
+```
+
+### Raumschaltflächen und Saugstufe
+
+Die vier Schaltflächen (Full, Living, Bedroom, Kitchen) drücken Button-Entitäten, die die Roborock-Integration aus den Routinen anlegt, die in der Roborock-App gespeichert sind. Ein Druck ist ein einziger `button.press`-Aufruf, du musst also keine Raum-IDs nachschlagen. Die Kitchen-Schaltfläche startet eine Routine, die ich „After meals“ genannt habe. Die Chips darunter stellen die Saugstufe ein: Quiet, Balanced, Turbo oder Max, und die aktive ist farbig hervorgehoben.
+
+![Die rechte Spalte der Roboter-Ansicht: Status mit Akku- und Flächen-Chips, Raumschaltflächen, Chips für die Saugstufe, Wartung mit verbleibenden Stunden und der Wischmodus](/blog-images/roborock-tablet-cards.webp)
+
+### Wartung in Prozent und Stunden
+
+Filter, Seitenbürste, Hauptbürste und Sensoren zeigen jeweils einen Prozentwert und die verbleibenden Stunden, etwa „91% - 137h of 150h“. Meine Version der Integration meldet nur die verbleibenden Stunden, deshalb teilt das Template durch die Nennlebensdauer des Teils: 150 h beim Filter, 200 h bei der Seitenbürste, 300 h bei der Hauptbürste und 30 h bei den Sensoren.
+
+```yaml
+secondary: >
+  {% set left = states('sensor.robo_filter_time_left') | float(0) %}
+  {{ ([[left / 150 * 100, 0] | max, 100] | min) | round(0) | int }}% - {{ left | round(0) | int }}h of 150h
+```
+
+### Wischen
+
+Der Wischmodus ist eine Select-Entität. Die Zeile für die Intensität erscheint nur, wenn der Roboter einen Wert meldet, und blendet sich aus, solange der Zustand unbekannt ist. So hat die Ansicht keine Zeile, in der „Unknown“ steht.
 
 ## Die Integration
 

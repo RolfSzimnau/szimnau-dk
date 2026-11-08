@@ -2,12 +2,12 @@
 title: "Škoda Elroq und Home Assistant, sechs Monate später"
 description: "Von MyŠkoda zu VW Group Connect in Home Assistant: was die Integration liefert, was fehlt, und ein EV-Dashboard mit Akkustatus und Vorheizen."
 pubDate: 2026-04-13
-updatedDate: 2026-11-05
+updatedDate: 2026-11-08
 verifiedOn: "HA 2026.11"
 tags: ["ev", "dashboard"]
 lang: "de"
 translationKey: "skoda-elroq-home-assistant"
-heroImage: "/blog-images/skoda-elroq-dashboard-2026.jpg"
+heroImage: "/blog-images/skoda-elroq-tablet-view.jpg"
 faqs:
   - question: "Welche Daten lieferte die MySkoda-Integration in Home Assistant?"
     answer: "Die MySkoda-Integration aus HACS zeigte Akkustand, Ladezustand, Reichweite, Kilometerstand, GPS-Position und den Status der Vorklimatisierung. Sie fragte die Škoda-Connect-Cloud ab, mit 15 bis 60 Sekunden Verzögerung."
@@ -15,6 +15,8 @@ faqs:
     answer: "Sie konnte das Ladelimit nicht steuern und hatte keine Echtzeitdaten und keine Push-Benachrichtigungen. Alles lief über regelmäßiges Abfragen. Ladezeiten musstest du mit Automatisierungen in Home Assistant planen, nicht in der Integration."
   - question: "Funktioniert die MySkoda-Integration in Home Assistant noch?"
     answer: "Das MySkoda-Projekt hat angekündigt, dass die Integration ab Oktober 2026 nicht mehr funktionieren würde. Ich habe sie am 9. Oktober 2026 aus meinem Home Assistant entfernt und betreibe die Elroq-Automatisierungen mit VW Group Connect. Home Assistant 2026.11 hat außerdem eine offizielle Škoda-Integration bekommen, die ich nicht getestet habe. Beim Wechsel ändern sich die Entitätsnamen (garage_<autoname>_* bei VW Group Connect), und manche Zustände stehen in Großbuchstaben, also prüfe danach jede Automatisierung."
+  - question: "Wie zeigt man den Ladestatus eines Elektroautos in einem Home-Assistant-Dashboard an?"
+    answer: "Das Autobild kommt in bedingte Karten, eine pro Ladestatus, und jede bekommt per card_mod einen Rand und ein Leuchten: grün bei CHARGING und CONSERVING, orange bei CHARGING_INTERRUPTED und READY_FOR_CHARGING, keines bei gezogenem Kabel. Bei VW Group Connect steht der Status in Großbuchstaben, also vergleiche ihn exakt."
 ---
 
 <div style="background:rgba(185,28,28,0.15);border:1px solid rgba(239,68,68,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
@@ -42,6 +44,55 @@ Im September hat das MySkoda-Projekt angekündigt, dass die Integration ab Oktob
 Ich habe meine eigenen Elroq-Automationen bereits auf [VW Group Connect](https://github.com/its-me-prash/vwgroup-connect-ha) umgestellt, eine gepflegte Alternative, die Škoda über mehrere Kanäle unterstützt. Wer noch MySkoda nutzt, sollte jetzt wechseln, zu VW Group Connect oder zur offiziellen Integration. MySkoda und VW Group Connect liefen während des Wechsels problemlos parallel. Eine 1:1-Umbenennung ist es aber nicht: Die Entity-Namen unterscheiden sich (`garage_<autoname>_*`, nicht `skoda_elroq_*`), und mindestens ein Enum-Sensor ändert komplett die Groß-/Kleinschreibung. MySkodas `charging_state` ist kleingeschrieben (`ready_for_charging`), das VW-Group-Connect-Pendant ist großgeschrieben (`READY_FOR_CHARGING`). Prüfe die State-Vergleiche jeder Automation von Hand, und verlass dich nicht auf Gleichheit.
 
 </div>
+
+## Die Elroq-Ansicht auf dem Wandtablet
+
+Das Tablet im Flur hat eine eigene Ansicht fürs Auto. Sie beantwortet eine einzige Frage von der Tür aus: Ist der Elroq fahrbereit? Die Codebeispiele weiter unten stammen aus meinem MySkoda-Aufbau, ihre Entitätsnamen sind also veraltet. Dieser Abschnitt verwendet die aktuellen von VW Group Connect.
+
+### Der Ring ums Auto
+
+Das Autobild hat einen farbigen Rand, der dem Ladestatus folgt. Grünes Leuchten bedeutet `CHARGING` oder `CONSERVING`, also Akkupflege, bei der das Auto nachlädt. Orangefarbenes Leuchten bedeutet `CHARGING_INTERRUPTED` oder `READY_FOR_CHARGING`: Das Kabel steckt, aber es fließt nichts. Bei gezogenem Kabel gibt es gar keinen Ring. Der Screenshot ganz oben zeigt das Auto, wenn es nicht lädt, deshalb ist dort keiner zu sehen.
+
+Jeder Zustand ist eine eigene bedingte Karte um dasselbe Bild, und es passt immer nur eine. Hier die grüne:
+
+```yaml
+type: conditional
+conditions:
+  - condition: state
+    entity: sensor.garage_el_rey_charging_status
+    state: CHARGING
+card:
+  type: picture-entity
+  entity: image.garage_el_rey_vehicle_render
+  show_state: false
+  show_name: false
+  card_mod:
+    style: |
+      ha-card {
+        border-radius: 24px !important;
+        overflow: hidden !important;
+        border: 2px solid rgba(0,200,80,0.6) !important;
+        box-shadow: 0 0 35px rgba(0,200,80,0.7), 0 6px 30px rgba(0,0,0,0.5) !important;
+      }
+```
+
+Der Status steht bei VW Group Connect in Großbuchstaben, und eine Zustandsbedingung vergleicht genau so, wie er geschrieben ist. `charging` trifft nie auf `CHARGING` zu.
+
+### Was die Akkukarte sagt
+
+Unter Prozentwert und Ladeziel steht eine zweite Zeile. Lädt das Auto, zeigt sie die Leistung in Kilowatt und wann das Laden fertig ist („Done at 06:40“) und pulsiert langsam. Lädt es nicht, nennt die Zeile den Grund: „No cable“, „Waiting to charge“, „Conserving“ oder „Interrupted“. So musst du nie raten, ob eine gleichbleibende Zahl „voll“ oder „nicht angeschlossen“ bedeutet.
+
+![Die rechte Seite der Škoda-Ansicht auf dem Wandtablet: fünf Statuschips, Akku mit Ladeziel, Klimasteuerung und Verbrauchswerte](/blog-images/skoda-elroq-tablet-cards.webp)
+
+### Ein geparktes Auto schläft
+
+Ein geparkter Elroq meldet sich nur hin und wieder. Wird der Ladestatus unavailable oder unknown, erscheint eine Karte mit „Not reporting live data“ und der Angabe, wie lange die letzte Meldung zurückliegt („Last update 25 minutes ago“). Das ist besser, als alte Zahlen so zu zeigen, als wären sie live.
+
+### Klima, Kabel und Kosten
+
+Fünf Chips oben zeigen Verriegelung, Standort (zu Hause oder nicht), Klimaanlage, Reichweite und Ladestatus. Darunter folgen die Klimaanlage, ein Schalter zum Enteisen der Scheiben und eine Zeile „Unlock Cable“, die das Skript aus dem Oktober-Abschnitt ausführt. Die untere Karte zeigt die geschätzten Kosten pro Kilometer, die Kilometer und Kronen dieses Monats, die letzte Fahrt und den aktuellen Strompreis. Die Fahrtwerte protokolliert eine Automatisierung, sobald der Kilometerzähler 10 Minuten lang stillgestanden hat.
+
+Die Landkarte unter dem Auto ist die Standardkarte von Home Assistant (Map-Card). Im Bild ist sie unscharf, weil sie meinen Ort und die Straßennamen zeigt.
 
 ## Oktober 2026: der Wechsel ist abgeschlossen
 

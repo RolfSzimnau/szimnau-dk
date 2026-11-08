@@ -3,18 +3,63 @@ title: "Det, der faktisk er nyttigt ved Roborock-kortet i Home Assistant"
 seoTitle: "Roborock-kort i Home Assistant: det, der virker"
 description: "Roborock Q5 Pro i Home Assistant: interaktivt kort via HACS, rengøring af enkelte rum og sensorer, der advarer, før børsten er slidt op."
 pubDate: 2025-04-04
+updatedDate: 2026-11-08
 tags: ["støvsuger", "dashboard"]
 lang: "da"
 translationKey: "roborock-interactive-map-ha"
-heroImage: "/blog-images/roborock-map-dashboard-2026.jpg"
+heroImage: "/blog-images/roborock-tablet-view.jpg"
 faqs:
   - question: "Hvordan får man et levende, interaktivt Roborock-kort i Home Assistant?"
     answer: "Den indbyggede Roborock-integration (kræver en konto i skyen) giver støvsugerentiteten, og Xiaomi Vacuum Map Card fra HACS tegner kortet live, så du kan trykke på et rum for at gøre det rent."
   - question: "Virker Roborock-integrationen lokalt?"
     answer: "Officielt henter den data fra skyen cirka hvert 5. sekund. Lokal forbindelse kræver, at du trækker nøgler ud af enhedens firmware. Til at starte rengøring og se batteri og rum er skyen helt tilstrækkelig."
+  - question: "Hvordan viser man slid på børster og filter i Home Assistant?"
+    answer: "Hvis Roborock-integrationen melder timer tilbage (sensor.*_filter_time_left og lignende), dividerer du med delens levetid i en skabelon og viser både procent og timer, fx 91 % af 150 timer for filteret. Begræns resultatet til mellem 0 og 100."
 ---
 
 Roborock-integrationen er bygget ind i HA, så der skal ikke bruges HACS. Tilføj den, log ind med din Roborock-konto, og støvsugeren dukker op. Hvad den ikke fortæller dig, er, at det interessante kommer fra et separat HACS-kort, der viser kortet live.
+
+## Robot-siden på vægtabletten
+
+På vægtabletten fylder kortet venstre halvdel, og alt det andet står i én kolonne til højre. Kortet er sløret på billederne, fordi det er min grundplan. Koden længere nede stammer fra den første version af opsætningen, så entitetsnavnene og procentsensorerne er forældede.
+
+### Kortet: zoner og kør-til
+
+På kortet kan du tegne en zone, der skal gøres rent, eller sende robotten hen til et sted. Zonerengøring er et rektangel, du tegner på kortet, og kør-til er et enkelt tryk. Hængelåsen i hjørnet låser panorering og zoom, så et uheld ikke flytter kortet. Kalibreringen kommer fra selve kortbilledet, så der ikke er nogen punkter, der skal sættes manuelt, og med `two_finger_pan` ruller et stryg med én finger siden i stedet for kortet.
+
+```yaml
+type: custom:xiaomi-vacuum-map-card
+entity: vacuum.robo
+vacuum_platform: Roborock
+map_source:
+  camera: image.robo_map
+calibration_source:
+  camera: true
+map_modes:
+  - template: vacuum_clean_zone
+  - template: vacuum_goto
+two_finger_pan: true
+```
+
+### Rumknapper og sugestyrke
+
+De fire knapper (Full, Living, Bedroom, Kitchen) trykker på knapentiteter, som Roborock-integrationen opretter ud fra de rutiner, der er gemt i Roborock-appen. Et tryk er ét kald til `button.press`, så der ikke er nogen rum-id'er at slå op, og Kitchen-knappen kører en rutine, jeg har kaldt «After meals». Chippene under dem vælger sugestyrken: Quiet, Balanced, Turbo eller Max, og den aktive er farvet.
+
+![Højre kolonne på Robot-siden: status med chips for batteri og areal, rumknapper, chips til sugestyrke, vedligehold med timer tilbage og moppetilstand](/blog-images/roborock-tablet-cards.webp)
+
+### Vedligehold som procent og timer
+
+Filter, sidebørste, hovedbørste og sensorer viser hver en procent og de timer, der er tilbage, fx «91% - 137h of 150h». Min version af integrationen melder kun timer tilbage, så skabelonen dividerer med delens levetid: 150 timer for filteret, 200 for sidebørsten, 300 for hovedbørsten og 30 for sensorerne.
+
+```yaml
+secondary: >
+  {% set left = states('sensor.robo_filter_time_left') | float(0) %}
+  {{ ([[left / 150 * 100, 0] | max, 100] | min) | round(0) | int }}% - {{ left | round(0) | int }}h of 150h
+```
+
+### Moppen
+
+Moppetilstanden er en select-entitet. Rækken med intensitet vises kun, når robotten melder en værdi, og den skjuler sig selv, så længe tilstanden er ukendt. Siden har dermed ingen række, hvor der står «Unknown».
 
 ## Integrationen
 
