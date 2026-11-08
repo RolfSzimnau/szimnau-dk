@@ -2,12 +2,12 @@
 title: "Vaskemaskinen venter nu på den billigste strøm"
 description: "Vaskemaskinen gik i stykker, så jeg valgte en Miele for den indbyggede Home Assistant-integration, men den mangler opvaskemaskinens forsinkede start."
 pubDate: 2026-07-28
-updatedDate: 2026-07-31
+updatedDate: 2026-11-08
 verifiedOn: "HA 2026.7"
 tags: ["dashboard", "energi", "automatisering", "stemme"]
 lang: "da"
 translationKey: "miele-washing-machine-home-assistant"
-heroImage: "/blog-images/miele-washing-machine-home-assistant.jpg"
+heroImage: "/blog-images/miele-washing-machine-progress-bar.jpg"
 faqs:
   - question: "Hvad giver den indbyggede Miele-integration adgang til i Home Assistant?"
     answer: "Integrationen `miele` (HA 2025.5 og nyere, uden HACS) viser programstatus, programfase, forløbet og resterende tid, forventet strøm- og vandforbrug, niveauet i TwinDos og tre knapper: start, stop og pause."
@@ -78,7 +78,29 @@ actions:
 
 En `time`-trigger, der peger på en `input_datetime`, genindlæser helperens værdi ved hver reload. En genstart mellem nu og det planlagte tidspunkt ødelægger altså ikke planen. Det ville et almindeligt `delay:`-trin i et script derimod gøre.
 
-![Miele vaskemaskine kort i Home Assistant der viser centrifugeringsfase, resterende tid og en stop-knap](/blog-images/miele-washing-machine-home-assistant.jpg)
+![Vaskemaskinens kort, mens den kører, på tabletten: en farvet fremdriftsbjælke bag den øverste række, sluttidspunktet og minutterne tilbage samt en stop-række](/blog-images/miele-running-card-progress.webp)
+
+## En fremdriftsbjælke bag statusrækken
+
+Den farvede bjælke bag den øverste række viser, hvor langt programmet er nået. Miele melder minutter gået og minutter tilbage, så bjælkens bredde er gået divideret med gået plus tilbage: 18 af 47 minutter er 38 %. Bjælken vises kun, mens maskinen kører eller skyller (`in_use` eller `rinse_hold`), og den stopper ved 100 %. Skærmbilledet er en rigtig hurtigvask, taget halvvejs.
+
+Teksten giver det præcise sluttidspunkt og fasen. Bjælken giver fornemmelsen af, hvor lang tid der er tilbage, og den kan man aflæse fra den anden side af rummet.
+
+```yaml
+card_mod:
+  style: |
+    ha-card { overflow: hidden !important; position: relative !important; }
+    {% set run = states('sensor.washing_machine') in ['in_use', 'rinse_hold'] %}
+    {% set el = states('sensor.washing_machine_elapsed_time') | float(0) %}
+    {% set rem = states('sensor.washing_machine_remaining_time') | float(0) %}
+    ha-card::after {
+      content: '' !important; position: absolute !important; left: 0; top: 0;
+      height: 100% !important;
+      width: {{ ([(el / (el + rem) * 100) if (el + rem) > 0 else 0, 100] | min) | round(0) | int if run else 0 }}% !important;
+      background: linear-gradient(90deg, rgba(0,188,212,0.24), rgba(0,188,212,0.06)) !important;
+      pointer-events: none !important;
+    }
+```
 
 ## Knapper der ikke findes, før man beder pænt
 
