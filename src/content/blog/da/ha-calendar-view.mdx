@@ -2,74 +2,134 @@
 title: "Ét overblik i Home Assistant til fire menneskers kalendere"
 description: "Sådan samlede jeg fire Google-kalendere og affaldsdata i én farvekodet visning i Home Assistant, der afløste vores vægkalender."
 pubDate: 2025-07-25
-updatedDate: 2026-10-01
+updatedDate: 2026-11-08
 tags: ["kalender", "dashboard"]
 lang: "da"
 translationKey: "ha-calendar-view"
-heroImage: "/blog-images/kalender-calendar.jpg"
+heroImage: "/blog-images/ha-calendar-view-tablet-grid.jpg"
 faqs:
   - question: "Hvordan viser man flere familiekalendere i én visning i Home Assistant?"
-    answer: "Hver persons Google-kalender bliver tilføjet med Google Calendar-integrationen og vist med sin egen farve i en fælles dagsorden. Affaldskalenderen kommer fra integrationen Affaldshaandtering DK."
-  - question: "Kan det betale sig at bygge en månedsvisning i Home Assistant?"
-    answer: "Ærligt talt bliver listen brugt langt mere. Månedsvisningen åbner vi kun for at tjekke bestemte datoer. Forsiden viser de næste 3 aftaler og kalendervisningen 15, så det er to zoomniveauer på de samme data."
+    answer: "Hver persons Google-kalender tilføjes med Google Kalender-integrationen og vises med sin egen farve i ét calendar-card-pro-kort. Affaldskalenderen kommer fra integrationen `affalddk` (Affaldshaandtering DK) og står i samme liste."
+  - question: "Kan man oprette aftaler i Google Kalender fra et Home Assistant-dashboard?"
+    answer: "Ja. Sætter man day_tap_action: add-event på calendar-card-pro, åbner et tryk på en dag en formular, der opretter aftalen. I Google-kalendere kan man oprette og slette, men ikke redigere, fordi integrationen ikke understøtter opdatering."
+  - question: "Hvilken visning i calendar-card-pro passer bedst til en vægtablet?"
+    answer: "Ugevisningen med tidsgitter. Med view: grid, en time_grid fra 07:00 til 22:00 og hour_height: 31px er der plads til en hel uge på en skærm på 1280×800 uden at scrolle. På telefonen er listen bedre."
 ---
 
 <div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-**Opdatering, oktober 2026:** Jeg er skiftet fra `atomic-calendar-revive` til `custom:calendar-card-pro` (HACS) på både forsiden og kalendervisningen, med samme farve pr. person og farvede mærker på heldagsaftaler. `atomic-calendar-revive` er afinstalleret. Princippet nedenfor er det samme, men YAML-eksemplerne er til det gamle kort.
+**Opdatering, november 2026:** Indlægget beskriver nu `custom:calendar-card-pro` v5.1 (HACS), som afløste `atomic-calendar-revive`. Vægtabletten viser ugen som et tidsgitter, et tryk på en dag opretter en aftale, og jeg har rettet farverne på pillerne til heldagsaftaler. Jeg har skrevet afsnittene nedenfor om, så de passer.
 
 </div>
 
 Vi havde en vægkalender i køkkenet i årevis. En af de store papirkalendere med en kolonne pr. familiemedlem. Nogen skriver noget i den, en anden ser det ikke, og pludselig er der dobbeltbooking ved skolehentning eller en fødselsdag, der først bliver husket samme morgen. Kalenderen virkede fint, så længe alle holdt den opdateret. Det gjorde de bare ikke altid.
 
-Kalendervisningen i HA løste ikke problemet med vanerne. Men den lagde de samme oplysninger et sted, hvor alle alligevel kigger.
+Kalendervisningen i Home Assistant løste ikke problemet med vanerne. Men den lagde de samme oplysninger et sted, hvor alle alligevel kigger.
 
 ## Opsætningen
 
-Hvert familiemedlem har en Google-kalender. HA's Google Kalender-integration henter dem alle ind som separate `calendar.*`-entiteter. Affaldsdata kommer fra integrationen `affalddk` (HACS), et dansk kommunalt API for affald, der opretter sin egen kalender med afhentningsdatoerne.
+Hvert familiemedlem har en Google-kalender. HA's Google Kalender-integration henter dem alle ind som hver sin `calendar.*`-entitet. De danske helligdage er også en kalender, og affaldsdata kommer fra integrationen `affalddk` (HACS), et dansk API med kommunernes affaldsdata, der opretter sin egen kalender med afhentningsdatoerne.
 
-Kalendervisningen bruger `custom:atomic-calendar-revive` (HACS) i agendatilstand. Ikke noget fancy, bare en liste over kommende aftaler med en farve pr. person.
+Det hele går gennem ét kort, `custom:calendar-card-pro` (HACS). Det har tre visninger (liste, kolonner og tidsgitter), og den samme liste over kalendere virker i dem alle. På telefonen bruger jeg listen:
 
 ```yaml
-type: custom:atomic-calendar-revive
+type: custom:calendar-card-pro
+days_to_show: 7
+compact_mode: true
+split_multiday_events: true
+allday_badge: title
+show_location: true
+show_event_progress_bar: true
+weather:
+  entity: weather.forecast_home
+  position: date
 entities:
   - entity: calendar.rolf
-    color: "#4fc3f7"
+    color: "#00bcd4"
+    accent_color: "#00bcd4"
   - entity: calendar.familiemedlem_1
-    color: "#f06292"
+    color: "#e040fb"
+    accent_color: "#e040fb"
   - entity: calendar.familiemedlem_2
-    color: "#ff8a65"
+    color: "#ff4081"
+    accent_color: "#ff4081"
   - entity: calendar.familiemedlem_3
-    color: "#aed581"
+    color: "#ff7043"
+    accent_color: "#ff7043"
+  - entity: calendar.helligdage_i_danmark
+    color: "#fdd835"
+    accent_color: "#fdd835"
   - entity: calendar.affalddk_din_adresse
-    color: "#78909c"
-mode: Event
-maxEventCount: 15
-hoursFormat: 24h
-showWeekDay: true
-showRelativeTime: true
-showLocation: true
-showDescription: false
+    color: "#4caf50"
+    accent_color: "#4caf50"
 ```
 
-`showRelativeTime: true` er det, der ændrede, hvordan jeg bruger den. I stedet for «14. maj» står der «om 5 dage». Jeg opfatter relativ tid hurtigere end datoer. Jeg ved ikke hvorfor.
+Nogle af indstillingerne gør mere, end man tror:
 
-## Det, affaldskalenderen gør
+- `days_to_show: 7` henter en uge fra i dag.
+- `split_multiday_events` viser en rejse eller en ferie på hver dag, den dækker, og ikke kun på den første.
+- `allday_badge: title` tegner heldagsaftaler som en farvet pille om titlen, så de ikke ligner aftaler med et tidspunkt.
+- `weather` sætter et lille vejrikon og en temperatur ved siden af hver dato. Det er praktisk, når man skal vurdere, om en udendørsplan holder til torsdag.
 
-`affalddk` opretter aftaler for hver type afhentning: restaffald, genbrug, papir og glas. De vises som grå linjer i visningen. På forsiden vises affaldskortet kun, når der er højst tre dage til en afhentning, men her i kalendervisningen ser man hele planen flere måneder frem.
-
-Det lyder som en lille ting. Det er det ikke. Når jeg ved, at papiret hentes næste torsdag, får jeg faktisk skilt kartonerne ad i tide i stedet for at proppe dem ned i containeren aftenen før.
+<img src="/blog-images/ha-calendar-view-phone-list.webp" alt="Kalenderlisten i Home Assistant på en telefon: en uges aftaler med én farve pr. person, en farvet pille om heldagsaftalerne og vejrudsigt ved hver dato" style="max-width: 360px; display: block; margin: 2rem auto; border-radius: 16px;" />
 
 ## Farvekodningen
 
 Hver person får én farve, og den er den samme alle steder, hvor deres aftaler dukker op. Efter et par uger holder man op med at læse navnene og læser bare farven. Et blik på mandag fortæller, hvis dag det er, uden at man skal læse teksten.
 
-Affaldskalenderen er grå, fordi den ikke er en person, men infrastruktur. Den står i listen uden at konkurrere med menneskenes aftaler.
+Jeg tog lidt fejl i starten. I kortet farver `color` kun aftalens titel. Stregen ved siden af aftalen, rækkens baggrund og pillen om heldagsaftaler bruger en anden indstilling, `accent_color`, og den falder tilbage til temaets blå. Jeg havde kun sat `color`, så en persons heldagsaftaler stod som blå piller med orange tekst. Da jeg satte `accent_color` til samme farvekode, var problemet løst. Farver man aftaler pr. person, skal man sætte begge.
 
-## Det, jeg ikke gjorde
+Affaldet er grønt, og helligdagene er gule. De står i samme liste uden at have brug for en persons farve.
 
-Jeg lavede ikke en ugevisning. Der findes kort, der viser et rigtigt månedsgitter, og jeg prøvede et. Det så fint ud, men jeg opdagede, at jeg brugte det på samme måde som papirkalenderen: ikke ofte nok og kun for at tjekke en bestemt dato.
+## Det, affaldskalenderen gør
 
-Det er agendavisningen, jeg faktisk bruger. Det er bare en liste over det, der kommer, i rækkefølge. Man skal ikke afkode et gitter.
+`affalddk` opretter aftaler for hver type afhentning: restaffald, genbrug, papir og glas. De vises som grønne linjer i visningen. På forsiden vises affaldskortet kun, når der er højst tre dage til en afhentning, men her i kalendervisningen ser man hele planen flere måneder frem.
 
-Forsiden viser de næste 3 aftaler fra alle kalendere samlet. Kalendervisningen viser 15. Når jeg vil planlægge en uge frem, går jeg til kalendervisningen. Til daglig kigger jeg bare på forsiden. To zoomniveauer på de samme data.
+Det lyder som en lille ting. Det er det ikke. Når jeg ved, at papiret hentes næste torsdag, får jeg faktisk skilt kartonerne ad i tide i stedet for at proppe dem ned i containeren aftenen før.
+
+## Ugevisning på vægtabletten
+
+Jeg plejede at springe tidsgitteret over. Jeg havde prøvet en månedsvisning, og den så fin ud, men jeg brugte den på samme måde som papirkalenderen: ikke ofte nok og kun for at tjekke en bestemt dato. Det var listen, jeg brugte.
+
+På vægtabletten blev gitteret den bedste visning. Der er plads til syv dagskolonner med timerne langs siden, og aftaler, der overlapper, er nemme at få øje på.
+
+```yaml
+type: custom:calendar-card-pro
+view: grid
+days_to_show: 7
+time_grid:
+  start_time: "07:00"
+  end_time: "22:00"
+  hour_height: 31px
+toolbar:
+  show: true
+  view_switcher: true
+  search: true
+day_tap_action:
+  action: add-event
+# entities: den samme liste som ovenfor
+```
+
+![Kalenderkortet i Home Assistant som ugevisning på en vægtablet: syv dagskolonner fra 07:00 til 22:00, heldagsaftaler i et bånd over timerne og en farveforklaring nedenunder](/blog-images/ha-calendar-view-grid-tablet.webp)
+
+`time_grid.start_time` og `end_time` udelader natten. `hour_height` er den, man skal justere. Standarden er 48 px, og så er en dag højere end en skærm på 1280×800. Ved 46 px lå aftenen stadig uden for skærmen, så jeg satte den ned, indtil hele ugen kunne være på skærmen uden at scrolle. For mig blev det 31 px, og jeg kontrollerede det med et skærmbillede i tabletens størrelse. Heldagsaftaler ligger i et bånd over timerne og tager ikke plads fra gitteret.
+
+Værktøjslinjen har tre funktioner. En visningsvælger lader enhver skifte til liste eller kolonner, og hver enhed husker sit eget valg. En opdateringsknap henter kalenderne igen. En søgeknap søger efter aftaler et år tilbage og et år frem. Kortet beholder også vejrudsigten ved hver dag.
+
+## Opret aftaler fra kortet
+
+`day_tap_action: add-event` gør et tryk på en dag til en ny aftale. I listen trykker man på datoen eller på det tomme område mellem aftalerne. I tidsgitteret trykker man på et tomt sted, og aftalen starter på det kvarter, man trykker på. Man kan også holde og trække over flere timer for at bestemme længden. Et tryk på en eksisterende aftale gør noget andet, så det opretter aldrig en ekstra ved et uheld.
+
+![Formularen til en ny aftale i kalenderkortet åbnet på tabletten: titel, start- og sluttidspunkt, sted, kalender og beskrivelse, med en ny aftale tegnet onsdag](/blog-images/ha-calendar-view-add-event-tablet.webp)
+
+Formularen har en titel, et start- og sluttidspunkt, et sted, en kalender og en beskrivelse. Den starter på den første kalender i listen, der kan modtage nye aftaler, og det er min egen. Man kan skifte kalender, før man gemmer.
+
+Det virker med Google, men med begrænsninger. Kortets dokumentation siger om Google Kalender: opret ja, slet ja, redigér nej. Home Assistants Google-integration kan oprette og slette aftaler, men ikke ændre dem, så kortets redigeringsfelter og muligheden for at trække en aftale hen gælder ikke vores kalendere. Derfor har jeg heller ikke sat `event_tap_action: details`. Den ville åbne en formular på eksisterende aftaler, og på en vægtablet vil jeg ikke have, at et tryk kan slette en.
+
+Jeg løb ind i en ting. Jeg havde sat `allow_event_edit: false` og `allow_event_delete: false` for en sikkerheds skyld. Bagefter skete der ingenting på telefonen, når jeg trykkede på en dag. Jeg fjernede begge indstillinger og genindlæste, og så åbnede formularen. Jeg kan ikke sige, om det var indstillingerne eller et kort, der lå i cachen, der var årsagen, men uden `event_tap_action` beskytter de ikke noget, så jeg lader dem være.
+
+## Det, jeg stadig ikke bruger
+
+Jeg bruger ikke en månedsvisning eller ugenumre. Og jeg redigerer ikke aftaler fra dashboardet, fordi Google ikke lader HA gøre det.
+
+Forsiden viser en kort liste over de næste fem aftaler fra alle kalendere samlet, og et tryk åbner kalendersiden. Kalendersiden er listen på telefonen og tidsgitteret på tabletten. Når jeg vil planlægge en uge frem, går jeg derhen. Til daglig kigger jeg bare på forsiden. Flere zoomniveauer på de samme data.

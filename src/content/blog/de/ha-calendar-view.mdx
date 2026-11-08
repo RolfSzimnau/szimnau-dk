@@ -1,23 +1,25 @@
 ---
 title: "Eine Home-Assistant-Ansicht für die Kalender von vier Personen"
 seoTitle: "Home-Assistant-Kalenderansicht für vier Personen"
-description: "Wie ich vier Google Kalender und Müllabfuhr-Daten in einer farbcodierten HA-Ansicht zusammengeführt habe, die unseren jahrelangen Wandkalender ersetzt hat."
+description: "Wie ich vier Google-Kalender und Abfuhrtermine in einer farbcodierten HA-Ansicht zusammengeführt habe, die unseren jahrelang genutzten Wandkalender ersetzt hat."
 pubDate: 2025-07-25
-updatedDate: 2026-10-01
+updatedDate: 2026-11-08
 tags: ["kalender", "dashboard"]
 lang: "de"
 translationKey: "ha-calendar-view"
-heroImage: "/blog-images/kalender-calendar.jpg"
+heroImage: "/blog-images/ha-calendar-view-tablet-grid.jpg"
 faqs:
   - question: "Wie zeigt man mehrere Familienkalender in einer Ansicht in Home Assistant?"
-    answer: "Jeder Google-Kalender kommt über die Google-Calendar-Integration dazu und erscheint in einer gemeinsamen Terminliste in seiner eigenen Farbe. Der Abfuhrkalender kommt aus der Integration Affaldshaandtering DK."
-  - question: "Lohnt sich eine Monatsansicht in Home Assistant?"
-    answer: "Ehrlich gesagt wird die Liste viel öfter benutzt. Die Monatsansicht öffnen wir nur, um bestimmte Tage nachzusehen. Die Startseite zeigt die nächsten 3 Termine, die Kalenderansicht 15, also zwei Zoomstufen auf dieselben Daten."
+    answer: "Jeder Google-Kalender kommt über die Google-Calendar-Integration dazu und erscheint in einer Karte vom Typ calendar-card-pro in seiner eigenen Farbe. Der Abfuhrkalender kommt aus der Integration `affalddk` (Affaldshaandtering DK) und steht in derselben Liste."
+  - question: "Kann man von einem Home-Assistant-Dashboard aus Termine in Google Kalender anlegen?"
+    answer: "Ja. Mit day_tap_action: add-event auf calendar-card-pro öffnet das Antippen eines Tages ein Formular, das den Termin anlegt. In Google-Kalendern kann man Termine anlegen und löschen, aber nicht bearbeiten, weil die Integration kein Aktualisieren unterstützt."
+  - question: "Welche Ansicht von calendar-card-pro passt am besten zu einem Wandtablet?"
+    answer: "Die Rasteransicht mit Zeitachse. Mit view: grid, einem time_grid von 07:00 bis 22:00 und hour_height: 31px passt eine ganze Woche ohne Scrollen auf einen Bildschirm mit 1280×800. Auf dem Handy ist die Liste besser."
 ---
 
 <div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-**Update, Oktober 2026:** Ich bin von `atomic-calendar-revive` auf `custom:calendar-card-pro` (HACS) umgestiegen, auf der Startseite und in der Kalenderansicht, mit derselben Farbe pro Person und farbigen Markierungen für ganztägige Termine. `atomic-calendar-revive` ist deinstalliert. Das Prinzip unten ist gleich, die YAML-Beispiele gelten aber für die alte Karte.
+**Update, November 2026:** Der Beitrag beschreibt jetzt `custom:calendar-card-pro` v5.1 (HACS), das `atomic-calendar-revive` abgelöst hat. Das Wandtablet zeigt die Woche als Zeitraster, das Antippen eines Tages legt einen Termin an, und ich habe die Farben der Markierungen für ganztägige Termine korrigiert. Die Abschnitte unten habe ich entsprechend neu geschrieben.
 
 </div>
 
@@ -27,50 +29,108 @@ Die HA-Kalenderansicht hat das Gewohnheitsproblem nicht gelöst. Aber sie hat di
 
 ## Die Konfiguration
 
-Jedes Familienmitglied hat einen Google Kalender. Die HA Google Kalender-Integration zieht alle als separate `calendar.*`-Entitäten rein. Die Müllabfuhr kommt von der `affalddk`-Integration (HACS, dänische Gemeindeabfall-API), die eine eigene Kalenderentität mit Abholungsterminen erstellt.
+Jedes Familienmitglied hat einen Google Kalender. Die Google-Kalender-Integration von HA bindet alle als einzelne `calendar.*`-Entitäten ein. Die dänischen Feiertage sind ebenfalls ein Kalender, und die Müllabfuhr kommt von der Integration `affalddk` (HACS), einer Schnittstelle dänischer Kommunen für die Abfallentsorgung, die eine eigene Kalenderentität mit den Abholterminen anlegt.
 
-Die Kalenderansicht verwendet `custom:atomic-calendar-revive` (HACS) im Agendamodus. Nichts Aufwändiges, nur eine scrollbare Liste bevorstehender Ereignisse, farbcodiert nach Person.
+Alles läuft über eine einzige Karte, `custom:calendar-card-pro` (HACS). Sie hat drei Ansichten (Liste, Spalten und Raster), und dieselbe Kalenderliste funktioniert in allen. Auf dem Handy nehme ich die Liste:
 
 ```yaml
-type: custom:atomic-calendar-revive
+type: custom:calendar-card-pro
+days_to_show: 7
+compact_mode: true
+split_multiday_events: true
+allday_badge: title
+show_location: true
+show_event_progress_bar: true
+weather:
+  entity: weather.forecast_home
+  position: date
 entities:
   - entity: calendar.rolf
-    color: "#4fc3f7"
+    color: "#00bcd4"
+    accent_color: "#00bcd4"
   - entity: calendar.familienmitglied_1
-    color: "#f06292"
+    color: "#e040fb"
+    accent_color: "#e040fb"
   - entity: calendar.familienmitglied_2
-    color: "#ff8a65"
+    color: "#ff4081"
+    accent_color: "#ff4081"
   - entity: calendar.familienmitglied_3
-    color: "#aed581"
+    color: "#ff7043"
+    accent_color: "#ff7043"
+  - entity: calendar.feiertage_in_daenemark
+    color: "#fdd835"
+    accent_color: "#fdd835"
   - entity: calendar.affalddk_deine_adresse
-    color: "#78909c"
-mode: Event
-maxEventCount: 15
-hoursFormat: 24h
-showWeekDay: true
-showRelativeTime: true
-showLocation: true
-showDescription: false
+    color: "#4caf50"
+    accent_color: "#4caf50"
 ```
 
-`showRelativeTime: true` ist das, was verändert hat, wie ich sie benutze. Statt "14. Mai" steht da "in 5 Tagen". Relative Zeit verarbeite ich schneller als absolute Daten. Ich weiß nicht warum.
+Einige dieser Einstellungen leisten mehr, als man ihnen ansieht:
 
-## Was der Müllkalender bringt
+- `days_to_show: 7` lädt eine Woche ab heute.
+- `split_multiday_events` zeigt eine Reise oder einen Urlaub an jedem Tag, den er umfasst, und nicht nur am ersten.
+- `allday_badge: title` zeichnet ganztägige Termine als farbige Pille um den Titel, damit sie nicht wie Termine mit Uhrzeit aussehen.
+- `weather` setzt ein kleines Wettersymbol mit Temperatur neben jedes Datum. Das hilft bei der Frage, ob ein Plan im Freien bis Donnerstag hält.
 
-Die `affalddk`-Integration erstellt Kalendereinträge für jeden Abholungstyp: Restmüll, Wertstoffe, Papier, Glas. Sie erscheinen als graue Einträge in der Ansicht. Auf dem Startbildschirm erscheint die Müllkarte nur innerhalb von drei Tagen vor einer Abholung. Hier in der eigenen Kalenderansicht sieht man dagegen den vollständigen Zeitplan Monate im Voraus.
-
-Das klingt marginal. Ist es nicht. Zu wissen, dass die Papierabholung nächsten Donnerstag ist, bedeutet, dass ich Kartons tatsächlich rechtzeitig aufschlage, anstatt sie am Vorabend hineinzustopfen.
+<img src="/blog-images/ha-calendar-view-phone-list.webp" alt="Kalenderliste in Home Assistant auf einem Handy: die Termine einer Woche mit einer Farbe pro Person, eine farbige Pille um ganztägige Termine und die Wettervorhersage neben jedem Datum" style="max-width: 360px; display: block; margin: 2rem auto; border-radius: 16px;" />
 
 ## Die Farbcodierung
 
-Jede Person bekommt eine Farbe, konsistent. Dieselbe Farbe in jedem Kontext, in dem ihre Ereignisse erscheinen. Nach ein paar Wochen hört man auf, die Namensspalte zu lesen, und liest nur noch die Farbe. Ein Blick auf Montag verrät, wessen Tag es ist, ohne dass die Augen auf Text fokussieren müssen.
+Jede Person bekommt eine feste Farbe, überall dieselbe, wo ihre Termine erscheinen. Nach ein paar Wochen hört man auf, die Namen zu lesen, und liest nur noch die Farbe. Ein Blick auf den Montag verrät, wessen Tag es ist, ohne dass man Text lesen muss.
 
-Der Müllkalender ist grau, weil er keine Person ist, sondern Infrastruktur. Er sitzt in der Liste, ohne visuell mit den menschlichen Einträgen zu konkurrieren.
+Ich hatte das anfangs etwas falsch gemacht. In der Karte färbt `color` nur den Titel eines Termins. Der Balken neben dem Termin, der getönte Hintergrund der Zeile und die Pille bei ganztägigen Terminen verwenden eine zweite Einstellung, `accent_color`, und die fällt auf das Blau des Themes zurück. Ich hatte nur `color` gesetzt, sodass die ganztägigen Termine einer Person als blaue Pillen mit orangem Text erschienen. Als ich `accent_color` auf denselben Farbwert setzte, war es behoben. Wer Termine pro Person einfärbt, setzt beide.
 
-## Was ich nicht gemacht habe
+Die Müllabfuhr ist grün, die Feiertage sind gelb. Sie stehen in derselben Liste, ohne dass sie die Farbe einer Person brauchen.
 
-Ich habe keine Wochenansicht gebaut. Es gibt Kalender-Karten, die ein richtiges Monatsgitter rendern, und ich habe eine ausprobiert. Sie sah korrekt aus, aber ich stellte fest, dass ich sie genauso nutzte wie den Papierwandkalender: nicht oft genug und nur um ein bestimmtes Datum zu prüfen.
+## Was der Müllkalender bringt
 
-Die Agendaansicht ist das, was ich tatsächlich verwende. Es ist einfach eine Liste dessen, was kommt, in Reihenfolge. Kein räumliches Denken erforderlich.
+Die Integration `affalddk` legt Kalendereinträge für jede Abholart an: Restmüll, Wertstoffe, Papier, Glas. Sie erscheinen als grüne Einträge in der Ansicht. Auf dem Startbildschirm erscheint die Müllkarte erst drei Tage vor einer Abholung, aber hier in der eigenen Kalenderansicht sieht man den ganzen Plan monatelang im Voraus.
 
-Der Startbildschirm zeigt die nächsten 3 Ereignisse aus allen Kalendern kombiniert. Die dedizierte Kalenderansicht zeigt 15. Wenn ich eine Woche vorausplanen möchte, gehe ich zur Kalenderansicht. Im Alltag schaue ich nur auf den Startbildschirm. Zwei Zoomstufen über denselben Daten.
+Das klingt nach wenig. Ist es nicht. Wenn ich weiß, dass das Papier nächsten Donnerstag abgeholt wird, falte ich die Kartons tatsächlich rechtzeitig zusammen, statt sie am Vorabend in die Tonne zu stopfen.
+
+## Wochenraster auf dem Wandtablet
+
+Das Raster habe ich früher übersprungen. Ich hatte eine Monatsansicht ausprobiert, und sie sah gut aus, aber ich nutzte sie wie den Papierkalender: nicht oft genug und nur, um ein bestimmtes Datum nachzusehen. Benutzt habe ich die Liste.
+
+Auf dem Wandtablet wurde das Raster die bessere Ansicht. Dort ist Platz für sieben Tagesspalten mit den Stunden am Rand, und überlappende Termine fallen leicht auf.
+
+```yaml
+type: custom:calendar-card-pro
+view: grid
+days_to_show: 7
+time_grid:
+  start_time: "07:00"
+  end_time: "22:00"
+  hour_height: 31px
+toolbar:
+  show: true
+  view_switcher: true
+  search: true
+day_tap_action:
+  action: add-event
+# entities: dieselbe Liste wie oben
+```
+
+![Kalenderkarte in Home Assistant als Wochenraster auf einem Wandtablet: sieben Tagesspalten von 07:00 bis 22:00, ganztägige Termine in einem Band über den Stunden und eine Farblegende darunter](/blog-images/ha-calendar-view-grid-tablet.webp)
+
+`time_grid.start_time` und `end_time` schneiden die Nacht aus dem Raster. `hour_height` ist die Einstellung, die man anpassen muss. Der Standardwert ist 48 px, und dann ist ein Tag höher als ein Bildschirm mit 1280×800. Bei 46 px lag der Abend noch außerhalb des Bildschirms, also bin ich weiter heruntergegangen, bis die ganze Woche ohne Scrollen passte. Bei mir waren es 31 px, und ich habe das mit einem Screenshot in Tablet-Größe geprüft. Ganztägige Termine liegen in einem Band über den Stunden und nehmen dem Raster keinen Platz weg.
+
+Die Symbolleiste hat drei Funktionen. Ein Umschalter lässt jeden zur Liste oder zu den Spalten wechseln, und jedes Gerät merkt sich seine eigene Wahl. Mit einer Schaltfläche lädt man die Kalender neu. Die Suche findet Termine ein Jahr zurück und ein Jahr voraus. Die Wettervorhersage bleibt an jedem Tag sichtbar.
+
+## Termine aus der Karte anlegen
+
+`day_tap_action: add-event` macht aus dem Antippen eines Tages einen neuen Termin. In der Liste tippt man auf das Datum oder auf die freie Fläche zwischen den Terminen. Im Raster tippt man auf eine freie Stelle, und der Termin beginnt in dieser Viertelstunde. Man kann auch gedrückt halten und über mehrere Stunden ziehen, um die Länge festzulegen. Das Antippen eines bestehenden Termins löst etwas anderes aus, damit nie versehentlich ein zweiter entsteht.
+
+![Das Formular für einen neuen Termin in der Kalenderkarte, geöffnet auf dem Tablet: Titel, Start- und Endzeit, Ort, Kalender und Beschreibung, dazu ein neuer Termin, der am Mittwoch eingezeichnet ist](/blog-images/ha-calendar-view-add-event-tablet.webp)
+
+Das Formular hat einen Titel, eine Start- und Endzeit, einen Ort, einen Kalender und eine Beschreibung. Vorausgewählt ist der erste Kalender der Liste, der neue Termine annimmt, und das ist meiner. Vor dem Speichern lässt sich der Kalender wechseln.
+
+Mit Google funktioniert das, allerdings mit Einschränkungen. Die Dokumentation der Karte nennt für Google Kalender: anlegen ja, löschen ja, bearbeiten nein. Die Google-Integration von Home Assistant kann Termine anlegen und löschen, aber nicht ändern, deshalb lassen sich die Bearbeitungsfelder der Karte und das Verschieben per Ziehen bei unseren Kalendern nicht nutzen. Aus demselben Grund habe ich auch `event_tap_action: details` nicht gesetzt. Es würde bei bestehenden Terminen ein Formular öffnen, und auf einem Wandtablet soll ein Antippen keinen Termin löschen können.
+
+Über eine Sache bin ich gestolpert. Ich hatte vorsichtshalber `allow_event_edit: false` und `allow_event_delete: false` gesetzt. Danach passierte auf dem Handy nichts, wenn ich auf einen Tag tippte. Ich entfernte beide Optionen und lud neu, und das Formular öffnete sich. Ob es an den Optionen oder an einer zwischengespeicherten Karte lag, kann ich nicht sagen. Ohne `event_tap_action` schützen sie aber nichts, deshalb würde ich sie weglassen.
+
+## Was ich weiterhin nicht nutze
+
+Ich nutze keine Monatsansicht und keine Kalenderwochen. Und ich bearbeite keine Termine im Dashboard, weil Google das über HA nicht zulässt.
+
+Der Startbildschirm zeigt eine kurze Liste der nächsten fünf Termine aus allen Kalendern zusammen, und ein Antippen öffnet die Kalenderseite. Die Kalenderseite ist auf dem Handy die Liste und auf dem Tablet das Raster. Wenn ich eine Woche vorausplanen möchte, gehe ich dorthin. Im Alltag schaue ich nur auf den Startbildschirm. Mehrere Zoomstufen für dieselben Daten.

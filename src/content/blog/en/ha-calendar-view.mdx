@@ -2,21 +2,23 @@
 title: "One Home Assistant Screen for Four People's Calendars"
 description: "How I combined four Google Calendars plus waste collection into a single colour-coded HA view that replaced the wall calendar we'd had for years."
 pubDate: 2025-07-25
-updatedDate: 2026-10-01
+updatedDate: 2026-11-08
 tags: ["calendar", "dashboard"]
 lang: "en"
 translationKey: "ha-calendar-view"
-heroImage: "/blog-images/kalender-calendar.jpg"
+heroImage: "/blog-images/ha-calendar-view-tablet-grid.jpg"
 faqs:
   - question: "How do you show multiple family calendars in one Home Assistant view?"
-    answer: "Each family member's Google Calendar is added via the Google Calendar integration and rendered with per-person colour coding in a shared agenda view. The Danish waste collection calendar from the Affaldshaandtering DK integration sits in the same list."
-  - question: "Is a month-grid calendar view worth building in Home Assistant?"
-    answer: "The agenda list gets used far more. The month grid only gets opened to check specific dates. The home screen shows the next 3 events and the calendar view 15: two zoom levels off the same data."
+    answer: "Each family member's Google Calendar is added via the Google Calendar integration and rendered with per-person colour coding in one calendar-card-pro card. The Danish waste collection calendar from the Affaldshaandtering DK integration sits in the same list."
+  - question: "Can you add events from a Home Assistant dashboard to Google Calendar?"
+    answer: "Yes. Set day_tap_action: add-event on calendar-card-pro and tapping a day opens a form that creates the event. Google calendars can be created in and deleted from, but not edited, because the integration has no update support."
+  - question: "Which calendar-card-pro layout fits a wall tablet best?"
+    answer: "The grid layout. With view: grid, a 07:00 to 22:00 time_grid and hour_height: 31px, a full week fits a 1280x800 screen without scrolling. The list layout is better on a phone."
 ---
 
 <div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-**Update, October 2026:** I have switched from `atomic-calendar-revive` to `custom:calendar-card-pro` (HACS) on both the home screen and the calendar view, with the same colour per person and coloured badges on all-day events. `atomic-calendar-revive` is uninstalled. The principle below is the same, but the YAML examples are for the old card.
+**Update, November 2026:** The post now describes `custom:calendar-card-pro` v5.1 (HACS), which replaced `atomic-calendar-revive`. The wall tablet shows the week as a time grid, a tap on a day creates an event, and I fixed the colours of the all-day badges. I rewrote the sections below to match.
 
 </div>
 
@@ -26,50 +28,108 @@ The HA calendar view didn't replace the habit problem. But it put the same infor
 
 ## The setup
 
-Each family member has a Google Calendar. HA's Google Calendar integration pulls all of them in as separate `calendar.*` entities. Waste collection comes from the `affalddk` integration (HACS), a Danish municipal waste API that creates its own calendar entity with pickup dates.
+Each family member has a Google Calendar. HA's Google Calendar integration pulls all of them in as separate `calendar.*` entities. The Danish public holidays are a calendar too, and waste collection comes from the `affalddk` integration (HACS), a Danish municipal waste API that creates its own calendar entity with pickup dates.
 
-The calendar view uses `custom:atomic-calendar-revive` (HACS) in agenda mode. Nothing fancy, just a scrollable list of upcoming events, colour-coded by person.
+Everything goes through one card, `custom:calendar-card-pro` (HACS). It has three layouts (list, columns and grid), and the same entity list works in all of them. On the phone I use the list:
 
 ```yaml
-type: custom:atomic-calendar-revive
+type: custom:calendar-card-pro
+days_to_show: 7
+compact_mode: true
+split_multiday_events: true
+allday_badge: title
+show_location: true
+show_event_progress_bar: true
+weather:
+  entity: weather.forecast_home
+  position: date
 entities:
   - entity: calendar.rolf
-    color: "#4fc3f7"
+    color: "#00bcd4"
+    accent_color: "#00bcd4"
   - entity: calendar.family_member_1
-    color: "#f06292"
+    color: "#e040fb"
+    accent_color: "#e040fb"
   - entity: calendar.family_member_2
-    color: "#ff8a65"
+    color: "#ff4081"
+    accent_color: "#ff4081"
   - entity: calendar.family_member_3
-    color: "#aed581"
+    color: "#ff7043"
+    accent_color: "#ff7043"
+  - entity: calendar.holidays_in_denmark
+    color: "#fdd835"
+    accent_color: "#fdd835"
   - entity: calendar.affalddk_your_address
-    color: "#78909c"
-mode: Event
-maxEventCount: 15
-hoursFormat: 24h
-showWeekDay: true
-showRelativeTime: true
-showLocation: true
-showDescription: false
+    color: "#4caf50"
+    accent_color: "#4caf50"
 ```
 
-`showRelativeTime: true` is the thing that changed how I use it. Instead of "May 14" it says "in 5 days". I process relative time faster than absolute dates. I don't know why.
+A few of these settings do more than they look like:
 
-## What the waste calendar does
+- `days_to_show: 7` loads a week from today.
+- `split_multiday_events` shows a trip or a holiday on every day it covers instead of only on the first.
+- `allday_badge: title` draws all-day events as a coloured pill around the title, so they don't look like timed appointments.
+- `weather` puts a small forecast icon and temperature beside each date. It's handy for working out whether an outdoor plan will survive Thursday.
 
-The `affalddk` integration creates calendar events for each pickup type: general waste, recycling, paper, glass. They show up as grey entries in the view. On the home screen the waste card only appears within three days of a pickup, but here in the dedicated calendar view, you see the full schedule months out.
-
-That sounds minor. It isn't. Knowing cardboard pickup is next Thursday means I actually break down boxes in time instead of cramming them in the bin the night before.
+<img src="/blog-images/ha-calendar-view-phone-list.webp" alt="Home Assistant calendar list on a phone: a week of events with one colour per person, a coloured pill on the all-day events and a weather forecast next to each date" style="max-width: 360px; display: block; margin: 2rem auto; border-radius: 16px;" />
 
 ## The colour coding
 
 Each person gets one colour, consistently. It's the same colour in every context where their events appear. After a few weeks you stop reading the name column and just read the colour. A glance at Monday tells you whose day it is without your eyes needing to focus on text.
 
-The waste calendar is grey because it's not a person. It's infrastructure. It sits in the list without competing visually with the human events.
+I got this slightly wrong at first. In the card, `color` only sets the colour of the event title. The bar beside an event, its tinted row and the all-day pill use a second setting, `accent_color`, and that falls back to the theme's blue. I had set only `color`, so one person's all-day events showed up as blue pills with orange text. Setting `accent_color` to the same hex fixed it. If you colour events per person, set both.
 
-## What I didn't do
+Waste collection is green and the public holidays are yellow. They sit in the same list without needing a person's colour.
 
-I didn't build a week-grid view. There are calendar cards that render a proper monthly grid, and I tried one. It looked correct but I found myself using it the same way I used the paper wall calendar: not often enough, and only to check a specific date.
+## What the waste calendar does
 
-The agenda view is what I actually use. It's just a list of what's coming, in order. No spatial reasoning required.
+The `affalddk` integration creates calendar events for each pickup type: general waste, recycling, paper, glass. They show up as green entries in the view. On the home screen the waste card only appears within three days of a pickup, but here in the dedicated calendar view, you see the full schedule months out.
 
-The home screen shows the next 3 events from all calendars combined. The dedicated calendar view shows 15. When I want to plan a week out I go to the calendar view. Day-to-day I just look at the home screen. Two levels of zoom off the same data.
+That sounds minor. It isn't. Knowing cardboard pickup is next Thursday means I actually break down boxes in time instead of cramming them in the bin the night before.
+
+## A week grid on the wall tablet
+
+I used to skip the grid. I had tried a month view, and it looked correct, but I used it the way I'd used the paper calendar: not often enough, and only to check a specific date. The list was what I used.
+
+On the wall tablet the grid turned out to be the better layout. There's room for seven day columns with the hours down the side, and overlapping appointments are easy to spot.
+
+```yaml
+type: custom:calendar-card-pro
+view: grid
+days_to_show: 7
+time_grid:
+  start_time: "07:00"
+  end_time: "22:00"
+  hour_height: 31px
+toolbar:
+  show: true
+  view_switcher: true
+  search: true
+day_tap_action:
+  action: add-event
+# entities: the same list as above
+```
+
+![Home Assistant calendar card in grid layout on a wall tablet: seven day columns from 07:00 to 22:00, all-day events in a band above the hours and a coloured legend below](/blog-images/ha-calendar-view-grid-tablet.webp)
+
+`time_grid.start_time` and `end_time` cut the night out of the grid. `hour_height` is the one to tune. The default is 48 px, which makes a day taller than a 1280×800 screen. At 46 px the evening was still off screen, so I went down until the whole week fit without scrolling. For me that was 31 px, and I checked it with a screenshot at the tablet's size. All-day events sit in a band above the hours and don't take space from the grid.
+
+The toolbar adds three things. A switcher lets anyone flip to the list or columns layout, and each device remembers its own choice. A refresh button reloads the calendars. A search button looks for events a year back and a year ahead. The card also keeps the weather forecast on each day header.
+
+## Adding events from the card
+
+`day_tap_action: add-event` turns a tap on a day into a new event. In the list layout you tap the date or the empty space between events. In the grid you tap an empty spot, and the event starts at that quarter hour. You can also hold and drag across several hours to set the length. A tap on an existing event does something else, so it never creates a second one by mistake.
+
+![The Home Assistant calendar card's new-event form open on the tablet: summary, start and end time, location, calendar and description, with a new event drawn on Wednesday](/blog-images/ha-calendar-view-add-event-tablet.webp)
+
+The form has a summary, a start and end time, a location, a calendar and a description. It starts on the first calendar in the list that accepts new events, which is mine, and you can change it before saving.
+
+This works with Google, with limits. The card's documentation lists Google Calendar as add: yes, delete: yes, edit: no. Home Assistant's Google integration can create and delete events but not change them, so the card's edit fields and drag-to-move don't apply to our calendars. That's also why I haven't set `event_tap_action: details`. It would open a form on existing events, and on a wall tablet I don't want a tap to be able to delete one.
+
+One thing tripped me up. I had set `allow_event_edit: false` and `allow_event_delete: false` to be safe. After that, tapping a day did nothing on the phone. I removed both options and reloaded, and the form opened. I can't say whether the options or a cached card was the cause, but with `event_tap_action` left unset they protect nothing, so I'd leave them out.
+
+## What I still don't use
+
+I don't use a month view or week numbers. And I don't edit events from the dashboard, because Google doesn't let HA do it.
+
+The home screen shows a compact list of the next 5 events from all calendars combined, and a tap opens the calendar page. The calendar page is the list on the phone and the grid on the tablet. When I want to plan a week out I go there. Day-to-day I just look at the home screen. Several levels of zoom off the same data.
