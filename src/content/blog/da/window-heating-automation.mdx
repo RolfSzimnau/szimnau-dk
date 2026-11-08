@@ -3,6 +3,7 @@ title: "Et Home Assistant-blueprint der stopper varmen når vinduet åbnes"
 seoTitle: "Home Assistant-blueprint: stop varmen når vinduet åbnes"
 description: "Radiatoren i min datters værelse slukker når vinduet åbnes og tænder igen når det lukkes. Bygget som Blueprint, så næste rum tager 30 sekunder."
 pubDate: 2026-05-17
+updatedDate: 2026-11-08
 tags: ["varme", "sensorer", "automatisering"]
 lang: "da"
 translationKey: "window-heating-automation"
@@ -14,13 +15,19 @@ faqs:
     answer: "For at kunne genbruge den. Næste rum er bare blueprint, vælg sensor, vælg radiator. Det tager cirka 30 sekunder og kræver ingen ny kode. Det virker til Mill-radiatorerne, mens stuen, der styres af Tado, kræver sin egen logik."
 ---
 
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Opdatering, november 2026:** En af de tre vinduessensorer har været offline siden 3. november, og blueprint'et kan ikke gøre noget ved et vindue, det ikke kan se. Jeg har lavet en alarm til det og skrevet om den i et nyt afsnit nedenfor. Jeg har også rettet entitets-id'erne og rumlisten: kontoret og soveværelset har nu deres egne sensorer.
+
+</div>
+
 Radiatoren i min datters værelse kørte for fuld varme med vinduet åbent. Hun er snart tyve, og at huske at lukke vinduet er ikke noget, der sker konsekvent. Jeg lagde mærke til, at vinduet havde stået åbent i en time, varmen på, udetemperatur på cirka 4°C. Det er bogstaveligt talt penge ud af vinduet, og det ville blive ved med at ske.
 
 Løsningen var en vinduessensor og én Home Assistant-automation. Den ekstra time jeg brugte var på at bygge den som et Blueprint, så næste gang det samme mønster dukker op i et andet rum, tager det 30 sekunder, ikke en hel eftermiddag.
 
 ## Hardware: IKEA vinduessensor + Mill-radiator
 
-En **IKEA MYGGBETT** dør/vinduessensor på min datters vindue (`binary_sensor.myggbett_door_window_sensor_door`). Radiatoren er en første-generations **Mill**-enhed, `climate.louise`, som kun understøtter to modes: `heat` og `off`. Jeg har den samme første-gen model på mit kontor.
+En **IKEA MYGGBETT** dør/vinduessensor på min datters vindue (`binary_sensor.myggbett_door_window_sensor_door_2`). Radiatoren er en første-generations **Mill**-enhed, `climate.louise`, som kun understøtter to modes: `heat` og `off`. Jeg har den samme første-gen model på mit kontor.
 
 Soveværelset og køkkenet kører nyere Mill-radiatorer med flere HVAC-modes. Blueprint'et håndterer dem alle. Det gemmer den præcise tilstand før slukning og gendanner den, når vinduet lukkes, uanset hvilken mode eller temperatur radiatoren stod på.
 
@@ -64,7 +71,7 @@ Automation-instansen for min datters værelse er tre linjer:
   use_blueprint:
     path: homeassistant/window_heating_control.yaml
     input:
-      window_sensor: binary_sensor.myggbett_door_window_sensor_door
+      window_sensor: binary_sensor.myggbett_door_window_sensor_door_2
       climate_entity: climate.louise
       delay_minutes: 1
 ```
@@ -138,8 +145,22 @@ alerts:
 
 Når alle vinduer er lukket viser kortet et grønt "alt OK" slide. Når et er åbent skifter det til en animeret alert med sensorens friendly name i beskeden.
 
+## Når en vinduessensor går offline
+
+Blueprint'et reagerer kun, når en sensor melder `on`. En sensor, der ikke melder noget, er usynlig for det. Hvis batteriet dør, eller sensoren falder ud af Matter-netværket, bliver tilstanden `unavailable`, og så slukker der ingenting, når vinduet åbnes. Radiatoren varmer videre ud ad det åbne vindue, og ingenting siger det til mig.
+
+Sådan er det lige nu. En af mine tre sensorer har været `unavailable` siden kl. 15.00 den 3. november. Da jeg skriver det her den 8. november, er det fem dage. De sandsynlige årsager er et tomt batteri eller en Matter-forbindelse, der er røget. Jeg har ikke fundet ud af hvilken, og sensoren er stadig offline, så jeg kan ikke kalde det løst.
+
+Om aftenen den 3. november, cirka to og en halv time efter at sensoren faldt ud, lavede jeg en automation, der hedder «Vindue: sensor offline». Den har de tre sensorer skrevet ind enkeltvis og sender en push-besked til min telefon, når en af dem har været `unavailable` i mere end seks timer. Beskeden siger, at varmestyringen i rummet er blind, og at jeg skal tjekke batteriet og parre sensoren igen. Seks timer, fordi de sensorer, der virker, som de skal højst havde 16 sekunder uden forbindelse over en uge, så korte udfald udløser den ikke.
+
+En trigger med `for: hours: 6` har to svagheder. En genstart nulstiller tælleren, og en sensor, der allerede er `unavailable`, når Home Assistant starter, skifter aldrig tilstand, så triggeren udløses ikke. Netop sådan var det med den her sensor, som allerede var offline, da jeg gemte automationen. Derfor er der en trigger mere: hver morgen kl. 9.00 tjekker automationen alle tre sensorer og sender en besked om dem, der har været `unavailable` i seks timer eller mere. Jeg bliver altså mindet om det hver morgen, til sensoren er tilbage. Hver sensor har sit eget notifikations-tag, så en ny besked erstatter den gamle i stedet for at hobe sig op.
+
+Sidste kørsel var i dag kl. 9.00. Jeg kan kun se de to seneste kørsler, fordi sporene blev ryddet, da Home Assistant genstartede kl. 8.44 den 7. november. Gårsdagens tjek ser ud til ikke at have gjort noget: genstarten havde nulstillet sensorens «sidst ændret» 16 minutter før, så sensoren endnu ikke havde været offline i seks timer. I dag sendte tjekket beskeden.
+
+En alarm får ikke varmestyringen til at virke igen. Indtil jeg skifter batteriet eller parrer sensoren igen, har det rum ingen vinduesstyring.
+
 ## Genbruge Blueprint'et i andre rum
 
 Indstillinger → Automationer → Opret → Fra Blueprint → vælg "Vindue → Varme slukker" → vælg sensor og radiator → gem. Ingen ny kode. Det er hele pointen med at bygge det som et Blueprint fra starten frem for en hardkodet automation.
 
-Kontoret er det næste, der får en sensor: samme første-gen Mill, samme Blueprint, identisk konfiguration. Soveværelsets og køkkenets Mill-radiatorer virker også, når de får vinduessensorer. Daikinaggregatet i stuen er en anden sag: Tado styrer den og skal have sin egen logik, når den tid kommer.
+Kontoret og soveværelset har nu deres egne sensorer og Blueprint-automationer, med samme konfiguration på nær entiteterne. Køkkenets Mill-radiator virker på samme måde, når den får en vinduessensor. Daikinaggregatet i stuen er en anden sag: Tado styrer den og skal have sin egen logik, når den tid kommer.

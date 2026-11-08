@@ -1,102 +1,130 @@
 ---
 title: "Den Bosch-Geschirrspüler in Home Assistant nach Strompreis einplanen"
 seoTitle: "Bosch-Geschirrspüler nach Strompreis in Home Assistant"
-description: "Bosch-Geschirrspüler über Home Connect: Dashboard mit Programmwahl und Endzeitkontrolle, plus ein Knopf, der die günstigste Stunde findet."
+description: "Die Ansicht Appliances auf dem Tablet steuert Bosch-Geschirrspüler und Miele-Waschmaschine: Eine Kachel wählt die günstigste Stunde, ein Diagramm zeigt, warum."
 pubDate: 2025-08-22
-updatedDate: 2026-10-01
+updatedDate: 2026-11-08
 tags: ["energie", "dashboard"]
 lang: "de"
 translationKey: "ha-appliances-dashboard"
-heroImage: "/blog-images/hvidevarer-appliances.jpg"
+heroImage: "/blog-images/appliances-tablet-view-2026.jpg"
 faqs:
   - question: "Kann Home Assistant eine Bosch-Spülmaschine zu einer bestimmten Uhrzeit starten?"
-    answer: "Ja. Die eingebaute Home-Connect-Integration bietet Programmauswahl und Fernstart, also kann eine Automatisierung den Start auf die günstigste Stromstunde legen. Vorher muss die Tür zu sein und Fernstart an der Maschine aktiviert."
+    answer: "Ja. Mit der Integration Home Connect Alt hat die Spülmaschine eine Auswahl für den verzögerten Start. Man stellt die Verzögerung ein, drückt Start, und die Maschine wartet. Eine Automatisierung kann die Verzögerung aus der günstigsten Stromstunde berechnen. Vorher müssen die Tür geschlossen und der Fernstart an der Maschine aktiviert sein."
   - question: "Wo stößt die Steuerung über Home Connect an Grenzen?"
     answer: "Das Programm lässt sich nur vor dem Start ändern. Sobald die Maschine läuft, kann man die Auswahl nur noch lesen. Das ist eine Sperre in Boschs Firmware, nicht in Home Assistant."
 ---
 
 <div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-**Update, Oktober 2026:** Der Geschirrspüler läuft jetzt über die HACS-Integration Home Connect Alt (`home_connect_alt`) statt über die offizielle, weil sie Zugriff auf den eigenen verzögerten Start der Maschine gibt. Der Start wird deshalb als Verzögerung (`startinrelative`) gesetzt und nicht als Endzeit. Die Idee hinter der Schaltfläche «Am günstigsten planen» ist dieselbe, die Entitätsnamen unten stammen aber von der offiziellen Integration.
+**Update, November 2026:** Ich habe die Ansicht Appliances auf dem Wandtablet umgebaut und diesen Beitrag neu geschrieben. Die Statuszeilen von Geschirrspüler und Waschmaschine sind größer geworden. Die Waschmaschine zählt jetzt Waschgänge, Strom und Kosten pro Monat, und ein Preisdiagramm unter beiden Karten zeigt, zwischen welchen Stunden die Kachel „Cheapest“ wählt. Der Geschirrspüler läuft über die HACS-Integration Home Connect Alt (`home_connect_alt`), die Entitätsnamen unten sind also die aktuellen.
 
 </div>
 
-Der Geschirrspüler war das Gerät, von dem ich am wenigsten erwartet hatte. Es ist ein Bosch. Er verbindet sich mit der Bosch Home Connect-App, was in Ordnung ist, aber eben nur eine weitere App. Ich habe die **Home Connect**-Integration (in HA integriert, ohne HACS, braucht aber ein Home Connect-Konto) zu HA hauptsächlich aus Vollständigkeitsgründen hinzugefügt.
+Vom Geschirrspüler hatte ich mir am wenigsten versprochen. Er ist von Bosch, und dazu gibt es die Bosch-App Home Connect. Die ist in Ordnung, aber eben noch eine App. Ich habe ihn vor allem der Vollständigkeit halber in Home Assistant eingebunden.
 
-Dann stellte ich fest, dass er genug Kontrolle bietet, um etwas wirklich Nützliches zu tun: den Waschgang so planen, dass er in der günstigsten Stromstunde startet.
+Dann merkte ich, dass sich damit etwas Brauchbares machen lässt: den Spülgang in der günstigsten Stromstunde starten. Die Waschmaschine, eine Miele, bekam später dieselbe Behandlung. Jetzt stehen beide nebeneinander in einer Ansicht auf dem Tablet.
 
-## Was Home Connect bereitstellt
+## Was der Geschirrspüler bereitstellt
 
-Nach dem Hinzufügen der Integration erscheint der Geschirrspüler mit:
+Ich bin von der offiziellen Integration auf die HACS-Variante Home Connect Alt gewechselt, weil sie den eigenen verzögerten Start der Maschine zugänglich macht. Das sind die Entitäten, die ich nutze. `<id>` steht für die Geräte-ID in den echten Namen.
 
 ```
-sensor.dishwasher_operation_state   — Ready, Run, Finished, usw.
-sensor.dishwasher_program           — Eco50, Auto, Intensive, usw.
-sensor.dishwasher_remaining_time
-binary_sensor.dishwasher_remote_start_allowed
-select.dishwasher_program
-select.dishwasher_finish_at         — verzögerter Startzeitpunkt
-switch.dishwasher_half_load
-switch.dishwasher_speed_perfect
-button.dishwasher_start
+sensor.bosch_<id>_bsh_common_status_operationstate          # Ready, Run, DelayedStart, Finished ...
+select.bosch_<id>_programs                                  # Eco50 und die anderen
+select.bosch_<id>_bsh_common_option_startinrelative         # die Verzögerung, z. B. 2:30
+binary_sensor.bosch_<id>_bsh_common_status_remotecontrolstartallowed
+switch.bosch_<id>_dishcare_dishwasher_option_halfload
+switch.bosch_<id>_dishcare_dishwasher_option_variospeedplus
+button.bosch_<id>_start_pause
+button.bosch_<id>_stop
 ```
 
-Der wichtigste ist `select.dishwasher_finish_at`. Mit Boschs eigenem Verzögerungsstart sagst du der Maschine, wann sie fertig sein soll, und sie rechnet von dort rückwärts. Das ist der Hebel.
+Wichtig ist `startinrelative`. Die Maschine will eine Verzögerung, keine Endzeit. Ich sage ihr in Schritten von einer halben Stunde, wie lange sie warten soll, und drücke dann Start.
 
-## Die Dashboard-Karte
+## Die Karte für den Geschirrspüler
 
-Das Dashboard zeigt alle Bedienelemente in einer Glaskarte:
+Die Statuszeile oben nimmt den meisten Platz ein. Dort steht „Ready“, „Starts 04:00“, „Done 15:40“ oder „Finished“, und der Kartenhintergrund füllt sich mit einem blauen Balken, während das Programm läuft. Ist die Maschine bereit, zeigt die zweite Zeile das Programm, den günstigsten kommenden Start samt Preis und den aktuellen Preis. Auf dem Screenshot ganz oben steht dort „cheapest start tomorrow 04:00 · 2.30 kr/kWh (now 3.62)“.
 
-- Betriebszustand (Bereit / Läuft / Fertig)
-- Programmwähler
-- Endzeitwähler
-- Halb-Beladung und SpeedPerfect-Schalter
-- Zwei Aktionsschaltflächen: **Günstigste planen** und **Jetzt starten**
+Darunter liegen drei Kacheln. Es gibt sie nur, solange die Maschine bereit ist:
 
-Der "Günstigste planen"-Knopf ist ein Skript, das [Energi Data Service](https://www.energidataservice.dk/) Spotpreise liest (HACS-Integration, kostenlose dänische Behörden-API), das günstigste kommende 1-Stunden-Fenster vor Mitternacht findet, die Programmlaufzeit addiert und `select.dishwasher_finish_at` auf diesen Zeitpunkt setzt.
+- „Cheapest“ zeigt die Uhrzeit und startet beim Antippen das Planungsskript.
+- „Start now“ startet sofort und zeigt den aktuellen Preis, damit ich ihn mit der günstigsten Zeit vergleichen kann.
+- „Finish at“ brauche ich für den umgekehrten Fall. Ich wähle eine Endzeit, eine Automatisierung zieht 90 Minuten ab (sie rechnet mit Eco 50), rundet die Verzögerung auf halbe Stunden ab und schreibt sie in die Maschine. Sie setzt nur die Verzögerung.
+
+Unten sitzen drei Chips: Programm, „Half load“ und „SpeedPerfect+“. Zwei Zeilen erscheinen nur bei Bedarf. Eine rote Zeile „Cancel“ taucht auf, solange ein Start geplant ist oder die Maschine läuft. Eine bernsteinfarbene Zeile „Remote start is off“ taucht auf, wenn ich die Taste an der Maschine vergessen habe.
+
+Hinter „Cheapest“ steckt dieses Skript, hier gekürzt. Das echte prüft zusätzlich, ob die Maschine bereit ist, und schickt eine Benachrichtigung mit Startzeit und Preis:
 
 ```yaml
-alias: Geschirrspüler — Günstigste Stunde planen
+alias: Schedule dishwasher cheapest start
 sequence:
   - variables:
-      prices: "{{ state_attr('sensor.energi_data_service', 'raw_today') | default([]) }}"
-      now_h: "{{ now().hour }}"
-      duration_h: 2
       best_hour: >
-        {% set ns = namespace(hour=none, price=999) %}
-        {% for h in prices %}
-          {% if as_datetime(h.hour).hour >= now_h | int and h.price < ns.price %}
-            {% set ns.price = h.price %}
-            {% set ns.hour = h.hour %}
+        {% set ns = namespace(price=999, hour='') %}
+        {% set prices = state_attr('sensor.energi_data_service', 'raw_today')
+           + state_attr('sensor.energi_data_service', 'raw_tomorrow') %}
+        {% for p in prices %}
+          {% if as_timestamp(p.hour) > as_timestamp(now()) + 1800
+                and p.price < ns.price %}
+            {% set ns.price = p.price %}{% set ns.hour = p.hour %}
           {% endif %}
         {% endfor %}
         {{ ns.hour }}
-  - service: select.select_option
+  - action: select.select_option
     target:
-      entity_id: select.dishwasher_finish_at
+      entity_id: select.bosch_<id>_bsh_common_option_startinrelative
     data:
       option: >
-        {{ (as_datetime(best_hour) + timedelta(hours=duration_h))
-           .strftime('%H:%M') }}
-  - service: button.press
+        {% set half_hours = ((as_timestamp(best_hour) - as_timestamp(now())) / 1800) | int %}
+        {{ half_hours // 2 }}:{{ '30' if half_hours % 2 else '00' }}
+  - delay:
+      milliseconds: 800
+  - action: button.press
     target:
-      entity_id: button.dishwasher_start
+      entity_id: button.bosch_<id>_start_pause
 ```
 
-![Bosch Geschirrspüler Energieoptimierung in Home Assistant mit Günstigste-Stunde-Planung und Spotpreis](/blog-images/bosch-dishwasher-home-assistant-energy-optimization.jpg)
+Die Preise liefert [Energi Data Service](https://www.energidataservice.dk/) (HACS). Die Integration hat `raw_today` und, sobald die Preise für morgen veröffentlicht sind, `raw_tomorrow`. Das Skript schaut in beide, die günstigste Stunde kann also morgen liegen. Die nächsten 30 Minuten überspringt es, damit es nie die Stunde nimmt, die gerade läuft.
 
-Danach steht auf der Karte "Günstigste planen: 16:30 · 0,27 kr". Man sieht Zeit und Preis, bevor man bestätigt.
+Zwei Dinge macht es nicht. Es nimmt die günstigste einzelne Stunde und nicht das günstigste Zeitfenster für das ganze Programm. Und weil die Verzögerung auf eine halbe Stunde abgerundet wird, kann die Maschine bis zu 29 Minuten vor der günstigen Stunde anlaufen. Läuft der Spülgang über Nacht, spielt beides keine Rolle.
 
-## Warum der Aufwand lohnt
+## Die Karte für die Waschmaschine
 
-Eco50 läuft ca. 2 Stunden. Die Preisdifferenz zwischen der günstigsten und teuersten Stunde eines typischen dänischen Werktags beträgt 1–3 DKK/kWh. Bei 0,8 kWh pro Waschgang sind das 0,80–2,40 DKK gespart. Individuell nicht dramatisch. Über 300 Waschgänge im Jahr summiert es sich, und wichtiger noch: Das Netz wird in Spitzenlastzeiten weniger belastet.
+Die Waschmaschine hat dieselbe Statuszeile und denselben Balken, der sich füllt, solange das Programm läuft. „Cheapest“ und „Start now“ erscheinen, sobald ich an der Maschine ein Programm gewählt habe.
 
-Der eigentliche Vorteil ist verhaltensbezogen. Ich befülle den Geschirrspüler wenn er voll ist, drücke einen Knopf und denke nicht mehr daran. Die Maschine findet heraus, wann sie laufen soll. Sie ist fertig bevor ich ins Bett gehe.
+Hier funktioniert es anders als beim Geschirrspüler. Einen verzögerten Start nutze ich bei der Miele nicht. „Cheapest“ speichert nur die geplante Startzeit in einem Helfer (`input_datetime.vaskemaskine_planlagt_start`). Zu diesem Zeitpunkt drückt eine Automatisierung auf Start, wenn die Maschine noch wartet und die Fernsteuerung (MobileStart) eingeschaltet ist.
+
+Und da liegt der Haken. Die Miele schaltet sich nach etwa 15 Minuten von selbst aus. Liegt die günstigste Stunde mehrere Stunden entfernt, ist die Maschine meist dunkel, wenn es so weit ist, und die Automatisierung kann mir nur noch melden, dass der Start nicht geklappt hat. Das Skript warnt mich gleich, wenn der Start mehr als zehn Minuten entfernt liegt. In der Praxis wähle ich das Programm näher am Zeitpunkt noch einmal, oder ich wasche, wenn die günstige Stunde nah ist.
+
+![Die Karte der Waschmaschine auf dem Tablet mit Washes, Energy und Cost für den Monat und dem letzten Waschgang](/blog-images/appliances-washing-tiles.webp)
+
+Die drei Kacheln unten sind neu. „Washes“, „Energy“ und „Cost“ zeigen die Summen für den laufenden Monat, „Last wash“ den jüngsten Waschgang: Programm, kWh, Kronen und Uhrzeit. Endet ein Programm, wartet eine Automatisierung eine Minute und addiert dann den eigenen Stromwert der Maschine für dieses Programm auf drei Zahlenhelfer (`vask_antal_denne_maaned`, `vask_kwh_denne_maaned`, `vask_kr_denne_maaned`). Außerdem schreibt sie die Zeile für den letzten Waschgang. Am Ersten, kurz nach Mitternacht, sichert sie den alten Monat in einem Text-Helfer und setzt die Zähler auf null.
+
+Ich zeige einen Monat, weil ein einzelner Waschgang zu klein ist, um ihn zu spüren. Im Oktober waren es 16 Waschgänge, 9,4 kWh und 14 kr. Das ist weniger als eine Krone pro Waschgang, und an einem einzelnen hätte ich das nie bemerkt. Die Zahl sagt erst etwas, wenn man sie aufsummiert.
+
+Der Preis ist eine Schätzung. Die Kosten sind kWh mal Preis in der Stunde, in der das Programm endet, nicht der Preis jeder Stunde, in der es lief. Bei ein bis zwei Stunden Laufzeit reicht das.
+
+## Das Preisdiagramm
+
+Die Karte unter dem Geschirrspüler macht den Rest lesbar. Die obere Zeile zeigt den aktuellen Preis und die günstigste kommende Stunde. Tippe ich darauf, öffnet sich meine Ansicht Energy. Darunter liegt eine apexcharts-card über 48 Stunden ab Mitternacht: heute in Orange, morgen in Grün, jeweils mit einem Punkt auf der günstigsten Stunde des Tages. Die Daten kommen aus denselben Attributen `raw_today` und `raw_tomorrow`, die auch das Skript liest.
+
+![Das Preisdiagramm der Ansicht Appliances mit heute in Orange und morgen in Grün](/blog-images/appliances-price-chart.webp)
+
+Statuszeile, Kachel „Cheapest“ und Kartenkopf führen dieselbe Suche nach der günstigsten Stunde aus und sind sich deshalb immer einig. Die Punkte im Diagramm markieren die günstigste Stunde des ganzen Tages, auch wenn sie schon vorbei ist. Die Kachel schaut nur nach vorn. Auf dem Screenshot liegt der Punkt für heute bei 05:00, das ist vorbei, also zeigt die Kachel auf den Punkt von morgen um 04:00.
+
+Das Diagramm sagt auch, was eine Kachel nicht kann. Morgen um 04:00 kostet der Strom 2,30 kr/kWh gegen 3,62 jetzt, rund 36 Prozent weniger. Das Tal ist aber breit: Von Mitternacht bis etwa 05:00 bewegt sich der Preis kaum, eine Stunde früher oder später kostet also nichts. Die Abendspitze liegt gegen 17:00 über 6 kr/kWh. Sehe ich das, vertraue ich der einen Uhrzeit auf der Kachel.
+
+## Warum sich der Aufwand lohnt
+
+Eco50 braucht etwa anderthalb bis zwei Stunden. Die Preisunterschied zwischen der günstigsten und teuersten Stunde eines typischen dänischen Werktags beträgt 1–3 DKK/kWh. Bei 0,8 kWh pro Waschgang sind das 0,80–2,40 DKK gespart. Im Einzelfall nicht dramatisch. Über 300 Waschgänge im Jahr summiert es sich, und wichtiger noch: Das Netz wird in Spitzenlastzeiten weniger belastet.
+
+Der eigentliche Vorteil liegt im Verhalten. Ich befülle den Geschirrspüler, wenn er voll ist, tippe eine Kachel an und denke nicht mehr daran. Die Statuszeile sagt mir, wann er startet und wann er fertig ist.
 
 ## Was nicht funktioniert
 
-Fernstart muss am physischen Bedienfeld der Maschine aktiviert werden. Auf dem Display gibt es ein kleines Symbol dafür. Wenn ich das vergesse, tut der Startbefehl der Integration nichts. Ich habe das so oft vergessen, dass ich einen Chip zur Karte hinzugefügt habe, der anzeigt, ob Fernstart gerade erlaubt ist.
+Fernstart muss am Bedienfeld der Maschine aktiviert werden. Auf dem Display gibt es ein kleines Symbol dafür. Vergesse ich es, tut der Startbefehl nichts. Ich habe das so oft vergessen, dass die Karte jetzt die bernsteinfarbene Zeile „Remote start is off“ zeigt, allerdings nur, solange die Maschine bereit ist.
 
-Programmänderungen über HA funktionieren nur bevor die Maschine startet. Sobald sie läuft, aktualisieren sich die Zustandsentitäten, aber die Auswahlfelder werden schreibgeschützt. Das ist eine Bosch-Firmware-Einschränkung, nicht HA.
+Programmänderungen über HA funktionieren nur, bevor die Maschine startet. Sobald sie läuft, verschwinden die Programm-Chips und die Kacheln von der Karte, und die Auswahlfelder sind nur noch lesbar. Das ist eine Einschränkung in Boschs Firmware, nicht in HA.
 
-Die `Finished`-Zustandsbenachrichtigung ist die andere Sache. Der Geschirrspüler sendet eine Zustandsaktualisierung, wenn er fertig ist. Ich habe dafür einen Alert-Ticker-Eintrag auf dem Startbildschirm, und "Geschirrspüler fertig, räum mich aus!" bleibt dort stehen, bis jemand ihn bestätigt. Lowtech, aber ich leere ihn jetzt tatsächlich aus, statt ihn drei Stunden stehen zu lassen.
+Dann ist da noch die Meldung am Ende. Wenn das Programm 99 Prozent überschreitet, schickt eine Automatisierung eine Benachrichtigung und spricht eine Ansage auf dem Küchenlautsprecher. Dazu habe ich einen Eintrag im Alert-Ticker auf dem Startbildschirm, „Dishwasher done, empty me!“, der stehen bleibt, bis jemand ihn bestätigt. Die Statuszeile schreibt „open the door to empty“, solange die Tür noch zu ist. Einfach gestrickt, aber ich räume ihn jetzt tatsächlich aus, statt ihn drei Stunden stehen zu lassen.

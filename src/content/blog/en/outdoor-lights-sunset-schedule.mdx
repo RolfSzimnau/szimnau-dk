@@ -1,87 +1,91 @@
 ---
-title: "Govee and LEDVANCE Outdoor Lights on a Sunset Schedule in Home Assistant"
-seoTitle: "Govee and LEDVANCE Outdoor Lights on a Sunset Schedule"
-description: "No more adjusting the outdoor light timer twice a year. One HA automation turns Govee and LEDVANCE string lights on at sunset, off at midnight."
+title: "Christmas Lights on a Sunset Schedule in Home Assistant"
+description: "How my garden Christmas lights follow the sun: on at sunset +15 min, off at 23:00 and sunrise, only November to January, plus a power-cut fix."
 pubDate: 2025-11-28
+updatedDate: 2026-11-08
 tags: ["lighting", "automation"]
 lang: "en"
 translationKey: "outdoor-lights-sunset-schedule"
-heroImage: "/blog-images/Hjem_Lys.jpg"
+heroImage: "/blog-images/outdoor-lights-schedule-2026.jpg"
 faqs:
-  - question: "How do you make outdoor lights follow sunset year-round in Home Assistant?"
-    answer: "One automation with a sun trigger (sunset +15 min offset) turns on the Govee and LEDVANCE lights, and a time trigger at midnight turns them off. No seasonal timer adjustment is needed."
-  - question: "Why not just use a clock-based schedule?"
-    answer: "In Denmark sunset shifts about six hours between June and December, so fixed times are visibly wrong for weeks every spring and autumn. The sun entity tracks the shift automatically."
+  - question: "How do you run Christmas lights on a sunset schedule in Home Assistant?"
+    answer: "Create a schedule in the HACS Scheduler component with the time sunset+00:15:00 and add a condition on a season helper, for example a template binary sensor that is on in November, December and January. A second schedule turns the lights off at 23:00 and at sunrise, so nothing runs outside the season."
+  - question: "How do you make outdoor lights come back on after a power cut?"
+    answer: "Use a state trigger on each light that fires when it goes from unavailable to on or off for 15 seconds. Add conditions for the schedule windows (after sunset +15 min and before 23:00, or after 05:30 with the sun below the horizon) and call light.turn_on on the light that triggered."
 ---
 
-Twice a year I'd go into the app and adjust the outdoor light timer. Once in spring when 21:00 was already pushing dusk. Once in autumn when it was dark at 17:30 and the lights weren't coming on until an hour later. I never quite got it right. There's always a week or two where the schedule is visibly wrong, lights flicking on in broad daylight or leaving the garden dark for an hour after sunset.
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-The fix is obvious in retrospect: stop using clock times and use the sun instead.
+**Update, November 2026:** The Govee and LEDVANCE lights and the two automations from the first version are gone. The outdoor lights are now Christmas lights on three Scheduler schedules that only run from November to January, plus an automation that switches a light back on after a power cut. I rewrote the post to match, with a new screenshot of the dashboard.
 
-## The setup
+</div>
 
-Two types of outdoor lights: **Govee** lights on the terrace, and warm gold string lights from Bauhaus controlled via **LEDVANCE SMART+**. Both are integrated into HA. Govee comes via HACS, while LEDVANCE SMART+ is built in and auto-discovers devices on the local network.
+Christmas lights that come on in June would look silly, and the first version of this post would have done exactly that. It ran two automations every day of the year, with a fixed switch-off at midnight. When the outdoor lights turned into Christmas lights, the setup needed a different shape.
 
-The string lights are warm gold by nature, around 2200K. They don't need a scene or a colour temperature command. They just need to be on.
+## What runs now
 
-## The automation
+Flood lights, ground lights and a string of lights sit in one light group, `light.udendors_lys` (udendørs is Danish for outdoors). Two Matter plugs, `switch.garden_plug_1` and `switch.garden_plug_2`, sit next to it. Three schedules in the HACS component Scheduler control the group and both plugs:
 
-One automation controls both. The on-trigger uses HA's built-in sun platform with a 15-minute offset:
+| Schedule | When | Only if | What it does |
+|---|---|---|---|
+| Turn on | sunset +15 min | season is on | group at brightness 255, both plugs on |
+| Turn off | 23:00, and again at sunrise | season is on | group and both plugs off |
+| Morning on | 05:30 | season is on and the sun is below the horizon | same as turn on |
 
-```yaml
-alias: Outdoor lights — Sunset on
-trigger:
-  - platform: sun
-    event: sunset
-    offset: "+00:15:00"
-action:
-  - service: light.turn_on
-    target:
-      entity_id:
-        - light.govee_outdoor
-        - light.bauhaus_string_lights
-    data:
-      brightness_pct: 100
+## The sun picks the evening
+
+The turn-on time is `sunset+00:15:00`. Scheduler writes the sun offset straight into the time, so there is no trigger to build. Today it resolves to 16:44. In mid-December it will be around 15:55. I keep the 15 minutes because the sky is still bright at the moment the sun technically sets, and Christmas lights disappear in that.
+
+Off is a fixed 23:00. The morning run needs an end too, so there is a second turn-off at sunrise, which is 07:42 tomorrow.
+
+## Why 05:30 only if it's dark
+
+From November to January it is always dark at 05:30 here, because sunrise never comes before about 07:00. The check `sun.sun` is `below_horizon` never fails today. I added it anyway. If I move the time or stretch the season into March, the lights can't come on in daylight, which is the exact flaw I started this whole thing with.
+
+## The season sensor
+
+`binary_sensor.julelys_saeson` is a template helper with one line:
+
+```jinja
+{{ now().month in [11, 12, 1] }}
 ```
 
-The 15-minute offset means the lights come on after it's actually dark, not the moment the sun technically sets, when there's still plenty of ambient light.
+It is a month check, nothing cleverer. All three schedules have it as a condition, so outside the season nothing runs. That works in both directions. The lights stay off in July, and if I switch the garden plugs on by hand for a summer evening, nothing turns them off at 23:00.
 
-The off-trigger is a fixed time:
+## When the power goes
 
-```yaml
-alias: Outdoor lights — Midnight off
-trigger:
-  - platform: time
-    at: "00:00:00"
-action:
-  - service: light.turn_off
-    target:
-      entity_id:
-        - light.govee_outdoor
-        - light.bauhaus_string_lights
-```
+A light that loses power can come back switched off, and a schedule that already fired won't try again until its next time slot. So there is one small automation, `automation.outdoor_lights_turn_on_after_power_restore`. It triggers when any light in the group goes from unavailable to on or off and stays there for 15 seconds, so it has settled before the command arrives. Then it turns that light on at 255, if one of two windows is open:
+
+- after sunset +15 min and before 23:00
+- after 05:30 and before 12:00, with the sun below the horizon
+
+The mode is `parallel`, so two lights that return together both get handled. It last ran on 6 November at 17:54, about an hour after the evening schedule had already fired. A light had come back late, and nobody had to touch it.
+
+It also checks the season sensor, so in February a light that comes back from a power cut stays as it is, because no schedule is running. I added that condition on 8 November after I noticed the gap while writing this post.
+
+## Why Scheduler and not an automation
+
+I can change a time on a card in the dashboard instead of editing YAML, and the next trigger is an attribute on each schedule switch, so the dashboard can show it without calculating anything.
+
+An automation would do the same job. It also keeps traces, which Scheduler doesn't, so when a schedule doesn't fire I have fewer clues. Scheduler's conditions are simple "entity is value" checks, and the schedules live in Home Assistant's storage instead of a YAML file I can diff. It is also a custom component. If you are comfortable in YAML, the two automations from the first version still work.
 
 ## The dashboard
 
-A pair of Mushroom template chips showing the next trigger time. The sunset calculation pulls from the sun entity and updates daily:
+Each schedule is a Mushroom template card that reads `next_trigger` from its switch. The text on the first row comes from this template:
 
-```yaml
-- type: custom:mushroom-chips-card
-  chips:
-    - type: template
-      icon: mdi:weather-sunset
-      content: >
-        On: {{ (as_timestamp(state_attr('sun.sun','next_setting'))
-             + 15 * 60) | timestamp_custom('%H:%M') }}
-    - type: template
-      icon: mdi:weather-night
-      content: "Off: 00:00"
+```jinja
+{% set nt = state_attr('switch.schedule_afaff2', 'next_trigger') %}
+{% if is_state('switch.schedule_afaff2', 'off') %}Disabled
+{% elif is_state('binary_sensor.julelys_saeson', 'off') %}Out of season (Nov–Jan)
+{% elif is_state('light.udendors_lys', 'on') %}Active · lights on
+{% elif nt %}Next: {{ as_local(as_datetime(nt)).strftime('%H:%M') }} · sunset +15 min
+{% else %}Disabled{% endif %}
 ```
 
-![Lighting schedule in Home Assistant: outdoor lights on at sunset +15 min, off at midnight](/blog-images/hjem_Ourdoor_Schedule.jpg.png)
+![The Schedule section of the Lights view: Outdoor lights turn on is active, turn off is next at 23:00, morning on is next at 05:30 if dark](/blog-images/glass-lights-schedule.webp)
 
-In Denmark the sunset shift between June and December is about six hours. The lights track that automatically: as late as around 22:15 in summer, as early as around 15:30 in mid-December.
+The "Manage schedules" button below the rows opens a pop-up with the Scheduler card, where the times can be edited.
 
-## What changed
+## One gotcha
 
-The two transition weeks in March and October where the schedule was always wrong are gone. Two triggers, two actions. But it's one of those things that makes the house feel like it actually knows what time of year it is.
+I renamed the three schedules with `scheduler.edit` and a new `name`. The schedule switches vanished from Home Assistant. They only came back after `scheduler.reload_storage`, and they came back switched off. The order that works: edit, reload storage, switch them on again, check that all three are on.

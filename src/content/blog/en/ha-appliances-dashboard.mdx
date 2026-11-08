@@ -1,102 +1,130 @@
 ---
 title: "Scheduling a Bosch Dishwasher in Home Assistant by Electricity Price"
 seoTitle: "Bosch Dishwasher by Electricity Price in Home Assistant"
-description: "Bosch dishwasher via Home Connect: a dashboard with programme selection and finish-time control, plus a button that finds the cheapest hour to run."
+description: "My tablet's Appliances view for a Bosch dishwasher and a Miele washing machine: a Cheapest tile picks the lowest price hour, a chart shows why."
 pubDate: 2025-08-22
-updatedDate: 2026-10-01
+updatedDate: 2026-11-08
 tags: ["energy", "dashboard"]
 lang: "en"
 translationKey: "ha-appliances-dashboard"
-heroImage: "/blog-images/hvidevarer-appliances.jpg"
+heroImage: "/blog-images/appliances-tablet-view-2026.jpg"
 faqs:
   - question: "Can Home Assistant start a Bosch dishwasher at a specific time?"
-    answer: "Yes. The built-in Home Connect integration exposes programme selects and remote start, so an automation can delay the start to the cheapest electricity hour. The door must be closed and remote start enabled on the machine first."
+    answer: "Yes. With the Home Connect Alt integration the dishwasher exposes a delayed-start select. Set the delay, press start, and the machine waits. An automation can work out that delay from the cheapest electricity hour. The door must be closed and remote start enabled on the machine first."
   - question: "What are the limitations of controlling a dishwasher via Home Connect?"
     answer: "Programme changes only work before the machine starts. Once it is running, the select entities become read-only. That is a Bosch firmware restriction, not a Home Assistant one."
 ---
 
 <div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-**Update, October 2026:** The dishwasher now runs on the HACS integration Home Connect Alt (`home_connect_alt`) instead of the official one, because it gives access to the machine's own delayed start. The start is therefore set as a delay (`startinrelative`) rather than a finish time. The idea behind the Schedule cheapest button is the same, but the entity names below are from the official integration.
+**Update, November 2026:** I rebuilt the Appliances view on the wall tablet and rewrote this post to match. The dishwasher and washing machine status rows are larger. The washing machine now keeps a monthly count of washes, energy and cost, and a price chart under both cards shows what the Cheapest tile chooses between. The dishwasher runs on the HACS integration Home Connect Alt (`home_connect_alt`), so the entity names below are the current ones.
 
 </div>
 
-The dishwasher was the appliance I expected least from. It's a Bosch. It connects to the Bosch Home Connect app, which is fine but just another app. I added the **Home Connect** integration (built into HA, no HACS needed, but it requires a Home Connect account) mostly out of completeness.
+The dishwasher was the appliance I expected least from. It's a Bosch. It comes with the Bosch Home Connect app, which is fine but just another app. I connected it to Home Assistant mostly out of completeness.
 
-Then I realised it exposes enough control to do something actually useful: schedule the wash to start at the cheapest electricity hour.
+Then I realised it exposes enough control to do something useful: start the wash in the cheapest electricity hour. The washing machine, a Miele, got the same treatment later. Both now sit in one view on the tablet.
 
-## What Home Connect exposes
+## What the dishwasher exposes
 
-After adding the integration, the dishwasher shows up with:
+I switched from the official integration to the HACS one, Home Connect Alt, because it gives access to the machine's own delayed start. These are the entities I use. `<id>` stands for the appliance ID in the real names.
 
 ```
-sensor.dishwasher_operation_state   — Ready, Run, Finished, etc.
-sensor.dishwasher_program           — Eco50, Auto, Intensive, etc.
-sensor.dishwasher_remaining_time
-binary_sensor.dishwasher_remote_start_allowed
-select.dishwasher_program
-select.dishwasher_finish_at         — delayed start time
-switch.dishwasher_half_load
-switch.dishwasher_speed_perfect
-button.dishwasher_start
+sensor.bosch_<id>_bsh_common_status_operationstate          # Ready, Run, DelayedStart, Finished...
+select.bosch_<id>_programs                                  # Eco50 and the rest
+select.bosch_<id>_bsh_common_option_startinrelative         # the delay, e.g. 2:30
+binary_sensor.bosch_<id>_bsh_common_status_remotecontrolstartallowed
+switch.bosch_<id>_dishcare_dishwasher_option_halfload
+switch.bosch_<id>_dishcare_dishwasher_option_variospeedplus
+button.bosch_<id>_start_pause
+button.bosch_<id>_stop
 ```
 
-The key one is `select.dishwasher_finish_at`. Bosch's own delayed start lets you tell the machine what time you want it to finish, and it works backwards from there. That's the lever.
+The one that matters is `startinrelative`. The machine takes a delay, not a finish time. I give it how long to wait, in half-hour steps, and then press start.
 
-## The dashboard card
+## The dishwasher card
 
-The dashboard shows all controls in one glass card:
+The status row at the top is the largest thing on the card. It says Ready, Starts 04:00, Done 15:40 or Finished, and the card background fills with a blue bar as the programme progresses. When the machine is ready, the second line shows the programme, the cheapest upcoming start and its price, and the price right now. In the screenshot at the top that reads "cheapest start tomorrow 04:00 · 2.30 kr/kWh (now 3.62)".
 
-- Operation state (Ready to wash / Running / Finished)
-- Programme selector
-- Finish time selector
-- Half load and SpeedPerfect toggles
-- Two action buttons: **Schedule cheapest** and **Start now**
+Under the status row there are three tiles, and they only exist while the machine is Ready:
 
-The "Schedule cheapest" button is a script that reads **Energi Data Service** (HACS) spot prices, finds the cheapest upcoming 1-hour window before midnight, adds the programme's runtime, and sets `select.dishwasher_finish_at` to that time.
+- **Cheapest** shows the time and runs the scheduling script when I tap it.
+- **Start now** starts at once and shows the current price, so I can compare it with the Cheapest time.
+- **Finish at** is for the other way round. I set a time, an automation subtracts 90 minutes (it assumes Eco 50), rounds the delay down to half an hour and writes it to the machine. It only sets the delay.
+
+Below the tiles are three chips: the programme, Half load and SpeedPerfect+. Two rows appear only when needed. A red Cancel row shows up while a start is scheduled or the machine runs. An amber "Remote start is off" row shows up when I forgot the button on the machine.
+
+The Cheapest tile runs this script, trimmed here. The real one also checks that the machine is Ready and sends a notification with the start time and the price:
 
 ```yaml
-alias: Dishwasher — Schedule cheapest hour
+alias: Schedule dishwasher cheapest start
 sequence:
   - variables:
-      prices: "{{ state_attr('sensor.energi_data_service', 'raw_today') | default([]) }}"
-      now_h: "{{ now().hour }}"
-      duration_h: 2
       best_hour: >
-        {% set ns = namespace(hour=none, price=999) %}
-        {% for h in prices %}
-          {% if as_datetime(h.hour).hour >= now_h | int and h.price < ns.price %}
-            {% set ns.price = h.price %}
-            {% set ns.hour = h.hour %}
+        {% set ns = namespace(price=999, hour='') %}
+        {% set prices = state_attr('sensor.energi_data_service', 'raw_today')
+           + state_attr('sensor.energi_data_service', 'raw_tomorrow') %}
+        {% for p in prices %}
+          {% if as_timestamp(p.hour) > as_timestamp(now()) + 1800
+                and p.price < ns.price %}
+            {% set ns.price = p.price %}{% set ns.hour = p.hour %}
           {% endif %}
         {% endfor %}
         {{ ns.hour }}
-  - service: select.select_option
+  - action: select.select_option
     target:
-      entity_id: select.dishwasher_finish_at
+      entity_id: select.bosch_<id>_bsh_common_option_startinrelative
     data:
       option: >
-        {{ (as_datetime(best_hour) + timedelta(hours=duration_h))
-           .strftime('%H:%M') }}
-  - service: button.press
+        {% set half_hours = ((as_timestamp(best_hour) - as_timestamp(now())) / 1800) | int %}
+        {{ half_hours // 2 }}:{{ '30' if half_hours % 2 else '00' }}
+  - delay:
+      milliseconds: 800
+  - action: button.press
     target:
-      entity_id: button.dishwasher_start
+      entity_id: button.bosch_<id>_start_pause
 ```
 
-![Bosch dishwasher energy optimization in Home Assistant showing cheapest hour scheduling and spot price](/blog-images/bosch-dishwasher-home-assistant-energy-optimization.jpg)
+The prices come from **Energi Data Service** (HACS), which has `raw_today` and, once tomorrow's prices are published, `raw_tomorrow`. The script looks at both, so the cheapest hour can be tomorrow. It skips the next 30 minutes, so it never picks the hour that is already running.
 
-The card then reads "Schedule cheapest: 16:30 · 0.27 kr". You see both the time and the price before you commit.
+Two things it does not do. It picks the cheapest single hour, not the cheapest window for the whole programme. And because the delay is rounded down to half an hour, the machine can start up to 29 minutes before the cheap hour. For a wash that runs through the night, neither matters.
+
+## The washing machine card
+
+The washing machine has the same status row and the same bar, which fills as the programme runs. The Cheapest and Start now tiles appear once I have chosen a programme on the machine.
+
+It works differently from the dishwasher. I don't use a delayed start on the Miele. Cheapest only stores the planned start time in a helper (`input_datetime.vaskemaskine_planlagt_start`). An automation presses start at that time, if the machine is still waiting and remote control (MobileStart) is on.
+
+Here is the catch. The Miele switches itself off after about 15 minutes. If the cheapest hour is hours away, the machine is usually dark when the time comes, and the automation can only send me a notification saying it could not start. The script warns me up front when the start is more than ten minutes out. In practice I choose the programme again closer to the time, or I use the washer when the cheap hour is near.
+
+![The washing machine card on the tablet: Washes, Energy and Cost for the month, and the last wash](/blog-images/appliances-washing-tiles.webp)
+
+The three tiles at the bottom are new. Washes, Energy and Cost show the totals for this month, and Last wash shows the latest one: programme, kWh, kr and time. When a programme ends, an automation waits a minute, then adds the machine's own energy figure for that programme to three number helpers (`vask_antal_denne_maaned`, `vask_kwh_denne_maaned`, `vask_kr_denne_maaned`) and writes the last-wash line. On the 1st, just after midnight, it saves the old month to a text helper and zeroes the counters.
+
+I show a month because one wash is too small to notice. October was 16 washes, 9.4 kWh and 14 kr. That is under a krone per wash, and I would never have felt it on a single wash. The number only means something added up.
+
+The price is an estimate. The cost is the kWh times the price in the hour the programme ends, not the price of each hour it ran. For a wash of an hour or two that is close enough.
+
+## The price chart
+
+The card under the dishwasher is the one that makes the rest readable. The top row shows the price now and the cheapest upcoming hour. Tap it and it opens my Energy view. Under it is an apexcharts-card that spans 48 hours from midnight: today in orange, tomorrow in green, with a dot on the cheapest hour of each day. The series are built from the same `raw_today` and `raw_tomorrow` attributes the script reads.
+
+![The price chart on the Appliances view with today in orange and tomorrow in green](/blog-images/appliances-price-chart.webp)
+
+The status row, the Cheapest tile and the card header all run the same cheapest-hour query, so they always agree. The dots on the chart mark the cheapest hour of the whole day, including hours that have already passed. The tile only looks ahead. In the screenshot today's dot sits at 05:00, which is over, so the tile points at tomorrow's dot at 04:00.
+
+The chart also tells me what a tile cannot. Tomorrow at 04:00 costs 2.30 kr/kWh against 3.62 right now, about 36 percent less. But the dip is wide, from midnight to about 05:00 the price barely moves, so starting an hour earlier or later costs nothing. The evening peak is above 6 kr/kWh at about 17:00. Seeing that is what makes me trust the single time on the tile.
 
 ## Why this is worth the effort
 
-Eco50 runs about 2 hours. The price difference between the cheapest and most expensive hour of a typical Danish weekday is 1–3 DKK/kWh. At 0.8 kWh per cycle that's 0.80–2.40 DKK saved per wash. Not dramatic individually. Over 300 washes a year it adds up, and more importantly the grid is less stressed during peaks.
+Eco50 takes roughly 90 minutes to two hours. The price difference between the cheapest and most expensive hour of a typical Danish weekday is 1–3 DKK/kWh. At 0.8 kWh per cycle that's 0.80–2.40 DKK saved per wash. Not dramatic individually. Over 300 washes a year it adds up, and more importantly the grid is less stressed during peaks.
 
-The real benefit is behavioural. I load the dishwasher when it's full, tap one button, and don't think about it. The machine figures out when to run. It's finished before I go to bed.
+The real benefit is behavioural. I load the dishwasher when it's full, tap one tile, and don't think about it. The status row says when it starts and when it is done.
 
 ## What doesn't work
 
-Remote start has to be enabled on the machine's physical panel. There's a small icon for it on the display. If I forget to enable it, the integration's start command does nothing. I've forgotten this enough times that I added a chip to the card showing whether remote start is currently allowed.
+Remote start has to be enabled on the machine's physical panel. There's a small icon for it on the display. If I forget, the start command does nothing. I've forgotten this enough times that the card now shows the amber "Remote start is off" row, but only when the machine is Ready.
 
-Programme changes via HA only work before the machine starts. Once running, the state entities update but the selects become read-only. That's a Bosch firmware limitation, not HA.
+Programme changes via HA only work before the machine starts. Once it runs, the programme chips and tiles disappear from the card, and the selects become read-only. That's a Bosch firmware limitation, not HA.
 
-The `Finished` state notification is the other thing. The dishwasher sends a state update when done. I have an alert ticker entry for it on the home screen, and "Dishwasher done, empty me!" stays there until someone acknowledges it. Low-tech, but I actually empty it now instead of leaving it sitting there for three hours.
+The finish notification is the other thing. When the programme passes 99 percent, an automation sends a notification and speaks a message on the kitchen speaker. I also have an alert ticker entry on the home screen, and "Dishwasher done, empty me!" stays there until someone acknowledges it. The status row adds "open the door to empty" while the door is still shut. Low-tech, but I actually empty it now instead of leaving it sitting there for three hours.

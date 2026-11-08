@@ -1,87 +1,91 @@
 ---
-title: "Govee- og LEDVANCE-udelys på en solnedgangs-tidsplan i Home Assistant"
-seoTitle: "Govee- og LEDVANCE-udelys på solnedgangs-tidsplan"
-description: "Sådan tænder mine lyskæder fra Govee og LEDVANCE ved solnedgang og slukker ved midnat. Én automation, der passer til alle årstider."
+title: "Julelys i haven styret af solnedgangen i Home Assistant"
+description: "Mit julelys i haven tænder 15 minutter efter solnedgang og slukker kl. 23 og ved solopgang. Det kører kun fra november til januar. Sådan er det sat op."
 pubDate: 2025-11-28
+updatedDate: 2026-11-08
 tags: ["lys", "automatisering"]
 lang: "da"
 translationKey: "outdoor-lights-sunset-schedule"
-heroImage: "/blog-images/Hjem_Lys.jpg"
+heroImage: "/blog-images/outdoor-lights-schedule-2026.jpg"
 faqs:
-  - question: "Hvordan får man udendørslyset til at følge solnedgangen hele året i Home Assistant?"
-    answer: "Én automation med en soltrigger (solnedgang plus 15 minutter) tænder Govee- og LEDVANCE-lyset, og en tidstrigger ved midnat slukker det igen. Der er ikke noget timerur, der skal stilles om efter årstiden."
-  - question: "Hvorfor ikke bare bruge faste klokkeslæt?"
-    answer: "I Danmark flytter solnedgangen sig omkring seks timer fra juni til december. Faste tider er synligt forkerte i ugevis hvert forår og efterår. Sol-entiteten følger med af sig selv."
+  - question: "Hvordan får man julelyset til at tænde ved solnedgang i Home Assistant?"
+    answer: "Lav en tidsplan i HACS-komponenten Scheduler med tidspunktet sunset+00:15:00, og tilføj en betingelse på en sæsonhjælper, for eksempel en template-binary_sensor, der er tændt i november, december og januar. En anden tidsplan slukker lyset kl. 23 og ved solopgang. Uden for sæsonen sker der ingenting."
+  - question: "Hvordan får man udelyset til at tænde igen, når strømmen har været væk?"
+    answer: "Brug en tilstandsudløser på hvert lys, der udløses, når lyset er gået fra unavailable til on eller off og har holdt den tilstand i 15 sekunder. Tilføj betingelser for tidsvinduerne (efter solnedgang plus 15 minutter og før kl. 23, eller efter kl. 05.30 med solen under horisonten), og kald light.turn_on på det lys, der udløste automationen."
 ---
 
-I Danmark går solen ned kl. 15:37 i december og kl. 21:58 i juni. Det er mere end seks timers forskel. Jeg satte altid udelyset til et fast klokkeslæt, justerede det to gange om året og ramte aldrig helt rigtigt. I starten af november var det mørkt kl. 17, men lyset tændte først kl. 20. I april tændte det i fuldt dagslys.
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-Det problem løser sig selv, hvis man bruger solen i stedet for uret.
+**Opdatering, november 2026:** Govee- og LEDVANCE-lyset og de to automationer fra første udgave er væk. Udelyset er nu julelys på tre Scheduler-tidsplaner, der kun kører fra november til januar, og en automation, der tænder et lys igen efter strømsvigt. Jeg har skrevet indlægget om og lagt et nyt skærmbillede af dashboardet ind.
 
-## Opsætningen
+</div>
 
-To slags udendørslys: **Govee**-lys på terrassen og varmt gyldne lyskæder fra Bauhaus, der styres via **LEDVANCE SMART+**. Begge er integreret i HA: Govee via HACS, mens LEDVANCE SMART+ er indbygget og selv finder enhederne på det lokale netværk.
+I dag tænder udelyset kl. 16.44. Midt i december sker det omkring kl. 15.55, og i juni først efter kl. 22. Et fast klokkeslæt kan ikke følge med, og det var hele pointen med første udgave af indlægget. Siden da har haven fået julelys i stedet for terrasselys, og så skulle opsætningen også kunne finde ud af, at lyset kun hører til tre måneder af året.
 
-Lyskæderne er i sig selv varmt gyldne, omkring 2200 K. De skal ikke have en scene eller en farvetemperatur. De skal bare tændes.
+## Tre lys, to stikkontakter, tre tidsplaner
 
-## Automationen
+Projektører, havespots og en lyskæde ligger i én lysgruppe, `light.udendors_lys`. Ved siden af står to Matter-stikkontakter, `switch.garden_plug_1` og `switch.garden_plug_2`. Tre tidsplaner i HACS-komponenten Scheduler styrer gruppen og begge stikkontakter:
 
-Én automation styrer begge. Udløseren for at tænde bruger HA's sol-platform med en forskydning på 15 minutter:
+| Tidsplan | Hvornår | Kun hvis | Hvad sker der |
+|---|---|---|---|
+| Tænd | solnedgang +15 min | sæsonen er på | gruppen på lysstyrke 255, begge stikkontakter tændt |
+| Sluk | kl. 23.00 og igen ved solopgang | sæsonen er på | gruppen og begge stikkontakter slukket |
+| Tænd om morgenen | kl. 05.30 | sæsonen er på, og solen er under horisonten | som Tænd |
 
-```yaml
-alias: Udelys — Solnedgang tænd
-trigger:
-  - platform: sun
-    event: sunset
-    offset: "+00:15:00"
-action:
-  - service: light.turn_on
-    target:
-      entity_id:
-        - light.govee_outdoor
-        - light.bauhaus_string_lights
-    data:
-      brightness_pct: 100
+## Solen bestemmer aftenen
+
+Tændetidspunktet står som `sunset+00:15:00`. Scheduler tager solforskydningen direkte i tidspunktet, så der er ingen udløser at bygge. I dag giver det kl. 16.44. Jeg beholder de 15 minutter, fordi himlen stadig er lys i det øjeblik, solen teknisk set går ned, og julelys forsvinder i det lys.
+
+Slukketidspunktet er et fast kl. 23. Morgenkørslen skal også have en ende, så der er en ekstra slukning ved solopgang. Den er kl. 07.42 i morgen.
+
+## Hvorfor kl. 05.30 kun i mørke
+
+Fra november til januar er det altid mørkt kl. 05.30, for solen står ikke op før omkring kl. 7. Betingelsen om, at `sun.sun` er `below_horizon`, fejler derfor aldrig i dag. Jeg har den med alligevel. Flytter jeg tidspunktet eller strækker sæsonen ind i marts, kan lyset ikke tænde i dagslys, og det er præcis den fejl, jeg oprindeligt ville af med.
+
+## Julelys-sæsonen
+
+`binary_sensor.julelys_saeson` er en template-hjælper med én linje:
+
+```jinja
+{{ now().month in [11, 12, 1] }}
 ```
 
-Forskydningen på 15 minutter betyder, at lyset tænder, når det faktisk er mørkt, og ikke i det øjeblik, solen teknisk set går ned, hvor der stadig er rigeligt med lys.
+Det er et månedstjek og ikke mere end det. Alle tre tidsplaner har den som betingelse, så uden for sæsonen kører der ingenting. Det virker begge veje. Lyset tænder ikke i juli, og hvis jeg selv tænder havens stikkontakter en sommeraften, slukker intet dem kl. 23.
 
-Udløseren for at slukke er et fast tidspunkt:
+## Når strømmen har været væk
 
-```yaml
-alias: Udelys — Midnat sluk
-trigger:
-  - platform: time
-    at: "00:00:00"
-action:
-  - service: light.turn_off
-    target:
-      entity_id:
-        - light.govee_outdoor
-        - light.bauhaus_string_lights
-```
+Et lys, der mister strømmen, kan komme tilbage slukket. En tidsplan, der allerede er kørt, prøver ikke igen før næste tidspunkt. Derfor er der en lille automation, `automation.outdoor_lights_turn_on_after_power_restore`. Den udløses, når et lys i gruppen går fra unavailable til on eller off og bliver der i 15 sekunder, så lyset har nået at falde til ro, før kommandoen kommer. Så tænder den lyset på 255, hvis et af to vinduer er åbent:
+
+- efter solnedgang +15 min og før kl. 23
+- efter kl. 05.30 og før kl. 12, mens solen er under horisonten
+
+Tilstanden er `parallel`, så to lys, der kommer tilbage samtidig, begge bliver håndteret. Sidst kørte den 6. november kl. 17.54, omkring en time efter, at aftenens tidsplan var kørt.
+
+Den tjekker også sæsonsensoren, så et lys, der kommer tilbage efter strømsvigt i februar, forbliver i den tilstand, det er i, fordi ingen tidsplan kører. Jeg tilføjede betingelsen den 8. november, da jeg opdagede hullet, mens jeg skrev indlægget.
+
+## Scheduler eller automation?
+
+I Scheduler kan jeg ændre et tidspunkt på et kort i dashboardet uden at åbne YAML, og næste udløsning ligger som en attribut på hver tidsplans kontakt, så dashboardet kan vise den uden at regne noget ud.
+
+En automation kan løse den samme opgave. En automation gemmer desuden spor, hvilket Scheduler ikke gør, så når en tidsplan ikke udløses, har jeg færre ledetråde. Schedulers betingelser er enkle tjek af, om en entitet har en bestemt værdi, og tidsplanerne ligger i Home Assistants interne lagring (`.storage`) og ikke i en YAML-fil, jeg kan lægge ind i versionsstyring. Det er desuden en brugerdefineret komponent. Er du fortrolig med YAML, virker de to automationer fra første udgave stadig fint.
 
 ## Dashboardet
 
-Et par Mushroom-chips viser, hvornår lyset næste gang tænder og slukker. Tidspunktet for solnedgang beregnes ud fra sol-entiteten og opdateres hver dag:
+Hver tidsplan er et Mushroom-skabelonkort, der læser `next_trigger` fra sin kontakt. Teksten på første række kommer fra denne skabelon (teksterne er engelske, som på resten af mine dashboards):
 
-```yaml
-- type: custom:mushroom-chips-card
-  chips:
-    - type: template
-      icon: mdi:weather-sunset
-      content: >
-        Tænd: {{ (as_timestamp(state_attr('sun.sun','next_setting'))
-               + 15 * 60) | timestamp_custom('%H:%M') }}
-    - type: template
-      icon: mdi:weather-night
-      content: "Sluk: 00:00"
+```jinja
+{% set nt = state_attr('switch.schedule_afaff2', 'next_trigger') %}
+{% if is_state('switch.schedule_afaff2', 'off') %}Disabled
+{% elif is_state('binary_sensor.julelys_saeson', 'off') %}Out of season (Nov–Jan)
+{% elif is_state('light.udendors_lys', 'on') %}Active · lights on
+{% elif nt %}Next: {{ as_local(as_datetime(nt)).strftime('%H:%M') }} · sunset +15 min
+{% else %}Disabled{% endif %}
 ```
 
-![Tidsplan for udelyset i Home Assistant: det tændes ved solnedgang +15 min og slukkes ved midnat](/blog-images/hjem_Ourdoor_Schedule.jpg.png)
+![Afsnittet Schedule i visningen Lights: Outdoor lights turn on er aktiv, turn off er næste kl. 23.00, morning on er næste kl. 05.30 hvis mørkt](/blog-images/glass-lights-schedule.webp)
 
-Den seneste solnedgang i Danmark er cirka kl. 22 i juni, den tidligste cirka kl. 15:30 i december. Lyset følger med af sig selv, år efter år, uden at nogen rører automationen.
+Knappen «Manage schedules» under rækkerne åbner en pop-up med Scheduler-kortet, hvor tidspunkterne kan rettes.
 
-## Det, der ændrede sig
+## Faldgruben: at omdøbe en tidsplan
 
-De to uger i overgangsperioderne, marts og oktober, hvor lyset altid var forkert, er væk. To udløsere, to handlinger. Men det er en af de automationer, der får huset til at føles, som om det ved, hvilken årstid det er.
+Jeg omdøbte de tre tidsplaner med `scheduler.edit` og et nyt `name`. Så forsvandt kontakterne fra Home Assistant. De kom først tilbage efter `scheduler.reload_storage`, og da var de slået fra. Rækkefølgen, der virker: ret, genindlæs lagringen, tænd dem igen og tjek, at alle tre er tændt.

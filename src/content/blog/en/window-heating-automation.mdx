@@ -3,6 +3,7 @@ title: "A Home Assistant Blueprint That Stops the Heat When a Window Opens"
 seoTitle: "Home Assistant Blueprint: Stop the Heat When a Window Opens"
 description: "The radiator turns off when the window opens and back on when it closes, built as a reusable Blueprint so the next room takes 30 seconds."
 pubDate: 2026-05-17
+updatedDate: 2026-11-08
 tags: ["heating", "sensors", "automation"]
 lang: "en"
 translationKey: "window-heating-automation"
@@ -14,13 +15,19 @@ faqs:
     answer: "Reuse. Adding the next room means picking the Blueprint, a sensor and a radiator: about 30 seconds with no new code. It works for the Mill radiators. The Tado-managed living room needs separate logic."
 ---
 
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, November 2026:** One of the three window sensors has been offline since 3 November, and the Blueprint cannot do anything about a window it cannot see. I added an alert for that and wrote it up in a new section below. I also corrected the entity IDs and the room list: the office and the master bedroom now have their own sensors.
+
+</div>
+
 The radiator in my daughter's room was running at full heat with the window wide open. She's almost twenty, and keeping her window shut isn't something that happens reliably. I noticed the window had been open for an hour, heat on, outside temperature around 4°C. Not a disaster, but a predictable waste that would keep repeating.
 
 The fix was a window sensor and one Home Assistant automation. The part I spent an extra hour on was building it as a Blueprint so when the same pattern comes up in another room, it takes 30 seconds, not another afternoon.
 
 ## Hardware needed: IKEA window sensor + Mill radiator
 
-An **IKEA MYGGBETT** door/window sensor on my daughter's window (`binary_sensor.myggbett_door_window_sensor_door`). The radiator is a first-generation **Mill** unit, `climate.louise`, which only supports two modes: `heat` and `off`. I have the same first-gen model in my office.
+An **IKEA MYGGBETT** door/window sensor on my daughter's window (`binary_sensor.myggbett_door_window_sensor_door_2`). The radiator is a first-generation **Mill** unit, `climate.louise`, which only supports two modes: `heat` and `off`. I have the same first-gen model in my office.
 
 The master bedroom and kitchen run newer-gen Mill radiators with more HVAC modes. The Blueprint handles all of them. It snapshots the exact state before turning off and restores it precisely when the window closes, regardless of which mode or temperature the radiator was at.
 
@@ -64,7 +71,7 @@ The automation instance for my daughter's room is three lines:
   use_blueprint:
     path: homeassistant/window_heating_control.yaml
     input:
-      window_sensor: binary_sensor.myggbett_door_window_sensor_door
+      window_sensor: binary_sensor.myggbett_door_window_sensor_door_2
       climate_entity: climate.louise
       delay_minutes: 1
 ```
@@ -138,8 +145,22 @@ alerts:
 
 When all windows are closed, the card shows a green "all clear" slide. When one is open, it switches to an animated alert with the sensor's friendly name in the message.
 
+## When a window sensor goes offline
+
+The Blueprint only reacts when a sensor reports `on`. A sensor that reports nothing is invisible to it. If the battery dies or the sensor drops off the Matter network, its state becomes `unavailable`, and opening that window no longer switches anything off. The radiator keeps heating into the open window and nothing tells me.
+
+That is the situation right now. One of my three sensors has been `unavailable` since 15:00 on 3 November. As I write this on 8 November, that is five days. The likely causes are a flat battery or a dropped Matter connection. I haven't confirmed which, and the sensor is still offline, so I can't call this fixed.
+
+On the evening of 3 November, about two and a half hours after the sensor dropped, I wrote an automation called "Vindue: sensor offline". It lists the three sensors explicitly and sends a push notification to my phone when one has been unavailable for more than six hours. The message says the heating control in that room is blind and tells me to check the battery and re-pair the sensor. Six hours because the healthy sensors were unavailable for 16 seconds at most over the previous week, so short blips don't trigger it.
+
+A `for: hours: 6` trigger has two weak spots. A restart resets the timer, and a sensor that is already unavailable when Home Assistant starts never changes state, so the trigger never fires. This sensor was already offline when I saved the automation, so it was exactly that case. So there is a second trigger: every morning at 09:00 the automation checks all three sensors and sends a message for any that has been unavailable for six hours or more. It nags me every morning until the sensor comes back. Each sensor has its own notification tag, so a new message replaces the old one instead of stacking up.
+
+The last run was 09:00 today. I can only see the last two runs, because the traces were cleared when Home Assistant restarted at 08:44 on 7 November. Yesterday's check looks like it did nothing: the restart had reset the sensor's "last changed" time 16 minutes earlier, so it didn't count as six hours yet. Today's check sent the message.
+
+An alert doesn't put the heating back in control. Until I change the battery or re-pair the sensor, that room has no window control at all.
+
 ## Reusing the Blueprint in other rooms
 
 Settings → Automations → Create → From Blueprint → select "Window → Heating off" → pick the sensor and radiator → save. No new code. That's the whole point of building it as a Blueprint from the start rather than a hardcoded automation.
 
-The office gets a sensor next: same first-gen Mill, same Blueprint, identical configuration. The master bedroom and kitchen Mill radiators will work too once they have window sensors. The Daikin in the living room is a different story: Tado manages that one and will need its own logic when the time comes.
+The office and the master bedroom have their own sensors and Blueprint automations now, with identical configuration apart from the entities. The kitchen Mill radiator will work the same way once it has a window sensor. The Daikin in the living room is a different story: Tado manages that one and will need its own logic when the time comes.

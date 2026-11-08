@@ -1,87 +1,93 @@
 ---
-title: "Govee- und LEDVANCE-Außenbeleuchtung nach Sonnenuntergangs-Zeitplan in Home Assistant"
-seoTitle: "Govee und LEDVANCE Außenlicht nach Sonnenuntergang"
-description: "Govee-Lichter und LEDVANCE-Lichterketten: bei Sonnenuntergang ein, Mitternacht aus. Eine Automatisierung, die jeder Jahreszeit folgt."
+title: "Weihnachtslichter im Garten nach Sonnenuntergang schalten"
+description: "Meine Gartenbeleuchtung zur Weihnachtszeit geht 15 Minuten nach Sonnenuntergang an, um 23 Uhr und bei Sonnenaufgang aus und läuft nur von November bis Januar."
 pubDate: 2025-11-28
+updatedDate: 2026-11-08
 tags: ["licht", "automatisierung"]
 lang: "de"
 translationKey: "outdoor-lights-sunset-schedule"
-heroImage: "/blog-images/Hjem_Lys.jpg"
+heroImage: "/blog-images/outdoor-lights-schedule-2026.jpg"
 faqs:
-  - question: "Wie folgt die Außenbeleuchtung das ganze Jahr dem Sonnenuntergang in Home Assistant?"
-    answer: "Eine Automatisierung mit Sonnen-Trigger (Sonnenuntergang plus 15 Minuten) schaltet die Govee- und LEDVANCE-Leuchten ein, ein Zeit-Trigger um Mitternacht schaltet sie wieder aus. Keine Zeitschaltuhr, die je nach Jahreszeit umgestellt werden muss."
-  - question: "Warum nicht einfach feste Uhrzeiten?"
-    answer: "In Dänemark verschiebt sich der Sonnenuntergang zwischen Juni und Dezember um rund sechs Stunden. Feste Zeiten liegen jedes Frühjahr und jeden Herbst wochenlang sichtbar daneben. Die Sonnen-Entität geht von selbst mit."
+  - question: "Wie schaltet man Weihnachtsbeleuchtung in Home Assistant nach Sonnenuntergang ein?"
+    answer: "Lege im HACS-Integration Scheduler einen Zeitplan mit der Zeit sunset+00:15:00 an und gib ihm eine Bedingung auf einen Saison-Helfer, zum Beispiel einen Template-Binärsensor, der im November, Dezember und Januar an ist. Ein zweiter Zeitplan schaltet um 23 Uhr und bei Sonnenaufgang aus. Außerhalb der Saison passiert nichts."
+  - question: "Wie bringt man Außenleuchten nach einem Stromausfall wieder zum Leuchten?"
+    answer: "Ein Zustands-Trigger auf jeder Leuchte löst aus, wenn sie von unavailable auf on oder off wechselt und 15 Sekunden in diesem Zustand bleibt. Bedingungen für die Zeitfenster (nach Sonnenuntergang plus 15 Minuten und vor 23 Uhr, oder nach 5:30 Uhr bei Sonne unter dem Horizont) begrenzen das, und die Aktion ruft light.turn_on für die auslösende Leuchte auf."
 ---
 
-Zweimal im Jahr änderte ich den Timer für die Außenlichter. Einmal im Frühling, wenn 21:00 Uhr noch helles Abendlicht war. Einmal im Herbst, wenn es um 17:00 Uhr dunkel war und die Lichter nicht vor 20:00 Uhr angingen. Ich traf es nie ganz richtig. In den Übergangswochen war der Timer immer falsch: Lichter, die im Tageslicht aufflackerten oder den Garten eine Stunde nach Sonnenuntergang noch dunkel ließen.
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-Die Lösung ist im Nachhinein offensichtlich: keine Uhrzeiten verwenden, sondern die Sonne.
+**Update, November 2026:** Die Govee- und LEDVANCE-Leuchten und die beiden Automatisierungen aus der ersten Fassung gibt es nicht mehr. Die Außenbeleuchtung ist jetzt Weihnachtsbeleuchtung mit drei Scheduler-Zeitplänen, die nur von November bis Januar laufen, und einer Automatisierung, die eine Leuchte nach einem Stromausfall wieder einschaltet. Ich habe den Beitrag neu geschrieben und einen neuen Screenshot des Dashboards eingefügt.
 
-## Die Einrichtung
+</div>
 
-Zwei Arten von Außenbeleuchtung: **Govee**-Lichter auf der Terrasse und warm-goldene Lichterketten von Bauhaus, gesteuert über **LEDVANCE SMART+**. Beide sind in HA integriert. Govee läuft über HACS, LEDVANCE SMART+ ist eingebaut und erkennt Geräte automatisch im lokalen Netzwerk.
+Am 6. November um 17:54 Uhr hat bei mir eine kleine Automatisierung ein Gartenlicht eingeschaltet, das gerade wieder erreichbar geworden war. Der Zeitplan hatte etwa eine Stunde vorher geschaltet und hätte es nicht noch einmal versucht. Von allein hätte er den Ausfall nicht bemerkt.
 
-Die Lichterketten sind von Natur aus warm-golden, etwa 2200K. Sie brauchen keine Szene und keinen Farbtemperatur-Befehl. Sie müssen einfach nur eingeschaltet werden.
+Seit der ersten Fassung dieses Beitrags hat sich viel geändert. Statt Govee und LEDVANCE hängt jetzt Weihnachtsbeleuchtung im Garten. Sie soll nur drei Monate im Jahr laufen, und ein Zeitplan, der das ganze Jahr mit einer festen Zeit um Mitternacht abschaltet, passt dazu nicht.
 
-## Die Automatisierung
+## Fünf Geräte, drei Zeitpläne
 
-Eine Automatisierung steuert beide. Der Einschalt-Trigger nutzt HAs Sonnen-Plattform mit 15 Minuten Offset:
+Flutlichter, Bodenstrahler und eine Lichterkette bilden eine Lichtgruppe, `light.udendors_lys` („udendørs“ ist dänisch für draußen). Daneben hängen zwei Matter-Steckdosen, `switch.garden_plug_1` und `switch.garden_plug_2`. Drei Zeitpläne im HACS-Integration Scheduler steuern die Gruppe und beide Steckdosen:
 
-```yaml
-alias: Außenlichter — Sonnenuntergang ein
-trigger:
-  - platform: sun
-    event: sunset
-    offset: "+00:15:00"
-action:
-  - service: light.turn_on
-    target:
-      entity_id:
-        - light.govee_outdoor
-        - light.bauhaus_string_lights
-    data:
-      brightness_pct: 100
+| Zeitplan | Wann | Nur wenn | Was passiert |
+|---|---|---|---|
+| Einschalten | Sonnenuntergang +15 Min. | Saison an | Gruppe mit Helligkeit 255, beide Steckdosen an |
+| Ausschalten | 23:00 Uhr und noch einmal bei Sonnenaufgang | Saison an | Gruppe und beide Steckdosen aus |
+| Morgens ein | 5:30 Uhr | Saison an und Sonne unter dem Horizont | wie Einschalten |
+
+## Die Sonne legt den Abend fest
+
+Die Einschaltzeit steht als `sunset+00:15:00` im Zeitplan. Scheduler schreibt den Sonnen-Offset direkt in die Uhrzeit, ein eigener Trigger ist nicht nötig. Heute ergibt das 16:44 Uhr, Mitte Dezember sind es etwa 15:55 Uhr. Die 15 Minuten behalte ich, weil der Himmel in dem Moment, in dem die Sonne rechnerisch untergeht, noch hell ist und eine Lichterkette in diesem Licht kaum zu sehen ist.
+
+Ausgeschaltet wird um 23:00 Uhr, fest. Der Morgenlauf braucht ebenfalls ein Ende, deshalb gibt es ein zweites Ausschalten bei Sonnenaufgang. Morgen ist das um 7:42 Uhr.
+
+## Warum 5:30 Uhr nur im Dunkeln
+
+Von November bis Januar ist es um 5:30 Uhr immer dunkel, denn die Sonne geht hier nie vor etwa 7 Uhr auf. Die Bedingung `sun.sun` ist `below_horizon` schlägt deshalb heute nie fehl. Ich habe sie trotzdem eingebaut. Verschiebe ich die Zeit oder dehne die Saison bis in den März aus, können die Lichter nicht im Tageslicht angehen, und genau diesen Fehler wollte ich ursprünglich loswerden.
+
+## Der Saison-Sensor
+
+`binary_sensor.julelys_saeson` ist ein Template-Helfer mit einer Zeile:
+
+```jinja
+{{ now().month in [11, 12, 1] }}
 ```
 
-Der 15-Minuten-Offset bedeutet, dass die Lichter angehen, wenn es tatsächlich dunkel ist, und nicht in dem Moment, in dem die Sonne technisch gesehen untergeht und noch genug Restlicht da ist.
+Das ist eine Monatsabfrage, mehr nicht. Alle drei Zeitpläne haben sie als Bedingung, außerhalb der Saison läuft also nichts. Das gilt in beide Richtungen. Im Juli gehen die Lichter nicht an, und wenn ich an einem Sommerabend die Gartensteckdosen von Hand einschalte, schaltet sie um 23:00 Uhr nichts aus.
 
-Der Ausschalt-Trigger ist eine feste Uhrzeit:
+## Nach einem Stromausfall
 
-```yaml
-alias: Außenlichter — Mitternacht aus
-trigger:
-  - platform: time
-    at: "00:00:00"
-action:
-  - service: light.turn_off
-    target:
-      entity_id:
-        - light.govee_outdoor
-        - light.bauhaus_string_lights
-```
+Eine Leuchte, die ohne Strom war, kann ausgeschaltet zurückkommen. Ein Zeitplan, der schon gelaufen ist, versucht es erst zur nächsten Zeit wieder. Dafür gibt es eine kleine Automatisierung, `automation.outdoor_lights_turn_on_after_power_restore`. Sie reagiert, wenn eine Leuchte der Gruppe von unavailable auf on oder off wechselt und 15 Sekunden dort bleibt, damit sie sich stabilisiert hat, bevor der Befehl ankommt. Dann schaltet sie diese Leuchte mit 255 ein, sofern eines von zwei Zeitfenstern offen ist:
+
+- nach Sonnenuntergang +15 Min. und vor 23:00 Uhr
+- nach 5:30 Uhr und vor 12:00 Uhr, solange die Sonne unter dem Horizont steht
+
+Der Modus ist `parallel`, damit zwei Leuchten, die gleichzeitig zurückkommen, beide behandelt werden.
+
+Sie prüft jetzt auch den Saison-Sensor: Kommt im Februar eine Leuchte nach einem Stromausfall zurück, bleibt sie, wie sie ist, weil kein Zeitplan läuft. Die Bedingung habe ich am 8. November ergänzt, nachdem mir die Lücke beim Schreiben dieses Beitrags aufgefallen war.
+
+## Scheduler oder Automatisierung?
+
+In Scheduler ändere ich eine Zeit auf einer Karte im Dashboard, ohne YAML zu öffnen. Der nächste Auslösezeitpunkt liegt als Attribut am Schalter jedes Zeitplans, das Dashboard muss also nichts ausrechnen.
+
+Eine Automatisierung könnte dasselbe. Sie hat außerdem Traces, die Scheduler nicht hat. Wenn ein Zeitplan nicht auslöst, habe ich weniger Anhaltspunkte. Die Bedingungen in Scheduler sind einfache Prüfungen, ob eine Entität einen bestimmten Wert hat, und die Zeitpläne liegen im Speicher von Home Assistant statt in einer YAML-Datei, die ich in die Versionsverwaltung legen kann. Es ist außerdem eine benutzerdefinierte Komponente. Wer sich in YAML wohlfühlt, kommt mit den zwei Automatisierungen aus der ersten Fassung weiterhin gut zurecht.
 
 ## Das Dashboard
 
-Ein Paar Mushroom Template Chips die die nächste Auslösezeit anzeigen. Die Sonnenuntergangszeit wird aus der Sonnen-Entität berechnet und aktualisiert sich täglich:
+Jeder Zeitplan ist eine Mushroom-Template-Karte, die `next_trigger` aus ihrem Schalter liest. Der Text der ersten Zeile stammt aus dieser Vorlage (die Texte sind englisch, wie auf allen meinen Dashboards):
 
-```yaml
-- type: custom:mushroom-chips-card
-  chips:
-    - type: template
-      icon: mdi:weather-sunset
-      content: >
-        Ein: {{ (as_timestamp(state_attr('sun.sun','next_setting'))
-              + 15 * 60) | timestamp_custom('%H:%M') }}
-    - type: template
-      icon: mdi:weather-night
-      content: "Aus: 00:00"
+```jinja
+{% set nt = state_attr('switch.schedule_afaff2', 'next_trigger') %}
+{% if is_state('switch.schedule_afaff2', 'off') %}Disabled
+{% elif is_state('binary_sensor.julelys_saeson', 'off') %}Out of season (Nov–Jan)
+{% elif is_state('light.udendors_lys', 'on') %}Active · lights on
+{% elif nt %}Next: {{ as_local(as_datetime(nt)).strftime('%H:%M') }} · sunset +15 min
+{% else %}Disabled{% endif %}
 ```
 
-![Beleuchtungsplan in Home Assistant: Außenlichter ein bei Sonnenuntergang +15 Min, aus um Mitternacht](/blog-images/hjem_Ourdoor_Schedule.jpg.png)
+![Der Bereich Schedule in der Ansicht Lights: Outdoor lights turn on ist aktiv, turn off kommt als Nächstes um 23:00 Uhr, morning on um 5:30 Uhr wenn es dunkel ist](/blog-images/glass-lights-schedule.webp)
 
-In Dänemark verlagert sich der Sonnenuntergang zwischen Juni und Dezember um mehr als sechs Stunden. Die Lichter folgen dem automatisch: frühestens um etwa 15:30 Uhr im Dezember, spätestens um etwa 22:00 Uhr im Juni.
+Die Schaltfläche „Manage schedules“ unter den Zeilen öffnet ein Pop-up mit der Scheduler-Karte, in der sich die Zeiten ändern lassen.
 
-## Was sich geändert hat
+## Eine Falle beim Umbenennen
 
-Die Übergangswochen im März und Oktober, in denen der Timer immer falsch war, sind weg. Zwei Trigger, zwei Aktionen. Aber es ist eine dieser Automationen, die das Haus so wirken lassen, als wüsste es, welche Jahreszeit gerade ist.
+Ich habe die drei Zeitpläne mit `scheduler.edit` und einem neuen `name` umbenannt. Danach waren die Schalter in Home Assistant verschwunden. Erst nach `scheduler.reload_storage` kamen sie wieder, und zwar ausgeschaltet. Die Reihenfolge, die funktioniert: ändern, Speicher neu laden, wieder einschalten und prüfen, dass alle drei an sind.

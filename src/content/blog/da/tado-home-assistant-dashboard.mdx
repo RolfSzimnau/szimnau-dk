@@ -1,8 +1,9 @@
 ---
 title: "Et Tado-varmedashboard med card_mod, der faktisk er værd at se på"
 seoTitle: "Et Tado-varmedashboard med card_mod, der er værd at se"
-description: "5 Tado-zoner i Home Assistant med Mushroom-klimakort, CSS-animation på de zoner, der varmer, og sænket temperatur ved fravær, der faktisk virker."
+description: "Mushroom-klimakort til Tado i Home Assistant med card_mod-animation, der pulserer, mens varmen kører. Først bygget til fem zoner, nu til én."
 pubDate: 2025-03-07
+updatedDate: 2026-11-08
 tags: ["varme", "dashboard"]
 lang: "da"
 translationKey: "tado-home-assistant-dashboard"
@@ -11,8 +12,18 @@ faqs:
   - question: "Hvad giver Tado-integrationen i Home Assistant?"
     answer: "Den er indbygget i HA (kræver Tados Internet Bridge og en konto). Hver zone bliver en klima-entitet, der opdateres på under fem sekunder, og der følger binære sensorer med for Tados registrering af åbne vinduer."
   - question: "Hvordan virker animationen, når varmen er tændt?"
-    answer: "Det er en CSS-animation med keyframes via card-mod på Mushroom-klimakortet, og den kører kun, mens hvac_action er heating. Fem zoner i et gitter kan aflæses med ét blik, fordi kun de aktive pulserer."
+    answer: "Det er en CSS-animation med keyframes via card-mod på Mushroom-klimakortet, og den kører kun, mens hvac_action er heating. Med fem zoner i et gitter kunne man aflæse det med ét blik, fordi kun de aktive pulserede. I dag har jeg én zone, så pulsen sidder på kortets ikon, og kortet dæmpes, når varmen står stille."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Opdatering, november 2026:** Jeg har nu én Tado-zone, ikke fem: Daikin-varmepumpen i stuen. Gitteret med fem zoner, løkkerne over fem klimaentiteter og automationerne for fravær og åbne vinduer længere nede beskriver en tidligere opsætning. Den pulserende animation virker på samme måde på ét kort, så den kode har jeg ladet stå.
+
+Kortet, jeg bruger i dag, er et Mushroom-klimakort, der hedder «Living room», med plus- og minusknapper og knapper til off, auto, cool, heat, dry og fan only. Ikonet lyser orange og pulserer, mens pumpen varmer, lyser blåt ved køling og grønt, når kun blæseren kører, og er gråt, når den står stille. Hele kortet dæmpes kraftigt (CSS `opacity: 0.4`), når zonen er slukket eller står stille.
+
+Sænkning ved fravær og alarmen for åbne vinduer kører jeg ikke i dag. Vinduerne holder IKEA-sensorer øje med, og dem skrev jeg om i [indlægget om blueprintet til vinduer](/da/blog/window-heating-automation/). Jeg bruger også Tado Hijack fra HACS i stedet for den indbyggede integration, fordi den styrer Tados daglige API-kvote.
+
+</div>
 
 Tados integration er en af de bedste i HA lige fra start: den er indbygget, så der skal ikke bruges HACS. Du skal have Tados Internet Bridge og en Tado-konto. Tilføj integrationen, log ind, og alle zoner dukker op som `climate.*`-entiteter med fuld understøttelse. Status opdateres på under fem sekunder. Det virker bare.
 

@@ -1,102 +1,130 @@
 ---
 title: "Sådan planlægger jeg Bosch-opvaskemaskinen i Home Assistant efter elprisen"
 seoTitle: "Bosch-opvaskemaskinen efter elpris i Home Assistant"
-description: "Opvaskemaskinen via Home Connect: et dashboard med programvalg og sluttid, plus en knap, der finder den billigste time at køre den i."
+description: "Visningen Appliances på tabletten styrer min Bosch-opvasker og Miele-vaskemaskine: et felt, «Cheapest», vælger den billigste time, og en prisgraf viser hvorfor."
 pubDate: 2025-08-22
-updatedDate: 2026-10-01
+updatedDate: 2026-11-08
 tags: ["energi", "dashboard"]
 lang: "da"
 translationKey: "ha-appliances-dashboard"
-heroImage: "/blog-images/hvidevarer-appliances.jpg"
+heroImage: "/blog-images/appliances-tablet-view-2026.jpg"
 faqs:
   - question: "Kan Home Assistant starte en Bosch-opvaskemaskine på et bestemt tidspunkt?"
-    answer: "Ja. Den indbyggede Home Connect-integration giver adgang til programvalg og fjernstart, så en automation kan udskyde starten til den billigste strømtime. Lågen skal være lukket, og fjernstart skal være slået til på maskinen først."
+    answer: "Ja. Med integrationen Home Connect Alt har opvaskeren en select-entitet til udskudt start. Du sætter forsinkelsen, trykker på start, og maskinen venter. En automation kan regne forsinkelsen ud fra den billigste strømtime. Lågen skal være lukket, og fjernstart skal være slået til på maskinen først."
   - question: "Hvad kan man ikke, når opvaskeren styres via Home Connect?"
     answer: "Programmet kan kun ændres, før maskinen starter. Når den kører, kan valgene kun læses. Det er en begrænsning i Boschs firmware, ikke i Home Assistant."
 ---
 
 <div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
 
-**Opdatering, oktober 2026:** Opvaskemaskinen kører nu på HACS-integrationen Home Connect Alt (`home_connect_alt`) i stedet for den officielle, fordi den giver adgang til maskinens egen udskudte start. Starttidspunktet sættes derfor som en forsinkelse (`startinrelative`) og ikke som et sluttidspunkt. Ideen med knappen «Planlæg billigst» er den samme, men entitetsnavnene nedenfor er fra den officielle integration.
+**Opdatering, november 2026:** Jeg har bygget visningen Appliances om på vægtabletten og skrevet indlægget om, så det passer. Statusrækkerne for opvaskeren og vaskemaskinen er blevet større. Vaskemaskinen tæller nu vaske, strøm og udgift pr. måned, og en prisgraf under begge kort viser, hvad «Cheapest»-feltet vælger imellem. Opvaskeren kører på HACS-integrationen Home Connect Alt (`home_connect_alt`), så entitetsnavnene nedenfor er de nuværende.
 
 </div>
 
-Opvaskemaskinen var det apparat, jeg havde de laveste forventninger til. Det er en Bosch. Den kobler sig på Boschs Home Connect-app, hvilket er fint, men bare endnu en app. Jeg tilføjede **Home Connect**-integrationen (indbygget i HA, så ingen HACS, men den kræver en Home Connect-konto) mest for fuldstændighedens skyld.
+Opvaskemaskinen var det apparat, jeg havde de laveste forventninger til. Det er en Bosch, og den bruger Boschs Home Connect-app, som er fin nok, men bare endnu en app. Jeg koblede den på Home Assistant mest for fuldstændighedens skyld.
 
-Så opdagede jeg, at den giver adgang til nok styring til at gøre noget faktisk nyttigt: at lade opvasken starte i den time, hvor strømmen er billigst.
+Så gik det op for mig, at der er nok styring til at gøre noget nyttigt: starte opvasken i den time, hvor strømmen er billigst. Vaskemaskinen, en Miele, fik samme behandling senere. Nu står de to side om side i én visning på tabletten.
 
-## Det giver Home Connect adgang til
+## Opvaskerens entiteter
 
-Når integrationen er tilføjet, dukker opvaskemaskinen op med:
+Jeg skiftede fra den officielle integration til HACS-udgaven, Home Connect Alt, fordi den giver adgang til maskinens egen udskudte start. Det er de entiteter, jeg bruger. `<id>` står for apparatets id i de rigtige navne.
 
 ```
-sensor.dishwasher_operation_state   — Ready, Run, Finished, osv.
-sensor.dishwasher_program           — Eco50, Auto, Intensive, osv.
-sensor.dishwasher_remaining_time
-binary_sensor.dishwasher_remote_start_allowed
-select.dishwasher_program
-select.dishwasher_finish_at         — forsinket starttid
-switch.dishwasher_half_load
-switch.dishwasher_speed_perfect
-button.dishwasher_start
+sensor.bosch_<id>_bsh_common_status_operationstate          # Ready, Run, DelayedStart, Finished ...
+select.bosch_<id>_programs                                  # Eco50 og de andre
+select.bosch_<id>_bsh_common_option_startinrelative         # forsinkelsen, fx 2:30
+binary_sensor.bosch_<id>_bsh_common_status_remotecontrolstartallowed
+switch.bosch_<id>_dishcare_dishwasher_option_halfload
+switch.bosch_<id>_dishcare_dishwasher_option_variospeedplus
+button.bosch_<id>_start_pause
+button.bosch_<id>_stop
 ```
 
-Den vigtigste er `select.dishwasher_finish_at`. Med Boschs egen udskudte start fortæller du maskinen, hvornår du vil have den færdig, og den regner baglæns derfra. Det er hele tricket.
+Den vigtige er `startinrelative`. Maskinen vil have en forsinkelse og ikke et sluttidspunkt. Jeg fortæller den, hvor længe den skal vente, i trin på en halv time, og trykker så på start.
 
-## Dashboard-kortet
+## Opvaskerens kort
 
-Dashboardet samler alle knapperne i ét glaskort:
+Statusrækken øverst fylder mest på kortet. Der står «Ready», «Starts 04:00», «Done 15:40» eller «Finished», og kortets baggrund fyldes med en blå bjælke, mens programmet skrider frem. Står maskinen klar, viser den anden linje programmet, den billigste kommende start med prisen og prisen lige nu. På skærmbilledet øverst står der «cheapest start tomorrow 04:00 · 2.30 kr/kWh (now 3.62)».
 
-- Driftstilstand (Klar til vask / Kører / Færdig)
-- Programvælger
-- Sluttidsvælger
-- Kontakter til halv fyldning og SpeedPerfect
-- To handlingsknapper: **Planlæg billigst** og **Start nu**
+Under statusrækken ligger tre felter, og de findes kun, mens maskinen er klar:
 
-Knappen «Planlæg billigst» er et script, der læser spotpriserne fra [Energi Data Service](https://www.energidataservice.dk/) (HACS-integration, gratis offentlig dansk API), finder den billigste kommende time før midnat, lægger programmets varighed til og sætter `select.dishwasher_finish_at` til det tidspunkt.
+- «Cheapest» viser tidspunktet og kører planlægningsscriptet, når jeg trykker.
+- «Start now» starter med det samme og viser den aktuelle pris, så jeg kan sammenligne med den billigste time.
+- «Finish at» bruger jeg, når jeg tænker modsat. Jeg vælger et sluttidspunkt, og en automation trækker 90 minutter fra (den regner med Eco 50), runder forsinkelsen ned til hele halve timer og skriver den til maskinen. Den sætter kun forsinkelsen.
+
+Nederst sidder tre chips: program, «Half load» og «SpeedPerfect+». To rækker dukker kun op, når der er brug for dem. En rød «Cancel»-række kommer frem, mens en start er planlagt, eller maskinen kører. En ravgul «Remote start is off»-række kommer frem, hvis jeg har glemt knappen på maskinen.
+
+Scriptet bag «Cheapest» ser sådan ud i en forkortet udgave. Det rigtige tjekker også, at maskinen er klar, og sender en besked med starttidspunkt og pris:
 
 ```yaml
-alias: Opvaskemaskine — Planlæg billigste time
+alias: Schedule dishwasher cheapest start
 sequence:
   - variables:
-      prices: "{{ state_attr('sensor.energi_data_service', 'raw_today') | default([]) }}"
-      now_h: "{{ now().hour }}"
-      duration_h: 2
       best_hour: >
-        {% set ns = namespace(hour=none, price=999) %}
-        {% for h in prices %}
-          {% if as_datetime(h.hour).hour >= now_h | int and h.price < ns.price %}
-            {% set ns.price = h.price %}
-            {% set ns.hour = h.hour %}
+        {% set ns = namespace(price=999, hour='') %}
+        {% set prices = state_attr('sensor.energi_data_service', 'raw_today')
+           + state_attr('sensor.energi_data_service', 'raw_tomorrow') %}
+        {% for p in prices %}
+          {% if as_timestamp(p.hour) > as_timestamp(now()) + 1800
+                and p.price < ns.price %}
+            {% set ns.price = p.price %}{% set ns.hour = p.hour %}
           {% endif %}
         {% endfor %}
         {{ ns.hour }}
-  - service: select.select_option
+  - action: select.select_option
     target:
-      entity_id: select.dishwasher_finish_at
+      entity_id: select.bosch_<id>_bsh_common_option_startinrelative
     data:
       option: >
-        {{ (as_datetime(best_hour) + timedelta(hours=duration_h))
-           .strftime('%H:%M') }}
-  - service: button.press
+        {% set half_hours = ((as_timestamp(best_hour) - as_timestamp(now())) / 1800) | int %}
+        {{ half_hours // 2 }}:{{ '30' if half_hours % 2 else '00' }}
+  - delay:
+      milliseconds: 800
+  - action: button.press
     target:
-      entity_id: button.dishwasher_start
+      entity_id: button.bosch_<id>_start_pause
 ```
 
-![Bosch opvaskemaskine energioptimering i Home Assistant med billigste time-planlægning og spotpris](/blog-images/bosch-dishwasher-home-assistant-energy-optimization.jpg)
+Priserne kommer fra [Energi Data Service](https://www.energidataservice.dk/) (HACS). Den har `raw_today` og, når morgendagens priser er offentliggjort, `raw_tomorrow`. Scriptet kigger i begge, så den billigste time kan ligge i morgen. De næste 30 minutter springer det over, så det aldrig vælger den time, der allerede kører.
 
-Kortet viser resultatet, fx «Planlæg billigst: 16:30 · 0,27 kr.». Du ser både tidspunktet og prisen, før du bekræfter.
+Der er to ting, det ikke gør. Det vælger den billigste enkelte time og ikke det billigste vindue for hele programmet. Og fordi forsinkelsen rundes ned til en halv time, kan maskinen starte op til 29 minutter før den billige time. Kører vasken om natten, betyder ingen af delene noget.
+
+## Vaskemaskinens kort
+
+Vaskemaskinen har samme statusrække og samme bjælke, som fyldes, mens programmet kører. «Cheapest» og «Start now» dukker op, når jeg har valgt et program på selve maskinen.
+
+Her virker det anderledes end på opvaskeren. Jeg bruger ikke udskudt start på Mielen. «Cheapest» gemmer kun det planlagte starttidspunkt i en hjælper (`input_datetime.vaskemaskine_planlagt_start`). En automation trykker på start på det tidspunkt, hvis maskinen stadig venter, og fjernstyring (MobileStart) er slået til.
+
+Og her er hagen. Mielen slukker sig selv efter cirka 15 minutter. Ligger den billigste time flere timer ude i fremtiden, er maskinen som regel slukket, når tiden kommer, og så kan automationen kun sende mig en besked om, at den ikke kunne starte. Scriptet advarer mig med det samme, hvis starten ligger mere end ti minutter væk. I praksis vælger jeg programmet igen tættere på tidspunktet, eller jeg vasker, når den billige time er nær.
+
+![Vaskemaskinens kort på tabletten med Washes, Energy og Cost for måneden og seneste vask](/blog-images/appliances-washing-tiles.webp)
+
+De tre felter nederst er nye. «Washes», «Energy» og «Cost» viser månedens samlede tal, og «Last wash» viser den seneste: program, kWh, kroner og tidspunkt. Når et program slutter, venter en automation et minut og lægger så maskinens egen strømmåling for programmet oven i tre hjælpere til tal (`vask_antal_denne_maaned`, `vask_kwh_denne_maaned`, `vask_kr_denne_maaned`) og skriver linjen med seneste vask. Den 1. lige efter midnat gemmer den den gamle måned i en hjælper til tekst og nulstiller tællerne.
+
+Jeg viser en måned, fordi én vask er for lille til at mærke. Oktober blev til 16 vaske, 9,4 kWh og 14 kr. Det er under en krone pr. vask, og det ville jeg aldrig have mærket på en enkelt vask. Tallet siger først noget, når det er lagt sammen.
+
+Prisen er et skøn. Udgiften er kWh gange prisen i den time, programmet slutter i, og ikke prisen for hver time, det har kørt. For en vask på en til to timer er det tæt nok på.
+
+## Prisgrafen
+
+Kortet under opvaskeren er det, der gør resten læsbart. Øverste række viser prisen nu og den billigste kommende time. Trykker jeg på den, åbner den min Energy-visning. Under den ligger et apexcharts-card, som dækker 48 timer fra midnat: i dag i orange, i morgen i grøn, med en prik på hver dags billigste time. Dataene kommer fra de samme `raw_today`- og `raw_tomorrow`-attributter, som scriptet læser.
+
+![Prisgrafen i visningen Appliances med i dag i orange og i morgen i grøn](/blog-images/appliances-price-chart.webp)
+
+Statusrækken, «Cheapest»-feltet og kortets overskrift kører alle den samme søgning efter den billigste time, så de er altid enige. Prikkerne på grafen markerer dagens billigste time, også hvis den ligger i fortiden. Feltet ser kun frem. På skærmbilledet ligger dagens prik kl. 05.00, som er forbi, så feltet peger på morgendagens prik kl. 04.00.
+
+Grafen fortæller også det, et felt ikke kan. I morgen kl. 04.00 koster strømmen 2,30 kr./kWh mod 3,62 lige nu, omkring 36 procent mindre. Men dalen er bred: fra midnat til cirka kl. 05.00 flytter prisen sig næsten ikke, så en start en time før eller efter koster ingenting. Aftenspidsen ligger over 6 kr./kWh omkring kl. 17.00. Når jeg kan se det, stoler jeg på det ene tidspunkt i feltet.
 
 ## Derfor er det besværet værd
 
-Eco50 kører cirka 2 timer. Forskellen mellem den billigste og den dyreste time på en typisk dansk hverdag er 1 til 3 kr./kWh. Med 0,8 kWh pr. opvask er det 0,80 til 2,40 kr. sparet pr. gang. Ikke voldsomt hver gang for sig. Men over 300 opvaske om året løber det op, og vigtigst af alt belaster det elnettet mindre, når forbruget topper.
+Eco50 tager cirka halvanden til to timer. Forskellen mellem den billigste og den dyreste time på en typisk dansk hverdag er 1 til 3 kr./kWh. Med 0,8 kWh pr. opvask er det 0,80 til 2,40 kr. sparet pr. gang. Ikke voldsomt hver gang for sig. Men over 300 opvaske om året løber det op, og vigtigst af alt belaster det elnettet mindre, når forbruget topper.
 
-Den egentlige gevinst er i vanerne. Når opvaskemaskinen er fuld, trykker jeg på én knap og tænker ikke mere over det. Maskinen finder selv ud af, hvornår den skal køre, og den er færdig, før jeg går i seng.
+Den egentlige gevinst er i vanerne. Når opvaskemaskinen er fuld, trykker jeg på ét felt og tænker ikke mere over det. Statusrækken siger, hvornår den starter, og hvornår den er færdig.
 
 ## Det, der ikke virker
 
-Fjernstart skal slås til på selve maskinens panel, hvor der er et lille ikon på displayet. Glemmer jeg det, gør integrationens startkommando ingenting. Jeg har glemt det så mange gange, at jeg har tilføjet en chip på kortet, der viser, om fjernstart er tilladt.
+Fjernstart skal slås til på selve maskinens panel, hvor der er et lille ikon på displayet. Glemmer jeg det, gør startkommandoen ingenting. Jeg har glemt det så mange gange, at kortet nu viser den ravgule række «Remote start is off», men kun mens maskinen er klar.
 
-Programmet kan kun ændres fra HA, før maskinen starter. Når den kører, opdateres tilstanden stadig, men valgene kan kun læses. Det er en begrænsning i Boschs firmware, ikke i HA.
+Programmet kan kun ændres fra HA, før maskinen starter. Når den kører, forsvinder programchipsene og felterne fra kortet, og valgene kan kun læses. Det er en begrænsning i Boschs firmware, ikke i HA.
 
-Det andet er beskeden, når den er færdig. Opvaskemaskinen melder sin tilstand, når den er færdig, og jeg har en linje i alert-tickeren på forsiden til det, «Opvaskemaskine færdig, tøm mig!», som bliver stående, til nogen bekræfter den. Simpelt, men nu tømmer jeg den faktisk i stedet for at lade den stå i tre timer.
+Det andet er beskeden, når den er færdig. Når programmet passerer 99 procent, sender en automation en besked og siger det højt på højttaleren i køkkenet. Jeg har også en linje i alert-tickeren på forsiden, «Dishwasher done, empty me!», som bliver stående, til nogen bekræfter den. Statusrækken skriver «open the door to empty», så længe lågen stadig er lukket. Simpelt, men nu tømmer jeg den faktisk i stedet for at lade den stå i tre timer.

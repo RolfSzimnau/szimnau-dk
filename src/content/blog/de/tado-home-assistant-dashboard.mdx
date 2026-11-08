@@ -1,8 +1,9 @@
 ---
 title: "Ein Tado-Heizungs-Dashboard mit card_mod, das wirklich einen Blick wert ist"
 seoTitle: "Tado-Heizungs-Dashboard mit card_mod, das sich lohnt"
-description: "5 Tado-Zonen in Home Assistant mit Mushroom-Klimakarten, CSS-Atemanimation bei aktiven Zonen und anwesenheitsbasierter Absenkung, die wirklich funktioniert."
+description: "Mushroom-Klimakarte für Tado in Home Assistant mit card_mod-Atemanimation bei aktiver Heizung. Erst für fünf Zonen gebaut, heute für eine."
 pubDate: 2025-03-07
+updatedDate: 2026-11-08
 tags: ["heizung", "dashboard"]
 lang: "de"
 translationKey: "tado-home-assistant-dashboard"
@@ -11,8 +12,18 @@ faqs:
   - question: "Was bringt die Tado-Integration in Home Assistant?"
     answer: "Sie ist in HA eingebaut (Tado Internet Bridge und Konto nötig). Jede Zone erscheint als Klima-Entität mit Updates in unter fünf Sekunden, dazu kommen Binärsensoren für Tados Fenster-offen-Erkennung."
   - question: "Wie funktioniert die Atem-Animation bei aktiver Heizung?"
-    answer: "Eine CSS-Keyframe-Animation per card-mod auf der Mushroom-Klimakarte, die nur läuft, solange hvac_action auf heating steht. Fünf Zonen im Raster lassen sich auf einen Blick lesen, weil nur die aktiven pulsieren."
+    answer: "Eine CSS-Keyframe-Animation per card-mod auf der Mushroom-Klimakarte, die nur läuft, solange hvac_action auf heating steht. Bei fünf Zonen im Raster ließ sich das auf einen Blick lesen, weil nur die aktiven pulsierten. Heute habe ich eine Zone, deshalb sitzt der Puls auf dem Symbol der Karte, und die Karte wird gedimmt, wenn die Heizung ruht."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, November 2026:** Ich habe jetzt eine Tado-Zone, nicht mehr fünf: die Daikin-Wärmepumpe im Wohnzimmer. Das Raster mit fünf Zonen, die Schleifen über fünf Klima-Entitäten und die Automatisierungen für Abwesenheit und offene Fenster weiter unten beschreiben einen früheren Aufbau. Die Atemanimation funktioniert auf einer einzelnen Karte genauso, deshalb habe ich den Code so gelassen.
+
+Die Karte, die ich heute nutze, ist eine Mushroom-Klimakarte namens „Living room“ mit Plus- und Minus-Schaltflächen und Schaltflächen für off, auto, cool, heat, dry und fan only. Ihr Symbol leuchtet orange und „atmet“, solange die Pumpe heizt, leuchtet blau beim Kühlen und grün, wenn nur der Lüfter läuft, und ist grau im Leerlauf. Die ganze Karte wird auf 40 % Deckkraft gedimmt, wenn die Zone aus ist oder im Leerlauf.
+
+Die Absenkung bei Abwesenheit und den Fensteralarm betreibe ich heute nicht. Die Fenster überwachen stattdessen IKEA-Sensoren, über die ich im [Beitrag zum Fenster-Blueprint](/de/blog/window-heating-automation/) geschrieben habe. Außerdem nutze ich inzwischen Tado Hijack aus HACS statt der eingebauten Integration, weil es Tados tägliche API-Quote verwaltet.
+
+</div>
 
 Tados HA-Integration gehört zum Besten, was es out-of-the-box gibt: in HA integriert, kein HACS nötig. Du brauchst die **Tado Internet Bridge** Hardware und ein Tado-Konto. Integration hinzufügen, einloggen, und alle Zonen erscheinen als `climate.*`-Entitäten mit voller Unterstützung. Statusupdates kommen in unter fünf Sekunden zurück. Es funktioniert einfach.
 

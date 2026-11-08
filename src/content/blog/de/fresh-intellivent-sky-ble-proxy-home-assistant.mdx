@@ -1,5 +1,5 @@
 ---
-title: "Badlüfter-Überwachung in Home Assistant: XIAO ESP32-C3 Bluetooth-Proxy + Fresh Intellivent Sky"
+title: "Lüfter im Bad-Überwachung in Home Assistant: XIAO ESP32-C3 Bluetooth-Proxy + Fresh Intellivent Sky"
 seoTitle: "Fresh Intellivent Sky in Home Assistant per Bluetooth-Proxy"
 description: "XIAO ESP32-C3 als Bluetooth-Proxy für Home Assistant, Fresh Intellivent Sky Lüfter über BLE, und ein Absturz, der wie ein Reichweitenproblem aussah."
 pubDate: 2026-07-08
@@ -16,7 +16,7 @@ faqs:
     answer: "Ein abgestürzter Konfigurationseintrag, kein Reichweitenproblem. Das Neuladen der Integration ist mitten im Entladen gescheitert und hat sie im Zustand failed_unload zurückgelassen, aus dem Home Assistant nicht von selbst herauskommt. Schau unter Einstellungen → Geräte & Dienste nach dem Status des Eintrags, bevor du Bluetooth verdächtigst. Nur ein kompletter Neustart von Home Assistant behebt das."
 ---
 
-Zwei Fresh Intellivent Sky Badlüfter, beide senden Bluetooth Low Energy, beide weiter vom Home Assistant-Host entfernt, als dessen eingebautes Funkmodul zuverlässig reicht. Die Lösung war kein neuer HA-Server und kein Netz aus Repeatern, sondern ein Mikrocontroller für ein paar Euro und rund zehn Minuten mit dem Browser. Dieser Beitrag behandelt die Einrichtung des Bluetooth-Proxys, das Hinzufügen der Lüfter und einen Fehler, der exakt wie ein Hardwareproblem aussah und keins war.
+Zwei Fresh Intellivent Sky Lüfter im Bad, beide senden Bluetooth Low Energy, beide weiter vom Home Assistant-Host entfernt, als dessen eingebautes Funkmodul zuverlässig reicht. Die Lösung war kein neuer HA-Server und kein Netz aus Repeatern, sondern ein Mikrocontroller für ein paar Euro und rund zehn Minuten mit dem Browser. Dieser Beitrag behandelt die Einrichtung des Bluetooth-Proxys, das Hinzufügen der Lüfter und einen Fehler, der exakt wie ein Hardwareproblem aussah und keins war.
 
 ## Die Hardware: Seeed Studio XIAO ESP32-C3
 
@@ -36,9 +36,9 @@ Ich betreibe das parallel zu einem [Google-Find-My-Setup](/de/blog/google-find-m
 
 ## Die Fresh-Intellivent-Sky-Lüfter hinzufügen
 
-Freshs Intellivent Sky ist ein feuchtigkeitsgesteuerter Badlüfter mit eigener Bluetooth-Schnittstelle, normalerweise über die Fresh-SmartLink-App gesteuert. Home Assistant hat keine offizielle Integration dafür. Die, die funktioniert, ist ein Community-Projekt, [`angoyd/freshintelliventHacs`](https://github.com/angoyd/freshintelliventHacs), installiert über HACS als benutzerdefiniertes Repository.
+Freshs Intellivent Sky ist ein feuchtigkeitsgesteuerter Lüfter im Bad mit eigener Bluetooth-Schnittstelle, normalerweise über die Fresh-SmartLink-App gesteuert. Home Assistant hat keine offizielle Integration dafür. Die, die funktioniert, ist ein Community-Projekt, [`angoyd/freshintelliventHacs`](https://github.com/angoyd/freshintelliventHacs), installiert über HACS als benutzerdefiniertes Repository.
 
-![Fresh Intellivent Sky Badlüfter, montiert in einem Deckendiffusor](/blog-images/fresh-intellivent-sky-fan-ceiling.jpg)
+![Fresh Intellivent Sky Lüfter im Bad, montiert in einem Deckendiffusor](/blog-images/fresh-intellivent-sky-fan-ceiling.jpg)
 
 Mit dem Proxy an Ort und Stelle ist die Einrichtung im Grunde nur Erkennung: Sobald die BLE-Ankündigungen des Lüfters einen Proxy in Reichweite erreichen, bietet Home Assistant ihn unter **Einstellungen → Geräte & Dienste → Erkannt** an, mit `fresh_intellivent_sky` als Quelle. Bestätigen, und es wird ein Gerät mit fünf Sensoren erstellt:
 

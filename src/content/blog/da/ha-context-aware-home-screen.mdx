@@ -2,6 +2,7 @@
 title: "Home Assistant-forsiden der kun viser det, der betyder noget"
 description: "En HA-forside, hvor hvert kort skal gøre sig fortjent: betingede kort, en prioriteret alert-ticker og en Škoda-sektion, der følger laderens status."
 pubDate: 2025-06-27
+updatedDate: 2026-11-08
 tags: ["dashboard", "automatisering"]
 lang: "da"
 translationKey: "ha-context-aware-home-screen"
@@ -12,6 +13,12 @@ faqs:
   - question: "Hvorfor skjule kort, når alt er i orden?"
     answer: "En støvsuger i sin dock eller en låst bil er en bekræftelse, ikke en information. Når kortene for »alt er fint« er skjult, bliver sidens længde i sig selv signalet: en kort side betyder et roligt hus."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Opdatering, november 2026:** Jeg har gennemgået forsiden igen og rettet det, der var drevet væk fra virkeligheden. Kortet «Quick actions» handler nu om hvidevarer og tv, ikke om lys. Renovationskortet vises altid, og varslet om afhentning i morgen kommer fra alert-tickeren. Knappen til ladekablet står ikke længere ved siden af «Klima Boost». Skærmbilledet øverst viser forsiden, som den så ud i 2025. Nederst i indlægget er der et nyt afsnit om Quick actions og renovationsbanneret med et skærmbillede af forsiden i dag.
+
+</div>
 
 Min datter spurgte mig engang, hvad jeg kigger på, når jeg åbner Home Assistant om morgenen. Jeg svarede, at jeg tjekker, hvad der sker. Det var ikke helt rigtigt. Jeg skimmede forbi en masse ting, der bare bekræftede, at intet usædvanligt var sket: støvsugeren i docken, slukkede lys, låst bil. Det er ikke information. Det er støj.
 
@@ -56,7 +63,7 @@ Det tog tid at få rigtigt. Opvaskemaskinens kort ser helt forskelligt ud afhæn
 
 **Klar**, når `OperationState` er `Ready`, og fjernstart er tilladt. Viser et felt med «Opvaskemaskine klar, indstil sluttid». Det dukker op præcis i det tidsrum, hvor du har fyldt den, men ikke startet den endnu.
 
-**Kører**, når `OperationState` er `Run`. Et andet kort med blå baggrund. Der skal ikke gøres noget, det er kun til orientering.
+**Kører**, når `OperationState` er `Run`. Et andet kort med blåt ikon, der viser, hvornår den er færdig, og hvor langt den er nået. Der skal ikke gøres noget, det er kun til orientering.
 
 Tre tilstande, tre forskellige kort, intet dobbelt.
 
@@ -64,7 +71,7 @@ Tre tilstande, tre forskellige kort, intet dobbelt.
 
 Lyset følger et mønster i to lag. Begge lag vises kun, når noget er tændt.
 
-**Lag 1, Quick Actions:** Når et hvilket som helst lys er tændt, dukker et ravgult kort op øverst med antallet og ét tryk for at slukke alt:
+**Lag 1, «Turn All Lights Off»:** Når et lys eller en udendørs stikkontakt er tændt, dukker et ravgult kort op i venstre kolonne under bilen. Det viser antallet og slukker alt med ét tryk:
 
 ```yaml
 - type: conditional
@@ -77,13 +84,13 @@ Lyset følger et mønster i to lag. Begge lag vises kun, når noget er tændt.
         # ... alle lys
   card:
     type: custom:mushroom-template-card
-    primary: Lights on
+    primary: Turn All Lights Off
     secondary: >
       {% set l = ['light.loft_1','light.loft_2','light.hjorne',
                   'light.oversvommelses_lys','light.ground_lights']
          | select('is_state','on') | list | count %}
       {% set c = 1 if is_state('switch.lyskaede','on') else 0 %}
-      {{ l + c }} lights on – tap to turn off all
+      {{ l + c }} lights currently on
     icon: mdi:lightbulb-group
     icon_color: amber
     tap_action:
@@ -105,11 +112,11 @@ Lyset følger et mønster i to lag. Begge lag vises kun, når noget er tændt.
 
 Ét tryk. Ingen navigation, ingen bekræftelse, alt slukket. Det er det kort, jeg bruger 9 ud af 10 gange.
 
-**Lag 2, Home Status:** Når der specifikt er tændt lys indenfor, dukker de enkelte Mushroom-lyskort op længere nede, med skydere til lysstyrke og farvetemperatur. Ikke bare tænd og sluk. Har du glemt lyset og står i rummet og vil dæmpe det, er knapperne der, uden at du skal navigere væk.
+**Lag 2, kortet Living Room:** Når der specifikt er tændt lys indenfor, dukker de enkelte Mushroom-lyskort op længere nede, med skydere til lysstyrke og farvetemperatur. Ikke bare tænd og sluk. Har du glemt lyset og står i rummet og vil dæmpe det, er knapperne der, uden at du skal navigere væk.
 
 Udendørssektionen virker på samme måde, men vises ved solnedgang, eller når et udendørs lys er tændt. Midt på dagen er den usynlig. Kl. 21:30 er den der med knapper til projektører, terrassebelysning og lyskæde.
 
-De to lag dækker hvert sit behov. Quick Actions er til «jeg tager af sted, sluk det hele». Home Status er til «jeg er her og vil justere». Samme betingede logik, forskellig grad af kontrol.
+De to lag dækker hvert sit behov. Det ravgule kort er til «jeg tager af sted, sluk det hele». Living Room-kortet er til «jeg er her og vil justere». Samme betingede logik, forskellig grad af kontrol.
 
 ## Škoda-sektionen skifter efter situationen
 
@@ -117,7 +124,7 @@ Bilen vises altid: om den er låst, og om den er hjemme. Men hvad der står nede
 
 **Kablet er ikke sat i:** ét kort, «Klima Boost». Forvarm bilen, inden du kører, med ét tryk.
 
-**Kablet er sat i:** to kort side om side, «Klima Boost» og «Unlock Cable». Knappen, der frigør ladekablet, giver kun mening, når kablet faktisk sidder i. Så det er kun der, den dukker op.
+**Kablet er sat i:** «Unlock Cable» dukker op som et ekstra kort under «Klima Boost». Knappen, der frigør ladekablet, giver kun mening, når kablet faktisk sidder i. Så det er kun der, den dukker op. Er bilen væk hjemmefra, kommer der også et landkort i samme panel.
 
 ```yaml
 - type: conditional
@@ -126,33 +133,38 @@ Bilen vises altid: om den er låst, og om den er hjemme. Men hvad der står nede
       entity: binary_sensor.garage_el_rey_charging_cable_connected
       state: "on"
   card:
-    type: horizontal-stack
-    cards:
-      - type: custom:mushroom-template-card
-        primary: Klima Boost
-        # ...
-      - type: custom:mushroom-template-card
-        primary: Unlock Cable
-        secondary: Tryk for at frigøre ladekabel
-        icon_color: orange
+    type: custom:mushroom-template-card
+    primary: Unlock Cable
+    secondary: Tap to release charger cable
+    icon_color: orange
 ```
 
 Det er det mønster, jeg endte med at bruge overalt: vis ikke knapper, der ikke er relevante for enhedens nuværende tilstand.
 
-## Home status: sektionen, der skal gøre sig fortjent til sit indhold
+## Stue, udendørs og robotter: kort, der skal gøre sig fortjent til pladsen
 
-Home status-sektionen indeholder flere betingede kort. Alle kræver, at noget er i gang:
+Flere kort er betingede. Alle kræver, at noget er i gang:
 
 - **Stuelys**: kun synligt, når mindst ét lys indenfor er tændt. Så viser det de fulde Mushroom-lyskort med dæmpere. Du er der allerede, fordi noget er tændt, så giv fuld kontrol.
 - **Udendørssektionen**: dukker op, når solen er gået ned, eller når et udendørs lys er tændt. Midt på en solrig dag er den væk. Kl. 21:30, eller hvis projektørerne er tændt, er den der.
-- **Roborock**: kun når den hverken er i docken eller står stille. Støvsuger, er på vej hjem, er sat på pause eller har en fejl: vis det. Står den i docken, er det uinteressant.
-- **Flora**: samme logik. Klipper den eller er på vej hjem, vises status, og et tryk fører til plæneklipperens visning. Står den parkeret, vises ingenting.
+- **Roborock**: kun når den hverken er i docken eller står stille. Støvsuger den, er den på vej hjem, er sat på pause eller har en fejl: vis det. Står den i docken, er det uinteressant.
+- **Flora**: samme logik. Klipper den, er på vej hjem eller har en fejl, vises status, og et tryk fører til plæneklipperens visning. Står den parkeret, vises ingenting.
+
+## To kort, der tjekker, før de dukker op
+
+Kortet «Quick actions» har sin egen betingelse. Det vises, når opvaskemaskinen er klar eller kører, når vaskemaskinen er programmeret, kører eller er færdig, når en badeværelsesventilator er tændt, eller når tv'et er i gang. Er intet af det tilfældet, er hele kortet væk, også overskriften. Når det vises, har hver række sin egen betingelse, så der kun står det, der gælder lige nu.
+
+![Forsiden i dag: et renovationsvarsel i alert-tickeren, kortet Quick actions med opvaskemaskine, tv og pauselys, og det ravgule kort Turn All Lights Off](/blog-images/home-screen-conditional-cards.webp)
+
+På skærmbilledet vises det, fordi opvaskemaskinen er fyldt, og tv'et kører Prime Video. Tv'et giver to rækker: en, der sætter afspilningen på pause og i gang igen, og en, der hedder «Pause light». Den tænder lyset op til en pause og dæmper det igen ved næste tryk. Jeg skal hverken ind i hvidevarevisningen eller finde fjernbetjeningen.
+
+Det andet kort, jeg bruger meget, er banneret helt øverst. Hver af de tre affaldstyper har to varsler i tickeren, ét til dagen før afhentning og ét til to dage før. Banneret på skærmbilledet siger «Plastic & cartons collected tomorrow». Renovation har prioritet 3, så en person ved døren eller en fejl på plæneklipperen kommer stadig først. Alle andre dage findes banneret ikke.
 
 ## Skærmlængden er signalet
 
 Det opdagede jeg ikke med det samme. Efter et par uger lagde jeg mærke til, at jeg så på skærmens længde, før jeg læste indholdet. Kort skærm: rolig dag. Lang skærm: der sker noget, så scroll ned og find ud af hvad.
 
-Renovationskortet dukker først op, når der er højst 3 dage til afhentning. Det meste af tiden er det der ikke. Op til afhentningen vises en farvet nedtælling: ravgul ved 3 dage, orange ved 2 og rød ved 1. Jeg har ikke glemt at sætte skraldespandene ud, siden jeg lavede det.
+Renovationskortet er undtagelsen fra reglen om at skjule ting. Det står der altid og viser de næste afhentninger i datorden. Selve påmindelsen kommer fra alert-tickeren: hver af de tre affaldstyper har to varsler, ét dagen før afhentning og ét to dage før. Banneret findes altså kun, når skraldespandene skal ud. Jeg har ikke glemt dem, siden jeg lavede det.
 
 Energikortet er der altid, med den aktuelle pris og hvornår strømmen bliver billig næste gang. Det har fortjent sin faste plads, fordi det faktisk ændrer, hvad jeg gør. Jeg planlægger opvaskemaskine og tørretumbler efter det.
 

@@ -2,6 +2,7 @@
 title: "The Home Assistant Home Screen That Only Shows What Matters"
 description: "An HA home screen where every card earns its place: conditional cards, a priority alert ticker, and a Škoda section that follows the charger state."
 pubDate: 2025-06-27
+updatedDate: 2026-11-08
 tags: ["dashboard", "automation"]
 lang: "en"
 translationKey: "ha-context-aware-home-screen"
@@ -12,6 +13,12 @@ faqs:
   - question: "Why hide dashboard cards when everything is fine?"
     answer: "A docked vacuum or a locked car is confirmation, not information. Hiding the 'still fine' cards makes screen length itself the signal: a short page means a quiet house."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, November 2026:** I went through the Home view again and corrected what had drifted. The "Quick actions" card now covers appliances and the TV, not lights. The waste card is always on screen, and the warning about tomorrow's pickup lives in the alert ticker. The cable button no longer sits beside "Klima Boost". The screenshot at the top shows the 2025 layout. There is also a new section on the Quick actions card and the waste banner, with a screenshot of today's Home view.
+
+</div>
 
 My first HA home screen had 40-something cards. Every time I opened it I'd scan past the docked vacuum, the off lights, the locked car, the zero-activity motion sensor. None of that is information. It's just confirmation that nothing unusual happened. Noise dressed up as data.
 
@@ -60,7 +67,7 @@ This took a while to get right. The dishwasher card has three completely differe
 
 **Ready:** when `OperationState` is `Ready` AND remote start is allowed. Shows a tile with "Dishwasher ready, set finish time" that links to the appliances view. The idea: you've loaded it, you haven't started it yet, you want to set a delayed start. The card only appears in that exact window.
 
-**Running:** when `OperationState` is `Run`. Different card, blue tinted background, "Dishwasher running" label. No action needed, just awareness.
+**Running:** when `OperationState` is `Run`. A different card with a blue icon that shows the finish time ("Dishwasher done 18:30") and how far along it is. No action needed, just awareness.
 
 ```yaml
 - type: conditional
@@ -68,13 +75,10 @@ This took a while to get right. The dishwasher card has three completely differe
     - entity: sensor.dishwasher_operation_state
       state: BSH.Common.EnumType.OperationState.Run
   card:
-    type: tile
+    type: custom:mushroom-template-card
     entity: sensor.dishwasher_operation_state
     name: Dishwasher running
-    card_mod:
-      style: >
-        ha-card { background: rgba(30,136,229,0.15) !important;
-        border: 1px solid rgba(30,136,229,0.3) !important; }
+    icon_color: blue
 ```
 
 Three states, three different cards, zero redundancy.
@@ -83,7 +87,7 @@ Three states, three different cards, zero redundancy.
 
 Lights follow a two-layer pattern. Both layers are conditional on something being on.
 
-**Layer 1 (Quick Actions):** When any light is on, an amber card appears at the top with the count and a single tap to kill everything. These use `custom:mushroom-template-card` (HACS, Mushroom suite) with `card_mod` (HACS) for the tinted backgrounds:
+**Layer 1 (Turn All Lights Off):** When any light or outdoor plug is on, an amber card appears in the left column, under the car, with the count and a single tap to kill everything. These use `custom:mushroom-template-card` (HACS, Mushroom suite) with `card_mod` (HACS) for the tinted backgrounds:
 
 ```yaml
 - type: conditional
@@ -99,13 +103,13 @@ Lights follow a two-layer pattern. Both layers are conditional on something bein
         # ... all lights
   card:
     type: custom:mushroom-template-card
-    primary: Lights on
+    primary: Turn All Lights Off
     secondary: >
       {% set l = ['light.ceiling_1','light.ceiling_2','light.corner',
                   'light.flood_lights','light.ground_lights']
          | select('is_state','on') | list | count %}
       {% set c = 1 if is_state('switch.string_lights','on') else 0 %}
-      {{ l + c }} lights on – tap to turn off all
+      {{ l + c }} lights currently on
     icon: mdi:lightbulb-group
     icon_color: amber
     tap_action:
@@ -127,11 +131,11 @@ Lights follow a two-layer pattern. Both layers are conditional on something bein
 
 One tap. No navigation, no confirmation, all off. This is the card I use 90% of the time.
 
-**Layer 2 (Home Status):** When indoor lights specifically are on, the individual mushroom light cards appear further down, with full brightness sliders and colour temperature controls. Not just on/off. If you've left the lights on and you're standing in the room wanting to dim them, the controls are right there without navigating away.
+**Layer 2 (Living Room):** When indoor lights specifically are on, the individual mushroom light cards appear further down, with full brightness sliders and colour temperature controls. Not just on/off. If you've left the lights on and you're standing in the room wanting to dim them, the controls are right there without navigating away.
 
 The outdoor lights section works the same way but triggers on sunset OR any outdoor light being on. At noon: invisible. At 21:30: there with individual controls for flood lights, ground lights, and string lights.
 
-The two layers serve different needs. Quick Actions is for "I'm leaving, kill everything." Home Status is for "I'm here and want to adjust." Same conditional logic, different depth of control.
+The two layers serve different needs. The amber card is for "I'm leaving, kill everything." The Living Room card is for "I'm here and want to adjust." Same conditional logic, different depth of control.
 
 ## The Škoda section changes based on context
 
@@ -139,7 +143,7 @@ The car is always shown, with lock status and whether it's home. But what sits b
 
 **Charger not connected:** one card, "Klima Boost". Pre-condition the car before you leave, one tap.
 
-**Charger connected:** two cards side by side, "Klima Boost" and "Unlock Cable". When the cable is physically locked in, you need a way to release it. That button only makes sense when the car is charging. So it only appears then.
+**Charger connected:** "Unlock Cable" appears as a second card below "Klima Boost". When the cable is physically locked in, you need a way to release it. That button only makes sense when a cable is plugged in. So it only appears then. When the car is away from home, a map card joins the same panel.
 
 ```yaml
 - type: conditional
@@ -148,36 +152,41 @@ The car is always shown, with lock status and whether it's home. But what sits b
       entity: binary_sensor.garage_el_rey_charging_cable_connected
       state: "on"
   card:
-    type: horizontal-stack
-    cards:
-      - type: custom:mushroom-template-card
-        primary: Klima Boost
-        # ...
-      - type: custom:mushroom-template-card
-        primary: Unlock Cable
-        secondary: Tap to release charger cable
-        icon_color: orange
-        # ...
+    type: custom:mushroom-template-card
+    primary: Unlock Cable
+    secondary: Tap to release charger cable
+    icon_color: orange
+    # ...
 ```
 
 This is the pattern I ended up using everywhere: don't show controls that aren't relevant to the current state of the device.
 
-## Home status: the section that earns its own content
+## Living room, outdoor, robots: cards that earn their place
 
-The home status section contains several conditional cards. All of them need to be active before they appear:
+Several more cards are conditional. All of them need something to be active before they appear:
 
 - **Living room lights:** only visible when at least one indoor light is on. When it appears, it shows full mushroom light cards with dimmer sliders, not just on/off. You're already there because something is on, so give full control.
 - **Outdoor section:** appears when the sun is below the horizon OR any outdoor light is on. At noon on a clear day: gone. At 21:30 or if someone turned on the flood lights: there.
 - **Roborock:** only when not docked and not idle. Cleaning, returning, paused, error: show it. Sitting in its dock: irrelevant.
-- **Flora:** same logic. Mowing or returning: show status and tap to the mower view. Parked: nothing.
+- **Flora:** same logic. Mowing, returning or in error: show status and tap to the mower view. Parked: nothing.
 
-The result: on a typical quiet afternoon, home status has no cards at all. Just the section header. When I come home at 22:00 and the outdoor lights are still on, that section is there with one-tap off buttons.
+The result: on a typical quiet afternoon none of these cards is on screen. When I come home at 22:00 and the outdoor lights are still on, that section is there with one-tap off buttons.
+
+## Two cards that check before they show up
+
+The Quick actions card has a condition of its own. It appears when the dishwasher is ready or running, when the washing machine is programmed, running or finished, when a bathroom fan is on, or when the TV is playing. If none of that is true, the whole card is gone, title included. When it does show, each row has its own condition too, so it only lists what applies.
+
+![Today's Home view: a waste warning in the alert ticker, the Quick actions card with the dishwasher, the TV and the pause light, and the amber Turn All Lights Off card](/blog-images/home-screen-conditional-cards.webp)
+
+On the screenshot it is on because the dishwasher is loaded and the TV is playing Prime Video. The TV adds two rows: one that pauses and plays, and one called "Pause light" that brings the lights up for a break and dims them again with a second tap. Nobody has to open the appliances view or find the remote.
+
+The other card I rely on is the banner at the very top. Each of the three bin types has two alerts in the ticker, one for the day before pickup and one for two days before. The banner in the screenshot says "Plastic & cartons collected tomorrow". Waste has priority 3, so a person at the door or a mower error still goes first. On every other day the banner doesn't exist.
 
 ## The length of the screen is the signal
 
 This is the thing I didn't expect. After a few weeks I realised I was reading the screen length before I read the content. Short screen: quiet day, nothing needs attention. Long screen: something is going on, so scroll to find out what.
 
-The waste collection card only appears within 3 days of pickup. Most of the year, not there. The week before collection it shows with color-coded countdown: amber at 3 days, orange at 2, red at 1. I haven't forgotten to put the bins out since I set this up.
+The waste card is the one exception to the hiding rule. It is always on screen and lists the next pickups, sorted by date. The nudge itself lives in the alert ticker: each of the three bin types adds a warning banner the day before pickup and again two days before, so the banner is only there when the bins need to go out. I haven't forgotten to put them out since I set this up.
 
 The energy card is always there, with the current price and when the next cheap window is. That one earned permanent status because it actually changes what I do. I time the dishwasher and dryer off it.
 

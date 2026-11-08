@@ -1,8 +1,9 @@
 ---
 title: "A Tado Heating Dashboard With card_mod That's Actually Worth Looking At"
 seoTitle: "A Tado Heating Dashboard with card_mod Worth Looking At"
-description: "5 Tado zones in Home Assistant with mushroom climate cards, a CSS breathing animation for active heating, and presence setback that works."
+description: "A Mushroom climate card for Tado in Home Assistant with a card_mod breathing animation for active heating. First built for five zones, now one."
 pubDate: 2025-03-07
+updatedDate: 2026-11-08
 tags: ["heating", "dashboard"]
 lang: "en"
 translationKey: "tado-home-assistant-dashboard"
@@ -11,8 +12,18 @@ faqs:
   - question: "What does the Tado integration give you in Home Assistant?"
     answer: "It is built into HA (Tado Internet Bridge and account required): every zone appears as a climate entity with sub-5-second state updates, plus binary sensors for Tado's hardware open-window detection."
   - question: "How does the breathing animation for active heating work?"
-    answer: "A card-mod CSS keyframe animation on the mushroom climate card that only runs while hvac_action is heating. Five zones in a grid read at a glance because only the active ones pulse."
+    answer: "A card-mod CSS keyframe animation on the mushroom climate card that only runs while hvac_action is heating. With five zones in a grid it read at a glance, because only the active ones pulsed. I have one zone today, so the pulse sits on the card's icon and the card dims while the heating is idle."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, November 2026:** I have one Tado zone now, not five: the Daikin heat pump in the living room. The grid of five zones, the loops over five climate entities and the presence and window automations further down describe an earlier layout. The breathing animation works the same on a single card, so I left that code as it was.
+
+The card I use today is a Mushroom climate card named "Living room" with plus and minus buttons and mode buttons for off, auto, cool, heat, dry and fan only. Its icon glows orange and breathes while the pump is heating, glows blue while cooling, green when only the fan runs, and turns grey when idle. The whole card dims to 40% opacity while the zone is off or idle.
+
+I don't run the away setback or the open-window alert today. The windows are watched by IKEA sensors instead, which I wrote about in [the window Blueprint post](/en/blog/window-heating-automation/). I also use the Tado Hijack integration from HACS now instead of the built-in one, because it manages Tado's daily API quota.
+
+</div>
 
 Tado's HA integration is one of the best out of the box. It's built into HA, no HACS needed. You need the Tado Internet Bridge hardware and a Tado account. Add the integration, sign in, and all your zones appear as `climate.*` entities with full support. State updates come back in under five seconds. It just works.
 

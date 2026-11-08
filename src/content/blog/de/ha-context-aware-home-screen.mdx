@@ -2,6 +2,7 @@
 title: "Der Home-Assistant-Startbildschirm, der nur Relevantes zeigt"
 description: "Wie ich einen HA-Startbildschirm mit bedingten Karten, priorisiertem Alert-Ticker und einem Škoda-Bereich der sich je nach Ladestand ändert gebaut habe."
 pubDate: 2025-06-27
+updatedDate: 2026-11-08
 tags: ["dashboard", "automatisierung"]
 lang: "de"
 translationKey: "ha-context-aware-home-screen"
@@ -12,6 +13,12 @@ faqs:
   - question: "Warum Karten ausblenden, wenn alles in Ordnung ist?"
     answer: "Ein Saugroboter in der Station oder ein abgeschlossenes Auto ist eine Bestätigung, keine Information. Sind die Karten für »alles gut« weg, wird die Länge der Seite selbst zum Signal: Eine kurze Seite heißt, im Haus ist es ruhig."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, November 2026:** Ich habe die Startansicht noch einmal durchgesehen und korrigiert, was nicht mehr zum Text passte. Die Karte „Quick actions“ deckt jetzt Haushaltsgeräte und den Fernseher ab, nicht mehr das Licht. Die Müllkarte ist immer sichtbar, und die Warnung vor der Abholung morgen kommt aus dem Alert-Ticker. Die Schaltfläche fürs Ladekabel steht nicht mehr neben „Klima Boost“. Der Screenshot ganz oben zeigt noch das Layout von 2025. Unten im Beitrag gibt es einen neuen Abschnitt über Quick actions und das Müll-Banner, mit einem Screenshot der heutigen Startansicht.
+
+</div>
 
 Ich hatte mal einen HA-Startbildschirm mit über vierzig Karten. Jeden Morgen scrollte ich an geparkten Robotern, ausgeschalteten Lichtern und einem leeren Bewegungssensor vorbei. Das ist keine Information, sondern nur die Bestätigung, dass nichts Ungewöhnliches passiert ist. Lärm in Kartenform.
 
@@ -46,7 +53,7 @@ alerts:
     priority: 3
 ```
 
-Personenerkennung ist Priorität 1. Müll morgen ist Priorität 3. Ein Tipp auf die Personenwarnung navigiert direkt zur Überwachungsansicht. Wenn alles ruhig ist: nichts. Kein leerer Balken, kein "Alles in Ordnung". Einfach nichts.
+Personenerkennung ist Priorität 1. Müll morgen ist Priorität 3. Tippst du die Personenwarnung an, landest du direkt in der Überwachungsansicht. Wenn alles ruhig ist: nichts. Kein leerer Balken, kein "Alles in Ordnung". Einfach nichts.
 
 ## Die Spülmaschine hat drei Zustände
 
@@ -56,7 +63,7 @@ Das hat eine Weile gedauert. Die Spülmaschinenkarte hat je nach Zustand drei v�
 
 **Bereit:** wenn `OperationState` `Ready` ist UND Fernstart erlaubt ist. Zeigt eine Kachel mit "Spülmaschine bereit, Endzeit einstellen". Erscheint genau in dem Fenster, in dem du sie befüllt, aber noch nicht gestartet hast.
 
-**Läuft:** wenn `OperationState` `Run` ist. Andere Karte, blauer Hintergrund, "Spülmaschine läuft". Keine Aktion nötig, nur zur Info.
+**Läuft:** wenn `OperationState` `Run` ist. Andere Karte mit blauem Symbol, die die Endzeit und den Fortschritt zeigt. Keine Aktion nötig, nur zur Info.
 
 ```yaml
 - type: conditional
@@ -78,7 +85,7 @@ Drei Zustände, drei verschiedene Karten, keine Redundanz.
 
 Licht folgt einem zweistufigen Muster. Beide Ebenen sind davon abhängig, dass etwas eingeschaltet ist.
 
-**Ebene 1 (Schnellaktionen):** Wenn irgendein Licht an ist, erscheint oben eine bernsteinfarbene Karte mit der Anzahl und einem einzigen Tippen, das alles ausschaltet:
+**Ebene 1 („Turn All Lights Off“):** Sobald irgendein Licht oder eine Außensteckdose an ist, erscheint in der linken Spalte unter dem Auto eine bernsteinfarbene Karte. Sie zeigt die Anzahl und schaltet mit einem einzigen Antippen alles aus:
 
 ```yaml
 - type: conditional
@@ -91,13 +98,13 @@ Licht folgt einem zweistufigen Muster. Beide Ebenen sind davon abhängig, dass e
         # ... alle Lichter
   card:
     type: custom:mushroom-template-card  # HACS, card_mod (HACS) für die inline CSS-Styles
-    primary: Lichter an
+    primary: Turn All Lights Off
     secondary: >
       {% set l = ['light.decke_1','light.decke_2','light.ecke',
                   'light.flutlichter','light.bodenlichter']
          | select('is_state','on') | list | count %}
       {% set c = 1 if is_state('switch.lichterkette','on') else 0 %}
-      {{ l + c }} Lichter an – Tippen zum Ausschalten aller
+      {{ l + c }} lights currently on
     icon: mdi:lightbulb-group
     icon_color: amber
     tap_action:
@@ -117,13 +124,13 @@ Licht folgt einem zweistufigen Muster. Beide Ebenen sind davon abhängig, dass e
         border: 1px solid rgba(255,152,0,0.25) !important; }
 ```
 
-Ein Tipp. Keine Navigation, keine Bestätigung, alles aus. Das ist die Karte, die ich in 90 % der Fälle benutze.
+Einmal antippen. Keine Navigation, keine Bestätigung, alles aus. Das ist die Karte, die ich in 90 % der Fälle benutze.
 
-**Ebene 2 (Home-Status):** Wenn ein Innenlicht eingeschaltet ist, erscheinen die einzelnen Mushroom-Lichtkarten weiter unten, mit vollständigen Helligkeitsschiebern und Farbtemperatursteuerung. Nicht nur Ein/Aus. Wenn du das Licht angelassen hast, im Raum stehst und es dimmen möchtest, sind die Bedienelemente direkt da, ohne woanders hinzunavigieren.
+**Ebene 2 (Karte „Living Room“):** Wenn ein Innenlicht eingeschaltet ist, erscheinen die einzelnen Mushroom-Lichtkarten weiter unten, mit vollständigen Helligkeitsschiebern und Farbtemperatursteuerung. Nicht nur Ein/Aus. Wenn du das Licht angelassen hast, im Raum stehst und es dimmen möchtest, sind die Bedienelemente direkt da, ohne die Ansicht zu wechseln.
 
 Der Außenbereich funktioniert genauso, wird aber bei Sonnenuntergang ODER wenn ein Außenlicht an ist ausgelöst. Mittags: unsichtbar. Um 21:30 Uhr: da mit einzelnen Steuerelementen für Flutlichter, Bodenlichter und Lichterkette.
 
-Die zwei Ebenen decken unterschiedliche Bedürfnisse ab. Schnellaktionen sind für "ich gehe, alles aus." Home-Status ist für "ich bin hier und möchte einstellen." Gleiche bedingte Logik, unterschiedliche Steuerungstiefe.
+Die zwei Ebenen decken unterschiedliche Bedürfnisse ab. Die bernsteinfarbene Karte ist für „ich gehe, alles aus“. Die Karte „Living Room“ ist für „ich bin hier und möchte einstellen“. Gleiche bedingte Logik, unterschiedliche Steuerungstiefe.
 
 ## Der Škoda-Bereich ändert sich je nach Kontext
 
@@ -131,7 +138,7 @@ Das Auto wird immer angezeigt, mit Schlossstatus und ob es zu Hause ist. Was dar
 
 **Ladekabel nicht angeschlossen:** eine Karte, "Klima Boost". Auto vorheizen, bevor du losfährst, mit einmal Tippen.
 
-**Ladekabel angeschlossen:** zwei Karten nebeneinander, "Klima Boost" und "Kabel entriegeln". Die Schaltfläche zum Entriegeln des Ladekabels ergibt nur Sinn, wenn das Kabel physisch eingesteckt ist. Also erscheint sie nur dann.
+**Ladekabel angeschlossen:** „Kabel entriegeln“ erscheint als zusätzliche Karte unter „Klima Boost“. Die Schaltfläche zum Entriegeln ergibt nur Sinn, wenn das Kabel wirklich steckt. Also erscheint sie nur dann. Ist das Auto nicht zu Hause, kommt außerdem eine Karte mit Landkarte in dasselbe Panel.
 
 ```yaml
 - type: conditional
@@ -140,31 +147,38 @@ Das Auto wird immer angezeigt, mit Schlossstatus und ob es zu Hause ist. Was dar
       entity: binary_sensor.garage_el_rey_charging_cable_connected
       state: "on"
   card:
-    type: horizontal-stack
-    cards:
-      - # Klima Boost
-      - type: custom:mushroom-template-card
-        primary: Kabel entriegeln
-        secondary: Tippen um Ladekabel freizugeben
-        icon_color: orange
+    type: custom:mushroom-template-card
+    primary: Unlock Cable
+    secondary: Tap to release charger cable
+    icon_color: orange
 ```
 
 Das ist das Muster, das ich überall verwendet habe: keine Bedienelemente anzeigen, die für den aktuellen Gerätezustand nicht relevant sind.
 
-## Home-Status: der Bereich, der seinen Inhalt verdienen muss
+## Wohnzimmer, Außenbereich, Roboter: Karten, die sich ihren Platz verdienen
 
-Der Home-Status-Bereich enthält mehrere bedingte Karten. Alle brauchen etwas Aktives:
+Mehrere weitere Karten sind bedingt. Alle erscheinen erst, wenn etwas aktiv ist:
 
 - **Wohnzimmerlicht:** nur sichtbar, wenn mindestens ein Innenlicht an ist. Wenn es erscheint, zeigt es vollständige Mushroom-Lichtkarten mit Dimmerschiebern. Du bist schon dort, weil etwas an ist, also gibt es volle Kontrolle.
 - **Außenbereich:** erscheint, wenn die Sonne unter dem Horizont ist ODER ein Außenlicht an ist. Mittags an einem sonnigen Tag: weg. Um 21:30 Uhr oder wenn die Flutlichter an sind: da.
 - **Roborock:** nur, wenn nicht geparkt und nicht im Leerlauf. Saugt, kehrt zurück, pausiert, Fehler: anzeigen. Sitzt in der Ladestation: irrelevant.
-- **Flora:** gleiche Logik. Mäht oder kehrt zurück: Status anzeigen. Geparkt: nichts.
+- **Flora:** gleiche Logik. Mäht, kehrt zurück oder meldet einen Fehler: Status anzeigen. Geparkt: nichts.
+
+## Zwei Karten, die prüfen, bevor sie auftauchen
+
+Die Karte „Quick actions“ hat eine eigene Bedingung. Sie erscheint, wenn die Spülmaschine bereit ist oder läuft, wenn an der Waschmaschine ein Programm gewählt ist, läuft oder fertig ist, wenn ein Lüfter im Bad an ist oder wenn der Fernseher läuft. Trifft nichts davon zu, ist die ganze Karte weg, samt Überschrift. Erscheint sie, hat auch jede Zeile ihre eigene Bedingung, und es steht nur da, was gerade gilt.
+
+![Die Startansicht heute: eine Müllwarnung im Alert-Ticker, die Karte Quick actions mit Spülmaschine, Fernseher und Pausenlicht und die bernsteinfarbene Karte Turn All Lights Off](/blog-images/home-screen-conditional-cards.webp)
+
+Auf dem Screenshot ist sie da, weil die Spülmaschine befüllt ist und auf dem Fernseher Prime Video läuft. Der Fernseher bringt zwei Zeilen mit: eine zum Pausieren und Fortsetzen und eine namens „Pause light“. Die holt das Licht für die Pause hoch und dimmt es beim nächsten Antippen wieder. Ich muss weder die Ansicht Appliances öffnen noch die Fernbedienung suchen.
+
+Die andere Karte, auf die ich mich verlasse, ist das Banner ganz oben. Jede der drei Tonnenarten hat im Ticker zwei Warnungen, eine für den Tag vor der Abholung und eine für zwei Tage davor. Das Banner auf dem Screenshot lautet „Plastic & cartons collected tomorrow“. Müll hat Priorität 3, also kommen eine Person an der Tür oder ein Fehler des Mähroboters weiterhin zuerst. An allen anderen Tagen gibt es das Banner nicht.
 
 ## Die Bildschirmlänge ist das Signal
 
 Das habe ich nicht sofort bemerkt. Nach ein paar Wochen merkte ich, dass ich die Bildschirmlänge las, bevor ich den Inhalt las. Kurzer Bildschirm: ruhiger Tag, nichts braucht Aufmerksamkeit. Langer Bildschirm: Irgendetwas ist los, also scrollen und herausfinden, was.
 
-Die Mülllkarte erscheint nur innerhalb von 3 Tagen vor der Abholung. Den Großteil des Jahres ist sie nicht da. Die Woche vor der Abholung erscheint sie mit farbkodiertem Countdown: Orange bei 3 Tagen, Dunkelorange bei 2, Rot bei 1. Seitdem habe ich die Tonne nicht mehr vergessen.
+Die Müllkarte ist die Ausnahme von der Ausblendregel. Sie steht immer da und listet die nächsten Abholtermine nach Datum. Die eigentliche Erinnerung kommt aus dem Alert-Ticker: Jede der drei Tonnenarten hat zwei Warnungen, eine für den Tag vor der Abholung und eine für zwei Tage davor. Das Banner gibt es also nur, wenn die Tonnen rausmüssen. Seitdem habe ich sie nicht mehr vergessen.
 
 Die Energiekarte ist immer da, mit dem aktuellen Preis und dem nächsten günstigen Fenster. Die hat ihren Dauerplatz verdient, weil sie tatsächlich ändert, was ich tue. Ich plane Spülmaschine und Trockner danach.
 

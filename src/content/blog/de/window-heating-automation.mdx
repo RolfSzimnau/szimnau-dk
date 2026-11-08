@@ -3,6 +3,7 @@ title: "Ein Home-Assistant-Blueprint, das die Heizung stoppt, wenn das Fenster �
 seoTitle: "Home-Assistant-Blueprint: Heizung aus bei offenem Fenster"
 description: "Heizkörper aus, wenn das Fenster aufgeht, an, wenn es schließt. Gebaut als wiederverwendbares Blueprint, damit das nächste Zimmer 30 Sekunden dauert."
 pubDate: 2026-05-17
+updatedDate: 2026-11-08
 tags: ["heizung", "sensoren", "automatisierung"]
 lang: "de"
 translationKey: "window-heating-automation"
@@ -14,13 +15,19 @@ faqs:
     answer: "Wegen der Wiederverwendung. Der nächste Raum ist nur Blueprint, Sensor wählen, Heizkörper wählen. Das dauert etwa 30 Sekunden und braucht keinen neuen Code. Das gilt für die Mill-Heizkörper, das Wohnzimmer mit Tado braucht eine eigene Logik."
 ---
 
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, November 2026:** Einer der drei Fenstersensoren ist seit dem 3. November offline, und das Blueprint kann nichts gegen ein Fenster tun, das es nicht sieht. Dafür habe ich einen Alarm gebaut und ihn in einem neuen Abschnitt unten beschrieben. Außerdem habe ich die Entitäts-IDs und die Zimmerliste korrigiert: Büro und Schlafzimmer haben jetzt eigene Sensoren.
+
+</div>
+
 Der Heizkörper im Zimmer meiner Tochter lief auf Hochtouren, und das bei offenem Fenster. Sie ist fast zwanzig, und daran zu denken, das Fenster zu schließen, passiert nicht zuverlässig. Ich bemerkte, dass das Fenster eine Stunde offen gestanden hatte, Heizung an, Außentemperatur um die 4°C. Kein Drama, aber eine vorhersehbare Verschwendung, die sich wiederholen würde. Geld zum Fenster hinauswerfen, buchstäblich.
 
 Die Lösung war ein Fenstersensor und eine einzige Home Assistant-Automatisierung. Die extra Stunde investierte ich darin, sie als Blueprint zu bauen, damit das nächste Zimmer 30 Sekunden braucht und nicht einen weiteren Nachmittag.
 
 ## Hardware: IKEA Fenstersensor + Mill-Heizkörper
 
-Ein **IKEA MYGGBETT** Tür-/Fenstersensor am Fenster meiner Tochter (`binary_sensor.myggbett_door_window_sensor_door`). Der Heizkörper ist ein Erstgenerations-**Mill**-Gerät (`climate.louise`), das nur zwei Modi unterstützt: `heat` und `off`. Das gleiche Erstgenerationsmodell steht auch in meinem Büro.
+Ein **IKEA MYGGBETT** Tür-/Fenstersensor am Fenster meiner Tochter (`binary_sensor.myggbett_door_window_sensor_door_2`). Der Heizkörper ist ein Erstgenerations-**Mill**-Gerät (`climate.louise`), das nur zwei Modi unterstützt: `heat` und `off`. Das gleiche Erstgenerationsmodell steht auch in meinem Büro.
 
 Das Schlafzimmer und die Küche laufen mit neueren Mill-Heizkörpern mit mehr HVAC-Modi. Das Blueprint behandelt sie alle: Es speichert den genauen Zustand vor dem Ausschalten und stellt ihn beim Schließen des Fensters präzise wieder her, unabhängig von Modus oder Temperatur.
 
@@ -64,7 +71,7 @@ Die Automatisierungsinstanz für das Zimmer meiner Tochter sind drei Zeilen:
   use_blueprint:
     path: homeassistant/window_heating_control.yaml
     input:
-      window_sensor: binary_sensor.myggbett_door_window_sensor_door
+      window_sensor: binary_sensor.myggbett_door_window_sensor_door_2
       climate_entity: climate.louise
       delay_minutes: 1
 ```
@@ -138,8 +145,22 @@ alerts:
 
 Bei geschlossenen Fenstern zeigt die Karte eine grüne "alles in Ordnung" Folie. Bei offenem Fenster wechselt sie zu einer animierten Warnung mit dem Friendly Name des Sensors in der Nachricht.
 
+## Wenn ein Fenstersensor offline geht
+
+Das Blueprint reagiert nur, wenn ein Sensor `on` meldet. Ein Sensor, der nichts meldet, ist für das Blueprint unsichtbar. Ist die Batterie leer oder fällt der Sensor aus dem Matter-Netz, steht sein Zustand auf `unavailable`, und beim Öffnen des Fensters wird nichts mehr abgeschaltet. Der Heizkörper heizt weiter gegen das offene Fenster, und nichts sagt mir Bescheid.
+
+So ist es gerade. Einer meiner drei Sensoren ist seit 15:00 Uhr am 3. November `unavailable`. Während ich das am 8. November schreibe, sind das fünf Tage. Wahrscheinliche Ursachen sind eine leere Batterie oder eine abgebrochene Matter-Verbindung. Welche von beiden es ist, habe ich nicht geprüft, und der Sensor ist weiter offline. Als gelöst kann ich das also nicht verbuchen.
+
+Am Abend des 3. November, etwa zweieinhalb Stunden nach dem Ausfall, habe ich eine Automatisierung namens „Vindue: sensor offline“ gebaut. Sie führt die drei Sensoren einzeln auf und schickt mir eine Push-Nachricht aufs Handy, wenn einer länger als sechs Stunden `unavailable` ist. In der Nachricht steht, dass die Heizungssteuerung im Raum blind ist und ich die Batterie prüfen und den Sensor neu koppeln soll. Sechs Stunden, weil die gesunden Sensoren in einer Woche höchstens 16 Sekunden ausgefallen waren. Kurze Aussetzer lösen also keine Meldung aus.
+
+Ein Trigger mit `for: hours: 6` hat zwei Schwächen. Ein Neustart setzt den Timer zurück, und ein Sensor, der beim Start von Home Assistant schon `unavailable` ist, wechselt nie den Zustand, sodass der Trigger nie auslöst. Genau so war es bei diesem Sensor, der beim Speichern der Automatisierung schon offline war. Deshalb gibt es einen zweiten Trigger: Jeden Morgen um 9:00 Uhr prüft die Automatisierung alle drei Sensoren und meldet jeden, der seit sechs Stunden oder länger `unavailable` ist. Ich werde also jeden Morgen erinnert, bis der Sensor wieder da ist. Jeder Sensor hat ein eigenes Benachrichtigungs-Tag, damit eine neue Meldung die alte ersetzt, statt sich zu stapeln.
+
+Der letzte Lauf war heute um 9:00 Uhr. Ich sehe nur die letzten zwei Läufe, weil die Traces beim Neustart von Home Assistant um 8:44 Uhr am 7. November gelöscht wurden. Die Prüfung von gestern scheint nichts getan zu haben: Der Neustart hatte die „zuletzt geändert“-Zeit des Sensors 16 Minuten vorher zurückgesetzt, also zählte er noch nicht als sechs Stunden. Die Prüfung heute hat die Meldung geschickt.
+
+Eine Warnung ändert nichts daran, dass die Heizungssteuerung blind bleibt. Bis ich die Batterie tausche oder den Sensor neu koppele, hat dieser Raum keine Fenstersteuerung.
+
 ## Das Blueprint in anderen Zimmern wiederverwenden
 
 Einstellungen → Automatisierungen → Erstellen → Aus Blueprint → "Fenster → Heizung aus" auswählen → Sensor und Heizkörper wählen → Speichern. Kein neuer Code. Das ist der ganze Punkt daran es von Anfang an als Blueprint zu bauen statt als fest kodierte Automatisierung.
 
-Das Büro bekommt als nächstes einen Sensor: gleicher Erstgenerations-Mill, gleiches Blueprint, identische Konfiguration. Die Mill-Heizkörper im Schlafzimmer und in der Küche funktionieren ebenfalls, sobald sie Fenstersensoren haben. Die Daikin im Wohnzimmer ist eine andere Geschichte: Tado verwaltet sie, und sie braucht eine eigene Logik, wenn die Zeit kommt.
+Büro und Schlafzimmer haben jetzt eigene Sensoren und Blueprint-Automatisierungen, mit identischer Konfiguration bis auf die Entitäten. Der Mill-Heizkörper in der Küche funktioniert genauso, sobald er einen Fenstersensor hat. Die Daikin im Wohnzimmer ist eine andere Geschichte: Tado verwaltet sie, und sie braucht eine eigene Logik, wenn die Zeit kommt.
