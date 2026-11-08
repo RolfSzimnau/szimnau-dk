@@ -3,6 +3,7 @@ title: "Circadian belysning med WiZ der følger solens farvetemperatur"
 seoTitle: "Circadian belysning med WiZ der følger solen"
 description: "Circadian belysning med WiZ-pærer og HA's sol-entitet: ingen tredjepartsintegration, én automation der mapper solhøjde til farvetemperatur."
 pubDate: 2025-12-12
+updatedDate: 2026-11-08
 tags: ["lys", "automatisering"]
 lang: "da"
 translationKey: "wiz-circadian-lighting"
@@ -94,11 +95,13 @@ repeat:
 
 `if`-betingelsen inde i løkken er det, der gør den diskret. Er et lys slukket, sker der ingenting. Automationen tænder aldrig lys, den justerer kun lys, der allerede er tændt. Du kan godt lade halvdelen af lysene være slukket, og dem, du har tændt, følger solen.
 
+Øverst ligger to betingelser: `input_boolean.film_mode` og `input_boolean.bright_mode` skal begge være slået fra. Er en af dem tændt, gør automationen ingenting. I den version, der kører i dag, tjekker automationen desuden kun én gang: en variabel samler de lys, der er tændt, og `light.turn_on` kaldes én gang. Resultatet er det samme.
+
 ## Hvad det føles som
 
-Skiftet går så langsomt, at du ikke lægger mærke til det. Det, du lægger mærke til, er, at rummet føles rigtigt: friskt og neutralt om dagen, varmere og mere afslappet, når aftenen kommer, og ravfarvet, når du er ved at gå i seng. Overgangen fra 2700K til 2200K i den sidste time før midnat er særligt tydelig, hvis du holder øje med den. Lyset bliver tydeligt orange, og for de fleste er det et signal om at sætte tempoet ned.
+Skiftet går så langsomt, at du ikke lægger mærke til det. Det, du lægger mærke til, er, at rummet føles rigtigt: friskt og neutralt om dagen, varmere og mere afslappet, når aftenen kommer, og ravfarvet, når du er ved at slappe af. Det eneste skift, du kan mærke, kommer ved solnedgang. Under horisonten er formlen helt flad på 2200K, så lyset bliver tydeligt orange, når solen går ned, og forbliver det til morgen. For de fleste er det et signal om at sætte tempoet ned.
 
-Det betyder også, at biograflys-automationen (der sætter 2200K til film) nu passer med det, lysene alligevel ville ende på om aftenen. De to automationer kommer ikke i konflikt. Filmautomationen tager midlertidigt over, og døgnrytme-automationen justerer det, der er tændt, næste gang den kører en halv time senere.
+Filmlys-automationen og denne deler lysene via `film_mode`. Når der kører en film på tv'et efter solnedgang, tænder `Stuen - Filmlys` for `input_boolean.film_mode`, slukker de to loftlys og sætter hjørnelamperne til 12 % ved 2700K. Så længe `film_mode` er tændt, springer døgnrytme-automationen sine kørsler over, så den aldrig overskriver filmlyset. Når filmen er slut, tænder filmautomationen lysene igen ved 2700K, og døgnrytme-automationen tager over ved næste kørsel eller når et lys tændes. Hvordan filmlyset er bygget, står i [indlægget om tv'et og lysene](/da/blog/wiz-movie-lights/).
 
 ## Hvad WiZ gør nativt
 

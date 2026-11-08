@@ -2,7 +2,7 @@
 title: "Camera Notifications That Actually Tell You Something"
 description: "How I got the Sentinel camera to send useful, actionable alerts instead of 40 motion pings a day: one automation, a mute toggle, and action buttons."
 pubDate: 2025-02-07
-updatedDate: 2026-11-05
+updatedDate: 2026-11-08
 tags: ["camera", "security"]
 lang: "en"
 translationKey: "sentinel-ai-camera-ha"
@@ -151,7 +151,13 @@ HA takes a fresh frame from the camera and sends the image itself to the TV, so 
 
 ## The dashboard
 
-The Security view has the camera at the top, status chips for motion, person, animal and vehicle, and a list of recent events. The chips all follow the same pattern:
+![The Security view on the tablet: the live garden camera on the left, six status chips and a Recent events list on the right](/blog-images/sentinel-security-view.webp)
+
+On the tablet the Security view has two columns. The left one is the camera card with the live stream from `camera.sentinel_fluent`. The notifications attach a still from a different entity, `camera.sentinel_snapshots_clear`. The menu row above the image belongs to the card itself, not to my automations.
+
+The right column has two parts. The chips show what the sensors say right now: grey and "Person clear" while a sensor is `off`, a coloured icon and "Person detected" while it is `on`. The template follows the sensor, so nothing has to reset the chip. Flood and Audio are buttons: they toggle the floodlight (the same light as the Turn on Flood button in the notification) and the camera's audio recording. Below them, Recent events is the log. A markdown card prints the ten entries of `input_text.sentinel_event_log`, newest first. The Sentinel event log automation adds an entry each time one of the four sensors turns `on`, never when it goes back. How that works is in the post on a [detections-only event list](/en/blog/detection-event-log-home-assistant/). In the screenshot nothing is happening, so all four chips are grey and the list is full of older detections.
+
+On the phone, the Security view stacks the camera at the top, four status chips for motion, person, animal and vehicle, and the same list of recent events. The chips all follow the same pattern:
 
 ```yaml
 type: custom:mushroom-chips-card

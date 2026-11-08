@@ -2,7 +2,7 @@
 title: "Danish Spot Prices in Home Assistant for EV Charging"
 description: "Energi Data Service in Home Assistant: hourly spot prices, an ApexCharts step chart and the cheapest charging window, plus the Elroq automation I retired."
 pubDate: 2025-05-02
-updatedDate: 2026-11-05
+updatedDate: 2026-11-08
 tags: ["energy", "ev", "automation"]
 lang: "en"
 translationKey: "danish-electricity-prices-ev-charging"
@@ -140,6 +140,22 @@ content: >
 ```
 
 The logic: find the minimum price for the day, then expand the window to include all adjacent hours within 25% of that minimum. The card re-renders automatically whenever the sensor updates, so no separate automation is needed.
+
+## The view on my tablet
+
+![The Energy view on the wall tablet: a stepped price line for today and tomorrow, a peak tariff row, rows with yesterday's use and the month's saving, and a forecast chart from Carnot](/blog-images/energy-prices-tablet-view.webp)
+
+This is the Energy view on the wall tablet. The chart at the top is the stepped line from above, drawn as a plain orange line. In November the price runs from 2 to 7 kr/kWh, because the sensor's price already includes the grid tariff. The green, orange and red thresholds from the example would be red all day, so I dropped the colours.
+
+The chart covers today and tomorrow. Before 13:00 tomorrow has no prices yet, so the view holds two chart cards, one over 24 hours and one over 48, and `binary_sensor.energi_tomorrow_valid` decides which one is visible. It turns on around 13:00, when the integration has fetched tomorrow's prices. In the screenshot the right half is tomorrow: 6.63 kr at 17:00, almost three times the 2.30 kr at 04:00.
+
+The row under the chart, "Peak grid tariff 17–21 · +0.32 kr/kWh", is worked out from the `tariffs` attribute, where the integration keeps my grid operator's hourly tariffs. A template takes the hours within 10 percent of the highest tariff and subtracts the tariff of the median hour. Today that gives 17 to 21 and 0.32 kr/kWh. While the clock is inside that window, the second line changes to "Peak tariff right now: avoid heavy loads".
+
+The "Today" and "Tomorrow" rows show the lowest and highest hour and the average, taken from `raw_today`, `raw_tomorrow` and `today_mean`. "Best time today" only looks at the hours from now on, so late in the evening it points at 23:00, as in the screenshot. Its icon is green when the cheapest hour is now, amber when it is within two hours and blue otherwise.
+
+The two rows at the top come from Eloverblik, which delivers consumption a day late. That is why the screenshot says 2026-11-07. An automation stores the day's 24 prices at 23:55. When the meter data arrives, a second automation multiplies each hour's kWh by that hour's price and compares the sum with the same kWh at the day's average price. The difference is the "saved" figure: 8.98 kr for yesterday, 73 kr for the month. It is what shifting load is worth, not a saving against a fixed price.
+
+The chart on the right is Carnot's forecast, which the integration delivers in the `forecast` attribute as hourly prices for the coming days. I draw it from the day after tomorrow, because the two days before it have real prices. The green dots mark the cheapest hour of each day. In the screenshot the forecast sits lower than the real prices, so I read it for the pattern, which day will be cheap. The price that counts arrives at 13:00 the day before.
 
 ## The charging automation
 

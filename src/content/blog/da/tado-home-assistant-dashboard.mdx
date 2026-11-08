@@ -57,6 +57,20 @@ En gæst spurgte, om huset trak vejret. Det føltes rigtigt.
 
 Kopiér blokken til hver zone, og skift entitets-id'et. Jinja2 i `card_mod` beregnes, når kortet tegnes, så hvert kort selv afgør, om det skal animeres.
 
+## De to stuekort i dag
+
+![Klimakortet «Living room» med tilstanden Auto, 20,5 °C og måltemperatur 22 over kortet «Price-shifted preheating» med forvarmning kl. 4 og eftermiddagsløft kl. 12](/blog-images/tado-living-room-card.webp)
+
+Det øverste kort er det fra opdateringsnotatet: ét Mushroom-klimakort til Daikin-pumpen. Det viser tilstanden og rumtemperaturen («Auto · 20.5 °C») og måltemperaturen med plus og minus. Den orange puls fra afsnittet ovenfor sidder på ikonet og kommer kun frem, mens varmepumpen rent faktisk varmer. Det kan et skærmbillede ikke vise, så her står kortet stille.
+
+Kortet under er den del, jeg bedst kan lide. Daikin-pumpen følger Tados egen tidsplan, som ligger i Tados sky og varmer på faste tidspunkter. Elprisen skifter time for time, så et fast tidspunkt sjældent er det billigste. Hver aften kl. 20.35 læser en automation morgendagens priser fra `sensor.energi_data_service`, finder den billigste blok på to timer mellem kl. 2 og 6 og den billigste blok på tre timer mellem kl. 12 og 18 og gemmer starttidspunkterne i to tidshjælpere. «Preheat window» og «Afternoon top-up» viser dem: kl. 4 og kl. 12 på billedet.
+
+Når et starttidspunkt kommer, beder en anden automation Tado om varme: 30 °C til forvarmningen og 23 °C til eftermiddagsløftet. Den bruger en overstyring, der gælder til næste blok. Derfor tager Tado selv over igen, når næste blok i dens egen tidsplan begynder (normalt kl. 5.45 om morgenen og kl. 17 om eftermiddagen), og jeg ender ikke med en manuel overstyring, jeg har glemt. I morges gik pumpen i gang kl. 4 og var tilbage på Tados tidsplan kl. 5.45.
+
+Der er en sikring. Er stuen allerede på 20 °C eller mere, gør automationen ingenting, for der er ingen grund til at betale for varme i et rum, der er varmt. Eftermiddagsløftet sprang sig selv over kl. 12 både i går og i dag af den grund.
+
+Det tog mig til slutningen af oktober at få det til at virke. Tado afviste kommandoen, fordi varmepumpens blæserindstillinger manglede, så Tados faste tidsplan gjorde hele arbejdet. Nu henter automationen først pumpens egenskaber igen, hvis de mangler.
+
 ## Layout
 
 Fem kort i et gitter med 2 kolonner via `custom:layout-card` (HACS), pakket ind i et glas-`custom:stack-in-card` (HACS) og med `card_mod` (HACS) til animationerne:

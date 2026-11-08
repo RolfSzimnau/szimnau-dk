@@ -3,6 +3,7 @@ title: "Zirkadianes Licht mit WiZ, das der Farbtemperatur der Sonne folgt"
 seoTitle: "Zirkadianes WiZ-Licht folgt der Sonne"
 description: "Zirkadiane Beleuchtung mit WiZ-Lampen und der HA-Sonnen-Entität: eine einzige Automatisierung mappt Sonnenhöhe auf Farbtemperatur."
 pubDate: 2025-12-12
+updatedDate: 2026-11-08
 tags: ["licht", "automatisierung"]
 lang: "de"
 translationKey: "wiz-circadian-lighting"
@@ -94,11 +95,13 @@ repeat:
 
 Das `if` innerhalb der Schleife macht sie unauffällig. Wenn eine Lampe aus ist, passiert nichts. Die Automatisierung schaltet niemals Lampen ein, sondern passt nur Lampen an, die bereits eingeschaltet sind. Du kannst die Hälfte der Lampen ausgeschaltet lassen, und die eingeschalteten folgen trotzdem der Sonne.
 
+Über alldem stehen zwei Bedingungen: `input_boolean.film_mode` und `input_boolean.bright_mode` müssen beide aus sein. Ist eine an, tut die Automatisierung nichts. In der Version, die heute läuft, wird die Prüfung außerdem nur einmal durchgeführt: Eine Variable sammelt die eingeschalteten Lampen, und `light.turn_on` wird einmal aufgerufen. Das Ergebnis ist dasselbe.
+
 ## Wie es sich anfühlt
 
-Die Verschiebung ist langsam genug, dass du nicht bemerkst, wie sie passiert. Was du stattdessen bemerkst: Der Raum fühlt sich richtig an. Wach und neutral tagsüber, wärmer und entspannter, wenn der Abend kommt, bernsteinfarben, wenn du zur Ruhe kommst. Der Übergang von 2700K zu 2200K in der letzten Stunde vor Mitternacht ist besonders spürbar, wenn du darauf achtest. Das Licht wird deutlich orange, was für die meisten Menschen ein Signal zum Entschleunigen ist.
+Die Verschiebung ist langsam genug, dass du nicht bemerkst, wie sie passiert. Was du stattdessen bemerkst: Der Raum fühlt sich richtig an. Wach und neutral tagsüber, wärmer und entspannter, wenn der Abend kommt, bernsteinfarben, wenn du zur Ruhe kommst. Den einen Sprung bemerkst du bei Sonnenuntergang. Unter dem Horizont ist die Formel konstant 2200K, das Licht wird also deutlich orange, sobald die Sonne weg ist, und bleibt es bis zum Morgen. Für die meisten ist das ein Signal zum Entschleunigen.
 
-Es bedeutet auch, dass die Kinomodus-Automatisierung (die für Filme 2200K setzt) jetzt zu dem passt, was die Lampen am Abend ohnehin erreichen würden. Die beiden Automatisierungen kommen sich nicht in die Quere. Die Film-Automatisierung übernimmt vorübergehend, und die zirkadiane passt beim nächsten 30-Minuten-Tick an, was eingeschaltet ist.
+Die Filmlicht-Automatisierung und diese hier teilen sich die Lampen über `film_mode`. Läuft nach Sonnenuntergang ein Film auf dem Fernseher, schaltet `Stuen - Filmlys` den `input_boolean.film_mode` ein, die beiden Deckenlampen aus und die Eckleuchten auf 12 % bei 2700K. Solange `film_mode` an ist, überspringt die zirkadiane Automatisierung ihre Läufe und überschreibt das Filmlicht nie. Endet der Film, schaltet die Film-Automatisierung die Lampen bei 2700K wieder ein, und die zirkadiane übernimmt beim nächsten Lauf oder sobald eine Lampe angeht. Wie das Filmlicht gebaut ist, steht im [Beitrag zum Fernseher und den Lampen](/de/blog/wiz-movie-lights/).
 
 ## Was WiZ nativ kann
 

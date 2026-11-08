@@ -3,6 +3,7 @@ title: "Eine Ereignisliste nur mit Detektionen für Home-Assistant-Kameras"
 seoTitle: "Nur Detektionen: Ereignisliste für Home-Assistant-Kameras"
 description: "Die Logbook-Karte zeigt Detected und Cleared für Kamera-Sensoren. Die Lösung: input_text als rollendes Log, eine Automation mit Trigger-IDs und Markdown."
 pubDate: 2026-07-18
+updatedDate: 2026-11-08
 verifiedOn: "HA 2026.7"
 tags: ["kamera", "sicherheit", "dashboard", "automatisierung"]
 lang: "de"
@@ -81,6 +82,14 @@ content: >-
 ```
 
 Das Ergebnis ist die Liste im Bild oben: nur Detektionen, doppelt so viel Historie auf gleichem Platz, null „Cleared"-Zeilen.
+
+## Was die Sicherheitsansicht zeigt
+
+![Sicherheitsansicht auf einem Tablet: sechs Status-Chips für Bewegung, Person, Tier, Fahrzeug, Flutlicht und Audio und eine Liste „Recent events“ mit zehn Erkennungen von 13:38 bis 14:48](/blog-images/security-recent-events.webp)
+
+Das Bild zeigt die rechte Spalte der Sicherheitsansicht auf meinem Tablet. Oben sitzen sechs Chips. Motion, Person, Animal und Vehicle folgen live den vier Binärsensoren der Kamera: grau und „Person clear“, solange der Sensor `off` ist, farbiges Symbol und „Person detected“, sobald er auf `on` springt. Der Chip ist ein Template auf `is_state()`, also muss ihn nichts zurücksetzen. Meldet die Kamera die Erkennung nicht mehr, geht er von selbst zurück. Flood und Audio sind Schaltflächen, keine Statusanzeigen: Sie schalten das Flutlicht und die Audioaufnahme der Kamera um.
+
+Unter den Chips steht das Log. Die Chips zeigen, was gerade passiert, die Liste, was passiert ist. Jede Zeile ist ein Wechsel auf `on` bei einem der vier Sensoren, geschrieben von der Automatisierung oben, neueste zuerst, und die Liste behält die letzten zehn. Die zwei Person-Zeilen um 14:48 sind echt: Der Sensor fiel auf `off` zurück und sprang innerhalb derselben Minute wieder auf `on`, und ich fasse sie nicht zusammen. Eine doppelte Zeile ist besser als eine verlorene Erkennung. Im Screenshot rührt sich nichts, deshalb sind alle vier Chips grau.
 
 ## Die Grenzen, ehrlich
 

@@ -57,6 +57,20 @@ A visitor asked if the house was breathing. That felt right.
 
 Duplicate the block for each zone and swap the entity ID. The Jinja2 inside `card_mod` evaluates at render time, so each card independently decides whether to animate.
 
+## The two living room cards today
+
+![The Living room climate card showing Auto and 20.5 °C with a setpoint of 22, above the Price-shifted preheating card with a preheat window at 04:00 and an afternoon top-up at 12:00](/blog-images/tado-living-room-card.webp)
+
+The top card is the one from the update note: a single Mushroom climate card for the Daikin. It shows the mode and the room temperature ("Auto · 20.5 °C") and the setpoint with plus and minus. The orange pulse from the section above sits on its icon and only appears while the heat pump is heating. A screenshot can't show that, so the card stands still here.
+
+The card below is the part I like. The Daikin follows Tado's own schedule, which lives in Tado's cloud and heats at fixed times. The electricity price changes by the hour, so a fixed time is rarely the cheapest one. Every evening at 20:35 an automation reads tomorrow's prices from `sensor.energi_data_service`, finds the cheapest two-hour block between 02:00 and 06:00 and the cheapest three-hour block between 12:00 and 18:00, and stores the start times in two time helpers. "Preheat window" and "Afternoon top-up" show them: 04:00 and 12:00 in the screenshot.
+
+When a start time arrives, a second automation asks Tado for heat: 30 °C for the preheat, 23 °C for the top-up. It uses an overlay that lasts until the next block, so Tado takes over again by itself when the next block of its own schedule starts (normally 05:45 in the morning and 17:00 in the afternoon). I never end up with a manual override I forgot about. This morning it went to heat at 04:00 and was back on Tado's schedule at 05:45.
+
+There is a guard. If the living room is already at 20 °C or more, the automation does nothing, because there is no point paying for heat in a warm room. The afternoon top-up skipped itself at 12:00 yesterday and today for that reason.
+
+It took me until late October to get this working. Tado rejected the command because the heat pump's fan settings were missing, so the fixed schedule did all the work. Now the automation refreshes the pump's capabilities first when they are missing.
+
 ## Layout
 
 Five cards in a 2-column grid via `custom:layout-card` (HACS), wrapped in a glass `custom:stack-in-card` (HACS), with `card_mod` (HACS) for the CSS animations:

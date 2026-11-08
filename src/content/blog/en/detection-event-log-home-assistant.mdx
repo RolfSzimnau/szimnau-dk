@@ -2,6 +2,7 @@
 title: "A Detections-Only Event List for Home Assistant Cameras"
 description: "The logbook card shows both Detected and Cleared for camera sensors. The fix: an input_text rolling log, an automation with trigger IDs, and a markdown card."
 pubDate: 2026-07-18
+updatedDate: 2026-11-08
 verifiedOn: "HA 2026.7"
 tags: ["camera", "security", "dashboard", "automation"]
 lang: "en"
@@ -80,6 +81,14 @@ content: >-
 ```
 
 The result is the list in the hero image: detections only, twice the history in the same space, zero "Cleared" lines. It sits in the same glass container style as the rest of the view. The [ANPR/license-plate version of this camera setup](/en/blog/sentinel-reolink-alpr-tv/) uses the same visual recipe.
+
+## What the Security view shows
+
+![Security view on a tablet: six status chips for motion, person, animal, vehicle, floodlight and audio, and a Recent events list with ten detections from 13:38 to 14:48](/blog-images/security-recent-events.webp)
+
+This is the right-hand column of my tablet's Security view. The top block has six chips. Motion, Person, Animal and Vehicle follow the camera's four binary sensors live: grey and "Person clear" while the sensor is `off`, a coloured icon and "Person detected" once it turns `on`. The chip is a template on `is_state()`, so nothing has to reset it. When the camera drops the detection, the chip goes back by itself. Flood and Audio are buttons, not status: they toggle the floodlight and the camera's audio recording.
+
+Below the chips is the log. The chips say what is happening now, the list says what happened. Each line is one switch to `on` on one of the four sensors, written by the automation above, newest first, and the list holds the last ten. The two Person lines at 14:48 are real: the sensor dropped and came back within the same minute, and I don't merge them. A doubled line is better than a lost detection. In the screenshot nothing is moving, so all four chips are grey.
 
 ## The limitations, honestly
 

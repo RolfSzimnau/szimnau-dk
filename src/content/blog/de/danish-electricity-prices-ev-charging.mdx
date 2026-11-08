@@ -2,7 +2,7 @@
 title: "Dänische Spotpreise in Home Assistant für das E-Auto"
 description: "Energi Data Service in Home Assistant: Spotpreise in Echtzeit, ein ApexCharts-Stufendiagramm und das günstigste Ladefenster, dazu meine alte Elroq-Automation."
 pubDate: 2025-05-02
-updatedDate: 2026-11-05
+updatedDate: 2026-11-08
 tags: ["energie", "ev", "automatisierung"]
 lang: "de"
 translationKey: "danish-electricity-prices-ev-charging"
@@ -140,6 +140,22 @@ content: >
 ```
 
 Die Logik: Minimumspreis für den Tag finden, dann das Fenster auf alle benachbarten Stunden innerhalb von 25% dieses Minimums ausweiten. Die Karte wird automatisch aktualisiert, sobald sich der Sensor ändert. Eine separate Automatisierung ist nicht nötig.
+
+## So sieht es auf meinem Tablet aus
+
+![Die Ansicht Energy auf dem Wandtablet: eine Preistreppe für heute und morgen, eine Zeile zum Spitzentarif, Zeilen mit dem Verbrauch von gestern und der Ersparnis des Monats und ein Prognosediagramm von Carnot](/blog-images/energy-prices-tablet-view.webp)
+
+Das ist die Ansicht Energy auf dem Wandtablet. Das Diagramm oben ist die Preistreppe aus dem Abschnitt weiter oben, nur als schlichte orange Linie. Im November liegt der Preis zwischen 2 und 7 kr/kWh, denn der Preis des Sensors enthält den Netztarif schon. Die Schwellen für Grün, Orange und Rot aus dem Beispiel würden deshalb den ganzen Tag Rot zeigen. Ich habe die Farben weggelassen.
+
+Das Diagramm zeigt heute und morgen. Vor 13 Uhr gibt es für morgen noch keine Preise, deshalb hat die Ansicht zwei Diagrammkarten, eine über 24 und eine über 48 Stunden, und `binary_sensor.energi_tomorrow_valid` entscheidet, welche zu sehen ist. Der Sensor springt gegen 13 Uhr an, sobald die Integration die Preise für morgen geholt hat. Auf dem Bild ist die rechte Hälfte morgen: 6,63 kr um 17 Uhr, fast das Dreifache der 2,30 kr um 4 Uhr.
+
+Die Zeile unter dem Diagramm, „Peak grid tariff 17–21 · +0.32 kr/kWh“, wird aus dem Attribut `tariffs` berechnet, in dem die Integration die Stundentarife meines Netzbetreibers hält. Ein Template nimmt die Stunden, die höchstens 10 Prozent unter dem höchsten Tarif liegen, und zieht den Tarif der Medianstunde ab. Heute ergibt das 17 bis 21 Uhr und 0,32 kr/kWh. Liegt die Uhrzeit in diesem Fenster, wechselt die zweite Zeile zu „Peak tariff right now: avoid heavy loads“.
+
+Die Zeilen „Today“ und „Tomorrow“ zeigen die billigste und die teuerste Stunde und den Durchschnitt, gelesen aus `raw_today`, `raw_tomorrow` und `today_mean`. „Best time today“ schaut nur auf die Stunden ab jetzt. Spät am Abend zeigt sie deshalb auf 23 Uhr, wie im Bild. Das Symbol ist grün, wenn die billigste Stunde jetzt ist, gelb, wenn sie in höchstens zwei Stunden kommt, sonst blau.
+
+Die beiden obersten Zeilen kommen von Eloverblik, das den Verbrauch einen Tag später liefert. Darum steht im Bild 2026-11-07. Eine Automatisierung speichert um 23:55 die 24 Preise des Tages. Wenn die Zählerdaten da sind, multipliziert eine zweite Automatisierung die kWh jeder Stunde mit dem Preis dieser Stunde und vergleicht das mit demselben Verbrauch zum Tagesdurchschnittspreis. Der Unterschied ist der Wert „saved“: 8,98 kr für gestern, 73 kr für den Monat. Das ist der Wert der Lastverschiebung, keine Ersparnis gegenüber einem Festpreis.
+
+Rechts steht die Prognose von Carnot, die die Integration im Attribut `forecast` als Stundenpreise für die nächsten Tage liefert. Ich zeichne sie ab übermorgen, weil für die zwei Tage davor echte Preise vorliegen. Die grünen Punkte markieren die billigste Stunde jedes Tages. Im Bild liegt die Prognose niedriger als die echten Preise, deshalb lese ich sie nur als Muster: Welcher Tag wird billig? Der Preis, der zählt, kommt um 13 Uhr am Vortag.
 
 ## Die Ladeautomatisierung
 

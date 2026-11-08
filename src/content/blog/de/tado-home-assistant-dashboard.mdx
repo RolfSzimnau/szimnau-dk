@@ -57,6 +57,20 @@ Ein Besucher fragte, ob das Haus atmet. Das fühlte sich richtig an.
 
 Den Block für jede Zone duplizieren und die Entitäts-ID tauschen. Das Jinja2 innerhalb von `card_mod` wird zur Renderzeit ausgewertet, jede Karte entscheidet also selbstständig ob sie animiert.
 
+## Die beiden Wohnzimmerkarten heute
+
+![Die Klimakarte „Living room“ mit Auto, 20,5 °C und Sollwert 22, darunter die Karte „Price-shifted preheating“ mit Vorheizfenster um 4 Uhr und Nachmittags-Nachheizung um 12 Uhr](/blog-images/tado-living-room-card.webp)
+
+Die obere Karte ist die aus dem Update-Hinweis: eine einzelne Mushroom-Klimakarte für die Daikin. Sie zeigt den Modus und die Raumtemperatur („Auto · 20.5 °C“) und den Sollwert mit Plus und Minus. Der orange Puls aus dem Abschnitt oben sitzt auf ihrem Symbol und erscheint nur, solange die Wärmepumpe wirklich heizt. Das kann ein Screenshot nicht zeigen, deshalb steht die Karte hier still.
+
+Die Karte darunter gefällt mir am besten. Die Daikin folgt Tados eigenem Zeitplan, der in Tados Cloud liegt und zu festen Zeiten heizt. Der Strompreis ändert sich stündlich, und eine feste Uhrzeit ist selten die billigste. Jeden Abend um 20:35 liest eine Automatisierung die Preise für morgen aus `sensor.energi_data_service`, sucht den günstigsten Zwei-Stunden-Block zwischen 2 und 6 Uhr und den günstigsten Drei-Stunden-Block zwischen 12 und 18 Uhr und speichert die Startzeiten in zwei Uhrzeit-Helfern. „Preheat window“ und „Afternoon top-up“ zeigen sie an: im Bild 4 Uhr und 12 Uhr.
+
+Ist eine Startzeit erreicht, bittet eine zweite Automatisierung Tado um Wärme: 30 °C für das Vorheizen, 23 °C für die Nachheizung am Nachmittag. Sie setzt eine manuelle Überschreibung, die bis zum nächsten Block gilt. Tado übernimmt dann selbst wieder, sobald der nächste Block seines Zeitplans beginnt (normalerweise um 5:45 und um 17 Uhr), und ich bleibe nicht auf einer vergessenen manuellen Überschreibung sitzen. Heute früh ging die Pumpe um 4 Uhr an und war um 5:45 Uhr zurück im Tado-Zeitplan.
+
+Dazu kommt eine Sperre. Hat das Wohnzimmer schon 20 °C oder mehr, tut die Automatisierung nichts, denn Wärme für einen schon warmen Raum zu bezahlen ergibt keinen Sinn. Die Nachheizung am Nachmittag hat sich gestern und heute um 12 Uhr deshalb selbst übersprungen.
+
+Bis Ende Oktober hat es gedauert, bis das lief. Tado lehnte den Befehl ab, weil die Lüftereinstellungen der Wärmepumpe fehlten, also erledigte der feste Zeitplan die ganze Arbeit. Jetzt liest die Automatisierung die Funktionen der Wärmepumpe zuerst neu aus, wenn sie fehlen.
+
 ## Layout
 
 Fünf Karten in einem 2-Spalten-Raster über `custom:layout-card` (HACS), eingewickelt in einen Glas-`custom:stack-in-card` (HACS), mit `card_mod` (HACS) für die CSS-Animationen:

@@ -3,7 +3,7 @@ title: "KI-Kamera in Home Assistant: Benachrichtigungen, die keinen verrückt ma
 seoTitle: "KI-Kamera in Home Assistant: Meldungen ohne Alarmflut"
 description: "Die Sentinel-Kamera schickt nützliche Meldungen statt 40 Bewegungsalarme am Tag: eine Automatisierung, Stumm-Schalter und Aktionsknöpfe."
 pubDate: 2025-02-07
-updatedDate: 2026-11-05
+updatedDate: 2026-11-08
 tags: ["kamera", "sicherheit"]
 lang: "de"
 translationKey: "sentinel-ai-camera-ha"
@@ -152,7 +152,13 @@ HA holt selbst ein frisches Bild von der Kamera und schickt das Bild direkt an d
 
 ## Das Dashboard
 
-Die Sicherheitsansicht zeigt oben die Kamera, dann Status-Chips für Bewegung, Person, Tier und Fahrzeug und eine Liste der letzten Ereignisse. Die Chips folgen alle demselben Muster:
+![Die Sicherheitsansicht auf dem Tablet: links das Live-Bild der Gartenkamera, rechts sechs Status-Chips und die Liste „Recent events“](/blog-images/sentinel-security-view.webp)
+
+Auf dem Tablet hat die Sicherheitsansicht zwei Spalten. Links sitzt die Kamerakarte mit dem Live-Stream von `camera.sentinel_fluent`. Die Benachrichtigungen hängen dagegen ein Standbild einer anderen Entität an, `camera.sentinel_snapshots_clear`. Die Menüzeile über dem Bild gehört zur Karte selbst, nicht zu meinen Automatisierungen.
+
+Die rechte Spalte hat zwei Teile. Die Chips zeigen, was die Sensoren gerade melden: grau und „Person clear“, solange ein Sensor `off` ist, farbiges Symbol und „Person detected“, solange er `on` ist. Das Template folgt dem Sensor, also muss den Chip nichts zurücksetzen. Flood und Audio sind Schaltflächen: Sie schalten das Flutlicht um (dasselbe wie die Schaltfläche „Flutlicht einschalten“ in der Benachrichtigung) und die Audioaufnahme der Kamera. Darunter ist „Recent events“ das Log. Eine Markdown-Karte gibt die zehn Einträge aus `input_text.sentinel_event_log` aus, den neuesten zuerst. Die Automatisierung Sentinel event log fügt jedes Mal einen Eintrag hinzu, wenn einer der vier Sensoren auf `on` springt, nie beim Zurückfallen. Wie das funktioniert, steht im Beitrag über eine [Ereignisliste nur mit Detektionen](/de/blog/detection-event-log-home-assistant/). Im Screenshot passiert nichts, deshalb sind alle vier Chips grau und die Liste ist voll mit älteren Erkennungen.
+
+Auf dem Telefon steht oben die Kamera, darunter vier Status-Chips für Bewegung, Person, Tier und Fahrzeug und dieselbe Liste der letzten Ereignisse. Die Chips folgen alle demselben Muster:
 
 ```yaml
 type: custom:mushroom-chips-card

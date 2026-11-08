@@ -3,6 +3,7 @@ title: "En hændelsesliste med kun registreringer fra kameraer i Home Assistant"
 seoTitle: "Eventliste kun med detektioner til Home Assistant-kameraer"
 description: "Logbogskortet viser både Detected og Cleared for kamerasensorer. Løsningen: en input_text som løbende log, en automation med trigger-id'er og et markdown-kort."
 pubDate: 2026-07-18
+updatedDate: 2026-11-08
 verifiedOn: "HA 2026.7"
 tags: ["kamera", "sikkerhed", "dashboard", "automatisering"]
 lang: "da"
@@ -81,6 +82,14 @@ content: >-
 ```
 
 Resultatet er listen på billedet øverst: kun registreringer, dobbelt så lang historik på samme plads og ingen «Cleared»-linjer.
+
+## Det viser overvågningsvisningen
+
+![Overvågningsvisningen på en tablet: seks statusfelter for bevægelse, person, dyr, køretøj, projektør og lyd og en liste med de ti seneste registreringer fra kl. 13.38 til 14.48](/blog-images/security-recent-events.webp)
+
+Billedet viser højre kolonne i overvågningsvisningen på min tablet. Øverst ligger seks små statusfelter (chips). De fire første, Motion, Person, Animal og Vehicle, følger kameraets fire binære sensorer live: grå og «Person clear», mens sensoren er `off`, farvet ikon og «Person detected», så snart den bliver `on`. Feltet er en skabelon med `is_state()`, så der er ikke noget, der skal nulstille det. Mister kameraet registreringen, går feltet tilbage af sig selv. Flood og Audio er knapper og viser ingen status: de tænder og slukker projektøren og kameraets lydoptagelse.
+
+Under felterne ligger loggen. Felterne viser, hvad der sker lige nu, listen viser, hvad der er sket. Hver linje er ét skift til `on` på en af de fire sensorer, skrevet af automationen ovenfor med den nyeste øverst, og listen rummer de ti seneste. De to Person-linjer kl. 14.48 er ægte: sensoren faldt tilbage og kom igen inden for samme minut, og jeg slår dem ikke sammen. En dobbelt linje er bedre end en registrering, der forsvinder. På skærmbilledet sker der ingenting, så alle fire felter er grå.
 
 ## Begrænsningerne, ærligt talt
 

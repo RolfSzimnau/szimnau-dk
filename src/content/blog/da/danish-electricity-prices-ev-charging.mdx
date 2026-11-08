@@ -3,7 +3,7 @@ title: "Elspotpriser i Home Assistant: find de billige timer til elbilen"
 seoTitle: "Elspotpriser i Home Assistant: billige timer til elbilen"
 description: "Energi Data Service til spotpriser i realtid, et trappediagram i ApexCharts og det billigste ladevindue, plus den Elroq-automation, jeg siden har stoppet."
 pubDate: 2025-05-02
-updatedDate: 2026-11-05
+updatedDate: 2026-11-08
 tags: ["energi", "ev", "automatisering"]
 lang: "da"
 translationKey: "danish-electricity-prices-ev-charging"
@@ -141,6 +141,22 @@ content: >
 ```
 
 Logikken: find dagens laveste pris, og udvid tidsrummet med alle tilstødende timer, der ligger højst 25 % over den. Kortet opdaterer sig selv, når sensoren ændrer sig, så der skal ingen separat automation til.
+
+## Visningen på min tablet
+
+![Visningen Energy på vægtabletten: et trappediagram over elprisen i dag og i morgen, en række om spidstarif, rækker med gårsdagens forbrug og månedens besparelse og et prognosediagram fra Carnot](/blog-images/energy-prices-tablet-view.webp)
+
+Det her er visningen Energy på vægtabletten. Diagrammet øverst er trappediagrammet fra eksemplet, bare som en almindelig orange linje. I november ligger prisen mellem 2 og 7 kr/kWh, for sensorens pris indeholder allerede nettariffen. Grænserne for grøn, orange og rød fra eksemplet ville give rødt hele døgnet, så jeg har droppet farverne.
+
+Diagrammet viser i dag og i morgen. Før kl. 13 findes morgendagens priser ikke, så visningen har to diagramkort, ét over 24 timer og ét over 48, og `binary_sensor.energi_tomorrow_valid` afgør, hvilket der vises. Sensoren slår til omkring kl. 13, når integrationen har hentet morgendagens priser. På billedet er højre halvdel i morgen: 6,63 kr kl. 17, næsten tre gange så meget som de 2,30 kr kl. 4.
+
+Rækken under diagrammet, «Peak grid tariff 17–21 · +0.32 kr/kWh», regnes ud fra attributten `tariffs`, hvor integrationen har min netvirksomheds timetariffer. En skabelon finder de timer, der ligger inden for 10 procent af den højeste tarif, og trækker tariffen for den time, der ligger på medianen fra. I dag giver det kl. 17 til 21 og 0,32 kr/kWh. Mens klokken er mellem 17 og 21, skifter rækkens anden linje til «Peak tariff right now: avoid heavy loads».
+
+Rækkerne «Today» og «Tomorrow» viser laveste og højeste time og gennemsnittet, hentet fra `raw_today`, `raw_tomorrow` og `today_mean`. «Best time today» ser kun på timerne fra nu og frem, så sent på aftenen peger den på kl. 23, som på billedet. Ikonet er grønt, når den billigste time er nu, gult, når den ligger inden for to timer, og ellers blåt.
+
+De to øverste rækker kommer fra Eloverblik, der leverer forbrug et døgn forsinket. Derfor står der 2026-11-07. En automation gemmer døgnets 24 priser kl. 23.55. Når måledata kommer, ganger en anden automation hver times kWh med den times pris og sammenligner med samme forbrug til døgnets gennemsnitspris. Forskellen er tallet «saved»: 8,98 kr for i går og 73 kr for måneden. Det er værdien af at flytte forbrug, ikke en besparelse i forhold til en fast elpris.
+
+Diagrammet til højre er Carnots prognose, som integrationen leverer i attributten `forecast` som timepriser for de kommende dage. Jeg tegner den fra i overmorgen, for de to dage før har rigtige priser. De grønne prikker er hver dags billigste time. På billedet ligger prognosen lavere end de rigtige priser, så jeg bruger den til at se mønsteret: hvilken dag der bliver billig. Den pris, der tæller, kommer kl. 13 dagen før.
 
 ## Automationen, der styrede opladningen
 

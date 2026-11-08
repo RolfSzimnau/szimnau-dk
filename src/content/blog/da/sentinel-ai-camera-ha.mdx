@@ -3,7 +3,7 @@ title: "AI-kamera i Home Assistant: notifikationer, der faktisk giver mening"
 seoTitle: "AI-kamera i Home Assistant: notifikationer der giver mening"
 description: "Sådan sender Sentinel-kameraet nyttige beskeder i stedet for 40 bevægelsesalarmer om dagen: én automation, en lydløs-kontakt og knapper i notifikationen."
 pubDate: 2025-02-07
-updatedDate: 2026-11-05
+updatedDate: 2026-11-08
 tags: ["kamera", "sikkerhed"]
 lang: "da"
 translationKey: "sentinel-ai-camera-ha"
@@ -152,7 +152,13 @@ HA henter selv et nyt billede fra kameraet og sender selve billedet til TV'et, s
 
 ## Dashboard
 
-Visningen Overvågning har kameraet øverst, statuskort for bevægelse, person, dyr og køretøj og en liste over de seneste hændelser. Statuskortene følger alle samme mønster:
+![Overvågningsvisningen på tabletten: live-kameraet med haven til venstre, seks statusfelter og en liste over seneste hændelser til højre](/blog-images/sentinel-security-view.webp)
+
+På tabletten er overvågningsvisningen delt i to kolonner. Til venstre ligger kamerakortet med live-streamen fra `camera.sentinel_fluent`. Notifikationerne vedhæfter derimod et stillbillede fra en anden entitet, `camera.sentinel_snapshots_clear`. Menuen over billedet hører til kortet selv og ikke til mine automationer.
+
+Højre kolonne har to dele. De små statusfelter øverst viser, hvad sensorerne siger lige nu: grå og «Person clear», mens en sensor er `off`, farvet ikon og «Person detected», mens den er `on`. Skabelonen følger sensoren, så intet skal nulstille feltet. Flood og Audio er knapper: de tænder og slukker projektøren (den samme som knappen «Tænd Flood» i notifikationen) og kameraets lydoptagelse. Under dem ligger loggen «Recent events». Et markdown-kort viser de ti linjer fra `input_text.sentinel_event_log` med den nyeste øverst. Automationen Sentinel event log tilføjer en linje, hver gang en af de fire sensorer bliver `on`, men aldrig når den går tilbage. Hvordan det virker, står i indlægget om [en hændelsesliste med kun registreringer](/da/blog/detection-event-log-home-assistant/). På skærmbilledet sker der ingenting, så alle fire sensorfelter er grå, og listen er fuld af ældre registreringer.
+
+På telefonen ligger kameraet øverst i visningen, fire statusfelter for bevægelse, person, dyr og køretøj og den samme liste over de seneste hændelser. Statusfelterne følger alle samme mønster:
 
 ```yaml
 type: custom:mushroom-chips-card
