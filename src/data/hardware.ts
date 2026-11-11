@@ -32,6 +32,16 @@ export const hardwareGroups: HardwareGroup[] = [
         },
       },
       {
+        name: 'JetKVM Mini',
+        icon: 'terminal-window',
+        link: 'https://jetkvm.com',
+        text: {
+          en: 'KVM over IP on the OptiPlex. BIOS and boot screens in a browser, for the times SSH is no help.',
+          da: 'KVM over IP på OptiPlexen. BIOS og opstartsskærme i browseren, til de gange hvor SSH ikke rækker.',
+          de: 'KVM over IP am OptiPlex. BIOS und Bootbildschirme im Browser, für die Fälle, in denen SSH nicht weiterhilft.',
+        },
+      },
+      {
         name: 'Home Assistant OS',
         icon: 'house-line',
         link: 'https://www.home-assistant.io',
