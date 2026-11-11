@@ -1,0 +1,64 @@
+---
+title: "JetKVM Mini: A Remote Console for the Server in the Utility Cupboard"
+description: "The JetKVM Mini now hangs off my Proxmox host in a cupboard full of water pipes and cable spaghetti. First impressions, and what is still untested."
+pubDate: 2026-11-11
+tags: ["infrastructure", "maintenance"]
+lang: "en"
+translationKey: "jetkvm-mini-proxmox-remote-console"
+heroImage: "/blog-images/jetkvm-mini-wiring-cabinet.webp"
+faqs:
+  - question: "What does a JetKVM Mini actually do?"
+    answer: "It captures the HDMI output of a computer and presents itself to that computer over USB as a keyboard and mouse. You reach it from a browser on the same network, which gives you BIOS, boot menu and recovery console on a machine that has no monitor attached."
+  - question: "Why not just use SSH or the Proxmox web interface?"
+    answer: "Both of those need the machine to have finished booting. They are no help at a grub prompt, in the BIOS, or when the network stack is the thing that broke. That is the gap a KVM over IP fills."
+  - question: "Does it need the vendor cloud?"
+    answer: "It gets an IP from DHCP and shows it on the front display, so the web interface is reachable on the local network. I have not tested the remote access path yet, and I will not until I have decided how I want it exposed."
+---
+
+The Dell OptiPlex 7060 that runs Proxmox here has never had a monitor attached. It sits on a shelf in the utility cupboard next to the UniFi gear, a drain pipe and the hot water manifold. Since I moved Home Assistant off the Raspberry Pi and [onto Proxmox in November 2024](/en/blog/proxmox-home-assistant-setup/), that has been completely fine. SSH and the web interface cover everything.
+
+Everything except the five percent that matters. A boot that stops at a grub prompt. A BIOS setting. A machine that answers ping and nothing else. For those, SSH is useless, because SSH needs the thing that is broken to be working.
+
+![Dell OptiPlex 7060 Micro on a shelf in the utility cupboard, the Proxmox host with no monitor attached](/blog-images/jetkvm-mini-optiplex-7060.webp)
+
+The old procedure was: unplug a monitor somewhere else in the house, carry it down with a keyboard under one arm, and find a surface in the cupboard that is not a water pipe. I have done it maybe four times in two years. Four times is enough.
+
+## What came in the box
+
+A black square with a screen on the front. It fits in one hand with room left over.
+
+![The port edge of the JetKVM Mini: RJ45, HDMI input, USB-C for the target machine and a second USB-C marked EXT](/blog-images/jetkvm-mini-ports.webp)
+
+Everything is on one edge: RJ45, HDMI input, a USB-C that goes to the target machine and a second USB-C marked EXT. The box claim is "control any computer remotely", which for a device like this means it grabs the HDMI output and pretends to be a USB keyboard and mouse at the same time. The target machine has no idea anything unusual is attached. That is the whole trick, and it is why it works on a BIOS screen where software remote access cannot.
+
+The front display shows the IP it got from DHCP, the MAC address, and whether USB and HDMI are connected. I did not expect to care about a screen on a device I plan to reach from a browser, but standing in a cupboard reading the IP off the front beats going to the UniFi controller to look it up.
+
+![JetKVM Mini display showing its IP address, MAC address and the USB and HDMI connection state](/blog-images/jetkvm-mini-display.webp)
+
+## About my beautiful cabling
+
+Look at the photo at the top of this post. Go on.
+
+Somewhere behind those loops of Cat6 there is a plan. There was, anyway, around the time the house was wired. Since then every new device has been added the same way: find a free port, find a free socket, let the cable take whatever route gravity suggests. The UniFi access point is mounted properly. The JetKVM is hanging from its own two cables like a Christmas decoration nobody got around to taking down.
+
+In my defence, it has a screen that needs to be readable, and the only thing in that cupboard at eye height is a drain pipe. In my actual defence: none. I will mount it properly. Probably.
+
+## Half installed, and I am going to admit it
+
+Read the display in the photo again. USB: Connected. HDMI: Disconnected.
+
+That is not a fault, it is me running out of evening. The USB-C went into the OptiPlex and the Ethernet went into the switch, and then it was late and the HDMI cable was going to need its own route through the cupboard. So right now I have a device that can type into a server it cannot see. Half a KVM.
+
+## What I have not tested yet
+
+The honest list, because this post is going up before the fun part:
+
+- Video capture quality and latency on the Proxmox console
+- Whether USB mass storage emulation can boot an ISO, which is the feature I actually bought it for
+- The EXT port and ATX control, so power and reset without walking to the cupboard at all
+- Remote access from outside the house, and whether I route that through the vendor or through my own tunnel
+- How it behaves when the OptiPlex is powered off rather than just unresponsive
+
+That last one matters more than it sounds. Most of what breaks on a home server does not break politely.
+
+I will update this post once the HDMI cable is in and I have tried to recover something on purpose. If it turns out to be a device I never think about again, that is the best review a piece of infrastructure can get.
