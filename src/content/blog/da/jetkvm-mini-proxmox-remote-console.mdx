@@ -1,6 +1,6 @@
 ---
 title: "JetKVM Mini: fjernkonsol til serveren i teknikskabet"
-description: "JetKVM Mini hænger nu på min Proxmox-vært i teknikskabet mellem vandrør og kabelkaos. Første indtryk, og alt det jeg ikke har nået at teste endnu."
+description: "JetKVM Mini hænger nu på min Proxmox-vært i teknikskabet mellem vandrør og kabelkaos. Første indtryk, og alt det, jeg ikke har nået at teste."
 pubDate: 2026-11-11
 tags: ["infrastruktur", "vedligehold"]
 lang: "da"
@@ -8,57 +8,57 @@ translationKey: "jetkvm-mini-proxmox-remote-console"
 heroImage: "/blog-images/jetkvm-mini-wiring-cabinet.webp"
 faqs:
   - question: "Hvad kan en JetKVM Mini egentlig?"
-    answer: "Den opfanger HDMI-signalet fra en computer og melder sig samtidig som tastatur og mus over USB. Du tilgår den fra en browser på netværket, og dermed får du BIOS, bootmenu og redningskonsol på en maskine, der ikke har en skærm siddende."
+    answer: "Den opfanger HDMI-signalet fra en computer og melder sig samtidig til den som tastatur og mus over USB. Selv tilgår du den fra en browser på netværket. Dermed kan du komme til BIOS, bootmenu og redningskonsol på en maskine, der ikke har en skærm siddende."
   - question: "Hvorfor ikke bare bruge SSH eller Proxmox-webfladen?"
     answer: "Begge dele kræver, at maskinen er kommet helt op at køre. De hjælper ikke ved en grub-prompt, inde i BIOS eller når det er netværket selv, der er gået i stykker. Det hul lukker en KVM over IP."
   - question: "Kræver den producentens cloud?"
-    answer: "Den henter en adresse via DHCP og viser den på displayet, så webfladen er tilgængelig lokalt. Fjernadgangen udefra har jeg ikke testet endnu, og det gør jeg ikke, før jeg har besluttet, hvordan den skal eksponeres."
+    answer: "Nej. Den henter en adresse via DHCP og viser den på displayet, så webfladen er tilgængelig lokalt. Adgangen udefra har jeg ikke testet endnu, og det venter, til jeg har besluttet, hvordan den skal sættes op."
 ---
 
-Fire gange på to år har jeg slæbt en skærm og et tastatur ned i bryggerset. Hver gang fordi Proxmox-værten ikke ville noget af det, SSH plejer at kunne klare.
+Der har aldrig været en skærm på min Proxmox-server. Det er en Dell OptiPlex 7060, og den står på en hylde i teknikskabet sammen med UniFi-udstyret, et afløbsrør og varmtvandsfordeleren. Siden jeg [flyttede Home Assistant fra Raspberry Pi til Proxmox](/da/blog/proxmox-home-assistant-setup/) i november 2024, har SSH og webfladen kunnet klare alt.
 
-Maskinen er en Dell OptiPlex 7060. Den står på en hylde i teknikskabet ved siden af UniFi-udstyret, et afløbsrør og varmtvandsfordeleren, og den har aldrig haft en skærm på. Siden jeg [flyttede Home Assistant fra Raspberry Pi til Proxmox i november 2024](/da/blog/proxmox-home-assistant-setup/), har det været helt uproblematisk. Lige indtil de dage hvor det ikke er.
+Alt lige indtil maskinen ikke booter. En grub-prompt, en indstilling i BIOS, en server der svarer på ping og ikke andet. Der kommer fjernadgang til kort, for fjernadgang forudsætter, at det, som er gået i stykker, virker. Så skal der hentes en skærm og et tastatur, og så skal der findes en plads i skabet, hvor der hverken er rør eller kabler. Den plads findes ikke.
 
 ![Dell OptiPlex 7060 Micro på hylden i teknikskabet, Proxmox-værten uden skærm](/blog-images/jetkvm-mini-optiplex-7060.webp)
 
-Problemet med fjernadgang er, at den forudsætter, at maskinen er nået igennem opstarten. Står den og venter ved en grub-prompt, eller skal der ændres en indstilling i BIOS, hjælper hverken SSH eller webfladen. Så skal der en skærm til. Og en ledig flade i et skab, hvor alting enten er et rør eller et kabel.
+Derfor hænger der nu en JetKVM Mini i skabet.
 
-## Hvad der kom i kassen
+## Hvad der var i kassen
 
-En sort firkant med et display på forsiden. Den fylder mindre end en håndflade.
+En sort firkant med et display på oversiden. Den fylder ikke mere end en håndflade.
 
 ![Portsiden på JetKVM Mini: RJ45, HDMI-indgang, USB-C til målmaskinen og endnu en USB-C mærket EXT](/blog-images/jetkvm-mini-ports.webp)
 
-Alle porte sidder på samme kant: RJ45, HDMI-indgang, en USB-C der går til målmaskinen, og en USB-C mærket EXT. Æsken lover "control any computer remotely", og måden det sker på er, at enheden opfanger HDMI-signalet og samtidig udgiver sig for at være et tastatur og en mus over USB. Målmaskinen opdager ikke, at der er noget usædvanligt i den. Det er netop derfor, den virker på et BIOS-skærmbillede, hvor software-baseret fjernadgang ikke rækker.
+Portene sidder samlet på den ene kant: RJ45, HDMI-indgang, en USB-C til målmaskinen og endnu en USB-C mærket EXT. På æsken står der "control any computer remotely". Rent praktisk gør den to ting på én gang. Den opfanger HDMI-signalet fra serveren, og den melder sig til serveren som tastatur og mus over USB. Serveren opdager ingen forskel. Netop derfor virker den på et BIOS-skærmbillede, hvor software-baseret fjernadgang slet ikke kan komme til.
 
-Displayet viser den IP-adresse, den har fået fra DHCP, MAC-adressen og om USB og HDMI er tilsluttet. Jeg havde ikke regnet med at bruge en skærm på en enhed, jeg skal styre fra en browser, men det er hurtigere at læse adressen på forsiden end at slå den op i UniFi-controlleren.
+Displayet på forsiden viser IP-adressen fra DHCP, MAC-adressen og om USB og HDMI er tilsluttet. Jeg havde ikke regnet med, at en skærm på selve enheden ville betyde noget, når jeg alligevel skal bruge en browser. Men det går hurtigere at læse adressen af nede i skabet end at gå ind i UniFi-controlleren og lede efter den.
 
 ![JetKVM Mini-displayet med IP-adresse, MAC-adresse og status for USB og HDMI](/blog-images/jetkvm-mini-display.webp)
 
 ## Min flotte kabelføring
 
-Kig på billedet øverst i artiklen. Tag jer god tid.
+Se billedet øverst. Der er ingen undskyldninger.
 
-Et sted bag de løkker af Cat6 ligger der en plan. Den lå der i hvert fald, dengang huset blev kablet. Siden er hver ny enhed kommet til efter samme princip: find en ledig port, find en ledig stikkontakt, lad kablet tage den vej, tyngdekraften foreslår. UniFi-access pointet sidder pænt på væggen. JetKVM'en hænger i sine egne to kabler som en julepynt, ingen har fået taget ned igen.
+Hver gang der er kommet en ny enhed til, er den blevet tilsluttet efter samme princip: find en ledig port, find en ledig stikkontakt, og lad kablet tage den vej, der nu er plads til. UniFi-accesspointet hænger pænt og lige på væggen. JetKVM'en hænger i sine egne to kabler midt i det hele. Den har fået præcis den montering, som aftenen rakte til.
 
-Til mit forsvar skal displayet kunne læses, og det eneste i det skab, der sidder i øjenhøjde, er et afløbsrør. Til mit reelle forsvar: ingenting. Den skal nok komme ordentligt op at hænge. På et tidspunkt.
+Til mit forsvar skal displayet kunne læses, og der er ikke meget i det skab, der sidder i øjenhøjde. Reelt er der ikke noget forsvar. Den skal nok komme ordentligt op.
 
-## Halvt installeret, og det siger jeg bare lige højt
+## Halvt installeret
 
-Læs displayet på billedet en gang til. USB: Connected. HDMI: Disconnected.
+Kig på displayet på billedet en gang til. USB: Connected. HDMI: Disconnected.
 
-Det er ikke en fejl, det er mig, der løb tør for aften. USB-C'en kom i OptiPlexen, netværkskablet kom i switchen, og så skulle HDMI-kablet have sin egen vej gennem skabet. Lige nu har jeg altså en enhed, der kan skrive til en server, den ikke kan se. En halv KVM.
+Det er ikke en fejl. USB-C-kablet kom i OptiPlexen, netværkskablet kom i switchen, og der stoppede aftenen. HDMI-kablet skal have sin egen vej gennem skabet, og den fandt jeg ikke. Lige nu har jeg altså en enhed, der kan taste på en server, den ikke kan se. En halv KVM.
 
-## Det jeg ikke har testet
+## Det, jeg ikke har testet
 
-Den ærlige liste, for artiklen her bliver skrevet før den sjove del:
+Artiklen her er skrevet inden den sjove del, så listen er ærlig:
 
 - Billedkvalitet og forsinkelse på Proxmox-konsollen
-- Om den kan emulere et USB-drev og boote en ISO, hvilket er den funktion, jeg i virkeligheden købte den til
-- EXT-porten og ATX-styring, altså tænd og reset uden overhovedet at gå ned i skabet
-- Fjernadgang udefra, og om den skal gå gennem producenten eller gennem min egen tunnel
+- Om den kan emulere et USB-drev og boote en ISO. Det er den funktion, jeg købte den for
+- EXT-porten og ATX-styring, så tænd og reset kan klares uden at gå ned i skabet
+- Adgang udefra, og om den skal gå gennem producentens tjeneste eller gennem min egen tunnel
 - Hvordan den opfører sig, når OptiPlexen er slukket og ikke bare uden svar
 
-Det sidste punkt betyder mere, end det lyder som. Det, der går i stykker på en hjemmeserver, går sjældent pænt i stykker.
+Det sidste punkt vejer tungere, end det lyder til. Når noget går ned på en hjemmeserver, går det sjældent pænt ned.
 
-Artiklen bliver opdateret, når HDMI-kablet er i, og jeg har prøvet at redde noget med vilje. Ender den med at være en enhed, jeg aldrig tænker på igen, er det den bedste anmeldelse, et stykke infrastruktur kan få.
+Artiklen bliver opdateret, når HDMI-kablet er på plads, og jeg har prøvet at redde maskinen med vilje. Ender det med en enhed, jeg aldrig tænker på igen, er det den bedste anmeldelse, infrastruktur kan få.

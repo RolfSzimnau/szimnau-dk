@@ -8,57 +8,57 @@ translationKey: "jetkvm-mini-proxmox-remote-console"
 heroImage: "/blog-images/jetkvm-mini-wiring-cabinet.webp"
 faqs:
   - question: "Was macht ein JetKVM Mini genau?"
-    answer: "Er greift das HDMI-Signal eines Rechners ab und meldet sich bei diesem Rechner gleichzeitig per USB als Tastatur und Maus an. Erreichbar ist er über den Browser im Netz, womit BIOS, Bootmenü und Rettungskonsole auch auf einer Maschine ohne Monitor offenstehen."
+    answer: "Er greift das HDMI-Signal eines Rechners ab und meldet sich bei demselben Rechner per USB als Tastatur und Maus an. Bedient wird er im Browser im lokalen Netz. Damit kommt man auch ohne Monitor an BIOS, Bootmenü und Rettungskonsole."
   - question: "Warum nicht einfach SSH oder die Proxmox-Weboberfläche?"
     answer: "Beides setzt voraus, dass die Maschine durchgebootet hat. An einer grub-Eingabeaufforderung, im BIOS oder wenn der Netzwerk-Stack selbst defekt ist, helfen sie nicht weiter. Genau diese Lücke schließt ein KVM over IP."
   - question: "Braucht das Gerät die Cloud des Herstellers?"
-    answer: "Es bezieht eine Adresse per DHCP und zeigt sie auf dem Display an, die Weboberfläche ist also lokal erreichbar. Den Zugriff von außen habe ich noch nicht getestet, und das mache ich erst, wenn ich entschieden habe, wie er freigegeben werden soll."
+    answer: "Nein. Es bezieht eine Adresse per DHCP und zeigt sie auf dem Display an, die Weboberfläche ist also lokal erreichbar. Den Zugriff von außen habe ich noch nicht getestet. Das kommt erst, wenn ich entschieden habe, wie er eingerichtet werden soll."
 ---
 
-Der Rechner, auf dem hier Proxmox läuft, hat nie einen Monitor gehabt. Ein Dell OptiPlex 7060, der im Technikschrank auf einem Brett steht, neben der UniFi-Technik, einem Abflussrohr und dem Warmwasserverteiler. Seit dem Umzug von Home Assistant [vom Raspberry Pi auf Proxmox im November 2024](/de/blog/proxmox-home-assistant-setup/) war das nie ein Thema. SSH und Weboberfläche reichen für alles.
+Fernzugriff hat eine Lücke, und sie tut sich genau dann auf, wenn man ihn braucht. SSH und die Proxmox-Weboberfläche setzen beide voraus, dass die Maschine hochgefahren ist. An einer grub-Eingabeaufforderung, im BIOS oder wenn der Netzwerk-Stack selbst hängt, kommt man damit nicht weiter.
 
-Für alles bis auf die fünf Prozent, auf die es ankommt. Ein Bootvorgang, der an einer grub-Eingabeaufforderung stehen bleibt. Eine BIOS-Einstellung. Eine Maschine, die auf Ping antwortet und sonst nichts. Fernzugriff hilft da nicht, denn er setzt voraus, dass funktioniert, was gerade kaputt ist.
+Mein Proxmox-Host ist ein Dell OptiPlex 7060 ohne Monitor. Er steht im Technikschrank auf einem Brett, neben der UniFi-Technik, einem Abflussrohr und dem Warmwasserverteiler. Seit dem Umzug von Home Assistant [vom Raspberry Pi auf Proxmox](/de/blog/proxmox-home-assistant-setup/) im November 2024 lief das reibungslos. Für den Rest brauchte es bisher einen Monitor, eine Tastatur und eine freie Fläche im Schrank, auf der weder ein Rohr noch ein Kabel liegt.
 
 ![Dell OptiPlex 7060 Micro auf dem Brett im Technikschrank, der Proxmox-Host ohne Monitor](/blog-images/jetkvm-mini-optiplex-7060.webp)
 
-Das alte Verfahren: irgendwo im Haus einen Monitor abstöpseln, ihn mit einer Tastatur unterm Arm nach unten tragen und im Schrank eine Fläche suchen, die kein Wasserrohr ist. In zwei Jahren viermal gemacht. Viermal reicht.
+Jetzt hängt dort ein JetKVM Mini.
 
 ## Was im Karton lag
 
-Ein schwarzer Würfel mit Display auf der Oberseite. Er liegt locker in einer Hand.
+Ein schwarzer Würfel mit Display auf der Oberseite, nicht größer als eine Handfläche.
 
 ![Die Anschlussseite des JetKVM Mini: RJ45, HDMI-Eingang, USB-C zum Zielrechner und ein zweiter USB-C mit der Beschriftung EXT](/blog-images/jetkvm-mini-ports.webp)
 
-Alle Anschlüsse sitzen auf derselben Kante: RJ45, HDMI-Eingang, ein USB-C zum Zielrechner und ein zweiter USB-C mit der Beschriftung EXT. Auf dem Karton steht "control any computer remotely". Technisch heißt das: Das Gerät greift das HDMI-Signal ab und gibt sich gleichzeitig als USB-Tastatur und -Maus aus. Der Zielrechner merkt nichts Ungewöhnliches. Deshalb funktioniert es auf einem BIOS-Bildschirm, an dem softwarebasierter Fernzugriff nichts ausrichtet.
+Die Anschlüsse sitzen alle auf einer Kante: RJ45, HDMI-Eingang, ein USB-C zum Zielrechner und ein zweiter USB-C mit der Aufschrift EXT. Auf dem Karton steht "control any computer remotely". Dafür tut das Gerät zweierlei gleichzeitig. Es greift das HDMI-Signal des Servers ab, und es meldet sich bei diesem Server per USB als Tastatur und Maus an. Der Server merkt keinen Unterschied. Genau deshalb funktioniert das auch im BIOS, wo Fernzugriff per Software gar nicht erst hinkommt.
 
-Das Display zeigt die per DHCP bezogene IP-Adresse, die MAC-Adresse und ob USB und HDMI verbunden sind. Ich hätte nicht gedacht, dass mir ein Bildschirm an einem Gerät wichtig wird, das ich ohnehin im Browser bediene. Aber die Adresse vorne abzulesen geht schneller, als sie im UniFi-Controller zu suchen.
+Das Display zeigt die IP-Adresse aus dem DHCP, die MAC-Adresse und ob USB und HDMI verbunden sind. Ich hätte nicht gedacht, dass mir ein Display an einem Gerät etwas nützt, das ich ohnehin im Browser bediene. Aber die Adresse unten im Schrank abzulesen geht schneller, als sie im UniFi-Controller zu suchen.
 
 ![Display des JetKVM Mini mit IP-Adresse, MAC-Adresse und dem Verbindungsstatus von USB und HDMI](/blog-images/jetkvm-mini-display.webp)
 
-## Zu meiner schönen Kabelführung
+## Meine schöne Kabelführung
 
-Das Bild oben am Anfang des Beitrags. Bitte in Ruhe ansehen.
+Das Bild ganz oben. Mehr ist dazu nicht zu sagen.
 
-Irgendwo hinter diesen Cat6-Schlaufen liegt ein Konzept. Jedenfalls lag dort eines, als das Haus verkabelt wurde. Seitdem kam jedes neue Gerät nach demselben Muster dazu: freien Port suchen, freie Steckdose suchen, das Kabel den Weg nehmen lassen, den die Schwerkraft vorschlägt. Der UniFi-Access-Point hängt ordentlich an der Wand. Der JetKVM baumelt an seinen eigenen zwei Kabeln wie ein Weihnachtsanhänger, den niemand abgenommen hat.
+Jedes neue Gerät ist hier nach demselben Muster dazugekommen: freier Port, freie Steckdose, und das Kabel nimmt den Weg, wo gerade Platz ist. Der UniFi-Access-Point hängt gerade und ordentlich an der Wand. Der JetKVM hängt an seinen eigenen zwei Kabeln mitten im Gewirr. Er hat genau die Montage bekommen, für die der Abend noch gereicht hat.
 
-Zu meiner Verteidigung: Das Display soll lesbar sein, und das Einzige in diesem Schrank auf Augenhöhe ist ein Abflussrohr. Zu meiner ehrlichen Verteidigung: nichts. Er kommt noch ordentlich an die Wand. Irgendwann.
+Zu meiner Verteidigung: Das Display soll lesbar sein, und auf Augenhöhe gibt es in diesem Schrank nicht viel. Ehrlicherweise: keine Verteidigung. Er kommt noch ordentlich an die Wand.
 
-## Halb installiert, und das schreibe ich auch so hin
+## Halb installiert
 
 Noch einmal auf das Display im Bild schauen. USB: Connected. HDMI: Disconnected.
 
-Kein Fehler, sondern ein Abend, der zu Ende war. Das USB-C-Kabel steckt im OptiPlex, das Netzwerkkabel im Switch, und dann hätte das HDMI-Kabel noch seinen eigenen Weg durch den Schrank gebraucht. Im Moment habe ich also ein Gerät, das in einen Server tippen kann, den es nicht sieht. Ein halbes KVM.
+Kein Fehler. Das USB-C-Kabel steckt im OptiPlex, das Netzwerkkabel im Switch, und dann war der Abend vorbei. Das HDMI-Kabel braucht seinen eigenen Weg durch den Schrank, und den habe ich nicht gefunden. Im Moment habe ich also ein Gerät, das auf einem Server tippen kann, den es nicht sieht. Ein halbes KVM.
 
 ## Was ich noch nicht getestet habe
 
-Die ehrliche Liste, denn dieser Beitrag entsteht vor dem interessanten Teil:
+Der Beitrag entsteht vor dem interessanten Teil, deshalb die ehrliche Liste:
 
 - Bildqualität und Latenz auf der Proxmox-Konsole
-- Ob sich ein USB-Laufwerk emulieren und davon eine ISO booten lässt, die Funktion, wegen der ich das Gerät eigentlich gekauft habe
-- Der EXT-Anschluss und die ATX-Steuerung, also Einschalten und Reset, ohne überhaupt in den Schrank zu gehen
-- Zugriff von außerhalb des Hauses, und ob der über den Hersteller oder über meinen eigenen Tunnel läuft
-- Wie sich das Gerät verhält, wenn der OptiPlex ausgeschaltet ist und nicht nur nicht antwortet
+- Ob sich ein USB-Laufwerk emulieren und davon eine ISO booten lässt. Dafür habe ich das Gerät gekauft
+- Der EXT-Anschluss und die ATX-Steuerung, damit Einschalten und Reset ohne Gang zum Schrank gehen
+- Zugriff von außerhalb, und ob der über den Dienst des Herstellers oder über meinen eigenen Tunnel läuft
+- Wie sich das Gerät verhält, wenn der OptiPlex aus ist und nicht nur nicht antwortet
 
-Der letzte Punkt wiegt schwerer, als er klingt. Was an einem Heimserver ausfällt, fällt selten höflich aus.
+Der letzte Punkt wiegt schwerer, als er klingt. Wenn an einem Heimserver etwas kaputtgeht, geht es selten sauber kaputt.
 
-Der Beitrag wird aktualisiert, sobald das HDMI-Kabel steckt und ich absichtlich etwas gerettet habe. Sollte am Ende ein Gerät herauskommen, an das ich nie wieder denke, ist das die beste Bewertung, die Infrastruktur bekommen kann.
+Der Beitrag wird aktualisiert, sobald das HDMI-Kabel liegt und ich absichtlich versucht habe, die Maschine zu retten. Sollte am Ende ein Gerät herauskommen, an das ich nie wieder denke, ist das die beste Bewertung, die Infrastruktur bekommen kann.
