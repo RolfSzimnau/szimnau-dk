@@ -1,6 +1,6 @@
 ---
-title: "JetKVM Mini: fjernkonsol til serveren i teknikskabet"
-description: "En død disk betød en ny installation på en server uden skærm. JetKVM Mini skal gøre næste gang nemmere. Første indtryk og det, jeg mangler at teste."
+title: "JetKVM Mini: derfor skulle min Proxmox-server uden skærm have en KVM over IP"
+description: "En død disk, en ny installation og en Proxmox-server uden skærm. Derfor hænger der nu en JetKVM Mini i skabet, og det skal virke, før jeg stoler på den."
 pubDate: 2026-11-11
 tags: ["infrastruktur", "vedligehold"]
 lang: "da"
@@ -11,6 +11,8 @@ faqs:
     answer: "Den opfanger HDMI-signalet fra en computer og melder sig samtidig til den som tastatur og mus over USB. Selv tilgår du den fra en browser på netværket. Dermed kan du komme til BIOS, bootmenu og redningskonsol på en maskine, der ikke har en skærm siddende."
   - question: "Hvorfor ikke bare bruge SSH eller Proxmox-webfladen?"
     answer: "Begge dele kræver, at maskinen er kommet helt op at køre. De hjælper ikke ved en grub-prompt, inde i BIOS eller når det er netværket selv, der er gået i stykker. Det hul lukker en KVM over IP."
+  - question: "Hvorfor ikke bruge Intel AMT eller IPMI i stedet?"
+    answer: "Rigtige servere har IPMI eller iDRAC indbygget, og en del erhvervs-pc'er understøtter Intel AMT, hvis CPU og chipsæt tillader det. Det koster ikke noget at tjekke sin egen BIOS først. AMT sidder fast på det ene bundkort og åbner en administrationsflade, man måske ikke vil have stående i et skab. En ekstern KVM kan flyttes til den maskine, der har brug for den."
   - question: "Kræver den producentens cloud?"
     answer: "Nej. Den henter en adresse via DHCP og viser den på displayet, så webfladen er tilgængelig lokalt. Adgangen udefra har jeg ikke testet endnu, og det venter, til jeg har besluttet, hvordan den skal sættes op."
 ---
@@ -22,6 +24,12 @@ Serveren er en Dell OptiPlex 7060, og den har ingen af delene. Den står på en 
 ![Dell OptiPlex 7060 Micro på hylden i teknikskabet, Proxmox-værten uden skærm](/blog-images/jetkvm-mini-optiplex-7060.webp)
 
 Så jeg hev en skærm ud et andet sted i huset, slæbte den ned med et tastatur under armen og fandt et sted at stille den, hvor der hverken var rør eller kabler i vejen. Det kan sagtens lade sig gøre. Det er bare en åndssvag måde at bruge en aften på, og det er grunden til, at der nu hænger en JetKVM Mini i skabet. Enheden ændrer ikke noget ved den aften. Den skal gøre den næste kortere.
+
+## Hvorfor ikke bruge det, maskinen allerede har
+
+En rigtig server klarer det med IPMI eller iDRAC, altså en styringschip, der kører, uanset om operativsystemet er oppe. En OptiPlex Micro er en erhvervs-pc, så det er ikke givet. Afhængigt af processor og chipsæt understøtter nogle OptiPlex-modeller Intel AMT, som dækker en del af det samme, og det koster ingenting at kigge i sin egen BIOS, inden man bruger penge.
+
+Hvor AMT findes, sidder det fast på det ene bundkort, og det betyder, at man slår en administrationsflade til på en maskine, der står i et skab. En ekstern KVM har ingen af delene. Den kan desuden flyttes over på det næste, der skal reddes, og det er trods alt mere sandsynligt end at samme maskine fejler igen.
 
 ## Hvad der var i kassen
 
@@ -35,21 +43,15 @@ Displayet på forsiden viser IP-adressen fra DHCP, MAC-adressen og om USB og HDM
 
 ![JetKVM Mini-displayet med IP-adresse, MAC-adresse og status for USB og HDMI](/blog-images/jetkvm-mini-display.webp)
 
-## Min flotte kabelføring
-
-Se billedet øverst i artiklen.
-
-Hver gang der er kommet en ny enhed til, er den blevet tilsluttet efter samme princip: find en ledig port, find en ledig stikkontakt, og lad kablet tage den vej, der nu er plads til. UniFi-accesspointet hænger pænt og lige på væggen. JetKVM'en hænger i sine egne to kabler midt i det hele. Den er ikke monteret endnu.
-
-Til mit forsvar skal displayet kunne læses, og der er ikke meget i det skab, der sidder i øjenhøjde. Reelt er der ikke noget forsvar. Den skal nok komme ordentligt op.
-
 ## Halvt installeret
+
+Billedet øverst i artiklen er skabet, som det ser ud. Et sted bag de løkker af Cat6 har der engang ligget et system. Hver ny enhed er kommet til efter samme princip: find en ledig port, find en ledig stikkontakt, og lad kablet tage den vej, der nu er plads til. UniFi-accesspointet hænger pænt og lige på væggen. JetKVM'en hænger i sine egne to kabler midt i det hele. Den er ikke monteret endnu.
 
 Kig på displayet på billedet en gang til. USB: Connected. HDMI: Disconnected.
 
 Det er ikke en fejl. USB-C-kablet kom i OptiPlexen, netværkskablet kom i switchen, og så kunne jeg ikke finde et HDMI-kabel. Et skab med så mange kabler i, og ikke ét af dem er et HDMI-kabel. Lige nu har jeg altså en enhed, der kan taste på en server, den ikke kan se. En halv KVM.
 
-## Det, jeg ikke har testet
+## Det skal virke, før jeg stoler på den
 
 - Billedkvalitet og forsinkelse på Proxmox-konsollen
 - Om den kan emulere et USB-drev og boote en installer-ISO. Det er den ene opgave, jeg købte den for
@@ -58,6 +60,8 @@ Det er ikke en fejl. USB-C-kablet kom i OptiPlexen, netværkskablet kom i switch
 - Hvordan den opfører sig, når OptiPlexen er slukket og ikke bare uden svar
 
 Det sidste punkt vejer tungere, end det lyder til. Når noget går ned på en hjemmeserver, går det sjældent pænt ned.
+
+Én fejl holder jeg særligt øje med: nogle maskiner sender kun billede ud, når de tror, der sidder en skærm for enden, og adaptere i den her klasse kan håndtere EDID forkert. Kommer OptiPlexen op med sort skærm gennem JetKVM'en, er det der, jeg kigger først.
 
 ISO-boot bliver testet med vilje en aften, hvor der ikke er noget galt. At finde ud af, at det ikke virker, mens en disk er død, er den samme fejl som skærmen under armen, bare med kortere vej at gå.
 

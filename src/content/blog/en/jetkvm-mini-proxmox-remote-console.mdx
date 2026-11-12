@@ -1,6 +1,6 @@
 ---
-title: "JetKVM Mini: A Remote Console for the Server in the Utility Cupboard"
-description: "A failed disk meant a fresh install on a server with no monitor. The JetKVM Mini is here to make the next one easier. First impressions and open questions."
+title: "JetKVM Mini: Why My Headless Proxmox Host Needed a KVM over IP"
+description: "A dead disk, a fresh install and a Proxmox host with no monitor. Why a JetKVM Mini now lives in the cupboard, and what has to work before I trust it."
 pubDate: 2026-11-11
 tags: ["infrastructure", "maintenance"]
 lang: "en"
@@ -11,6 +11,8 @@ faqs:
     answer: "It captures the HDMI output of a computer and presents itself to that computer over USB as a keyboard and mouse. You reach it from a browser on the same network, which gives you BIOS, boot menu and recovery console on a machine that has no monitor attached."
   - question: "Why not just use SSH or the Proxmox web interface?"
     answer: "Both of those need the machine to have finished booting. They are no help at a grub prompt, in the BIOS, or when the network stack is the thing that broke. That is the gap a KVM over IP fills."
+  - question: "Why not use Intel AMT or IPMI instead?"
+    answer: "Real servers have IPMI or iDRAC built in, and some business desktops support Intel AMT if the CPU and chipset allow it. Worth checking your own BIOS before buying anything. AMT is tied to that one motherboard and adds management surface you may not want exposed, where an external KVM moves to whichever machine needs it next."
   - question: "Does it need the vendor cloud?"
     answer: "It gets an IP from DHCP and shows it on the front display, so the web interface is reachable on the local network. I have not tested the remote access path yet, and I will not until I have decided how I want it exposed."
 ---
@@ -22,6 +24,12 @@ The Dell OptiPlex 7060 has none of those. It sits on a shelf in the utility cupb
 ![Dell OptiPlex 7060 Micro on a shelf in the utility cupboard, the Proxmox host with no monitor attached](/blog-images/jetkvm-mini-optiplex-7060.webp)
 
 So I unplugged a monitor somewhere else in the house, carried it down with a keyboard under one arm, and found somewhere to put it that was not a water pipe. It works. It is also a stupid way to spend an evening, and it is the reason there is now a JetKVM Mini hanging in that cupboard. The device does nothing about that evening. It is there to make the next one shorter.
+
+## Why not use what the machine already has
+
+A real server answers this with IPMI or iDRAC, a management chip that runs whether the operating system is up or not. An OptiPlex Micro is a business desktop, so that is not a given. Depending on the processor and chipset, some OptiPlex configurations do support Intel AMT, which covers part of the same ground, and it costs nothing to check your own BIOS before spending money.
+
+Where AMT exists it is tied to that one motherboard, and it means enabling a management stack on a machine sitting in a cupboard. An external KVM has neither property. It also moves to whatever else needs rescuing, which for me is the more likely future.
 
 ## What came in the box
 
@@ -35,21 +43,15 @@ The front display shows the IP it got from DHCP, the MAC address, and whether US
 
 ![JetKVM Mini display showing its IP address, MAC address and the USB and HDMI connection state](/blog-images/jetkvm-mini-display.webp)
 
-## About my beautiful cabling
-
-Look at the photo at the top of this post. Go on.
-
-Somewhere behind those loops of Cat6 there is a plan. There was, anyway, at some point. Since then every new device has been added the same way: find a free port, find a free socket, let the cable take whatever route gravity suggests. The UniFi access point is mounted properly. The JetKVM is hanging from its own two cables like a Christmas decoration nobody got around to taking down.
-
-In my defence, it has a screen that needs to be readable, and the only thing in that cupboard at eye height is a drain pipe. In my actual defence: none. I will mount it properly. Probably.
-
 ## Half installed, and I am going to admit it
 
-Read the display in the photo again. USB: Connected. HDMI: Disconnected.
+The photo at the top of this post is the cupboard as it actually looks. Somewhere behind those loops of Cat6 there was a plan once. Every device since has gone in the same way: free port, free socket, and the cable takes whatever route gravity suggests. The UniFi access point is mounted properly. The JetKVM is hanging from its own two cables like a Christmas decoration nobody took down, and I will get to that.
+
+Read the display in that photo again. USB: Connected. HDMI: Disconnected.
 
 That is not a fault. The USB-C went into the OptiPlex, the Ethernet went into the switch, and then I could not find an HDMI cable. A cupboard with that much cable in it, and not one of them HDMI. So right now I have a device that can type into a server it cannot see. Half a KVM.
 
-## What I have not tested yet
+## What has to work before I trust it
 
 - Video capture quality and latency on the Proxmox console
 - Whether USB mass storage emulation can boot an installer ISO, which is the one job I bought it for
@@ -58,6 +60,8 @@ That is not a fault. The USB-C went into the OptiPlex, the Ethernet went into th
 - How it behaves when the OptiPlex is powered off rather than just unresponsive
 
 That last one matters more than it sounds. Most of what breaks on a home server does not break politely.
+
+One failure I am watching for specifically: some machines only output video when they believe a display is attached, and adapters in this class can get EDID handling wrong. If the OptiPlex comes up blank through the JetKVM, that is the first place I will look.
 
 The ISO boot gets tested on purpose, on an evening when nothing is wrong. Finding out it does not work while a disk is dead would be the same mistake as the monitor under the arm, just with a shorter walk.
 
