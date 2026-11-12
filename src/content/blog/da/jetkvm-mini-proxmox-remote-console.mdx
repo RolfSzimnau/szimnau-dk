@@ -1,6 +1,6 @@
 ---
 title: "JetKVM Mini: fjernkonsol til serveren i teknikskabet"
-description: "JetKVM Mini hænger nu på min Proxmox-vært i teknikskabet mellem vandrør og kabelkaos. Første indtryk, og alt det, jeg ikke har nået at teste."
+description: "En død disk betød en ny installation på en server uden skærm. JetKVM Mini skal løse det. Første indtryk, og den ene opgave jeg ikke har testet endnu."
 pubDate: 2026-11-11
 tags: ["infrastruktur", "vedligehold"]
 lang: "da"
@@ -15,13 +15,13 @@ faqs:
     answer: "Nej. Den henter en adresse via DHCP og viser den på displayet, så webfladen er tilgængelig lokalt. Adgangen udefra har jeg ikke testet endnu, og det venter, til jeg har besluttet, hvordan den skal sættes op."
 ---
 
-Der har aldrig været en skærm på min Proxmox-server. Det er en Dell OptiPlex 7060, og den står på en hylde i teknikskabet sammen med UniFi-udstyret, et afløbsrør og varmtvandsfordeleren. Siden jeg [flyttede Home Assistant fra Raspberry Pi til Proxmox](/da/blog/proxmox-home-assistant-setup/) i november 2024, har SSH og webfladen kunnet klare alt.
+En disk i Proxmox-serveren stod af. At få den nye i tog ikke lang tid. Det, der kom bagefter, tog længere, for maskinen skulle installeres forfra, og en ny installation kræver en skærm, et tastatur og en mus.
 
-Alt lige indtil maskinen ikke booter. En grub-prompt, en indstilling i BIOS, en server der svarer på ping og ikke andet. Der kommer fjernadgang til kort, for fjernadgang forudsætter, at det, som er gået i stykker, virker. Så skal der hentes en skærm og et tastatur, og så skal der findes en plads i skabet, hvor der hverken er rør eller kabler. Den plads findes ikke.
+Serveren er en Dell OptiPlex 7060, og den har ingen af delene. Den står på en hylde i teknikskabet sammen med UniFi-udstyret, et afløbsrør og varmtvandsfordeleren, og der har aldrig været en skærm på den. Siden jeg [flyttede Home Assistant fra Raspberry Pi til Proxmox](/da/blog/proxmox-home-assistant-setup/) i november 2024, har SSH og webfladen kunnet klare alt. Men hverken SSH eller en webflade hjælper på en installer, der ikke er startet endnu.
 
 ![Dell OptiPlex 7060 Micro på hylden i teknikskabet, Proxmox-værten uden skærm](/blog-images/jetkvm-mini-optiplex-7060.webp)
 
-Derfor hænger der nu en JetKVM Mini i skabet.
+Så jeg hev en skærm ud et andet sted i huset, slæbte den ned med et tastatur under armen og fandt et sted at stille den, hvor der hverken var rør eller kabler i vejen. Det kan sagtens lade sig gøre. Det er bare en åndssvag måde at bruge en aften på, og det er grunden til, at der nu hænger en JetKVM Mini i skabet.
 
 ## Hvad der var i kassen
 
@@ -37,7 +37,7 @@ Displayet på forsiden viser IP-adressen fra DHCP, MAC-adressen og om USB og HDM
 
 ## Min flotte kabelføring
 
-Se billedet øverst. Der er ingen undskyldninger.
+Se billedet øverst i artiklen.
 
 Hver gang der er kommet en ny enhed til, er den blevet tilsluttet efter samme princip: find en ledig port, find en ledig stikkontakt, og lad kablet tage den vej, der nu er plads til. UniFi-accesspointet hænger pænt og lige på væggen. JetKVM'en hænger i sine egne to kabler midt i det hele. Den har fået præcis den montering, som aftenen rakte til.
 
@@ -54,11 +54,13 @@ Det er ikke en fejl. USB-C-kablet kom i OptiPlexen, netværkskablet kom i switch
 Artiklen her er skrevet inden den sjove del, så listen er ærlig:
 
 - Billedkvalitet og forsinkelse på Proxmox-konsollen
-- Om den kan emulere et USB-drev og boote en ISO. Det er den funktion, jeg købte den for
+- Om den kan emulere et USB-drev og boote en installer-ISO. Det er den ene opgave, jeg købte den for
 - EXT-porten og ATX-styring, så tænd og reset kan klares uden at gå ned i skabet
 - Adgang udefra, og om den skal gå gennem producentens tjeneste eller gennem min egen tunnel
 - Hvordan den opfører sig, når OptiPlexen er slukket og ikke bare uden svar
 
 Det sidste punkt vejer tungere, end det lyder til. Når noget går ned på en hjemmeserver, går det sjældent pænt ned.
+
+ISO-boot bliver testet med vilje en aften, hvor der ikke er noget galt. At finde ud af, at det ikke virker, mens en disk er død, er den samme fejl som skærmen under armen, bare med kortere vej at gå.
 
 Artiklen bliver opdateret, når HDMI-kablet er på plads, og jeg har prøvet at redde maskinen med vilje. Ender det med en enhed, jeg aldrig tænker på igen, er det den bedste anmeldelse, infrastruktur kan få.

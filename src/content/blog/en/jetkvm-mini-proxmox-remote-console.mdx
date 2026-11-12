@@ -1,6 +1,6 @@
 ---
 title: "JetKVM Mini: A Remote Console for the Server in the Utility Cupboard"
-description: "The JetKVM Mini now hangs off my Proxmox host in a cupboard full of water pipes and cable spaghetti. First impressions, and what is still untested."
+description: "A failed disk meant a fresh install on a server with no monitor. The JetKVM Mini is the answer. First impressions, and the one job I have not tested."
 pubDate: 2026-11-11
 tags: ["infrastructure", "maintenance"]
 lang: "en"
@@ -15,13 +15,13 @@ faqs:
     answer: "It gets an IP from DHCP and shows it on the front display, so the web interface is reachable on the local network. I have not tested the remote access path yet, and I will not until I have decided how I want it exposed."
 ---
 
-The Dell OptiPlex 7060 that runs Proxmox here has never had a monitor attached. It sits on a shelf in the utility cupboard next to the UniFi gear, a drain pipe and the hot water manifold. Since I moved Home Assistant off the Raspberry Pi and [onto Proxmox in November 2024](/en/blog/proxmox-home-assistant-setup/), that has been completely fine. SSH and the web interface cover everything.
+A disk in the Proxmox host failed. Putting the new one in took a few minutes. What came after it did not, because the machine needed a fresh install, and a fresh install needs a monitor, a keyboard and a mouse.
 
-Everything except the five percent that matters. A boot that stops at a grub prompt. A BIOS setting. A machine that answers ping and nothing else. For those, SSH is useless, because SSH needs the thing that is broken to be working.
+The Dell OptiPlex 7060 has none of those. It sits on a shelf in the utility cupboard next to the UniFi gear, a drain pipe and the hot water manifold, and it has never had a screen attached. Since I moved Home Assistant [off the Raspberry Pi and onto Proxmox in November 2024](/en/blog/proxmox-home-assistant-setup/), SSH and the web interface have covered everything. Neither is any use to an installer that has not started yet.
 
 ![Dell OptiPlex 7060 Micro on a shelf in the utility cupboard, the Proxmox host with no monitor attached](/blog-images/jetkvm-mini-optiplex-7060.webp)
 
-The old procedure was: unplug a monitor somewhere else in the house, carry it down with a keyboard under one arm, and find a surface in the cupboard that is not a water pipe. It works. It is also the reason there is now a JetKVM Mini in the cupboard.
+So I unplugged a monitor somewhere else in the house, carried it down with a keyboard under one arm, and found somewhere to put it that was not a water pipe. It works. It is also a stupid way to spend an evening, and it is the reason there is now a JetKVM Mini hanging in that cupboard.
 
 ## What came in the box
 
@@ -54,11 +54,13 @@ That is not a fault, it is me running out of evening. The USB-C went into the Op
 The honest list, because this post is going up before the fun part:
 
 - Video capture quality and latency on the Proxmox console
-- Whether USB mass storage emulation can boot an ISO, which is the feature I actually bought it for
+- Whether USB mass storage emulation can boot an installer ISO, which is the one job I bought it for
 - The EXT port and ATX control, so power and reset without walking to the cupboard at all
 - Remote access from outside the house, and whether I route that through the vendor or through my own tunnel
 - How it behaves when the OptiPlex is powered off rather than just unresponsive
 
 That last one matters more than it sounds. Most of what breaks on a home server does not break politely.
+
+The ISO boot gets tested on purpose, on an evening when nothing is wrong. Finding out it does not work while a disk is dead would be the same mistake as the monitor under the arm, just with a shorter walk.
 
 I will update this post once the HDMI cable is in and I have tried to recover something on purpose. If it turns out to be a device I never think about again, that is the best review a piece of infrastructure can get.

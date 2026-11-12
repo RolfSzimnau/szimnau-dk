@@ -1,6 +1,6 @@
 ---
 title: "JetKVM Mini: Fernkonsole für den Server im Technikschrank"
-description: "Der JetKVM Mini hängt jetzt am Proxmox-Host im Technikschrank zwischen Wasserrohren und Kabelsalat. Erste Eindrücke und was noch ungetestet ist."
+description: "Eine defekte Platte, eine Neuinstallation, ein Server ohne Monitor. Der JetKVM Mini soll das lösen. Erste Eindrücke und was noch ungetestet ist."
 pubDate: 2026-11-11
 tags: ["infrastruktur", "wartung"]
 lang: "de"
@@ -15,13 +15,15 @@ faqs:
     answer: "Nein. Es bezieht eine Adresse per DHCP und zeigt sie auf dem Display an, die Weboberfläche ist also lokal erreichbar. Den Zugriff von außen habe ich noch nicht getestet. Das kommt erst, wenn ich entschieden habe, wie er eingerichtet werden soll."
 ---
 
-Fernzugriff hat eine Lücke, und sie tut sich genau dann auf, wenn man ihn braucht. SSH und die Proxmox-Weboberfläche setzen beide voraus, dass die Maschine hochgefahren ist. An einer grub-Eingabeaufforderung, im BIOS oder wenn der Netzwerk-Stack selbst hängt, kommt man damit nicht weiter.
+Eine Neuinstallation braucht einen Monitor, eine Tastatur und eine Maus. Das klingt nach nichts, bis der Rechner, auf dem installiert werden muss, im Technikschrank steht und noch nie einen Bildschirm gehabt hat.
 
-Mein Proxmox-Host ist ein Dell OptiPlex 7060 ohne Monitor. Er steht im Technikschrank auf einem Brett, neben der UniFi-Technik, einem Abflussrohr und dem Warmwasserverteiler. Seit dem Umzug von Home Assistant [vom Raspberry Pi auf Proxmox](/de/blog/proxmox-home-assistant-setup/) im November 2024 lief das reibungslos. Für den Rest brauchte es bisher einen Monitor, eine Tastatur und eine freie Fläche im Schrank, auf der weder ein Rohr noch ein Kabel liegt.
+In meinem Proxmox-Host ist eine Platte ausgefallen. Die neue einzubauen war schnell erledigt. Danach musste die Maschine neu aufgesetzt werden, und dabei halfen weder SSH noch die Proxmox-Weboberfläche, denn beide setzen ein System voraus, das bereits läuft.
+
+Der Rechner ist ein Dell OptiPlex 7060. Er steht auf einem Brett neben der UniFi-Technik, einem Abflussrohr und dem Warmwasserverteiler. Seit dem Umzug von Home Assistant [vom Raspberry Pi auf Proxmox](/de/blog/proxmox-home-assistant-setup/) im November 2024 lief alles über SSH und die Weboberfläche, und genau deshalb stand dort nie ein Bildschirm.
 
 ![Dell OptiPlex 7060 Micro auf dem Brett im Technikschrank, der Proxmox-Host ohne Monitor](/blog-images/jetkvm-mini-optiplex-7060.webp)
 
-Jetzt hängt dort ein JetKVM Mini.
+Also einen Monitor woanders im Haus abgestöpselt, mit einer Tastatur unterm Arm nach unten getragen und im Schrank eine Fläche gesucht, auf der weder ein Rohr noch ein Kabel liegt. Geht. Ist aber ein vergeudeter Abend, und der Grund, warum jetzt ein JetKVM Mini in diesem Schrank hängt.
 
 ## Was im Karton lag
 
@@ -54,11 +56,13 @@ Kein Fehler. Das USB-C-Kabel steckt im OptiPlex, das Netzwerkkabel im Switch, un
 Der Beitrag entsteht vor dem interessanten Teil, deshalb die ehrliche Liste:
 
 - Bildqualität und Latenz auf der Proxmox-Konsole
-- Ob sich ein USB-Laufwerk emulieren und davon eine ISO booten lässt. Dafür habe ich das Gerät gekauft
+- Ob sich ein USB-Laufwerk emulieren und davon eine Installer-ISO booten lässt. Dafür habe ich das Gerät gekauft
 - Der EXT-Anschluss und die ATX-Steuerung, damit Einschalten und Reset ohne Gang zum Schrank gehen
 - Zugriff von außerhalb, und ob der über den Dienst des Herstellers oder über meinen eigenen Tunnel läuft
 - Wie sich das Gerät verhält, wenn der OptiPlex aus ist und nicht nur nicht antwortet
 
 Der letzte Punkt wiegt schwerer, als er klingt. Wenn an einem Heimserver etwas kaputtgeht, geht es selten sauber kaputt.
+
+Den ISO-Boot teste ich absichtlich an einem Abend, an dem nichts kaputt ist. Erst zu merken, dass es nicht klappt, während eine Platte tot ist, wäre derselbe Fehler wie der Monitor unterm Arm, nur mit kürzerem Weg.
 
 Der Beitrag wird aktualisiert, sobald das HDMI-Kabel liegt und ich absichtlich versucht habe, die Maschine zu retten. Sollte am Ende ein Gerät herauskommen, an das ich nie wieder denke, ist das die beste Bewertung, die Infrastruktur bekommen kann.
