@@ -12,8 +12,6 @@ faqs:
     answer: "Ja. Mammotion-HA aus HACS liefert eine lawn_mower-Entität und Sensoren für Akku, Fortschritt, gemähte Fläche, Schnitthöhe und die Zahl der RTK-Satelliten. Damit kann HA das Mähen nach dem Wetter planen."
   - question: "Worauf muss man bei einem Mammotion-Mäher mit Home Assistant achten?"
     answer: "Er hängt stark an Cloud und 4G, und die GPS-Grenzen lassen sich nur in der Hersteller-App zeichnen. HA kann das Mähen steuern, aber nie festlegen, wo der Rasen ist. Behalte den Sensor für die Satellitenzahl im Blick: Wenige Satelliten erklären die meisten Stopps, die sonst zufällig wirken."
-  - question: "Wie gut ist der Kundendienst von Mammotion?"
-    answer: "Gut, nach meiner Erfahrung. Ein Vision Module, das nach der Winterlagerung ausgefallen war, wurde innerhalb weniger Tage ersetzt. Ein Antriebsfehler im Oktober 2026 war sechsundzwanzig Tage nach der ersten Antwort repariert, mit einem zugeschickten Karton, einem vorbezahlten UPS-Etikett und Updates, um die ich nie bitten musste. Direkt bei Mammotion gekaufte Mäher repariert Mammotion selbst. Bei Händlerkäufen läuft es über den Händler."
 ---
 
 Mein Husqvarna 213C lief jahrelang und hatte nie irgendetwas mit Home Assistant zu tun. Ein Aufsitzmäher macht das nicht: Man setzt sich drauf, fährt, und das war's. Wenn es regnete, fiel das Mähen aus. Wenn ich weg war, wartete der Rasen.
@@ -127,23 +125,9 @@ Ich kontaktierte den Mammotion-Support und erwartete die übliche Troubleshootin
 
 Das Modul kann ausfallen. Winterlagerung und Kondensation sind eine Kombination, die man im Blick behalten sollte.
 
-## Zweiter Fall: das linke Vorderrad
+## Zweiter Fall: der Vorderradmotor
 
-An einem Samstagmorgen im Oktober ging bei Flora gar nichts mehr. Nach dem Einschalten landete sie sofort im Fehlerzustand. Die App meldete „continue working“ und eine Sekunde später „task paused“, in Dauerschleife. Manuell steuern ließ sie sich auch nicht. Ich tippte auf das linke Vorderrad, mehr als eine Vermutung war das aber nicht.
-
-Ein Log hatte ich schon über die App geschickt. Am Samstag, dem 17. Oktober, um 8:43 Uhr antwortete July vom Mammotion-Support, siebzehn Minuten später ging meine Antwort raus. Gegen Mittag stand fest: Flora muss ins Service-Center. Gekauft habe ich sie direkt im Mammotion-Webshop, deshalb kümmert sich Mammotion selbst um die Reparatur und nicht ein Händler.
-
-Die Originalverpackung hatte ich nicht mehr, also boten sie an, mir einen Karton zu schicken. Am Sonntag brauchte ich drei Anläufe, um den richtigen Screenshot meiner Mammotion-ID zu schicken. Ich habe immer wieder die falsche Ansicht geschickt, bis sie mir Bilder geschickt haben, wo genau ich tippen muss. Das ging auf meine Kappe. Am Montag hatte ich einen Reparaturauftrag und ein vorbezahltes UPS-Etikett, am Mittwoch ging der Karton per DHL raus.
-
-Am Sonntag, dem 25. Oktober, brachte ich Flora zu UPS, Hedy bestätigte noch am selben Nachmittag. Danach hielt mich Lynn auf dem Laufenden, ohne dass ich fragen musste: ob das Paket schon unterwegs sei, dass es angekommen, aber noch nicht im Lager erfasst sei, und am 4. November, dass Flora in der Reparaturwarteschlange vorgezogen wurde, obwohl gerade Hochsaison für Reparaturen ist. Am 12. November war sie repariert, den Rückversand zahlt Mammotion.
-
-Fünf verschiedene Leute haben den Fall betreut, auch am Wochenende, und keiner wollte den Fehler ein zweites Mal von mir erklärt haben. Zwischendurch habe ich ihnen geschrieben, dass ihre Kommunikation großartig ist. Das war ernst gemeint.
-
-Zwei Hardwaredefekte sind zwei Hardwaredefekte, das will ich nicht kleinreden. Beide Male wurde der Defekt aber schneller behoben, als ich erwartet hatte, und ohne jede Garantiediskussion.
-
-![Flora zurück aus dem Mammotion-Service-Center, noch im Karton, den sie mir geschickt hatten](/blog-images/flora-repair-box.webp)
-
-Am 13. November stand Flora wieder vor der Tür, einen Tag nach der Reparaturmail und siebenundzwanzig Tage nach Julys erster Antwort. Die Mail endete mit einer Checkliste fürs Auspacken: Sicherheitsschlüssel einsetzen, LoRa-RTK-ID prüfen, Schrauben kontrollieren und bei Kälte erst drinnen testen. Die hat jemand geschrieben, der weiß, was nach einer Reparatur typischerweise schiefgeht.
+Im Oktober 2026 rührte sich Flora gar nicht mehr. Das Service-Center hat einen Radnabenmotor vorne und die Messerscheibe ersetzt, beides auf Garantie, und siebenundzwanzig Tage nach der ersten Antwort von Mammotion stand sie wieder vor der Tür. Den ganzen Ablauf habe ich in einem eigenen Beitrag beschrieben: [Mammotion LUBA mini in der Garantiereparatur](/de/blog/mammotion-luba-warranty-repair/).
 
 ## Was mühsam ist
 

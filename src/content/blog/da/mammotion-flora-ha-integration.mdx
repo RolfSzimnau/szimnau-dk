@@ -12,8 +12,6 @@ faqs:
     answer: "Ja. Mammotion-HA fra HACS giver en lawn_mower-entitet og sensorer for batteri, fremdrift, klippet areal, knivhøjde og antal RTK-satellitter. Dermed kan HA lægge en tidsplan, der tager højde for vejret."
   - question: "Hvad skal man være opmærksom på med en Mammotion-robot i Home Assistant?"
     answer: "Den er meget afhængig af skyen og 4G, og GPS-grænserne kan kun tegnes i producentens app. HA kan styre klipningen, men aldrig bestemme, hvor græsplænen er. Hold øje med sensoren for antal satellitter: et lavt tal forklarer de fleste stop, der ellers virker tilfældige."
-  - question: "Hvordan er Mammotions service efter købet?"
-    answer: "God, efter min erfaring. Et Vision-modul, der gik i stykker efter vinteropbevaring, blev skiftet inden for få dage. En fejl på drivhjulet i oktober 2026 var repareret seksogtyve dage efter første svar, og de sendte mig både en kasse, en forudbetalt UPS-label og løbende besked, uden at jeg spurgte. Købt direkte hos Mammotion repareres klipperen af Mammotion selv. Købt hos en forhandler går sagen gennem forhandleren."
 ---
 
 Min Husqvarna 213C kørte i årevis uden at have det mindste med Home Assistant at gøre. Det har en siddeklipper ikke: man sætter sig op, kører, og så er man færdig. Regnede det, aflyste jeg selv. Var jeg væk, ventede plænen.
@@ -127,23 +125,9 @@ Jeg kontaktede Mammotions support og ventede den sædvanlige runddans: opret en 
 
 Modulet kan altså gå i stykker, og vinteropbevaring med fugt er en kombination, man skal have i baghovedet.
 
-## Anden runde: venstre forhjul
+## Anden runde: forhjulsmotoren
 
-En lørdag morgen i oktober nægtede Flora at gøre noget som helst. Hun tændte og gik direkte i fejl. Appen skrev «continue working» og et sekund efter «task paused», igen og igen, og jeg kunne heller ikke styre hende manuelt fra appen. Jeg gættede på venstre forhjul, men det var et gæt.
-
-Jeg havde allerede sendt en log fra appen, og lørdag den 17. oktober kl. 8.43 svarede July fra Mammotions support. Mit svar gik af sytten minutter senere. Ved middagstid lå det fast, at Flora skulle til service. Jeg købte hende direkte på Mammotions hjemmeside, så det er Mammotion selv og ikke en forhandler, der står for reparationen.
-
-Den originale emballage havde jeg ikke længere, så de tilbød at sende en kasse. Om søndagen skulle jeg bruge tre forsøg på at sende det rigtige skærmbillede af mit Mammotion-ID. Jeg sendte det forkerte skærmbillede, indtil de sendte mig billeder af, præcis hvor jeg skulle trykke. Den var min egen. Mandag havde jeg en reparationsordre og en forudbetalt fragtlabel fra UPS, og onsdag blev kassen sendt med DHL.
-
-Søndag den 25. oktober afleverede jeg Flora hos UPS, og samme eftermiddag kvitterede Hedy. Derefter holdt Lynn mig orienteret, uden at jeg spurgte: om pakken var sendt, at den var nået frem, men endnu ikke registreret på lageret, og den 4. november, at Flora var rykket frem i køen, selv om det er højsæson for reparationer. Den 12. november var hun repareret, og Mammotion betaler returfragten.
-
-Fem medarbejdere har været inde over sagen, også i weekenderne, og ingen af dem bad mig forklare fejlen forfra. Midt i forløbet skrev jeg til dem, at deres kommunikation var fremragende. Det mente jeg.
-
-To hardwarefejl er to hardwarefejl, og det skal ikke skjules. Men begge gange blev fejlen rettet hurtigere, end jeg havde regnet med, og uden ét ord om garanti.
-
-![Flora tilbage fra Mammotions værksted, stadig i den kasse, de sendte](/blog-images/flora-repair-box.webp)
-
-Flora kom hjem den 13. november, dagen efter mailen om reparationen og syvogtyve dage efter Julys første svar. Mailen sluttede med en tjekliste til udpakningen: sikkerhedsnøglen i, tjek LoRa RTK-ID'et, efterspænd skruerne, og test hende indendørs, hvis det er koldt. Den er skrevet af nogen, der ved, hvad der typisk går galt efter en reparation.
+I oktober 2026 gik Flora helt i stå. Værkstedet skiftede en hjulnavmotor på forhjulet og knivskiven, begge dele under garantien, og hun stod hjemme igen syvogtyve dage efter Mammotions første svar. Hele sagen har fået sit eget indlæg: [Mammotion LUBA mini til garantireparation](/da/blog/mammotion-luba-warranty-repair/).
 
 ## Det, der er træls
 
