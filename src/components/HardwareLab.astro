@@ -22,6 +22,7 @@ const iconSvg = (name: string, size = 20) =>
     <div class="mb-12">
       <h2 class="font-heading text-3xl sm:text-4xl font-bold text-text-primary mb-4">{t('hardware.title')}</h2>
       <p class="text-text-muted max-w-2xl">{t('hardware.subtitle')}</p>
+      <p id="hardware-vendor-note" hidden>{t('hardware.vendor')}</p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -41,9 +42,10 @@ const iconSvg = (name: string, size = 20) =>
                           href={item.link}
                           target="_blank"
                           rel="noopener noreferrer"
+                          aria-describedby="hardware-vendor-note"
                           class="inline-block py-1 underline decoration-white/25 underline-offset-4 hover:text-blue hover:decoration-blue focus-visible:text-blue transition-colors"
                         >
-                          {item.name}<span class="sr-only"> {t('hardware.vendor')}</span>
+                          {item.name}
                         </a>
                       ) : (
                         <span class="inline-block py-1">{item.name}</span>
