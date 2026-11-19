@@ -75,6 +75,8 @@ Lige nu kan hele internettet se loginsiden. Stop ikke her.
 3. Vælg en gyldighedsperiode, og fortsæt.
 4. Kopiér certifikatet til en fil med navnet `ha-phone.pem` og den private nøgle til `ha-phone.key`. Cloudflare viser kun den private nøgle denne ene gang, og den kan ikke hentes senere.
 
+Telefonen kan ikke bruge de to filer, som de er. I trin 6 bliver de konverteret til den ene PKCS12-fil, som Android tager imod.
+
 Læg en påmindelse i kalenderen nogle uger før, certifikatet udløber. Et udløbet certifikat lukker dig ude på samme måde som et manglende.
 
 ## Trin 4: Fortæl Cloudflare, hvilket værtsnavn der skal bede om certifikatet

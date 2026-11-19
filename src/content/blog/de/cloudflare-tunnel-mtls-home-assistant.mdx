@@ -75,6 +75,8 @@ In diesem Zustand kann das ganze Internet die Anmeldeseite sehen. Hör hier nich
 3. Wähle eine Gültigkeitsdauer und fahre fort.
 4. Kopiere das Zertifikat in eine Datei namens `ha-phone.pem` und den privaten Schlüssel in `ha-phone.key`. Cloudflare zeigt den privaten Schlüssel nur dieses eine Mal an. Später lässt er sich nicht mehr abrufen.
 
+Das Handy kann mit diesen beiden Dateien so nichts anfangen. In Schritt 6 werden sie in die eine PKCS12-Datei umgewandelt, die Android annimmt.
+
 Trag dir ein paar Wochen vor dem Ablaufdatum eine Erinnerung in den Kalender ein. Ein abgelaufenes Zertifikat sperrt dich genauso aus wie ein fehlendes.
 
 ## Schritt 4: Cloudflare sagen, welcher Hostname das Zertifikat verlangt

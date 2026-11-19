@@ -75,6 +75,8 @@ At this point the login page is reachable by the whole internet. Do not stop her
 3. Choose a validity period and continue.
 4. Copy the certificate into a file named `ha-phone.pem` and the private key into `ha-phone.key`. Cloudflare shows the private key once. It cannot be fetched later.
 
+The phone cannot use these two files as they are. Step 6 converts them into the single PKCS12 file that Android accepts.
+
 Put a reminder in your calendar a few weeks before the certificate expires. An expired certificate locks you out the same way a missing one does.
 
 ## Step 4: Tell Cloudflare which hostname asks for the certificate
