@@ -13,6 +13,7 @@
     "lint:da": "node scripts/lint-da.mjs",
     "validate": "node scripts/validate.mjs",
     "validate:src": "node scripts/validate.mjs --src",
+    "test:search": "node scripts/test-search.mjs",
     "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
