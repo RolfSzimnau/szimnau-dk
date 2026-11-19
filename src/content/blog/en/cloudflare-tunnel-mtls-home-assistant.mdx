@@ -1,0 +1,146 @@
+---
+title: "Home Assistant Remote Access: Cloudflare Tunnel with a Client Certificate"
+seoTitle: "Home Assistant: Cloudflare Tunnel with Client Certificate"
+description: "Reach Home Assistant from your phone with no open ports: the Cloudflared app, a Cloudflare client certificate (mTLS) and one rule that blocks everyone else."
+pubDate: 2026-11-19
+tags: ["infrastructure", "security"]
+lang: "en"
+translationKey: "cloudflare-tunnel-mtls-home-assistant"
+heroImage: "/blog-images/cloudflare-tunnel-mtls-cloudflared-app.jpg"
+faqs:
+  - question: "Do I need to open a port on my router for a Cloudflare Tunnel to Home Assistant?"
+    answer: "No. The Cloudflared app makes an outbound connection from Home Assistant to Cloudflare, and Cloudflare sends visitors back through that connection. Nothing listens on your public IP address."
+  - question: "What does a client certificate (mTLS) add on top of the Home Assistant login?"
+    answer: "Cloudflare asks the device for a certificate before any request is forwarded. A device without it gets a 403 from Cloudflare and never reaches the Home Assistant login page, so bots cannot probe it or try passwords."
+  - question: "Is mTLS with a Cloudflare-issued client certificate available on the Free plan?"
+    answer: "Yes. Client certificates from the Cloudflare-managed CA work on Free, Pro and Business, with up to 100 active certificates per zone. Bringing your own CA is an Enterprise feature."
+  - question: "What breaks when the Home Assistant hostname requires a client certificate?"
+    answer: "Everything that calls the external URL without the certificate: webhooks from cloud services, a browser on a borrowed computer, and Wear OS until you give the watch its own PKCS12 file during onboarding."
+---
+
+My Home Assistant answers on a public hostname, and my phone reaches it from anywhere. Nobody else gets as far as the login page. No port is open on the router, and anything that arrives without the right certificate is stopped at Cloudflare.
+
+This is what that looks like from a device that is not my phone:
+
+![Cloudflare block page with the text Sorry, you have been blocked, shown to a browser without the client certificate](/blog-images/cloudflare-mtls-block-page.webp)
+
+The setup has two layers. A Cloudflare Tunnel carries the traffic, so the house needs no inbound port. A client certificate (mutual TLS, or mTLS) on the phone decides who may use the tunnel. Both fit in Cloudflare's Free plan.
+
+I use `ha.example.com` as the hostname below. Replace it with your own.
+
+## What you need before you start
+
+- A domain whose DNS is hosted at Cloudflare. The Free plan is enough.
+- Home Assistant OS or Supervised, because the tunnel runs as an app (what used to be called an add-on).
+- OpenSSL on a computer, to pack the certificate for the phone. Git for Windows ships with it, and macOS and Linux have it already.
+- An Android phone with the Home Assistant Companion app. I use a Pixel.
+
+## Step 1: Let Home Assistant trust the tunnel as a proxy
+
+The Cloudflared app forwards requests to Home Assistant from inside the app network. Home Assistant rejects proxied requests until you tell it which proxy to trust, and the symptom is a plain `400: Bad Request` on the external URL.
+
+Go to **Settings → System → Network → HTTP server**. Enable **Reverse proxy - Trust X-Forwarded-For**, add `172.30.33.0/24` under trusted proxies, and restart Home Assistant. That range is the app network. On my system the Cloudflared app has the address `172.30.33.1`.
+
+If your HTTP settings still live in `configuration.yaml`, the same thing looks like this:
+
+```yaml
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.30.33.0/24
+```
+
+## Step 2: Install the Cloudflared app and create the tunnel
+
+1. In Home Assistant, open the app store, choose **Repositories** in the menu and add `https://github.com/homeassistant-apps/repository`.
+2. Install **Cloudflared**. Do not start it yet.
+3. Open the **Configuration** tab and set one option:
+
+```yaml
+external_hostname: ha.example.com
+```
+
+4. Start the app and open the **Log** tab. The first start prints a login link to Cloudflare. Open it, sign in and pick your domain.
+
+The app then creates the tunnel and the DNS record for the hostname by itself. It overwrites an existing DNS record with the same name, so check that first. My configuration contains only `external_hostname`, and it has not needed anything else.
+
+Open `https://ha.example.com` in a browser. You should see the Home Assistant login page with a valid certificate. If the page loads and then hangs on "Loading data", check that WebSockets is on under **Network** for the domain in Cloudflare.
+
+At this point the login page is reachable by the whole internet. Do not stop here.
+
+## Step 3: Create a client certificate in Cloudflare
+
+1. In the Cloudflare dashboard, select the domain and go to **SSL/TLS → Client Certificates**.
+2. Select **Add Certificate**. Leave the Cloudflare-managed CA and let Cloudflare generate the private key and CSR.
+3. Choose a validity period and continue.
+4. Copy the certificate into a file named `ha-phone.pem` and the private key into `ha-phone.key`. Cloudflare shows the private key once. It cannot be fetched later.
+
+Put a reminder in your calendar a few weeks before the certificate expires. An expired certificate locks you out the same way a missing one does.
+
+## Step 4: Tell Cloudflare which hostname asks for the certificate
+
+On the same page, find the **Hosts** section and select **Edit**. Enter the hostname and save. Cloudflare appends the domain itself, so for `ha.example.com` you type `ha`.
+
+This step is easy to skip. Without it Cloudflare never asks the phone for a certificate, every request counts as unverified, and the rule in the next step blocks you along with everyone else.
+
+## Step 5: Block every request without a valid certificate
+
+Enabling mTLS on the hostname only makes Cloudflare ask. A WAF custom rule does the refusing. The **Create mTLS Rule** button on the Client Certificates page opens a template, or you can go to **Security → WAF → Custom rules** (Security rules in the new dashboard) and enter the expression yourself:
+
+```text
+(http.host eq "ha.example.com" and (not cf.tls_client_auth.cert_verified or cf.tls_client_auth.cert_revoked))
+```
+
+Set the action to **Block** and deploy.
+
+The `cert_revoked` part is there on purpose. Cloudflare's documentation tells you to update your mTLS rules when you revoke a certificate, and with this clause in place from day one a revoked certificate stops working the moment you revoke it.
+
+## Step 6: Pack the certificate and install it on the phone
+
+Android wants the certificate and key as a single PKCS12 file:
+
+```bash
+openssl pkcs12 -export -in ha-phone.pem -inkey ha-phone.key -out ha-phone.p12 -name "ha-phone"
+```
+
+OpenSSL asks for an export password. You type it once more on the phone. If Android later refuses a password you know is right, add `-legacy` to the command and create the file again. OpenSSL 3 uses an encryption that some Android versions cannot read.
+
+Move `ha-phone.p12` to the phone over a USB cable. On a Pixel the installer is under **Settings → Security & privacy → More security & privacy → Encryption & credentials → Install a certificate → VPN & app user certificate**. Other brands name the menus differently, but the type to pick is always the VPN and app user certificate.
+
+Afterwards, delete the three files from the computer and the `.p12` from the phone's storage, or keep them in a password manager. Anyone holding the key file can pass the rule.
+
+## Step 7: Connect the Companion app and test from outside
+
+Open the Companion app and set the external URL to `https://ha.example.com`. Android shows a certificate picker the first time. Choose `ha-phone` and the app connects as usual. Chrome on the phone asks the same question once.
+
+At home the app can keep using the internal URL. Enter your home Wi-Fi under the server settings in the app, and it only goes through Cloudflare when you are away.
+
+Then test from a computer. Without the certificate:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://ha.example.com
+```
+
+That returns `403` here. With the certificate, before you delete the files:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" --cert ha-phone.pem --key ha-phone.key https://ha.example.com
+```
+
+That should return `200`. Test both. A rule that lets everyone in looks exactly like a working setup when you only test from the phone that holds the certificate.
+
+## What stops working behind the certificate
+
+The rule cannot tell a bot from a service you invited. Anything that calls the external URL without the certificate gets the same 403:
+
+- Webhooks from cloud services that post to `https://ha.example.com/api/webhook/...`.
+- A browser on a work laptop or a borrowed computer. Each device needs its own certificate. Create one per device, so one of them can be revoked without touching the others.
+- Wear OS. The watch cannot use the certificate installed on the phone and needs the PKCS12 file during its own onboarding.
+
+If you need a webhook from outside, make a narrow exception for that one path in the rule and leave the rest of the hostname closed.
+
+## When the phone is lost
+
+Go to **SSL/TLS → Client Certificates**, select the certificate and revoke it. With the rule from step 5 the phone is locked out at once. Then repeat steps 3 and 6 for the new phone.
+
+The certificate replaces nothing inside Home Assistant. The login is still there, and two-factor authentication on the owner account is still a good idea. What changes is who gets to see the login page at all, and here that is now one phone. The tunnel itself runs as an app in the Home Assistant VM on [my Proxmox host](/en/blog/proxmox-home-assistant-setup/). The app can carry more hostnames through `additional_hosts`, which is one of the options I am weighing for [reaching the JetKVM from outside](/en/blog/jetkvm-mini-proxmox-remote-console/).

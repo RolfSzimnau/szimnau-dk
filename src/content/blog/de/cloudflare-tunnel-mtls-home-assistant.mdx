@@ -1,0 +1,146 @@
+---
+title: "Home Assistant von unterwegs: Cloudflare Tunnel mit Client-Zertifikat"
+seoTitle: "Home Assistant: Cloudflare Tunnel mit Client-Zertifikat"
+description: "Home Assistant vom Handy aus erreichen, ohne offene Ports: die Cloudflared-App, ein Client-Zertifikat von Cloudflare (mTLS) und eine Regel gegen alle anderen."
+pubDate: 2026-11-19
+tags: ["infrastruktur", "sicherheit"]
+lang: "de"
+translationKey: "cloudflare-tunnel-mtls-home-assistant"
+heroImage: "/blog-images/cloudflare-tunnel-mtls-cloudflared-app.jpg"
+faqs:
+  - question: "Do I need to open a port on my router for a Cloudflare Tunnel to Home Assistant?"
+    answer: "No. The Cloudflared app makes an outbound connection from Home Assistant to Cloudflare, and Cloudflare sends visitors back through that connection. Nothing listens on your public IP address."
+  - question: "What does a client certificate (mTLS) add on top of the Home Assistant login?"
+    answer: "Cloudflare asks the device for a certificate before any request is forwarded. A device without it gets a 403 from Cloudflare and never reaches the Home Assistant login page, so bots cannot probe it or try passwords."
+  - question: "Is mTLS with a Cloudflare-issued client certificate available on the Free plan?"
+    answer: "Yes. Client certificates from the Cloudflare-managed CA work on Free, Pro and Business, with up to 100 active certificates per zone. Bringing your own CA is an Enterprise feature."
+  - question: "What breaks when the Home Assistant hostname requires a client certificate?"
+    answer: "Everything that calls the external URL without the certificate: webhooks from cloud services, a browser on a borrowed computer, and Wear OS until you give the watch its own PKCS12 file during onboarding."
+---
+
+Mein Home Assistant hat einen öffentlichen Hostnamen, und mein Handy erreicht ihn von überall. Alle anderen kommen nicht einmal bis zur Anmeldeseite. Im Router ist kein Port offen, und was ohne das richtige Zertifikat ankommt, bleibt bei Cloudflare hängen.
+
+So sieht das auf einem Gerät aus, das nicht mein Handy ist:
+
+![Sperrseite von Cloudflare mit dem Text Sorry, you have been blocked, angezeigt in einem Browser ohne Client-Zertifikat](/blog-images/cloudflare-mtls-block-page.webp)
+
+Der Aufbau hat zwei Schichten. Ein Cloudflare Tunnel transportiert den Datenverkehr, das Haus braucht also keinen eingehenden Port. Ein Client-Zertifikat (Mutual TLS, kurz mTLS) auf dem Handy legt fest, wer den Tunnel benutzen darf. Beides geht im kostenlosen Tarif von Cloudflare.
+
+Als Hostnamen verwende ich im Folgenden `ha.example.com`. Ersetze ihn durch deinen eigenen.
+
+## Was du vorher brauchst
+
+- Eine Domain, deren DNS bei Cloudflare liegt. Der kostenlose Tarif reicht.
+- Home Assistant OS oder Supervised, denn der Tunnel läuft als App (früher Add-on genannt).
+- OpenSSL auf einem Rechner, um das Zertifikat für das Handy zu verpacken. Git for Windows bringt es mit, macOS und Linux haben es ohnehin.
+- Ein Android-Handy mit der Home Assistant Companion App. Meins ist ein Pixel.
+
+## Schritt 1: Home Assistant den Tunnel als Proxy vertrauen lassen
+
+Die Cloudflared-App reicht die Anfragen aus dem App-Netzwerk an Home Assistant weiter. Home Assistant lehnt Anfragen über einen unbekannten Proxy ab, und auf der externen Adresse steht dann nur `400: Bad Request`.
+
+Öffne **Einstellungen → System → Netzwerk → HTTP-Server**. Aktiviere **Reverse proxy - Trust X-Forwarded-For**, trage `172.30.33.0/24` bei den vertrauenswürdigen Proxys ein und starte Home Assistant neu. Dieser Adressbereich ist das App-Netzwerk. Bei mir hat die Cloudflared-App die Adresse `172.30.33.1`.
+
+Stehen deine HTTP-Einstellungen noch in der `configuration.yaml`, sieht dasselbe so aus:
+
+```yaml
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.30.33.0/24
+```
+
+## Schritt 2: Cloudflared-App installieren und den Tunnel anlegen
+
+1. Öffne in Home Assistant den App-Store, wähle im Menü **Repositories** und füge `https://github.com/homeassistant-apps/repository` hinzu.
+2. Installiere **Cloudflared**, starte die App aber noch nicht.
+3. Öffne den Reiter **Konfiguration** und setze eine einzige Option:
+
+```yaml
+external_hostname: ha.example.com
+```
+
+4. Starte die App und öffne den Reiter **Log**. Beim ersten Start steht dort ein Anmeldelink zu Cloudflare. Öffne ihn, melde dich an und wähle deine Domain.
+
+Danach legt die App den Tunnel und den DNS-Eintrag für den Hostnamen selbst an. Ein vorhandener DNS-Eintrag mit demselben Namen wird überschrieben, also sieh vorher nach. Meine Konfiguration besteht nur aus `external_hostname`, mehr war bisher nicht nötig.
+
+Öffne `https://ha.example.com` im Browser. Du solltest die Anmeldeseite von Home Assistant mit einem gültigen Zertifikat sehen. Lädt die Seite und bleibt dann bei „Loading data“ stehen, prüfe, ob WebSockets für die Domain bei Cloudflare unter **Network** eingeschaltet ist.
+
+In diesem Zustand kann das ganze Internet die Anmeldeseite sehen. Hör hier nicht auf.
+
+## Schritt 3: Client-Zertifikat bei Cloudflare erstellen
+
+1. Wähle im Cloudflare-Dashboard die Domain und gehe zu **SSL/TLS → Client Certificates**.
+2. Wähle **Add Certificate**. Lass die von Cloudflare verwaltete CA eingestellt und lass Cloudflare den privaten Schlüssel und die CSR erzeugen.
+3. Wähle eine Gültigkeitsdauer und fahre fort.
+4. Kopiere das Zertifikat in eine Datei namens `ha-phone.pem` und den privaten Schlüssel in `ha-phone.key`. Cloudflare zeigt den privaten Schlüssel nur dieses eine Mal an. Später lässt er sich nicht mehr abrufen.
+
+Trag dir ein paar Wochen vor dem Ablaufdatum eine Erinnerung in den Kalender ein. Ein abgelaufenes Zertifikat sperrt dich genauso aus wie ein fehlendes.
+
+## Schritt 4: Cloudflare sagen, welcher Hostname das Zertifikat verlangt
+
+Auf derselben Seite gibt es den Abschnitt **Hosts**. Wähle **Edit**, trage den Hostnamen ein und speichere. Cloudflare hängt die Domain selbst an, für `ha.example.com` gibst du also nur `ha` ein.
+
+Diesen Schritt überspringt man leicht. Ohne ihn fragt Cloudflare das Handy nie nach einem Zertifikat, jede Anfrage gilt als nicht verifiziert, und die Regel im nächsten Schritt sperrt dich zusammen mit allen anderen aus.
+
+## Schritt 5: Alles ohne gültiges Zertifikat blockieren
+
+Ist mTLS für den Hostnamen aktiv, fragt Cloudflare nach dem Zertifikat, weist aber niemanden ab. Das übernimmt eine benutzerdefinierte WAF-Regel. Die Schaltfläche **Create mTLS Rule** auf der Seite Client Certificates öffnet eine Vorlage. Du kannst auch zu **Security → WAF → Custom rules** gehen (im neuen Dashboard Security rules) und den Ausdruck selbst eintragen:
+
+```text
+(http.host eq "ha.example.com" and (not cf.tls_client_auth.cert_verified or cf.tls_client_auth.cert_revoked))
+```
+
+Setze die Aktion auf **Block** und aktiviere die Regel.
+
+Der Teil mit `cert_revoked` steht dort mit Absicht. Laut Cloudflare-Dokumentation müssen die mTLS-Regeln angepasst werden, wenn ein Zertifikat widerrufen wird. Steht die Bedingung von Anfang an in der Regel, funktioniert ein widerrufenes Zertifikat ab dem Moment des Widerrufs nicht mehr.
+
+## Schritt 6: Zertifikat verpacken und auf dem Handy installieren
+
+Android erwartet Zertifikat und Schlüssel in einer einzigen PKCS12-Datei:
+
+```bash
+openssl pkcs12 -export -in ha-phone.pem -inkey ha-phone.key -out ha-phone.p12 -name "ha-phone"
+```
+
+OpenSSL fragt nach einem Exportpasswort, das du auf dem Handy noch einmal eingibst. Lehnt Android ein Passwort ab, von dem du weißt, dass es stimmt, ergänze den Befehl um `-legacy` und erzeuge die Datei neu. OpenSSL 3 verwendet eine Verschlüsselung, die manche Android-Versionen nicht lesen können.
+
+Übertrage `ha-phone.p12` per USB-Kabel auf das Handy. Suche in den Einstellungen des Handys nach „Zertifikat“, wähle die Installation eines Zertifikats und als Typ das Nutzerzertifikat für VPN und Apps (englisch „VPN & app user certificate“). Auf einem Pixel liegt das in den Sicherheitseinstellungen bei Verschlüsselung und Anmeldedaten. Andere Hersteller benennen die Menüs anders, der Typ bleibt derselbe.
+
+Lösche danach die drei Dateien auf dem Rechner und die `.p12`-Datei im Speicher des Handys, oder bewahre sie in einem Passwortmanager auf. Wer die Schlüsseldatei hat, kommt an der Regel vorbei.
+
+## Schritt 7: Companion App verbinden und von außen testen
+
+Öffne die Companion App und trage `https://ha.example.com` als externe URL ein. Beim ersten Mal zeigt Android eine Zertifikatsauswahl. Wähle `ha-phone`, und die App verbindet sich wie gewohnt. Chrome auf dem Handy fragt dasselbe einmal.
+
+Zu Hause kann die App weiter die interne URL verwenden. Trag dein Heim-WLAN in den Servereinstellungen der App ein, dann geht sie nur unterwegs über Cloudflare.
+
+Teste anschließend von einem Rechner aus. Ohne Zertifikat:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://ha.example.com
+```
+
+Bei mir kommt `403` zurück. Mit Zertifikat, bevor du die Dateien löschst:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" --cert ha-phone.pem --key ha-phone.key https://ha.example.com
+```
+
+Hier sollte `200` zurückkommen. Teste beides. Eine Regel, die alle durchlässt, sieht wie ein funktionierender Aufbau aus, wenn du nur mit dem Handy testest, auf dem das Zertifikat liegt.
+
+## Was hinter dem Zertifikat nicht mehr funktioniert
+
+Die Regel kann einen Bot nicht von einem Dienst unterscheiden, den du selbst eingeladen hast. Alles, was die externe URL ohne Zertifikat aufruft, bekommt dieselbe 403:
+
+- Webhooks von Cloud-Diensten, die an `https://ha.example.com/api/webhook/...` senden.
+- Ein Browser auf dem Arbeitslaptop oder einem geliehenen Rechner. Jedes Gerät braucht ein eigenes Zertifikat. Erstelle eines pro Gerät, dann kannst du eines widerrufen, ohne die anderen anzufassen.
+- Wear OS. Die Uhr kann das auf dem Handy installierte Zertifikat nicht nutzen und braucht die PKCS12-Datei bei ihrer eigenen Einrichtung.
+
+Brauchst du einen Webhook von außen, lege in der Regel eine enge Ausnahme für genau diesen Pfad an und lass den Rest des Hostnamens geschlossen.
+
+## Wenn das Handy weg ist
+
+Gehe zu **SSL/TLS → Client Certificates**, wähle das Zertifikat und widerrufe es. Mit der Regel aus Schritt 5 ist das Handy sofort ausgesperrt. Wiederhole danach die Schritte 3 und 6 für das neue Handy.
+
+Das Zertifikat ersetzt nichts in Home Assistant. Die Anmeldung gibt es weiterhin, und Zwei-Faktor-Authentifizierung für das Besitzerkonto bleibt sinnvoll. Geändert hat sich, wer die Anmeldeseite überhaupt zu sehen bekommt, und das ist hier jetzt ein einziges Handy. Der Tunnel selbst läuft als App in der Home-Assistant-VM auf [meinem Proxmox-Host](/de/blog/proxmox-home-assistant-setup/). Über `additional_hosts` kann die App weitere Hostnamen durchleiten, und das ist eine der Möglichkeiten, die ich für den [Zugriff auf das JetKVM von außen](/de/blog/jetkvm-mini-proxmox-remote-console/) abwäge.

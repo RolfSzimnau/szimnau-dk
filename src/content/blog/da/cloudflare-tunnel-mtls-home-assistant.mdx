@@ -1,0 +1,146 @@
+---
+title: "Home Assistant udefra: Cloudflare Tunnel med klientcertifikat"
+seoTitle: "Home Assistant: Cloudflare Tunnel med klientcertifikat"
+description: "Sådan når telefonen Home Assistant uden åbne porte: Cloudflared-appen, et klientcertifikat fra Cloudflare (mTLS) og én regel, der afviser alle andre."
+pubDate: 2026-11-19
+tags: ["infrastruktur", "sikkerhed"]
+lang: "da"
+translationKey: "cloudflare-tunnel-mtls-home-assistant"
+heroImage: "/blog-images/cloudflare-tunnel-mtls-cloudflared-app.jpg"
+faqs:
+  - question: "Do I need to open a port on my router for a Cloudflare Tunnel to Home Assistant?"
+    answer: "No. The Cloudflared app makes an outbound connection from Home Assistant to Cloudflare, and Cloudflare sends visitors back through that connection. Nothing listens on your public IP address."
+  - question: "What does a client certificate (mTLS) add on top of the Home Assistant login?"
+    answer: "Cloudflare asks the device for a certificate before any request is forwarded. A device without it gets a 403 from Cloudflare and never reaches the Home Assistant login page, so bots cannot probe it or try passwords."
+  - question: "Is mTLS with a Cloudflare-issued client certificate available on the Free plan?"
+    answer: "Yes. Client certificates from the Cloudflare-managed CA work on Free, Pro and Business, with up to 100 active certificates per zone. Bringing your own CA is an Enterprise feature."
+  - question: "What breaks when the Home Assistant hostname requires a client certificate?"
+    answer: "Everything that calls the external URL without the certificate: webhooks from cloud services, a browser on a borrowed computer, and Wear OS until you give the watch its own PKCS12 file during onboarding."
+---
+
+Min Home Assistant har et offentligt værtsnavn, og telefonen kan nå den, uanset hvor jeg er. Alle andre kommer ikke engang frem til loginsiden. Der er ingen åben port i routeren, og det, der kommer uden det rigtige certifikat, bliver stoppet hos Cloudflare.
+
+Sådan ser det ud fra en enhed, der ikke er min telefon:
+
+![Cloudflares blokeringsside med teksten Sorry, you have been blocked, vist i en browser uden klientcertifikatet](/blog-images/cloudflare-mtls-block-page.webp)
+
+Opsætningen har to lag. En Cloudflare Tunnel bærer trafikken, så huset ikke behøver en indgående port. Et klientcertifikat (mutual TLS, forkortet mTLS) på telefonen afgør, hvem der må bruge tunnelen. Begge dele kan lade sig gøre på Cloudflares gratis plan.
+
+Jeg bruger `ha.example.com` som værtsnavn i resten af indlægget. Skift det ud med dit eget.
+
+## Det skal du have klar
+
+- Et domæne, hvor Cloudflare står for DNS. Den gratis plan er nok.
+- Home Assistant OS eller Supervised, fordi tunnelen kører som en app (det, der før hed et add-on).
+- OpenSSL på en computer til at pakke certifikatet til telefonen. Det følger med Git for Windows, og macOS og Linux har det i forvejen.
+- En Android-telefon med Home Assistant Companion-appen. Min er en Pixel.
+
+## Trin 1: Lad Home Assistant stole på tunnelen som proxy
+
+Cloudflared-appen sender forespørgslerne videre til Home Assistant fra appnetværket. Home Assistant afviser forespørgsler fra en proxy, den ikke kender, og så står der bare `400: Bad Request` på den eksterne adresse.
+
+Gå til **Indstillinger → System → Netværk → HTTP-server**. Slå **Reverse proxy - Trust X-Forwarded-For** til, tilføj `172.30.33.0/24` under betroede proxyer, og genstart Home Assistant. Det adresseområde er appnetværket. Hos mig har Cloudflared-appen adressen `172.30.33.1`.
+
+Ligger dine HTTP-indstillinger stadig i `configuration.yaml`, ser det samme sådan ud:
+
+```yaml
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.30.33.0/24
+```
+
+## Trin 2: Installér Cloudflared-appen og opret tunnelen
+
+1. Åbn appbutikken i Home Assistant, vælg **Repositories** i menuen, og tilføj `https://github.com/homeassistant-apps/repository`.
+2. Installér **Cloudflared**, men start den ikke endnu.
+3. Åbn fanen **Konfiguration**, og sæt én indstilling:
+
+```yaml
+external_hostname: ha.example.com
+```
+
+4. Start appen, og åbn fanen **Log**. Ved første start skriver den et loginlink til Cloudflare. Åbn det, log ind, og vælg dit domæne.
+
+Derefter opretter appen selv tunnelen og DNS-posten for værtsnavnet. Findes der allerede en DNS-post med samme navn, bliver den overskrevet, så tjek det først. Min konfiguration består kun af `external_hostname`, og mere har den ikke haft brug for.
+
+Åbn `https://ha.example.com` i en browser. Nu skal du se Home Assistants loginside med et gyldigt certifikat. Hvis siden kommer frem og så hænger på «Loading data», så tjek, at WebSockets er slået til under **Network** for domænet hos Cloudflare.
+
+Lige nu kan hele internettet se loginsiden. Stop ikke her.
+
+## Trin 3: Opret et klientcertifikat hos Cloudflare
+
+1. Vælg domænet i Cloudflares dashboard, og gå til **SSL/TLS → Client Certificates**.
+2. Vælg **Add Certificate**. Behold Cloudflares egen CA, og lad Cloudflare generere både privat nøgle og CSR.
+3. Vælg en gyldighedsperiode, og fortsæt.
+4. Kopiér certifikatet til en fil med navnet `ha-phone.pem` og den private nøgle til `ha-phone.key`. Cloudflare viser kun den private nøgle denne ene gang, og den kan ikke hentes senere.
+
+Læg en påmindelse i kalenderen nogle uger før, certifikatet udløber. Et udløbet certifikat lukker dig ude på samme måde som et manglende.
+
+## Trin 4: Fortæl Cloudflare, hvilket værtsnavn der skal bede om certifikatet
+
+På samme side finder du afsnittet **Hosts**. Vælg **Edit**, skriv værtsnavnet, og gem. Cloudflare sætter selv domænet på, så til `ha.example.com` skriver du kun `ha`.
+
+Det trin er let at springe over. Uden det beder Cloudflare aldrig telefonen om et certifikat, hver forespørgsel tæller som ubekræftet, og reglen i næste trin lukker dig ude sammen med alle andre.
+
+## Trin 5: Afvis alt, der kommer uden et gyldigt certifikat
+
+Når mTLS er slået til for værtsnavnet, beder Cloudflare om certifikatet, men afviser ingen. Det klarer en brugerdefineret WAF-regel. Knappen **Create mTLS Rule** på siden Client Certificates åbner en skabelon. Du kan også gå til **Security → WAF → Custom rules** (Security rules i det nye dashboard) og selv skrive udtrykket:
+
+```text
+(http.host eq "ha.example.com" and (not cf.tls_client_auth.cert_verified or cf.tls_client_auth.cert_revoked))
+```
+
+Sæt handlingen til **Block**, og aktivér reglen.
+
+Delen med `cert_revoked` står der med vilje. Cloudflares dokumentation beder dig opdatere dine mTLS-regler, når du tilbagekalder et certifikat. Står betingelsen der fra starten, holder et tilbagekaldt certifikat op med at virke i samme øjeblik, du tilbagekalder det.
+
+## Trin 6: Pak certifikatet, og installér det på telefonen
+
+Android vil have certifikat og nøgle samlet i én PKCS12-fil:
+
+```bash
+openssl pkcs12 -export -in ha-phone.pem -inkey ha-phone.key -out ha-phone.p12 -name "ha-phone"
+```
+
+OpenSSL beder om en eksportadgangskode, som du skal skrive igen på telefonen. Afviser Android en adgangskode, du ved er rigtig, så tilføj `-legacy` til kommandoen, og lav filen igen. OpenSSL 3 bruger en kryptering, som nogle Android-versioner ikke kan læse.
+
+Flyt `ha-phone.p12` til telefonen med et USB-kabel. Søg efter «certifikat» i telefonens indstillinger, vælg at installere et certifikat, og vælg typen brugercertifikat til VPN og apps (på engelsk «VPN & app user certificate»). På en Pixel ligger det under sikkerhedsindstillingerne ved kryptering og loginoplysninger. Andre mærker kalder menuerne noget andet, men typen er den samme.
+
+Slet bagefter de tre filer på computeren og `.p12`-filen på telefonens lager, eller gem dem i en adgangskodemanager. Den, der har nøglefilen, kommer forbi reglen.
+
+## Trin 7: Forbind Companion-appen, og test udefra
+
+Åbn Companion-appen, og sæt den eksterne adresse til `https://ha.example.com`. Første gang viser Android en certifikatvælger. Vælg `ha-phone`, og appen forbinder som normalt. Chrome på telefonen spørger om det samme én gang.
+
+Hjemme kan appen blive ved med at bruge den interne adresse. Angiv dit hjemmenetværk under serverindstillingerne i appen, så går den kun gennem Cloudflare, når du er ude.
+
+Test derefter fra en computer. Uden certifikatet:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://ha.example.com
+```
+
+Hos mig giver det `403`. Med certifikatet, inden du sletter filerne:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" --cert ha-phone.pem --key ha-phone.key https://ha.example.com
+```
+
+Det skal give `200`. Test begge dele. En regel, der lukker alle ind, ligner en opsætning, der virker, hvis du kun prøver fra den telefon, der har certifikatet.
+
+## Det holder op med at virke bag certifikatet
+
+Reglen kan ikke kende forskel på en bot og en tjeneste, du selv har inviteret. Alt, der kalder den eksterne adresse uden certifikatet, får den samme 403:
+
+- Webhooks fra cloudtjenester, der sender til `https://ha.example.com/api/webhook/...`.
+- En browser på arbejdscomputeren eller en lånt computer. Hver enhed skal have sit eget certifikat. Lav ét pr. enhed, så du kan tilbagekalde ét uden at røre de andre.
+- Wear OS. Uret kan ikke bruge det certifikat, der er installeret på telefonen, og skal have PKCS12-filen under sin egen opsætning.
+
+Har du brug for en webhook udefra, så lav en smal undtagelse for netop den sti i reglen, og lad resten af værtsnavnet være lukket.
+
+## Hvis telefonen bliver væk
+
+Gå til **SSL/TLS → Client Certificates**, vælg certifikatet, og tilbagekald det. Med reglen fra trin 5 er telefonen lukket ude med det samme. Gentag derefter trin 3 og 6 for den nye telefon.
+
+Certifikatet erstatter ikke noget i Home Assistant. Loginet er der stadig, og tofaktorgodkendelse på ejerkontoen er stadig en god idé. Forskellen er, hvem der overhovedet får loginsiden at se, og her er det nu én telefon. Selve tunnelen kører som en app i Home Assistant-VM'en på [min Proxmox-server](/da/blog/proxmox-home-assistant-setup/). Appen kan føre flere værtsnavne igennem med `additional_hosts`, og det er en af de muligheder, jeg overvejer til at [nå JetKVM'en udefra](/da/blog/jetkvm-mini-proxmox-remote-console/).
