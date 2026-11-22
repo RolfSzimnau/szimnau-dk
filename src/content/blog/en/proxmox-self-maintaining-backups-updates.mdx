@@ -1,0 +1,102 @@
+---
+title: "Proxmox for Home Assistant: Off-Site Backups, Safe Auto-Updates and Phone Alerts"
+seoTitle: "Proxmox Backups to Google Drive and Safe Auto-Updates"
+description: "How my Proxmox host backs up Home Assistant to Google Drive, updates itself with safety checks, and sends a message to my phone when something fails."
+pubDate: 2026-11-21
+tags: ["infrastructure", "maintenance", "notifications"]
+lang: "en"
+translationKey: "proxmox-self-maintaining-backups-updates"
+heroImage: "/blog-images/proxmox-self-maintaining-1200.jpg"
+verifiedOn: "HA 2026.11"
+faqs:
+  - question: "How do I back up a Home Assistant VM on Proxmox to Google Drive automatically?"
+    answer: "Schedule a vzdump job to local storage, then mirror the dump folder to Google Drive with rclone from cron. Authorise rclone with the drive.file scope on a PC with a browser using rclone authorize, and paste the token into the config on the headless Proxmox host."
+  - question: "Is it safe to auto-update Proxmox VE?"
+    answer: "Only with guards. Require a fresh backup first, refuse updates that remove packages, skip new Proxmox minor versions, and restart only when a newer kernel than the running one is installed. The no-subscription repository is also tested less than the enterprise one."
+---
+
+My Home Assistant runs as a VM on a single Proxmox host, and for a long time that host looked after nothing. The backups lived on the same SSD as the system, updates waited until I remembered them, and a failed job was silent. This post covers what I changed in one evening, what went wrong on the way, and what I have not tested yet.
+
+## Where the host started
+
+Proxmox VE 9.2 with one guest, Home Assistant OS, on a single 256 GB SATA SSD. The disk has about 56,000 power-on hours. SMART still says PASSED, but a disk that old makes an off-site copy the first job, and the host had no backup job at all. I wrote about the original install in [The Right Way to Run Home Assistant on Proxmox](/en/blog/proxmox-home-assistant-setup/).
+
+## A weekly backup that leaves the machine
+
+The backup itself is a normal Proxmox job: Sunday 03:00, snapshot mode, zstd, keep the last two. The Home Assistant VM comes to about 4 GB and the job takes roughly a minute.
+
+The part that makes it a backup is the copy to Google Drive. I use rclone with the `drive.file` scope, so the token on the hypervisor can only see files rclone created itself and not the rest of my Drive. The host has no browser, so the authorisation happens on my PC once:
+
+```bash
+# on a PC with a browser
+rclone authorize "drive" --drive-scope drive.file
+
+# on the Proxmox host, with the token it printed
+rclone config create gdrive drive scope=drive.file config_is_local=false token='{"access_token":"..."}'
+```
+
+After that the PC is not needed again. A cron job at 05:00 mirrors only the backups of the Home Assistant VM:
+
+```bash
+rclone sync /mnt/ext/dump gdrive:Proxmox-Backups --include 'vzdump-qemu-100-*'
+```
+
+Because it is a `sync`, a backup that Proxmox prunes locally also disappears from Drive. A second small job packs the host configuration into a 17 KB archive: `/etc/pve` without the `priv` folder and without `*.key` files, the network file and my own scripts. Secrets stay out of it on purpose. A new host still needs a fresh ACME token and a fresh Google authorisation.
+
+My first cron line pointed at `/mnt/pve/ext/dump`, a path that does not exist. The real one is `/mnt/ext/dump`. A dry run with `rclone sync --dry-run` showed it before the first Sunday, which is the reason I now dry-run every new sync line.
+
+## Alerts that reach the phone
+
+Proxmox sends its notifications to `root`, and on my host those went nowhere. There was no mail relay, and two messages were stuck in the queue. Instead of setting up mail, I used what already runs next to the host: a Proxmox notification target of type webhook that calls a Home Assistant webhook automation, which sends a push to the phone.
+
+```yaml
+triggers:
+  - trigger: webhook
+    webhook_id: pve-<random-id>
+    allowed_methods: [POST]
+    local_only: true
+actions:
+  - action: notify.mobile_app_<phone>
+    data:
+      title: "Proxmox: {{ trigger.json.title }}"
+      message: "{{ trigger.json.message }}"
+```
+
+Proxmox wants the request body and every header value base64-encoded. My first test failed with `could not decode UTF8 string from base64, key 'Content-Type'`. A matcher on the severities warning, error and unknown sends only things that need attention, so the phone stays quiet otherwise.
+
+## Let's Encrypt without opening a port
+
+UniFi's local DNS can point a name at an address but cannot carry a port, so `proxmox.szimnau.dk` would still need `:8006`. A small systemd unit redirects port 443 to 8006 on the host. I limited the rule to the host's own address, because a bare redirect on 443 could also catch HTTPS traffic from guests that crosses the bridge:
+
+```bash
+iptables -t nat -A PREROUTING -d <host-ip> -p tcp --dport 443 -j REDIRECT --to-ports 8006
+```
+
+For the certificate I used Proxmox's built-in ACME client with the Cloudflare DNS plugin. DNS validation needs no inbound access, so nothing is exposed. The plugin on my host was already configured but nobody had ever ordered the certificate, which is why the browser still warned. One order later it was valid, covers both names and renews on its own. Proxmox stores the Cloudflare token in plain text and hands it out through the API, so give it DNS edit rights on one zone only.
+
+## Auto-updates with brakes
+
+The update script runs Sunday 06:00, after the backup and the upload. It refuses to do anything unless it passes these checks:
+
+- A backup of the Home Assistant VM newer than 12 hours exists.
+- The update would not remove any packages.
+- The new Proxmox version is not a new minor version. A jump from 9.2 to 9.3 sends me a message instead.
+- A restart happens only if an installed kernel is newer than the running one, and not while a backup is running.
+
+When it restarts, it waits ten minutes and tells the phone first. A systemd unit also sends a message after every boot, once the VM runs, Home Assistant answers and two more minutes have passed. If that message does not arrive within about ten minutes, Home Assistant did not come back.
+
+```bash
+OLDK=$(uname -r)
+NEWK=$(ls /boot/vmlinuz-* | sed 's|/boot/vmlinuz-||' | sort -V | tail -n 1)
+[ "$NEWK" != "$OLDK" ] && shutdown -r +10
+```
+
+The first version of the script exited as soon as there were no packages to install. That would have skipped the restart for a kernel that was already installed, which was exactly the state of my host. The dry-run mode (`-n`) caught it before the real run.
+
+## What I have and have not tested
+
+The unattended Sunday run worked. At 03:00 Proxmox took the backup, at 04:00 the host configuration was packed, at 05:00 both were on Drive (3.6 GB and 18 KB), and at 06:00 the update script ran, found nothing to install, saw that the running kernel was already the newest one, and left the host alone. The evening before, a real run had installed nothing but scheduled the restart for the pending kernel, and Home Assistant answered again about a minute after Proxmox came back.
+
+One check failed. The "Proxmox is up" message after that restart never reached my phone. My best explanation is that Home Assistant answers on port 8123 before its webhooks are registered, so the message hit a closed door. The script now waits two minutes after Home Assistant answers before it sends. I have not restarted the host again to confirm the fix.
+
+I have also not seen a failing upload trigger its alert, and I have not restored anything from Drive. A backup you have never restored is still a guess, so the restore into a temporary VM is next on my list.

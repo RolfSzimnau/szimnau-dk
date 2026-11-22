@@ -1,0 +1,102 @@
+---
+title: "Proxmox til Home Assistant: backup til Google Drive, trygge opdateringer og alarmer på telefonen"
+seoTitle: "Proxmox: backup til Google Drive og sikre opdateringer"
+description: "Sådan tager min Proxmox-server backup af Home Assistant til Google Drive, opdaterer sig selv med sikkerhedstjek og giver telefonen besked, når noget fejler."
+pubDate: 2026-11-21
+tags: ["infrastruktur", "vedligehold", "notifikationer"]
+lang: "da"
+translationKey: "proxmox-self-maintaining-backups-updates"
+heroImage: "/blog-images/proxmox-self-maintaining-1200.jpg"
+verifiedOn: "HA 2026.11"
+faqs:
+  - question: "How do I back up a Home Assistant VM on Proxmox to Google Drive automatically?"
+    answer: "Schedule a vzdump job to local storage, then mirror the dump folder to Google Drive with rclone from cron. Authorise rclone with the drive.file scope on a PC with a browser using rclone authorize, and paste the token into the config on the headless Proxmox host."
+  - question: "Is it safe to auto-update Proxmox VE?"
+    answer: "Only with guards. Require a fresh backup first, refuse updates that remove packages, skip new Proxmox minor versions, and restart only when a newer kernel than the running one is installed. The no-subscription repository is also tested less than the enterprise one."
+---
+
+Mit Home Assistant kører som en VM på én Proxmox-server, og i lang tid passede serveren ikke på sig selv. Backuppen lå på samme SSD som systemet, opdateringer ventede på, at jeg huskede dem, og hvis et job fejlede, hørte jeg intet. Her er, hvad jeg ændrede på en aften, hvad der gik galt undervejs, og hvad jeg endnu ikke har testet.
+
+## Udgangspunktet
+
+Proxmox VE 9.2 med én gæst, Home Assistant OS, på en enkelt SATA-SSD på 256 GB. Disken har cirka 56.000 driftstimer. SMART siger stadig PASSED, men en så gammel disk gør en kopi uden for maskinen til det første, der skal laves, og serveren havde slet ikke noget backupjob.
+
+## En ugentlig backup, der forlader maskinen
+
+Selve backuppen er et almindeligt Proxmox-job: søndag kl. 03.00, snapshot-tilstand, zstd, og de to seneste beholdes. VM'en med Home Assistant fylder cirka 4 GB, og jobbet tager omkring et minut.
+
+Det, der gør den til en rigtig backup, er kopien til Google Drive. Jeg bruger rclone med adgangen `drive.file`, så tokenet på serveren kun kan se filer, som rclone selv har oprettet, og ikke resten af mit Drive. Serveren har ingen browser, så godkendelsen sker én gang på min pc:
+
+```bash
+# på en pc med browser
+rclone authorize "drive" --drive-scope drive.file
+
+# på Proxmox-serveren, med det token der blev skrevet ud
+rclone config create gdrive drive scope=drive.file config_is_local=false token='{"access_token":"..."}'
+```
+
+Bagefter skal pc'en ikke bruges mere. Et cron-job kl. 05.00 spejler kun backupperne af Home Assistant-VM'en:
+
+```bash
+rclone sync /mnt/ext/dump gdrive:Proxmox-Backups --include 'vzdump-qemu-100-*'
+```
+
+Fordi det er en `sync`, forsvinder en backup, som Proxmox rydder op lokalt, også fra Drive. Et lille job mere pakker serverens opsætning i et arkiv på 17 KB: `/etc/pve` uden mappen `priv` og uden `*.key`-filer, netværksfilen og mine egne scripts. Hemmeligheder er bevidst udeladt, så en ny server skal have et nyt ACME-token og en ny Google-godkendelse.
+
+Min første cron-linje pegede på `/mnt/pve/ext/dump`, som ikke findes. Den rigtige sti er `/mnt/ext/dump`. En kørsel med `rclone sync --dry-run` afslørede det før første søndag, og derfor kører jeg nu alle nye sync-linjer med `--dry-run` først.
+
+## Alarmer, der når telefonen
+
+Proxmox sender sine beskeder til `root`, og på min server endte de ingen steder. Der er ingen mailrelay, og to beskeder sad fast i køen. I stedet for at sætte mail op brugte jeg det, der allerede kører ved siden af: et notifikationsmål i Proxmox af typen webhook kalder en webhook-automation i Home Assistant, som sender en besked til telefonen.
+
+```yaml
+triggers:
+  - trigger: webhook
+    webhook_id: pve-<tilfældigt-id>
+    allowed_methods: [POST]
+    local_only: true
+actions:
+  - action: notify.mobile_app_<telefon>
+    data:
+      title: "Proxmox: {{ trigger.json.title }}"
+      message: "{{ trigger.json.message }}"
+```
+
+Proxmox kræver, at både body og alle headerværdier er base64-kodet. Min første test fejlede med `could not decode UTF8 string from base64, key 'Content-Type'`. En regel på alvorlighederne warning, error og unknown sender kun det, der kræver handling, så telefonen er stille resten af tiden.
+
+## Let's Encrypt uden at åbne en port
+
+UniFis lokale DNS kan pege et navn på en adresse, men ikke på en port, så `proxmox.szimnau.dk` ville stadig kræve `:8006`. En lille systemd-service sender derfor port 443 videre til 8006 på serveren. Jeg begrænsede reglen til serverens egen adresse, fordi en almindelig omdirigering af 443 også kunne ramme HTTPS-trafik fra gæsterne, når den går over broen:
+
+```bash
+iptables -t nat -A PREROUTING -d <server-ip> -p tcp --dport 443 -j REDIRECT --to-ports 8006
+```
+
+Til certifikatet brugte jeg Proxmox' indbyggede ACME-klient med Cloudflare DNS-plugin. DNS-validering kræver ingen indgående adgang, så der bliver ikke åbnet for noget udefra. Pluginet var allerede sat op, men ingen havde nogensinde bestilt certifikatet, og derfor advarede browseren stadig. Efter én bestilling var det gyldigt for begge navne og fornyer sig selv. Proxmox gemmer Cloudflare-tokenet i klartekst og udleverer det via API'et, så giv det kun ret til at redigere DNS i én zone.
+
+## Automatiske opdateringer med bremser
+
+Opdateringsscriptet kører søndag kl. 06.00, efter backup og upload. Det gør ingenting, medmindre disse tjek består:
+
+- Der findes en backup af Home Assistant-VM'en, som er yngre end 12 timer.
+- Opdateringen ville ikke fjerne nogen pakker.
+- Der er ikke kommet en ny Proxmox-version, for eksempel fra 9.2 til 9.3. Så får jeg i stedet en besked.
+- Der genstartes kun, hvis en installeret kerne er nyere end den kørende, og ikke mens en backup kører.
+
+Når den genstarter, venter den ti minutter og giver først telefonen besked. En systemd-service sender også en besked efter hver opstart, når VM'en kører, Home Assistant svarer, og der er gået to minutter mere. Kommer den besked ikke inden for cirka ti minutter, er Home Assistant ikke kommet tilbage.
+
+```bash
+OLDK=$(uname -r)
+NEWK=$(ls /boot/vmlinuz-* | sed 's|/boot/vmlinuz-||' | sort -V | tail -n 1)
+[ "$NEWK" != "$OLDK" ] && shutdown -r +10
+```
+
+Den første version af scriptet stoppede, så snart der ikke var pakker at installere. Det ville have sprunget genstarten over for en kerne, der allerede var installeret, og det var præcis min servers tilstand. Tørkørslen (`-n`) fangede det før den rigtige kørsel.
+
+## Hvad jeg har testet, og hvad jeg ikke har
+
+Den uovervågede søndagskørsel virkede. Kl. 03.00 tog Proxmox backuppen, kl. 04.00 blev serverens opsætning pakket, kl. 05.00 lå begge på Drive (3,6 GB og 18 KB), og kl. 06.00 kørte opdateringsscriptet, fandt intet at installere, så at den kørende kerne allerede var den nyeste, og lod serveren være. Aftenen før havde en rigtig kørsel ikke installeret noget, men planlagt genstarten for den ventende kerne, og Home Assistant svarede igen cirka et minut efter, at Proxmox var tilbage.
+
+Ét tjek fejlede. Beskeden «Proxmox is up» efter den genstart nåede aldrig min telefon. Min bedste forklaring er, at Home Assistant svarer på port 8123, før dens webhooks er klar, så beskeden ramte en lukket dør. Scriptet venter nu to minutter, efter at Home Assistant svarer, før det sender. Jeg har ikke genstartet serveren igen for at bekræfte rettelsen.
+
+Jeg har heller ikke set en fejlet upload udløse sin alarm, og jeg har ikke gendannet noget fra Drive. En backup, du aldrig har gendannet, er stadig et gæt, så gendannelse til en midlertidig VM er næste punkt på min liste.
