@@ -11,9 +11,9 @@ heroImage: "/blog-images/proxmox-self-maintaining-1200.jpg"
 verifiedOn: "HA 2026.11"
 faqs:
   - question: "How do I back up a Home Assistant VM on Proxmox to Google Drive automatically?"
-    answer: "Schedule a vzdump job to local storage, then mirror the dump folder to Google Drive with rclone from cron. Authorise rclone with the drive.file scope on a PC with a browser using rclone authorize, and paste the token into the config on the headless Proxmox host."
+    answer: "Schedule a vzdump job to local storage, then copy the new backups to Google Drive with rclone from cron, and verify the checksum on Drive before deleting any old copy there. Authorise rclone with the drive.file scope on a PC with a browser using rclone authorize, and paste the token into the config on the headless Proxmox host."
   - question: "Is it safe to auto-update Proxmox VE?"
-    answer: "Only with guards. Require a fresh backup first, refuse updates that remove packages, skip new Proxmox minor versions, and restart only when a newer kernel than the running one is installed. The no-subscription repository is also tested less than the enterprise one."
+    answer: "Only with guards. Require a fresh backup that is confirmed off-site first, refuse updates that remove packages, stop at a new Proxmox major version, and restart only when a newer kernel than the running one is installed. The no-subscription repository is also tested less than the enterprise one."
 ---
 
 Mein Home Assistant läuft als VM auf einem einzelnen Proxmox-Server, und lange Zeit kümmerte sich der Server um nichts. Die Backups lagen auf derselben SSD wie das System, Updates warteten, bis ich daran dachte, und wenn ein Job fehlschlug, erfuhr ich nichts davon. Hier steht, was ich an einem Abend geändert habe, was dabei schiefging und was ich noch nicht getestet habe.
@@ -36,15 +36,15 @@ rclone authorize "drive" --drive-scope drive.file
 rclone config create gdrive drive scope=drive.file config_is_local=false token='{"access_token":"..."}'
 ```
 
-Danach wird der PC nicht mehr gebraucht. Ein Cron-Job um 05:00 Uhr spiegelt nur die Backups der Home-Assistant-VM:
+Danach wird der PC nicht mehr gebraucht. Ein Cron-Job um 05:00 Uhr kopiert die Backups der Home-Assistant-VM nach Drive, aber nur, wenn das neueste lokale Backup frisch ist und `zstd -t` besteht:
 
 ```bash
-rclone sync /mnt/ext/dump gdrive:Proxmox-Backups --include 'vzdump-qemu-100-*'
+rclone copy /mnt/ext/dump gdrive:Proxmox-Backups --include 'vzdump-qemu-100-*'
 ```
 
-Weil es ein `sync` ist, verschwindet ein Backup, das Proxmox lokal aufräumt, auch von Drive. Ein zweiter kleiner Job packt die Serverkonfiguration in ein Archiv mit 17 KB: `/etc/pve` ohne den Ordner `priv` und ohne `*.key`-Dateien, die Netzwerkdatei und meine eigenen Skripte. Geheimnisse bleiben absichtlich draußen. Ein neuer Server braucht deshalb ein neues ACME-Token und eine neue Google-Autorisierung.
+Meine erste Version nutzte `rclone sync`, das Drive zu einem exakten Spiegel macht. Für ein Backup ist das das falsche Werkzeug: Ein leerer oder gelöschter lokaler Ordner hätte am nächsten Sonntag alle Kopien auf Drive gelöscht. Das Skript nutzt jetzt `rclone copy`, bricht ab, wenn das neueste lokale Backup fehlt, älter als acht Tage ist oder `zstd -t` nicht besteht, vergleicht die MD5-Summe auf Drive mit der lokalen Datei und löscht erst danach die ältesten Kopien dort, sodass die vier neuesten bleiben. Ein zweiter kleiner Job packt die Serverkonfiguration in ein Archiv mit 23 KB: `/etc/pve` ohne den Ordner `priv` und ohne `*.key`-Dateien, die Netzwerkdatei und meine eigenen Skripte. Geheimnisse bleiben absichtlich draußen. Ein neuer Server braucht deshalb ein neues ACME-Token und eine neue Google-Autorisierung.
 
-Meine erste Cron-Zeile zeigte auf `/mnt/pve/ext/dump`, einen Pfad, den es nicht gibt. Der richtige ist `/mnt/ext/dump`. Ein Lauf mit `rclone sync --dry-run` zeigte das vor dem ersten Sonntag, und deshalb lasse ich neue Sync-Zeilen jetzt immer zuerst mit `--dry-run` laufen.
+Meine erste Cron-Zeile zeigte auf `/mnt/pve/ext/dump`, einen Pfad, den es nicht gibt. Der richtige ist `/mnt/ext/dump`. Ein Lauf mit `rclone --dry-run` zeigte das vor dem ersten Sonntag, und deshalb lasse ich neue rclone-Zeilen jetzt immer zuerst mit `--dry-run` laufen.
 
 ## Alarme, die das Handy erreichen
 
@@ -79,12 +79,12 @@ Für das Zertifikat habe ich den eingebauten ACME-Client von Proxmox mit dem Clo
 
 Das Update-Skript läuft sonntags um 06:00 Uhr, nach Backup und Upload. Es tut nichts, wenn nicht alle diese Prüfungen bestanden sind:
 
-- Es gibt ein Backup der Home-Assistant-VM, das jünger als 12 Stunden ist.
+- Es gibt ein Backup der Home-Assistant-VM, das jünger als 12 Stunden ist und dessen Upload auf Drive bestätigt wurde.
 - Das Update würde keine Pakete entfernen.
-- Es ist keine neue Proxmox-Version erschienen, etwa von 9.2 auf 9.3. Dann bekomme ich stattdessen eine Nachricht.
+- Es ist keine neue Hauptversion von Proxmox erschienen. Kleinere Schritte wie 9.2 auf 9.3 laufen durch und stehen in der Nachricht, ein Sprung auf Version 10 schickt mir stattdessen eine Nachricht.
 - Neu gestartet wird nur, wenn ein installierter Kernel neuer ist als der laufende, und nicht, während ein Backup läuft.
 
-Vor dem Neustart wartet das Skript zehn Minuten und sagt dem Handy Bescheid. Ein systemd-Dienst schickt außerdem nach jedem Start eine Nachricht, sobald die VM läuft, Home Assistant antwortet und zwei weitere Minuten vergangen sind. Kommt diese Nachricht nicht innerhalb von etwa zehn Minuten, ist Home Assistant nicht zurückgekommen.
+Vor dem Neustart wartet das Skript zehn Minuten und sagt dem Handy Bescheid. Ein systemd-Dienst schickt außerdem nach jedem Start eine Nachricht, sobald die VM läuft, Home Assistant antwortet und zwei weitere Minuten vergangen sind. Kommt diese Nachricht nicht innerhalb von etwa zwölf Minuten, ist Home Assistant nicht zurückgekommen. Wenn kein Neustart ansteht, räumt das Skript außerdem alte Kernel auf und behält den laufenden und die zwei neuesten.
 
 ```bash
 OLDK=$(uname -r)
@@ -102,4 +102,8 @@ Eine Prüfung ist fehlgeschlagen. Die Nachricht „Proxmox is up“ nach diesem 
 
 Die Wiederherstellung funktioniert. Ich habe das Backup der letzten Nacht von Drive geladen, geprüft, dass es Byte für Byte mit der lokalen Datei übereinstimmt (gleiche Größe und gleiche MD5-Summe), und es mit `qmrestore --unique 1` in eine temporäre VM zurückgespielt. Das dauerte etwa zwei Minuten. Die VM habe ich nie gestartet, weil eine zweite Home-Assistant-Instanz im selben Netz und mit demselben Zigbee-Stick Ärger machen würde. Stattdessen habe ich die Datenpartition über ein Loop-Gerät schreibgeschützt eingehängt und darin die Home-Assistant-Konfiguration, die Automationen und die Datenbank gefunden, und danach die VM wieder gelöscht. Proxmox bringt `kpartx` nicht mit, deshalb habe ich die Partitionen mit `losetup -rP` sichtbar gemacht.
 
-Das belegt die Dateien und den Aufbau der Platte, nicht aber, dass die wiederhergestellte VM startet. Außerdem habe ich noch nicht gesehen, dass ein fehlgeschlagener Upload seinen Alarm auslöst.
+Das belegt die Dateien und den Aufbau der Platte, nicht aber, dass die wiederhergestellte VM startet.
+
+Der Wiederherstellungstest läuft jetzt jedes Quartal von selbst. Er lädt das neueste Backup von Drive, vergleicht die MD5-Summe mit der, die Drive meldet, stellt es in einer temporären VM wieder her, lässt SQLite eine Kopie der Home-Assistant-Datenbank prüfen, löscht alles wieder und schickt das Ergebnis aufs Handy. Ein Lauf des fertigen Skripts dauerte gut vier Minuten und las 762.224 Zeilen Verlauf ohne Fehler.
+
+Auch der Fehlerweg funktioniert. Ich habe das Upload-Skript auf einen leeren Ordner gerichtet. Es hat angehalten, bevor es Drive berührte, und der Alarm ging über Home Assistant raus. Eine Durchsicht meiner Skripte fand das oben beschriebene `sync`-Problem und einen alten wöchentlichen Job in Roots Crontab, der ein Skript von GitHub holte und als root ausführte. Den habe ich entfernt. Die Notfallanleitung liegt jetzt im selben Drive-Ordner wie die Backups, und Home Assistant macht jede Nacht selbst ein Backup auf Drive als zweite Schicht.

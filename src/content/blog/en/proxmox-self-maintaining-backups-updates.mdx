@@ -11,9 +11,9 @@ heroImage: "/blog-images/proxmox-self-maintaining-1200.jpg"
 verifiedOn: "HA 2026.11"
 faqs:
   - question: "How do I back up a Home Assistant VM on Proxmox to Google Drive automatically?"
-    answer: "Schedule a vzdump job to local storage, then mirror the dump folder to Google Drive with rclone from cron. Authorise rclone with the drive.file scope on a PC with a browser using rclone authorize, and paste the token into the config on the headless Proxmox host."
+    answer: "Schedule a vzdump job to local storage, then copy the new backups to Google Drive with rclone from cron, and verify the checksum on Drive before deleting any old copy there. Authorise rclone with the drive.file scope on a PC with a browser using rclone authorize, and paste the token into the config on the headless Proxmox host."
   - question: "Is it safe to auto-update Proxmox VE?"
-    answer: "Only with guards. Require a fresh backup first, refuse updates that remove packages, skip new Proxmox minor versions, and restart only when a newer kernel than the running one is installed. The no-subscription repository is also tested less than the enterprise one."
+    answer: "Only with guards. Require a fresh backup that is confirmed off-site first, refuse updates that remove packages, stop at a new Proxmox major version, and restart only when a newer kernel than the running one is installed. The no-subscription repository is also tested less than the enterprise one."
 ---
 
 My Home Assistant runs as a VM on a single Proxmox host, and for a long time that host looked after nothing. The backups lived on the same SSD as the system, updates waited until I remembered them, and a failed job was silent. This post covers what I changed in one evening, what went wrong on the way, and what I have not tested yet.
@@ -36,15 +36,15 @@ rclone authorize "drive" --drive-scope drive.file
 rclone config create gdrive drive scope=drive.file config_is_local=false token='{"access_token":"..."}'
 ```
 
-After that the PC is not needed again. A cron job at 05:00 mirrors only the backups of the Home Assistant VM:
+After that the PC is not needed again. A cron job at 05:00 copies the backups of the Home Assistant VM to Drive, but only if the newest local backup is fresh and passes `zstd -t`:
 
 ```bash
-rclone sync /mnt/ext/dump gdrive:Proxmox-Backups --include 'vzdump-qemu-100-*'
+rclone copy /mnt/ext/dump gdrive:Proxmox-Backups --include 'vzdump-qemu-100-*'
 ```
 
-Because it is a `sync`, a backup that Proxmox prunes locally also disappears from Drive. A second small job packs the host configuration into a 17 KB archive: `/etc/pve` without the `priv` folder and without `*.key` files, the network file and my own scripts. Secrets stay out of it on purpose. A new host still needs a fresh ACME token and a fresh Google authorisation.
+My first version used `rclone sync`, which makes Drive an exact mirror. That is the wrong tool for a backup: an empty or wiped local folder would have deleted every copy on Drive the next Sunday. The script now uses `rclone copy`, stops if the newest local backup is missing, older than eight days or fails `zstd -t`, compares the MD5 sum on Drive with the local file, and only then deletes the oldest copies there, so the newest four stay. A second small job packs the host configuration into a 23 KB archive: `/etc/pve` without the `priv` folder and without `*.key` files, the network file and my own scripts. Secrets stay out of it on purpose. A new host still needs a fresh ACME token and a fresh Google authorisation.
 
-My first cron line pointed at `/mnt/pve/ext/dump`, a path that does not exist. The real one is `/mnt/ext/dump`. A dry run with `rclone sync --dry-run` showed it before the first Sunday, which is the reason I now dry-run every new sync line.
+My first cron line pointed at `/mnt/pve/ext/dump`, a path that does not exist. The real one is `/mnt/ext/dump`. A dry run with `rclone --dry-run` showed it before the first Sunday, which is the reason I now dry-run every new rclone line.
 
 ## Alerts that reach the phone
 
@@ -79,12 +79,12 @@ For the certificate I used Proxmox's built-in ACME client with the Cloudflare DN
 
 The update script runs Sunday 06:00, after the backup and the upload. It refuses to do anything unless it passes these checks:
 
-- A backup of the Home Assistant VM newer than 12 hours exists.
+- A backup of the Home Assistant VM newer than 12 hours exists, and its upload to Drive is confirmed.
 - The update would not remove any packages.
-- The new Proxmox version is not a new minor version. A jump from 9.2 to 9.3 sends me a message instead.
+- There is no new major version of Proxmox. Smaller steps such as 9.2 to 9.3 go through and the message names them, but a jump to version 10 sends me a message instead.
 - A restart happens only if an installed kernel is newer than the running one, and not while a backup is running.
 
-When it restarts, it waits ten minutes and tells the phone first. A systemd unit also sends a message after every boot, once the VM runs, Home Assistant answers and two more minutes have passed. If that message does not arrive within about ten minutes, Home Assistant did not come back.
+When it restarts, it waits ten minutes and tells the phone first. A systemd unit also sends a message after every boot, once the VM runs, Home Assistant answers and two more minutes have passed. If that message does not arrive within about twelve minutes, Home Assistant did not come back. When no restart is pending, the script also removes old kernels and keeps the running one and the newest two.
 
 ```bash
 OLDK=$(uname -r)
@@ -102,4 +102,8 @@ One check failed. The "Proxmox is up" message after that restart never reached m
 
 The restore works. I downloaded last night's backup from Drive, confirmed that it matched the local file byte for byte (same size and the same MD5 sum), and restored it into a temporary VM with `qmrestore --unique 1`. That took about two minutes. I never started the VM, because a second Home Assistant on the same network and with the same Zigbee dongle would cause trouble. Instead I mounted the data partition read-only through a loop device and found the Home Assistant configuration, the automations and the database in it, and then deleted the VM again. Proxmox does not ship `kpartx`, so `losetup -rP` made the partitions visible.
 
-That proves the files and the disk layout, not that the restored VM boots. I have also not seen a failing upload trigger its alert.
+That proves the files and the disk layout, not that the restored VM boots.
+
+The restore test now runs by itself every quarter. It downloads the newest backup from Drive, compares the MD5 sum with the one Drive reports, restores it into a temporary VM, lets SQLite check a copy of the Home Assistant database, deletes everything again and sends the result to my phone. A run of the finished script took a little over four minutes and read 762,224 rows of state history without errors.
+
+The failure path works too. I pointed the upload script at an empty folder. It stopped before touching Drive, and the alert went out through Home Assistant. A review of my scripts found the `sync` problem described above and an old weekly job in root's crontab that downloaded a script from GitHub and ran it as root, which I removed. The recovery guide now lives in the same Drive folder as the backups, and Home Assistant makes its own nightly backup to Drive as a second layer.
