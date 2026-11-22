@@ -2,6 +2,7 @@
 title: "Nightly Home Assistant Health Checks with GitHub Actions"
 description: "A nightly CI pipeline runs 22 tests against my live Home Assistant setup and opens a GitHub issue when something breaks, before I notice."
 pubDate: 2026-05-11
+updatedDate: 2026-11-22
 tags: ["maintenance", "infrastructure", "automation"]
 lang: "en"
 translationKey: "ha-nightly-health-check"
@@ -12,6 +13,12 @@ faqs:
   - question: "What should nightly Home Assistant tests cover?"
     answer: "Critical automations and scripts, notification services, custom Lovelace card resources, and key entity states. The goal is catching silent breakages: integrations that stop working after a HA update without throwing visible errors."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, November 2026:** I have shut down the self-hosted runner this post is built on. It no longer made sense for me to keep a separate container just for these tests, so they no longer run the way this post describes. I have left the post as I wrote it, for anyone who wants to build something similar.
+
+</div>
 
 The dishwasher notification worked perfectly for months. Then one day it didn't. The `notify.android_tv` service had silently disappeared after a Home Assistant restart, and I only found out when I was standing in the kitchen waiting for an alert that never came.
 

@@ -3,6 +3,7 @@ title: "Nächtliche Home-Assistant-Gesundheitschecks mit GitHub Actions"
 seoTitle: "Nächtliche Home-Assistant-Checks mit GitHub Actions"
 description: "Eine nächtliche CI-Pipeline führt 22 Tests gegen mein Live-HA-Setup aus und öffnet automatisch ein GitHub-Issue, bevor ich den Fehler bemerke."
 pubDate: 2026-05-11
+updatedDate: 2026-11-22
 tags: ["wartung", "infrastruktur", "automatisierung"]
 lang: "de"
 translationKey: "ha-nightly-health-check"
@@ -13,6 +14,12 @@ faqs:
   - question: "Was sollten nächtliche Tests in Home Assistant abdecken?"
     answer: "Die wichtigsten Automatisierungen und Skripte, Benachrichtigungen, die Ressourcen eigener Lovelace-Karten und den Zustand zentraler Entitäten. Es geht um die stillen Ausfälle: Integrationen, die nach einem HA-Update aufhören zu funktionieren, ohne eine sichtbare Fehlermeldung."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, November 2026:** Ich habe den selbst gehosteten Runner abgeschaltet, auf dem dieser Beitrag aufbaut. Es ergab für mich keinen Sinn mehr, einen eigenen Container nur für diese Tests zu behalten, deshalb laufen sie nicht mehr so, wie der Beitrag es beschreibt. Ich habe den Beitrag so gelassen, wie ich ihn geschrieben habe, für alle, die etwas Ähnliches bauen wollen.
+
+</div>
 
 Die Geschirrspüler-Benachrichtigung funktionierte monatelang perfekt. Dann eines Tages nicht mehr. Der `notify.android_tv`-Dienst war nach einem Home Assistant-Neustart still verschwunden, und ich erfuhr es erst, als ich in der Küche stand und auf einen Alarm wartete, der nie kam.
 

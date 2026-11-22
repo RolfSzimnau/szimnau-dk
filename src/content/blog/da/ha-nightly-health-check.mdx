@@ -2,6 +2,7 @@
 title: "Natlige Home Assistant-sundhedstjek med GitHub Actions"
 description: "En nightly CI-pipeline kører 22 tests mod mit live Home Assistant-setup og åbner et GitHub-issue, når noget går i stykker, før jeg selv opdager det."
 pubDate: 2026-05-11
+updatedDate: 2026-11-22
 tags: ["vedligehold", "infrastruktur", "automatisering"]
 lang: "da"
 translationKey: "ha-nightly-health-check"
@@ -12,6 +13,12 @@ faqs:
   - question: "Hvad skal de natlige tests i Home Assistant dække?"
     answer: "De vigtigste automationer og scripts, notifikationer, ressourcer til brugerdefinerede Lovelace-kort og tilstanden på centrale entiteter. Formålet er at fange de stille fejl: integrationer, der holder op med at virke efter en HA-opdatering uden at sige noget."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Opdatering, november 2026:** Jeg har lukket den selvhostede runner, som det her indlæg bygger på. Det gav ikke længere mening for mig at have en separat container kun til de her tests, så de kører ikke længere sådan, som indlægget beskriver. Jeg har ladet indlægget stå, som jeg skrev det, til dem der vil bygge noget lignende.
+
+</div>
 
 Opvaskemaskine-notifikationen virkede perfekt i måneder. Så en dag gjorde den det ikke. `notify.android_tv`-servicen var stille og roligt forsvundet efter en Home Assistant-genstart, og jeg fandt først ud af det da jeg stod i køkkenet og ventede på en alarm der aldrig kom.
 

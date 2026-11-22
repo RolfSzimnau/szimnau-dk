@@ -2,6 +2,7 @@
 title: "The Right Way to Run Home Assistant on Proxmox"
 description: "Moving Home Assistant from Raspberry Pi 4 to a Dell OptiPlex 7060 on Proxmox VE: VM sizing, USB passthrough, and why snapshots changed how I handle updates."
 pubDate: 2024-11-15
+updatedDate: 2026-11-22
 tags: ["infrastructure"]
 lang: "en"
 translationKey: "proxmox-home-assistant-setup"
@@ -12,6 +13,12 @@ faqs:
   - question: "What hardware specs are recommended for Home Assistant on Proxmox?"
     answer: "A Dell OptiPlex 7060 with 16 GB RAM and a 256 GB SSD works well. Assign 2 CPU cores and 4 GB RAM to the Home Assistant VM. An SSD is essential, because SD cards fail under HA's write load."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, November 2026:** I wrote this in 2024, and parts of it no longer made sense for the setup I run today. The hardware table below is not what the host runs on now: it is an Intel Core i7-8700T with 16 GB of RAM and a single 256 GB SATA SSD. I have left the rest as I wrote it. My newer post, [Proxmox for Home Assistant: Off-Site Backups, Safe Auto-Updates and Phone Alerts](/en/blog/proxmox-self-maintaining-backups-updates/), describes how the host is run today.
+
+</div>
 
 My Home Assistant setup had been running on a Raspberry Pi 4 for two years when, on a Wednesday evening in October, I came home to find it dead. The SD card had silently corrupted itself. No warning. No graceful shutdown. Just a cold house and nothing working.
 
