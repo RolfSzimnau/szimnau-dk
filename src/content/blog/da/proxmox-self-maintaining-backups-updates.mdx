@@ -3,6 +3,7 @@ title: "Proxmox til Home Assistant: backup til Google Drive, trygge opdateringer
 seoTitle: "Proxmox: backup til Google Drive og sikre opdateringer"
 description: "Sådan tager min Proxmox-server backup af Home Assistant til Google Drive, opdaterer sig selv med sikkerhedstjek og giver telefonen besked, når noget fejler."
 pubDate: 2026-11-21
+updatedDate: 2026-11-22
 tags: ["infrastruktur", "vedligehold", "notifikationer"]
 lang: "da"
 translationKey: "proxmox-self-maintaining-backups-updates"
@@ -99,4 +100,6 @@ Den uovervågede søndagskørsel virkede. Kl. 03.00 tog Proxmox backuppen, kl. 0
 
 Ét tjek fejlede. Beskeden «Proxmox is up» efter den genstart nåede aldrig min telefon. Min bedste forklaring er, at Home Assistant svarer på port 8123, før dens webhooks er klar, så beskeden ramte en lukket dør. Scriptet venter nu to minutter, efter at Home Assistant svarer, før det sender. Jeg har ikke genstartet serveren igen for at bekræfte rettelsen.
 
-Jeg har heller ikke set en fejlet upload udløse sin alarm, og jeg har ikke gendannet noget fra Drive. En backup, du aldrig har gendannet, er stadig et gæt, så gendannelse til en midlertidig VM er næste punkt på min liste.
+Gendannelsen virker. Jeg hentede nattens backup fra Drive, bekræftede at den var identisk med den lokale fil (samme størrelse og samme MD5-sum) og gendannede den til en midlertidig VM med `qmrestore --unique 1`. Det tog cirka to minutter. Jeg startede aldrig VM'en, for en ekstra Home Assistant på samme netværk og med den samme Zigbee-dongle ville give problemer. I stedet monterede jeg datapartitionen skrivebeskyttet via en loop-enhed og fandt Home Assistants konfiguration, automationerne og databasen, og så slettede jeg VM'en igen. Proxmox har ikke `kpartx` med, så jeg brugte `losetup -rP` til at få partitionerne frem.
+
+Det beviser filerne og diskens opbygning, ikke at den gendannede VM starter. Jeg har heller ikke set en fejlet upload udløse sin alarm.

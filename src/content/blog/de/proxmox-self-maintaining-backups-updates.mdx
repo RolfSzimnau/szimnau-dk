@@ -3,6 +3,7 @@ title: "Proxmox für Home Assistant: Backup zu Google Drive, sichere Updates und
 seoTitle: "Proxmox: Backup zu Google Drive und sichere Auto-Updates"
 description: "Wie mein Proxmox-Server Home Assistant auf Google Drive sichert, sich mit Prüfungen selbst aktualisiert und bei Fehlern eine Nachricht aufs Handy schickt."
 pubDate: 2026-11-21
+updatedDate: 2026-11-22
 tags: ["infrastruktur", "wartung", "benachrichtigungen"]
 lang: "de"
 translationKey: "proxmox-self-maintaining-backups-updates"
@@ -99,4 +100,6 @@ Der unbeaufsichtigte Sonntagslauf hat funktioniert. Um 03:00 Uhr machte Proxmox 
 
 Eine Prüfung ist fehlgeschlagen. Die Nachricht „Proxmox is up“ nach diesem Neustart kam nie auf meinem Handy an. Meine beste Erklärung: Home Assistant antwortet auf Port 8123, bevor seine Webhooks bereit sind, die Nachricht lief also ins Leere. Das Skript wartet jetzt zwei Minuten, nachdem Home Assistant antwortet, bevor es sendet. Ob die Korrektur wirkt, habe ich noch nicht durch einen weiteren Neustart geprüft.
 
-Einen fehlgeschlagenen Upload, der seinen Alarm auslöst, habe ich ebenfalls nicht gesehen, und ich habe nichts von Drive wiederhergestellt. Ein Backup, das man nie zurückgespielt hat, bleibt eine Vermutung, deshalb steht die Wiederherstellung in eine temporäre VM als Nächstes auf meiner Liste.
+Die Wiederherstellung funktioniert. Ich habe das Backup der letzten Nacht von Drive geladen, geprüft, dass es Byte für Byte mit der lokalen Datei übereinstimmt (gleiche Größe und gleiche MD5-Summe), und es mit `qmrestore --unique 1` in eine temporäre VM zurückgespielt. Das dauerte etwa zwei Minuten. Die VM habe ich nie gestartet, weil eine zweite Home-Assistant-Instanz im selben Netz und mit demselben Zigbee-Stick Ärger machen würde. Stattdessen habe ich die Datenpartition über ein Loop-Gerät schreibgeschützt eingehängt und darin die Home-Assistant-Konfiguration, die Automationen und die Datenbank gefunden, und danach die VM wieder gelöscht. Proxmox bringt `kpartx` nicht mit, deshalb habe ich die Partitionen mit `losetup -rP` sichtbar gemacht.
+
+Das belegt die Dateien und den Aufbau der Platte, nicht aber, dass die wiederhergestellte VM startet. Außerdem habe ich noch nicht gesehen, dass ein fehlgeschlagener Upload seinen Alarm auslöst.

@@ -3,6 +3,7 @@ title: "Proxmox for Home Assistant: Off-Site Backups, Safe Auto-Updates and Phon
 seoTitle: "Proxmox Backups to Google Drive and Safe Auto-Updates"
 description: "How my Proxmox host backs up Home Assistant to Google Drive, updates itself with safety checks, and sends a message to my phone when something fails."
 pubDate: 2026-11-21
+updatedDate: 2026-11-22
 tags: ["infrastructure", "maintenance", "notifications"]
 lang: "en"
 translationKey: "proxmox-self-maintaining-backups-updates"
@@ -99,4 +100,6 @@ The unattended Sunday run worked. At 03:00 Proxmox took the backup, at 04:00 the
 
 One check failed. The "Proxmox is up" message after that restart never reached my phone. My best explanation is that Home Assistant answers on port 8123 before its webhooks are registered, so the message hit a closed door. The script now waits two minutes after Home Assistant answers before it sends. I have not restarted the host again to confirm the fix.
 
-I have also not seen a failing upload trigger its alert, and I have not restored anything from Drive. A backup you have never restored is still a guess, so the restore into a temporary VM is next on my list.
+The restore works. I downloaded last night's backup from Drive, confirmed that it matched the local file byte for byte (same size and the same MD5 sum), and restored it into a temporary VM with `qmrestore --unique 1`. That took about two minutes. I never started the VM, because a second Home Assistant on the same network and with the same Zigbee dongle would cause trouble. Instead I mounted the data partition read-only through a loop device and found the Home Assistant configuration, the automations and the database in it, and then deleted the VM again. Proxmox does not ship `kpartx`, so `losetup -rP` made the partitions visible.
+
+That proves the files and the disk layout, not that the restored VM boots. I have also not seen a failing upload trigger its alert.
