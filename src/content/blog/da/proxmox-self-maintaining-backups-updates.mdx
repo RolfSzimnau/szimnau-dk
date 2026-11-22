@@ -94,6 +94,18 @@ NEWK=$(ls /boot/vmlinuz-* | sed 's|/boot/vmlinuz-||' | sort -V | tail -n 1)
 
 Den første version af scriptet stoppede, så snart der ikke var pakker at installere. Det ville have sprunget genstarten over for en kerne, der allerede var installeret, og det var præcis min servers tilstand. Tørkørslen (`-n`) fangede det før den rigtige kørsel.
 
+## Gendannelse i Proxmox' webgrænseflade
+
+Dør disken, kommer Home Assistant-VM'en tilbage gennem webgrænsefladen. Installér Proxmox på en ny disk, og kopiér backupfilen til `/var/lib/vz/dump/` med `scp` eller WinSCP. Fanen Backups har ingen Upload-knap (det har kun ISO Images og CT Templates), men filen dukker op dér, så snart den ligger i den mappe: noden, `local`, Backups.
+
+![Proxmox' webgrænseflade med lageret local åbent på fanen Backups, en backup markeret og knappen Restore i værktøjslinjen](/blog-images/proxmox-restore-backups-tab.webp)
+
+Markér filen, og klik Restore. Lad Storage stå på «From backup configuration», skriv 100 i VM, lad Unique være tom, så VM'en beholder sin netværksadresse, og sæt flueben i Start after restore.
+
+![Dialogen Restore: VM i Proxmox med Source, Storage, VM, Unique og Start after restore](/blog-images/proxmox-restore-dialog.webp)
+
+Scripts og cron-filer ligger ikke i VM'en. De ligger i det ugentlige arkiv med serverens opsætning på Drive, sammen med et lille hjælpescript, der lægger dem på plads igen og skriver ud, hvad der stadig skal gøres i hånden.
+
 ## Hvad jeg har testet, og hvad jeg ikke har
 
 Den uovervågede søndagskørsel virkede. Kl. 03.00 tog Proxmox backuppen, kl. 04.00 blev serverens opsætning pakket, kl. 05.00 lå begge på Drive (3,6 GB og 18 KB), og kl. 06.00 kørte opdateringsscriptet, fandt intet at installere, så at den kørende kerne allerede var den nyeste, og lod serveren være. Aftenen før havde en rigtig kørsel ikke installeret noget, men planlagt genstarten for den ventende kerne, og Home Assistant svarede igen cirka et minut efter, at Proxmox var tilbage.

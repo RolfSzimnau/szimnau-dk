@@ -94,6 +94,18 @@ NEWK=$(ls /boot/vmlinuz-* | sed 's|/boot/vmlinuz-||' | sort -V | tail -n 1)
 
 The first version of the script exited as soon as there were no packages to install. That would have skipped the restart for a kernel that was already installed, which was exactly the state of my host. The dry-run mode (`-n`) caught it before the real run.
 
+## Restoring in the Proxmox web interface
+
+If the disk dies, the Home Assistant VM comes back through the web interface. Install Proxmox on a new disk and copy the backup file to `/var/lib/vz/dump/` with `scp` or WinSCP. The Backups tab has no Upload button (only ISO Images and CT Templates have one), but the file shows up there as soon as it is in that folder: node, `local`, Backups.
+
+![Proxmox web interface with the local storage open on the Backups tab, a backup selected and the Restore button in the toolbar](/blog-images/proxmox-restore-backups-tab.webp)
+
+Select the file and click Restore. Leave Storage on "From backup configuration", set VM to 100, leave Unique empty so the VM keeps its network address, and tick Start after restore.
+
+![The Restore: VM dialog in Proxmox with Source, Storage, VM, Unique and Start after restore](/blog-images/proxmox-restore-dialog.webp)
+
+The scripts and cron files are not in the VM. They sit in the weekly host-configuration archive on Drive, together with a small helper script that puts them back and prints what is left to do by hand.
+
 ## What I have and have not tested
 
 The unattended Sunday run worked. At 03:00 Proxmox took the backup, at 04:00 the host configuration was packed, at 05:00 both were on Drive (3.6 GB and 18 KB), and at 06:00 the update script ran, found nothing to install, saw that the running kernel was already the newest one, and left the host alone. The evening before, a real run had installed nothing but scheduled the restart for the pending kernel, and Home Assistant answered again about a minute after Proxmox came back.

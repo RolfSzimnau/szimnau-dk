@@ -94,6 +94,18 @@ NEWK=$(ls /boot/vmlinuz-* | sed 's|/boot/vmlinuz-||' | sort -V | tail -n 1)
 
 Die erste Version des Skripts brach ab, sobald es keine Pakete zu installieren gab. Das hätte den Neustart für einen schon installierten Kernel übersprungen, und genau so war der Zustand meines Servers. Der Probelauf (`-n`) hat es vor dem echten Lauf aufgedeckt.
 
+## Wiederherstellung in der Proxmox-Weboberfläche
+
+Fällt die Platte aus, kommt die Home-Assistant-VM über die Weboberfläche zurück. Proxmox auf einer neuen Platte installieren und die Backup-Datei mit `scp` oder WinSCP nach `/var/lib/vz/dump/` kopieren. Der Reiter Backups hat keinen Upload-Knopf (den haben nur ISO Images und CT Templates), aber die Datei erscheint dort, sobald sie in diesem Ordner liegt: Knoten, `local`, Backups.
+
+![Proxmox-Weboberfläche mit dem Speicher local auf dem Reiter Backups, einem markierten Backup und dem Knopf Restore in der Werkzeugleiste](/blog-images/proxmox-restore-backups-tab.webp)
+
+Datei markieren und auf Restore klicken. Storage auf „From backup configuration“ lassen, bei VM 100 eintragen, Unique leer lassen, damit die VM ihre Netzwerkadresse behält, und Start after restore anhaken.
+
+![Der Dialog Restore: VM in Proxmox mit Source, Storage, VM, Unique und Start after restore](/blog-images/proxmox-restore-dialog.webp)
+
+Die Skripte und Cron-Dateien liegen nicht in der VM. Sie stecken im wöchentlichen Archiv der Serverkonfiguration auf Drive, zusammen mit einem kleinen Hilfsskript, das sie wieder an ihren Platz legt und ausgibt, was noch von Hand zu tun ist.
+
 ## Was ich getestet habe und was nicht
 
 Der unbeaufsichtigte Sonntagslauf hat funktioniert. Um 03:00 Uhr machte Proxmox das Backup, um 04:00 Uhr wurde die Serverkonfiguration gepackt, um 05:00 Uhr lagen beide auf Drive (3,6 GB und 18 KB), und um 06:00 Uhr lief das Update-Skript, fand nichts zu installieren, sah, dass der laufende Kernel schon der neueste war, und ließ den Server in Ruhe. Am Abend davor hatte ein echter Lauf zwar nichts installiert, aber den Neustart für den wartenden Kernel eingeplant, und Home Assistant antwortete etwa eine Minute nach der Rückkehr von Proxmox wieder.
