@@ -71,7 +71,7 @@ Mop mode is a select entity. The intensity row only shows when the robot reports
 
 ## The integration
 
-Commands and polling run locally. The cloud handles setup and acts as the fallback. This section used to say that local communication meant extracting keys from the firmware, and that is no longer true. Updates arrive by polling, not push, and the vacuum needs internet access: without it, it blocks its local API. For anything that matters (starting a clean, checking battery, room segments), that is fast enough.
+Commands and polling run locally. The cloud handles setup and acts as the fallback. This section used to say that local communication meant extracting keys from the firmware, and that is no longer true. Updates arrive by polling, not push, and the vacuum needs internet access: without it, it blocks its local API. For anything that matters (starting a clean, checking battery, room segments), that is fast enough. My robot runs only once or twice a week, so polling speed doesn't decide anything for me. I get an alert if something goes wrong, and it tells me where the robot was when it happened. I also get an alert when a part needs replacing.
 
 Entities after setup:
 
