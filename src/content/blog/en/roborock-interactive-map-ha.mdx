@@ -3,7 +3,7 @@ title: "What's Actually Useful About the Roborock Map in Home Assistant"
 seoTitle: "Roborock Custom Map Card in Home Assistant (HACS)"
 description: "Roborock Q5 Pro in Home Assistant: set up the interactive map card from HACS, clean single rooms by segment and track brush and filter wear."
 pubDate: 2025-04-04
-updatedDate: 2026-11-08
+updatedDate: 2026-11-27
 tags: ["vacuum", "dashboard"]
 lang: "en"
 translationKey: "roborock-interactive-map-ha"
@@ -12,10 +12,18 @@ faqs:
   - question: "How do you get a live interactive Roborock map in Home Assistant?"
     answer: "The built-in Roborock integration (cloud account required) provides the vacuum entity, and the Xiaomi Vacuum Map Card from HACS renders the live map with tap-to-clean room segments."
   - question: "Does the Roborock integration work locally?"
-    answer: "Officially it is cloud polling at roughly 5-second refresh. Local communication requires extracting keys from device firmware. For starting cleans, battery and room segments, cloud polling is entirely adequate."
+    answer: "Partly. According to the Home Assistant documentation (checked 27 November 2026), commands and polling run locally, and the cloud handles setup and acts as a fallback. The vacuum still needs internet access. Over Matter it can run fully offline, with fewer controls and sensors."
   - question: "How do you show brush and filter wear in Home Assistant?"
     answer: "If the Roborock integration reports hours left (sensor.*_filter_time_left and similar), divide by the part's rated life in a template and show both the percentage and the hours, for example 91% of 150 h for the filter. Clamp the result between 0 and 100."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, November 2026:** I wrote here that local control needs keys pulled from the firmware and that the integration polls the cloud. That is out of date. The Home Assistant documentation (checked 27 November 2026) now describes a hybrid model: commands and polling run locally, and the cloud covers setup and fallback. The S, QV, Qrevo and Saros series are listed as fully supported, and the Q series varies by model. A vacuum that loses its internet connection shuts its local API until it can reach Roborock again. If you want it fully offline, you can add it over Matter and accept fewer controls and sensors. Older models such as the S5 go through the Xiaomi Miio integration instead. The code and entity names further down are unchanged.
+
+**Advertising for RobotGuiden.dk.** Andreas from RobotGuiden.dk emailed me and asked for a link. I get no payment or other benefit. RobotGuiden earns money from affiliate links on its own site. If you want a hardware comparison of Roborock and Dreame (door thresholds, mop systems, docking stations), it is here: <a href="https://robotguiden.dk/roborock-vs-dreame/" rel="sponsored noopener noreferrer">advertising link for RobotGuiden.dk</a>.
+
+</div>
 
 The Roborock integration is built into HA. No HACS is needed, but you do need a Roborock cloud account to authenticate. Add the integration, sign in, and the vacuum appears. What it doesn't tell you is that the interesting part comes from a separate HACS card that renders the live map.
 
@@ -63,7 +71,7 @@ Mop mode is a select entity. The intensity row only shows when the robot reports
 
 ## The integration
 
-Cloud polling, 5-second refresh. Local communication is possible but requires extracting keys from the device firmware, which I didn't bother with. For anything that matters (starting a clean, checking battery, room segments), cloud polling is fast enough.
+Commands and polling run locally. The cloud handles setup and acts as the fallback. This section used to say that local communication meant extracting keys from the firmware, and that is no longer true. Updates arrive by polling, not push, and the vacuum needs internet access: without it, it blocks its local API. For anything that matters (starting a clean, checking battery, room segments), that is fast enough.
 
 Entities after setup:
 

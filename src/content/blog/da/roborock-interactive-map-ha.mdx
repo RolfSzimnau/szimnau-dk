@@ -3,7 +3,7 @@ title: "Det, der faktisk er nyttigt ved Roborock-kortet i Home Assistant"
 seoTitle: "Roborock-kort i Home Assistant: det, der virker"
 description: "Roborock Q5 Pro i Home Assistant: interaktivt kort via HACS, rengøring af enkelte rum og sensorer, der advarer, før børsten er slidt op."
 pubDate: 2025-04-04
-updatedDate: 2026-11-08
+updatedDate: 2026-11-27
 tags: ["støvsuger", "dashboard"]
 lang: "da"
 translationKey: "roborock-interactive-map-ha"
@@ -12,10 +12,18 @@ faqs:
   - question: "Hvordan får man et levende, interaktivt Roborock-kort i Home Assistant?"
     answer: "Den indbyggede Roborock-integration (kræver en konto i skyen) giver støvsugerentiteten, og Xiaomi Vacuum Map Card fra HACS tegner kortet live, så du kan trykke på et rum for at gøre det rent."
   - question: "Virker Roborock-integrationen lokalt?"
-    answer: "Officielt henter den data fra skyen cirka hvert 5. sekund. Lokal forbindelse kræver, at du trækker nøgler ud af enhedens firmware. Til at starte rengøring og se batteri og rum er skyen helt tilstrækkelig."
+    answer: "Delvist. Ifølge Home Assistants dokumentation (tjekket 27. november 2026) går kommandoer og polling lokalt, mens skyen bruges til opsætning og som fallback. Robotten skal stadig kunne nå internettet. Via Matter kan den køre helt offline, men så får du færre styringer og sensorer."
   - question: "Hvordan viser man slid på børster og filter i Home Assistant?"
     answer: "Hvis Roborock-integrationen melder timer tilbage (sensor.*_filter_time_left og lignende), dividerer du med delens levetid i en skabelon og viser både procent og timer, fx 91 % af 150 timer for filteret. Begræns resultatet til mellem 0 og 100."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Opdatering, november 2026:** Jeg skrev tidligere, at lokal forbindelse kræver nøgler fra firmwaren, og at integrationen henter data fra skyen. Det er forældet. Home Assistants dokumentation (tjekket 27. november 2026) beskriver en hybridmodel: kommandoer og polling går lokalt, og skyen bruges til opsætning og som fallback. S-, QV-, Qrevo- og Saros-serien står som fuldt understøttet, mens Q-serien varierer. Er robotten uden internet, lukker den sin lokale API. Vil du have den helt offline, kan den kobles på via Matter, men så er der færre styringer og sensorer. Ældre modeller som S5 sættes i stedet op via Xiaomi Miio-integrationen. Koden og entitetsnavnene længere nede er uændrede.
+
+**Reklame for RobotGuiden.dk.** Andreas fra RobotGuiden.dk skrev til mig og bad om et link. Jeg får ingen betaling eller andre fordele. RobotGuiden tjener penge på affiliate-links på sin egen side. Til en sammenligning af hardwaren hos Roborock og Dreame, bl.a. dørtrin, moppesystemer og stationer, kan du se her: <a href="https://robotguiden.dk/roborock-vs-dreame/" rel="sponsored noopener noreferrer">reklamelink for RobotGuiden.dk</a>.
+
+</div>
 
 Roborock-integrationen er bygget ind i HA, så der skal ikke bruges HACS. Tilføj den, log ind med din Roborock-konto, og støvsugeren dukker op. Hvad den ikke fortæller dig, er, at det interessante kommer fra et separat HACS-kort, der viser kortet live.
 
@@ -63,7 +71,7 @@ Moppetilstanden er en select-entitet. Rækken med intensitet vises kun, når rob
 
 ## Integrationen
 
-Den henter data fra cloud hvert 5. sekund. Lokal forbindelse er mulig, men kræver, at man trækker nøgler ud af enhedens firmware, og det gad jeg ikke. Til alt, der betyder noget, som at starte rengøring, tjekke batteriet eller vælge rum, er cloud hurtigt nok.
+Kommandoer og polling går lokalt, og skyen bruges til opsætning og som fallback. Tidligere stod der her, at lokal forbindelse krævede nøgler fra firmwaren. Det passer ikke længere. Opdateringer kommer ved polling og ikke som push, og robotten skal have internetadgang, for uden den lukker den sin lokale API. Til alt, der betyder noget, som at starte rengøring, tjekke batteriet eller vælge rum, er det hurtigt nok.
 
 Entiteter efter opsætningen:
 

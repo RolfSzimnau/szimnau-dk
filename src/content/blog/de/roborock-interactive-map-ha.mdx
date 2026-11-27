@@ -3,7 +3,7 @@ title: "Was an der Roborock-Karte in Home Assistant wirklich nützlich ist"
 seoTitle: "Roborock-Karte in Home Assistant: was wirklich hilft"
 description: "Roborock Q5 Pro in Home Assistant: interaktive Karte per HACS, Raumreinigung nach Segment und Wartungssensoren, die vor leeren Bürsten warnen."
 pubDate: 2025-04-04
-updatedDate: 2026-11-08
+updatedDate: 2026-11-27
 tags: ["staubsauger", "dashboard"]
 lang: "de"
 translationKey: "roborock-interactive-map-ha"
@@ -12,10 +12,18 @@ faqs:
   - question: "Wie bekommt man eine interaktive Live-Karte des Roborock in Home Assistant?"
     answer: "Die eingebaute Roborock-Integration (braucht ein Cloud-Konto) liefert die Saugroboter-Entität, und die Xiaomi Vacuum Map Card aus HACS zeichnet die Karte live. Ein Tipp auf einen Raum startet die Reinigung dort."
   - question: "Läuft die Roborock-Integration lokal?"
-    answer: "Offiziell fragt sie die Cloud etwa alle 5 Sekunden ab. Für lokalen Betrieb müsstest du Schlüssel aus der Firmware des Geräts holen. Zum Starten, für den Akku und für die Räume reicht die Cloud völlig."
+    answer: "Teilweise. Laut Dokumentation von Home Assistant (geprüft am 27. November 2026) laufen Befehle und Abfragen lokal, die Cloud dient für die Einrichtung und als Rückfallebene. Der Roboter braucht weiterhin Internetzugang. Über Matter läuft er komplett offline, dann aber mit weniger Steuerungen und Sensoren."
   - question: "Wie zeigt man den Verschleiß von Bürsten und Filtern in Home Assistant an?"
     answer: "Meldet die Roborock-Integration die verbleibenden Stunden (`sensor.*_filter_time_left` und ähnliche), teilst du in einem Template durch die Nennlebensdauer des Teils und zeigst Prozent und Stunden an, beim Filter zum Beispiel 91 % von 150 h. Begrenze das Ergebnis auf 0 bis 100."
 ---
+
+<div style="background:rgba(217,119,6,0.15);border:1px solid rgba(245,158,11,0.40);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem">
+
+**Update, November 2026:** Ich hatte hier geschrieben, dass man für lokalen Betrieb Schlüssel aus der Firmware holen muss und die Integration die Cloud abfragt. Das ist überholt. Die Dokumentation von Home Assistant (geprüft am 27. November 2026) beschreibt heute ein Hybridmodell: Befehle und Abfragen laufen lokal, die Cloud dient der Einrichtung und als Rückfallebene. Die Serien S, QV, Qrevo und Saros gelten als voll unterstützt, bei der Q-Serie hängt es vom Modell ab. Verliert der Roboter seine Internetverbindung, sperrt er seine lokale API, bis er Roborock wieder erreicht. Soll er ganz ohne Internet laufen, geht das über Matter, mit weniger Steuerungen und Sensoren. Ältere Modelle wie der S5 werden stattdessen über die Xiaomi-Miio-Integration eingebunden. Code und Entitätsnamen weiter unten sind unverändert.
+
+**Werbung für RobotGuiden.dk.** Andreas von RobotGuiden.dk hat mir geschrieben und um einen Link gebeten. Ich bekomme dafür kein Geld und keine anderen Vorteile. RobotGuiden verdient auf der eigenen Seite über Affiliate-Links. Einen Hardware-Vergleich von Roborock und Dreame (Türschwellen, Wischsysteme, Stationen) findest du hier: <a href="https://robotguiden.dk/roborock-vs-dreame/" rel="sponsored noopener noreferrer">Werbelink für RobotGuiden.dk</a>.
+
+</div>
 
 Die Roborock-Integration ist direkt in HA eingebaut, kein HACS nötig. Hinzufügen, mit dem Roborock-Konto einloggen (ein Roborock-Cloud-Konto ist erforderlich), der Staubsauger erscheint. Was einem niemand sagt: Das Interessante kommt von einer separaten HACS-Karte, die die Live-Karte rendert.
 
@@ -63,7 +71,7 @@ Der Wischmodus ist eine Select-Entität. Die Zeile für die Intensität erschein
 
 ## Die Integration
 
-Cloud-Polling mit 5-Sekunden-Aktualisierung. Lokale Kommunikation ist möglich, erfordert aber das Extrahieren von Schlüsseln aus der Geräte-Firmware. Das habe ich mir gespart. Für alles Wichtige (Reinigung starten, Akku prüfen, Raumsegmente) ist Cloud-Polling schnell genug.
+Befehle und Abfragen laufen lokal, die Cloud übernimmt Einrichtung und Rückfall. Früher stand hier, für lokalen Betrieb müsse man Schlüssel aus der Firmware holen. Das stimmt nicht mehr. Aktualisierungen kommen per Polling, nicht per Push, und der Roboter braucht Internetzugang: Ohne ihn sperrt er seine lokale API. Für alles Wichtige (Reinigung starten, Akku prüfen, Raumsegmente) reicht das.
 
 Entitäten nach der Einrichtung:
 
